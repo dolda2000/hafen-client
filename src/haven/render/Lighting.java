@@ -32,6 +32,7 @@ import static haven.render.sl.Function.PDir.*;
 import static haven.render.sl.Type.*;
 
 public interface Lighting {
+    public static final State.Slot<State> lights = new State.Slot<>(State.Slot.Type.SYS, State.class);
     public static final Struct s_light = Struct.make(new Symbol.Shared("light"),
 						     VEC4, "amb",
 						     VEC4, "dif",
@@ -55,33 +56,43 @@ public interface Lighting {
 	}
     }
 
-    public static class SimpleLights extends LightList {
+    public static class SimpleLights extends State {
 	public static final int maxlights = 4;
 	public static final boolean unroll = true;
-	public final Uniform nlights, lights;
+	public static final Uniform u_nlights = new Uniform(INT, "nlights", p -> ((SimpleLights)p.get(lights)).list.length, lights);
+	public static final Uniform u_lights = new Uniform(new Array(s_light, maxlights), "lights", p -> ((SimpleLights)p.get(lights)).list, lights);
+	private final Object[][] list;
 
-	public SimpleLights(Uniform.Data<Object[]> lights) {
-	    this.nlights = new Uniform(INT, "nlights", p -> lights.value.apply(p).length, lights.deps);
-	    this.lights = new Uniform(new Array(s_light, maxlights), "lights", p -> lights.value.apply(p), lights.deps);
+	public SimpleLights(Object[][] lights) {
+	    this.list = lights;
 	}
 
-	public void construct(Block blk, java.util.function.Function<Params, Statement> body) {
-	    if(!unroll) {
-		Variable i = blk.local(INT, "i", null);
-		blk.add(new For(ass(i, l(0)), lt(i.ref(), nlights.ref()), linc(i.ref()),
-				body.apply(new Params(i.ref(), idx(lights.ref(), i.ref())))));
-	    } else {
-		for(int i = 0; i < maxlights; i++) {
-		    /* Some old drivers and/or hardware seem to be
-		     * having trouble with the for loop. Might not be
-		     * as much of a problem these days as it used to
-		     * be, but keep this for now, especially if
-		     * SimpleLights are to be more of a legacy
-		     * concern. */
-		    blk.add(new If(gt(nlights.ref(), l(i)),
-				   body.apply(new Params(l(i), idx(lights.ref(), l(i))))));
-		}
-	    }
+	private static final ShaderMacro shader = prog -> {
+	    prog.module(new LightList() {
+		    public void construct(Block blk, java.util.function.Function<Params, Statement> body) {
+			if(!unroll) {
+			    Variable i = blk.local(INT, "i", null);
+			    blk.add(new For(ass(i, l(0)), lt(i.ref(), u_nlights.ref()), linc(i.ref()),
+					    body.apply(new Params(i.ref(), idx(u_lights.ref(), i.ref())))));
+			} else {
+			    for(int i = 0; i < maxlights; i++) {
+				/* Some old drivers and/or hardware seem to be
+				 * having trouble with the for loop. Might not be
+				 * as much of a problem these days as it used to
+				 * be, but keep this for now, especially if
+				 * SimpleLights are to be more of a legacy
+				 * concern. */
+				blk.add(new If(gt(u_nlights.ref(), l(i)),
+					       body.apply(new Params(l(i), idx(u_lights.ref(), l(i))))));
+			    }
+			}
+		    }
+		});
+	};
+	public ShaderMacro shader() {return(shader);}
+
+	public void apply(Pipe p) {
+	    p.put(lights, this);
 	}
     }
 }
