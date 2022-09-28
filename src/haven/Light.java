@@ -85,7 +85,7 @@ public abstract class Light implements RenderTree.Node {
 	    this.lights = lights;
 	}
 
-	private static final ShaderMacro shader = new Phong.SimpleLights(new Uniform.Data<Object[]>( p-> {
+	private static final ShaderMacro shader = new Lighting.SimpleLights(new Uniform.Data<Object[]>( p-> {
 		    Lights l = p.get(clights);
 		    return((l == null) ? new Object[0][] : l.lights);
 	}, clights));

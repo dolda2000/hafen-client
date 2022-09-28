@@ -32,15 +32,7 @@ import static haven.render.sl.Cons.*;
 import static haven.render.sl.Function.PDir.*;
 import static haven.render.sl.Type.*;
 
-public class Phong extends ValBlock.Group {
-    public static final Struct s_light = Struct.make(new Symbol.Shared("light"),
-						     VEC4, "amb",
-						     VEC4, "dif",
-						     VEC4, "spc",
-						     VEC4, "pos",
-						     FLOAT, "ac",
-						     FLOAT, "al",
-						     FLOAT, "aq");
+public class Phong extends ValBlock.Group implements Lighting{
     public static final Struct s_material = Struct.make(new Symbol.Shared("material"),
 							VEC4, "emi",
 							VEC4, "amb",
@@ -82,50 +74,6 @@ public class Phong extends ValBlock.Group {
 		ph.bcol.mod(in -> celramp.call(in), 0);
 	    if(spc)
 		ph.scol.mod(in -> celramp.call(in), 0);
-	}
-    }
-
-    public static abstract class LightList implements ShaderMacro {
-	public abstract void construct(Block blk, java.util.function.Function<Params, Statement> body);
-
-	public static class Params {
-	    public Expression idx, lpar;
-
-	    public Params(Expression idx, Expression lpar) {this.idx = idx; this.lpar = lpar;}
-	}
-
-	public void modify(ProgramContext prog) {
-	    prog.module(this);
-	}
-    }
-
-    public static class SimpleLights extends LightList {
-	public static final int maxlights = 4;
-	public static final boolean unroll = true;
-	public final Uniform nlights, lights;
-
-	public SimpleLights(Uniform.Data<Object[]> lights) {
-	    this.nlights = new Uniform(INT, "nlights", p -> lights.value.apply(p).length, lights.deps);
-	    this.lights = new Uniform(new Array(s_light, maxlights), "lights", p -> lights.value.apply(p), lights.deps);
-	}
-
-	public void construct(Block blk, java.util.function.Function<Params, Statement> body) {
-	    if(!unroll) {
-		Variable i = blk.local(INT, "i", null);
-		blk.add(new For(ass(i, l(0)), lt(i.ref(), nlights.ref()), linc(i.ref()),
-				body.apply(new Params(i.ref(), idx(lights.ref(), i.ref())))));
-	    } else {
-		for(int i = 0; i < maxlights; i++) {
-		    /* Some old drivers and/or hardware seem to be
-		     * having trouble with the for loop. Might not be
-		     * as much of a problem these days as it used to
-		     * be, but keep this for now, especially if
-		     * SimpleLights are to be more of a legacy
-		     * concern. */
-		    blk.add(new If(gt(nlights.ref(), l(i)),
-				   body.apply(new Params(l(i), idx(lights.ref(), l(i))))));
-		}
-	    }
 	}
     }
 
