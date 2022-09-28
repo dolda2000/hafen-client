@@ -33,7 +33,6 @@ import static haven.render.sl.Function.PDir.*;
 import static haven.render.sl.Type.*;
 
 public class Phong extends ValBlock.Group {
-    public static final int maxlights = 4;
     public static final Struct s_light = Struct.make(new Symbol.Shared("light"),
 						     VEC4, "amb",
 						     VEC4, "dif",
@@ -48,8 +47,6 @@ public class Phong extends ValBlock.Group {
 							VEC4, "dif",
 							VEC4, "spc",
 							FLOAT, "shine");
-    private final Uniform nlights;
-    private final Uniform lights;
     private final Uniform material;
     public final GValue bcol = new GValue(VEC3), scol = new GValue(VEC3);
     public final boolean pfrag;
@@ -88,14 +85,58 @@ public class Phong extends ValBlock.Group {
 	}
     }
 
+    public static abstract class LightList implements ShaderMacro {
+	public abstract void construct(Block blk, java.util.function.Function<Params, Statement> body);
+
+	public static class Params {
+	    public Expression idx, lpar;
+
+	    public Params(Expression idx, Expression lpar) {this.idx = idx; this.lpar = lpar;}
+	}
+
+	public void modify(ProgramContext prog) {
+	    prog.module(this);
+	}
+    }
+
+    public static class SimpleLights extends LightList {
+	public static final int maxlights = 4;
+	public static final boolean unroll = true;
+	public final Uniform nlights, lights;
+
+	public SimpleLights(Uniform.Data<Object[]> lights) {
+	    this.nlights = new Uniform(INT, "nlights", p -> lights.value.apply(p).length, lights.deps);
+	    this.lights = new Uniform(new Array(s_light, maxlights), "lights", p -> lights.value.apply(p), lights.deps);
+	}
+
+	public void construct(Block blk, java.util.function.Function<Params, Statement> body) {
+	    if(!unroll) {
+		Variable i = blk.local(INT, "i", null);
+		blk.add(new For(ass(i, l(0)), lt(i.ref(), nlights.ref()), linc(i.ref()),
+				body.apply(new Params(i.ref(), idx(lights.ref(), i.ref())))));
+	    } else {
+		for(int i = 0; i < maxlights; i++) {
+		    /* Some old drivers and/or hardware seem to be
+		     * having trouble with the for loop. Might not be
+		     * as much of a problem these days as it used to
+		     * be, but keep this for now, especially if
+		     * SimpleLights are to be more of a legacy
+		     * concern. */
+		    blk.add(new If(gt(nlights.ref(), l(i)),
+				   body.apply(new Params(l(i), idx(lights.ref(), l(i))))));
+		}
+	    }
+	}
+    }
+
     public class DoLight extends Function.Def {
+	public final Expression ls = param(IN, s_light).ref();
 	public final Expression i = param(IN, INT).ref();
 	public final Expression vert = param(IN, VEC3).ref();
 	public final Expression edir = param(IN, VEC3).ref();
 	public final Expression norm = param(IN, VEC3).ref();
 	public final LValue diff = param(INOUT, VEC3).ref();
 	public final LValue spec = param(INOUT, VEC3).ref();
-	public final Expression ls = idx(lights.ref(), i);
 	public final Expression mat = material.ref();
 	public final Expression shine = fref(mat, "shine");
 	public final Value lvl, dir, dl, sl;
@@ -182,20 +223,8 @@ public class Phong extends ValBlock.Group {
     public void cons2(Block blk) {
 	bcol.tgt = blk.local(VEC3, pick(fref(material.ref(), "emi"), "rgb")).ref();
 	scol.tgt = blk.local(VEC3, Vec3Cons.z).ref();
-	boolean unroll = true;
-	if(!unroll) {
-	    Variable i = blk.local(INT, "i", null);
-	    blk.add(new For(ass(i, l(0)), lt(i.ref(), nlights.ref()), linc(i.ref()),
-			    stmt(dolight.call(i.ref(), vert, edir, norm, bcol.tgt, scol.tgt))));
-	} else {
-	    for(int i = 0; i < 4; i++) {
-		/* No few drivers seem to be having trouble with the for
-		 * loop. It would be nice to be able to select this code
-		 * path only on those drivers. */
-		blk.add(new If(gt(nlights.ref(), l(i)),
-			       stmt(dolight.call(l(i), vert, edir, norm, bcol.tgt, scol.tgt))));
-	    }
-	}
+	LightList ls = prog.getmod(LightList.class);
+	ls.construct(blk, par -> stmt(dolight.call(par.lpar, par.idx, vert, edir, norm, bcol.tgt, scol.tgt)));
 	bcol.addmods(blk); scol.addmods(blk);
     }
 
@@ -203,10 +232,8 @@ public class Phong extends ValBlock.Group {
 	FragColor.fragcol(fctx).mod(in -> add(mul(in, vec4(bcol, pick(fref(material.ref(), "dif"), "a"))), vec4(scol, l(0.0))), 500);
     }
 
-    public Phong(VertexContext vctx, Uniform.Data<Object[]> lights, Uniform.Data<?> material) {
+    public Phong(VertexContext vctx, Uniform.Data<?> material) {
 	vctx.mainvals.super();
-	this.nlights = new Uniform(INT, "nlights", p -> lights.value.apply(p).length, lights.deps);
-	this.lights = new Uniform(new Array(s_light, maxlights), "lights", p -> lights.value.apply(p), lights.deps);
 	this.material = new Uniform(s_material, "material", p -> material.value.apply(p), material.deps);
 	pfrag = false;
 	prog = vctx.prog;
@@ -228,10 +255,8 @@ public class Phong extends ValBlock.Group {
 	prog.module(this);
     }
 
-    public Phong(FragmentContext fctx, Uniform.Data<Object[]> lights, Uniform.Data<?> material) {
+    public Phong(FragmentContext fctx, Uniform.Data<?> material) {
 	fctx.mainvals.super();
-	this.nlights = new Uniform(INT, "nlights", p -> lights.value.apply(p).length, lights.deps);
-	this.lights = new Uniform(new Array(s_light, maxlights), "lights", p -> lights.value.apply(p), lights.deps);
 	this.material = new Uniform(s_material, "material", p -> material.value.apply(p), material.deps);
 	pfrag = true;
 	prog = fctx.prog;

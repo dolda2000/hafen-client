@@ -85,7 +85,11 @@ public abstract class Light implements RenderTree.Node {
 	    this.lights = lights;
 	}
 
-	public ShaderMacro shader() {return(null);}
+	private static final ShaderMacro shader = new Phong.SimpleLights(new Uniform.Data<Object[]>( p-> {
+		    Lights l = p.get(clights);
+		    return((l == null) ? new Object[0][] : l.lights);
+	}, clights));
+	public ShaderMacro shader() {return(shader);}
 
 	public void apply(Pipe p) {p.put(clights, this);}
     }
@@ -153,14 +157,8 @@ public abstract class Light implements RenderTree.Node {
 
     @Material.ResName("col")
     public static class PhongLight extends State {
-	private static final Uniform.Data<Object[]> getlights = new Uniform.Data<Object[]>(p -> {
-		Lights l = p.get(clights);
-		return((l == null) ? new Object[0][] : l.lights);
-	    }, clights);
-	public static final ShaderMacro vlight = prog -> new Phong(prog.vctx, getlights,
-								   new Uniform.Data<>(p -> p.get(lighting).material, lighting));
-	public static final ShaderMacro flight = prog -> new Phong(prog.fctx, getlights,
-								   new Uniform.Data<>(p -> p.get(lighting).material, lighting));
+	public static final ShaderMacro vlight = prog -> new Phong(prog.vctx, new Uniform.Data<>(p -> p.get(lighting).material, lighting));
+	public static final ShaderMacro flight = prog -> new Phong(prog.fctx, new Uniform.Data<>(p -> p.get(lighting).material, lighting));
 	private final ShaderMacro shader;
 	private final Object[] material;
 
