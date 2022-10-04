@@ -228,8 +228,7 @@ public class ShadowMap extends State {
     }
 
     public ShadowMap setpos(Coord3f base, Coord3f dir) {
-	DirCam lcam = new DirCam();
-	lcam.update(base, dir);
+	Camera lcam = Camera.dir(base, dir);
 	if(Utils.eq(this.lcam, lcam))
 	    return(this);
 	ShadowMap ret = new ShadowMap(this);
