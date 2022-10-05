@@ -27,15 +27,25 @@
 package haven.render;
 
 import haven.*;
+import java.util.function.*;
 import haven.render.sl.ShaderMacro;
 import haven.render.sl.InstancedAttribute;
 
 public class Location extends Transform {
     public final String id;
 
+    public Location(Function<Matrix4f, Matrix4f> xf, String id) {
+	super(xf);
+	this.id = id;
+    }
+
     public Location(Matrix4f xf, String id) {
 	super(xf);
 	this.id = id;
+    }
+
+    public Location(Function<Matrix4f, Matrix4f> xf) {
+	this(xf, null);
     }
 
     public Location(Matrix4f xf) {
