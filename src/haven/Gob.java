@@ -483,6 +483,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
     }
 
     private static final ClassResolver<Gob> ctxr = new ClassResolver<Gob>()
+	.add(Gob.class, g -> g)
 	.add(Glob.class, g -> g.glob)
 	.add(Session.class, g -> g.glob.sess);
     public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
