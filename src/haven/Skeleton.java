@@ -925,17 +925,34 @@ public class Skeleton {
 		    t &= 0x7f;
 		}
 		switch(t) {
-		case 0:
+		case 0: case 2: {
 		    String resnm = buf.string();
 		    int resver = buf.uint16();
 		    byte[] sdt = buf.bytes(buf.uint8());
+		    int fl = (t == 2) ? buf.uint8() : 0;
 		    Indir<Resource> res = getres().pool.load(resnm, resver);
-		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt, null);
+		    Function<ModOwner, Pipe.Op> ploc = null;
+		    if((fl & 1) != 0) {
+			String eqnm = buf.string();
+			Indir<Resource> src = ((fl & 2) == 0) ? getres().indir() : res;
+			ploc = new Function<ModOwner, Pipe.Op>() {
+				BoneOffset eqp = null;
+
+				public Pipe.Op apply(ModOwner owner) {
+				    if(eqp == null)
+					eqp = src.get().flayer(BoneOffset.class, eqnm);
+				    return(eqp.forpose(getpose(owner)).get());
+				}
+			    };
+		    }
+		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt, ploc);
 		    break;
-		case 1:
+		}
+		case 1: {
 		    String id = buf.string();
 		    events[i] = new FxTrack.Trigger(tm, id);
 		    break;
+		}
 		default:
 		    throw(new Resource.LoadException("Illegal control event: " + t, getres()));
 		}
