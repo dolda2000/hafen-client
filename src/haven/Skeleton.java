@@ -926,6 +926,11 @@ public class Skeleton {
 	    for(int i = 0; i < events.length; i++) {
 		float tm = (fmt == 0) ? (float)buf.cpfloat() : (buf.unorm16() * len);
 		int t = buf.uint8();
+		Message sub = buf;
+		if((t & 0x80) != 0) {
+		    sub = new MessageBuf(buf.bytes(buf.uint16()));
+		    t &= 0x7f;
+		}
 		switch(t) {
 		case 0:
 		    String resnm = buf.string();
