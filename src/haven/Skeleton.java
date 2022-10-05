@@ -1101,6 +1101,9 @@ public class Skeleton {
 		    }
 		};
 	    */
+	    opcodes[4] = buf -> {
+		return(pose -> () -> Location.nullrot);
+	    };
 	}
 
 	@SuppressWarnings("unchecked")
