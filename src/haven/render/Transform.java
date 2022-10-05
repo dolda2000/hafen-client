@@ -84,6 +84,27 @@ public abstract class Transform extends State {
 	    return(xf.toString());
 	}
     }
+
+    public static final Function<Matrix4f, Matrix4f> nullrot = new Function<Matrix4f, Matrix4f>() {
+	public Matrix4f apply(Matrix4f p) {
+	    if(p == Matrix4f.id)
+		return(p);
+	    Matrix4f r = new Matrix4f(p);
+	    /* XXX: This is only actually correct for input matrices
+	     * that are only rotating and translating. Tthat's
+	     * probably not a problem for now, but please consider a
+	     * fix. */
+	    r.m[0] = r.m[5] = r.m[10] = 1.0f;
+	    r.m[1] = r.m[2] = r.m[4] =
+	    r.m[6] = r.m[8] = r.m[9] = 0.0f;
+	    return(r);
+	}
+
+	public String toString() {
+	    return("#nullrot");
+	}
+    };
+
     public static Matrix4f makexlate(Matrix4f d, Coord3f c) {
 	d.m[ 0] = d.m[ 5] = d.m[10] = d.m[15] = 1.0f;
 	d.m[ 1] = d.m[ 2] = d.m[ 3] =
@@ -105,7 +126,7 @@ public abstract class Transform extends State {
 	d.m[ 2] = (x * z * C) - (y * s); d.m[ 6] = (y * z * C) + (x * s); d.m[10] = (z * z * C) + c;
 	return(d);
     }
-    
+
     public static Matrix4f rxinvert(Matrix4f m) {
 	/* This assumes that m is merely a composition of rotations
 	 * and translations. */
