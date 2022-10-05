@@ -350,6 +350,9 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	}
     }
 
+    protected void obstate(Pipe buf) {
+    }
+
     private class GobState implements Pipe.Op {
 	final Pipe.Op mods;
 
@@ -371,6 +374,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	    if(!virtual)
 		buf.prep(new GobClick(Gob.this));
 	    buf.prep(new TickList.Monitor(Gob.this));
+	    obstate(buf);
 	    if(mods != null)
 		buf.prep(mods);
 	}
