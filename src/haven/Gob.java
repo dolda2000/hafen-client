@@ -499,6 +499,13 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	return(m.getv());
     }
 
+    public Collection<Location.Chain> getloc() {
+	Collection<Location.Chain> ret = new ArrayList<>(slots.size());
+	for(RenderTree.Slot slot : slots)
+	    ret.add(slot.state().get(Homo3D.loc));
+	return(ret);
+    }
+
     public class Placed implements RenderTree.Node, TickList.Ticking, TickList.TickNode {
 	private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
 	private Placement cur;

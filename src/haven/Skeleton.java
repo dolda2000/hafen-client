@@ -396,13 +396,13 @@ public class Skeleton {
     
     public interface ModOwner extends OwnerContext {
 	public double getv();
-	public Coord3f getc();
+	public Collection<Location.Chain> getloc();
 	@Deprecated
 	public default Glob glob() {return(context(Glob.class));}
 
 	public static final ModOwner nil = new ModOwner() {
 		public double getv() {return(0);}
-		public Coord3f getc() {return(Coord3f.o);}
+		public Collection<Location.Chain> getloc() {return(Collections.emptyList());}
 		public <T> T context(Class<T> cl) {throw(new NoContext(cl));}
 	    };
     }

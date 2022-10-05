@@ -128,7 +128,7 @@ public class Avaview extends PView {
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, Avaview.this));}
 	@Deprecated public Glob glob() {return(context(Glob.class));}
 
-	public Coord3f getc() {return(Coord3f.o);}
+	public Collection<Location.Chain> getloc() {return(Collections.emptyList());}
 	public double getv() {return(0);}
     }
     private final AvaOwner avaowner = new AvaOwner();
