@@ -1035,20 +1035,10 @@ public class Skeleton {
 	    return(new ResMod(owner, skel, mode));
 	}
 
-	@Deprecated
-	public TrackMod forskel(Skeleton skel, WrapMode mode) {
-	    return(forskel(ModOwner.nil, skel, mode));
-	}
-
-	@Deprecated
-	public TrackMod forgob(Skeleton skel, WrapMode mode, Gob gob) {
-	    return(forskel(gob, skel, mode));
-	}
-	
 	public Integer layerid() {
 	    return(id);
 	}
-	
+
 	public void init() {}
     }
 
