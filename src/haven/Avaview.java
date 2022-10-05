@@ -151,7 +151,7 @@ public class Avaview extends PView {
 	    throw(new Loading());
 	Pipe buf = new BufPipe();
 	buf.prep(bo.forpose(comp.pose).get());
-	return(new LocationCam(buf.get(Homo3D.loc)));
+	return(Camera.placed(buf.get(Homo3D.loc)));
     }
 
     private Composite getgcomp() {
