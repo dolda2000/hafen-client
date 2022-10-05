@@ -694,9 +694,6 @@ public class Skeleton {
 	}
 
 	private void playfx(float ot, float nt) {
-	    if(!(owner instanceof Gob))
-		return;
-	    Gob gob = (Gob)owner;
 	    if(ot > nt) {
 		playfx(Math.min(ot, len), len);
 		playfx(0, Math.max(0, nt));
@@ -706,7 +703,7 @@ public class Skeleton {
 			if((ev.time >= ot) && (ev.time < nt)) {
 			    for(FxTrack.EventListener l : cbl)
 				l.event(ev);
-			    ev.trigger(gob);
+			    ev.trigger(owner);
 			}
 		    }
 		}
@@ -825,7 +822,7 @@ public class Skeleton {
 		this.time = time;
 	    }
 
-	    public abstract void trigger(Gob gob);
+	    public abstract void trigger(ModOwner owner);
 	}
 
 	public FxTrack(Event[] events) {
@@ -835,38 +832,34 @@ public class Skeleton {
 	public static class SpawnSprite extends Event {
 	    public final Indir<Resource> res;
 	    public final byte[] sdt;
-	    public final Location loc;
+	    public final Function<ModOwner, Pipe.Op> loc;
 
-	    public SpawnSprite(float time, Indir<Resource> res, byte[] sdt, Location loc) {
+	    public SpawnSprite(float time, Indir<Resource> res, byte[] sdt, Function<ModOwner, Pipe.Op> loc) {
 		super(time);
 		this.res = res;
 		this.sdt = (sdt == null)?new byte[0]:sdt;
 		this.loc = loc;
 	    }
 
-	    public void trigger(Gob gob) {
-		final Coord3f fc;
-		try {
-		    fc = gob.getc();
-		} catch(Loading e) {
-		    return;
-		}
-		gob.glob.loader.defer(() -> {
-			Gob n = gob.glob.oc.new Virtual(gob.rc, gob.a) {
-				public Coord3f getc() {
-				    return(new Coord3f(fc));
-				}
-
-				/* XXXRENDER
-				   public boolean setup(RenderList rl) {
-				   if(SpawnSprite.this.loc != null)
-				   rl.prepc(SpawnSprite.this.loc);
-				   return(super.setup(rl));
-				   }
-				*/
-			    };
-			n.addol(new Gob.Overlay(n, -1, res, new MessageBuf(sdt)), false);
-			gob.glob.oc.add(n);
+	    public void trigger(ModOwner owner) {
+		Glob glob = owner.context(Glob.class);
+		Collection<Location.Chain> locs = owner.getloc();
+		Loader l = glob.loader;
+		l.defer(() -> {
+			Pipe.Op ploc = (this.loc != null) ? this.loc.apply(owner) : null;
+			for(Location.Chain loc : locs) {
+			    l.defer(() -> {
+				    Gob n = glob.oc.new FixedPlace() {
+					    protected void obstate(Pipe buf) {
+						buf.prep(loc);
+						if(ploc != null)
+						    buf.prep(ploc);
+					    }
+					};
+				    n.addol(new Gob.Overlay(n, -1, res, new MessageBuf(sdt)), false);
+				    glob.oc.add(n);
+				}, null);
+			}
 		    }, null);
 	    }
 	}
@@ -879,7 +872,7 @@ public class Skeleton {
 		this.id = id.intern();
 	    }
 
-	    public void trigger(Gob gob) {}
+	    public void trigger(ModOwner owner) {}
 	}
     }
 
