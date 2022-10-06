@@ -848,10 +848,12 @@ public class Skeleton {
 		l.defer(() -> {
 			Pipe.Op ploc = (this.loc != null) ? this.loc.apply(owner) : null;
 			for(Location.Chain loc : locs) {
+			    Coord3f o = loc.fin(Matrix4f.id).mul4(Coord3f.o);
+			    Location lxf = new Location(loc.fin(Location.makexlate(new Matrix4f(), o.inv())));
 			    l.defer(() -> {
-				    Gob n = glob.oc.new FixedPlace() {
+				    Gob n = glob.oc.new FixedPlace(o.invy(), 0) {
 					    protected void obstate(Pipe buf) {
-						buf.prep(loc);
+						buf.prep(lxf);
 						if(ploc != null)
 						    buf.prep(ploc);
 					    }
