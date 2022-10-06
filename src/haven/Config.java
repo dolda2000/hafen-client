@@ -35,7 +35,7 @@ import java.nio.file.*;
 
 public class Config {
     public static final Properties jarprops = getjarprops();
-    public static final String confid = jarprops.getProperty("config.client-id", "");
+    public static final String confid = jarprops.getProperty("config.client-id", "unknown");
     public static final Variable<Boolean> par = Variable.def(() -> true);
     public final Properties localprops = getlocalprops();
 
