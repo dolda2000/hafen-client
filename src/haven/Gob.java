@@ -350,6 +350,9 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	}
     }
 
+    protected void obstate(Pipe buf) {
+    }
+
     private class GobState implements Pipe.Op {
 	final Pipe.Op mods;
 
@@ -371,6 +374,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	    if(!virtual)
 		buf.prep(new GobClick(Gob.this));
 	    buf.prep(new TickList.Monitor(Gob.this));
+	    obstate(buf);
 	    if(mods != null)
 		buf.prep(mods);
 	}
@@ -497,6 +501,13 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	if(m == null)
 	    return(0);
 	return(m.getv());
+    }
+
+    public Collection<Location.Chain> getloc() {
+	Collection<Location.Chain> ret = new ArrayList<>(slots.size());
+	for(RenderTree.Slot slot : slots)
+	    ret.add(slot.state().get(Homo3D.loc));
+	return(ret);
     }
 
     public class Placed implements RenderTree.Node, TickList.Ticking, TickList.TickNode {
