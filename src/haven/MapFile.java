@@ -642,13 +642,16 @@ public class MapFile {
 	    int nt = 0;
 	    Resource.Spec[] sets = new Resource.Spec[256];
 	    int[] tmap = new int[256];
-	    int[] rmap = new int[256];
 	    boolean[] norepl = new boolean[256];
 	    Arrays.fill(tmap, -1);
 	    for(int tn : cg.tiles) {
+		if(tn >= tmap.length) {
+		    int pl = tmap.length;
+		    tmap = Utils.extend(tmap, Integer.highestOneBit(tn) * 2);
+		    Arrays.fill(tmap, pl, tmap.length, -1);
+		}
 		if(tmap[tn] == -1) {
 		    tmap[tn] = nt;
-		    rmap[nt] = tn;
 		    sets[nt] = map.tilesetn(tn);
 		    try {
 			for(String tag : map.tileset(tn).tags) {
@@ -661,7 +664,7 @@ public class MapFile {
 		}
 	    }
 	    int[] prios = new int[nt];
-	    for(int i = 0, tn = 0; i < 256; i++) {
+	    for(int i = 0, tn = 0; i < tmap.length; i++) {
 		if(tmap[i] != -1)
 		    prios[tmap[i]] = tn++;
 	    }
