@@ -649,7 +649,7 @@ public class MapFile {
 		if(tmap[tn] == -1) {
 		    tmap[tn] = nt;
 		    rmap[nt] = tn;
-		    sets[nt] = map.nsets[tn];
+		    sets[nt] = map.tilesetn(tn);
 		    try {
 			for(String tag : map.tileset(tn).tags) {
 			    if(tag.equals("norepl"))
