@@ -302,28 +302,4 @@ public class JOGLPanel extends GLCanvas implements GLPanel, Console.Directory {
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);
     }
-
-    /* XXX: This should be in UIPanel, but Java is dumb and needlessly forbids it. */
-    static {
-	Console.setscmd("stats", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    dbtext.set(Utils.parsebool(args[1]));
-		}
-	    });
-	Console.setscmd("profile", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    if(args[1].equals("none") || args[1].equals("off")) {
-			profile.set(false);
-			profilegpu.set(false);
-		    } else if(args[1].equals("cpu")) {
-			profile.set(true);
-		    } else if(args[1].equals("gpu")) {
-			profilegpu.set(true);
-		    } else if(args[1].equals("all")) {
-			profile.set(true);
-			profilegpu.set(true);
-		    }
-		}
-	    });
-    }
 }
