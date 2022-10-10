@@ -34,6 +34,7 @@ import java.util.*;
 import java.lang.reflect.*;
 
 public class MainFrame extends java.awt.Frame implements Console.Directory {
+    public static final Config.Variable<Boolean> initfullscreen = Config.Variable.propb("haven.fullscreen", false);
     final UIPanel p;
     private final ThreadGroup g;
     private Thread mt;
@@ -231,21 +232,21 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
     public static Session connect(Object[] args) {
 	String username;
 	byte[] cookie;
-	if((Config.authuser != null) && (Config.authck != null)) {
-	    username = Config.authuser;
-	    cookie = Config.authck;
+	if((Bootstrap.authuser.get() != null) && (Bootstrap.authck.get() != null)) {
+	    username = Bootstrap.authuser.get();
+	    cookie = Bootstrap.authck.get();
 	} else {
-	    if(Config.authuser != null) {
-		username = Config.authuser;
+	    if(Bootstrap.authuser.get() != null) {
+		username = Bootstrap.authuser.get();
 	    } else {
-		if((username = Utils.getpref("tokenname@" + Config.defserv, null)) == null)
-		    throw(new ConnectionError("no explicit or saved username for host: " + Config.defserv));
+		if((username = Utils.getpref("tokenname@" + Bootstrap.defserv.get(), null)) == null)
+		    throw(new ConnectionError("no explicit or saved username for host: " + Bootstrap.defserv.get()));
 	    }
-	    String token = Utils.getpref("savedtoken-" + username + "@" + Config.defserv, null);
+	    String token = Utils.getpref("savedtoken-" + username + "@" + Bootstrap.defserv.get(), null);
 	    if(token == null)
 		throw(new ConnectionError("no saved token for user: " + username));
 	    try {
-		AuthClient cl = new AuthClient((Config.authserv == null) ? Config.defserv : Config.authserv, Config.authport);
+		AuthClient cl = new AuthClient((Bootstrap.authserv.get() == null) ? Bootstrap.defserv.get() : Bootstrap.authserv.get(), Bootstrap.authport.get());
 		try {
 		    if((username = cl.trytoken(username, Utils.hex2byte(token))) == null)
 			throw(new ConnectionError("authentication with saved token failed"));
@@ -259,7 +260,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
 	Session sess;
 	try {
-	    sess = new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(Config.defserv), Config.mainport), username, cookie, args);
+	    sess = new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(Bootstrap.defserv.get()), Bootstrap.mainport.get()), username, cookie, args);
 	} catch(IOException e) {
 	    throw(new RuntimeException(e));
 	}
@@ -338,11 +339,12 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
     }
     
+    public static final Config.Variable<Boolean> nopreload = Config.Variable.propb("haven.nopreload", false);
     public static void setupres() {
 	if(ResCache.global != null)
 	    Resource.setcache(ResCache.global);
-	if(Config.resurl != null)
-	    Resource.addurl(Config.resurl);
+	if(Resource.resurl.get() != null)
+	    Resource.addurl(Resource.resurl.get());
 	if(ResCache.global != null) {
 	    /*
 	    try {
@@ -350,7 +352,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    } catch(IOException e) {}
 	    */
 	}
-	if(!Config.nopreload) {
+	if(!nopreload.get()) {
 	    try {
 		InputStream pls;
 		pls = Resource.class.getResourceAsStream("res-preload");
@@ -364,7 +366,24 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    }
 	}
     }
-    
+
+    public static final Config.Variable<Path> loadwaited = Config.Variable.propp("haven.loadwaited", "");
+    public static final Config.Variable<Path> allused = Config.Variable.propp("haven.allused", "");
+    public static void resdump() {
+	dumplist(Resource.remote().loadwaited(), loadwaited.get());
+	dumplist(Resource.remote().cached(), allused.get());
+	if(ResCache.global != null) {
+	    try {
+		Writer w = new OutputStreamWriter(ResCache.global.store("tmp/allused"), "UTF-8");
+		try {
+		    Resource.dumplist(Resource.remote().used(), w);
+		} finally {
+		    w.close();
+		}
+	    } catch(IOException e) {}
+	}
+    }
+
     static {
 	WebBrowser.self = DesktopBrowser.create();
     }
@@ -396,30 +415,19 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
 	setupres();
 	UI.Runner fun = null;
-	if(Config.servargs != null) {
+	if(Bootstrap.servargs.get() != null) {
 	    try {
-		fun = new RemoteUI(connect(Config.servargs));
+		fun = new RemoteUI(connect(Bootstrap.servargs.get()));
 	    } catch(ConnectionError e) {
 		System.err.println("hafen: " + e.getMessage());
 		System.exit(1);
 	    }
 	}
 	MainFrame f = new MainFrame(null);
-	if(Config.fullscreen)
+	if(initfullscreen.get())
 	    f.setfs();
 	f.run(fun);
-	dumplist(Resource.remote().loadwaited(), Config.loadwaited);
-	dumplist(Resource.remote().cached(), Config.allused);
-	if(ResCache.global != null) {
-	    try {
-		Writer w = new OutputStreamWriter(ResCache.global.store("tmp/allused"), "UTF-8");
-		try {
-		    Resource.dumplist(Resource.remote().used(), w);
-		} finally {
-		    w.close();
-		}
-	    } catch(IOException e) {}
-	}
+	resdump();
 	System.exit(0);
     }
     

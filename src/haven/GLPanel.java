@@ -198,7 +198,7 @@ public interface GLPanel extends UIPanel, UI.Context {
 	    Tex tex = (tt == null) ? null : tt.get();
 	    if(tex != null) {
 		Coord sz = tex.sz();
-		Coord pos = ui.mc.add(sz.inv());
+		Coord pos = ui.mc.sub(sz).sub(curshotspot);
 		if(pos.x < 0)
 		    pos.x = 0;
 		if(pos.y < 0)
@@ -221,6 +221,7 @@ public interface GLPanel extends UIPanel, UI.Context {
 
 	private String cursmode = defaultcurs();
 	private Resource lastcursor = null;
+	private Coord curshotspot = Coord.z;
 	private void drawcursor(UI ui, GOut g) {
 	    Resource curs;
 	    synchronized(ui) {
@@ -229,22 +230,27 @@ public interface GLPanel extends UIPanel, UI.Context {
 	    if(cursmode == "awt") {
 		if(curs != lastcursor) {
 		    try {
-			if(curs == null)
+			if(curs == null) {
+			    curshotspot = Coord.z;
 			    p.setCursor(null);
-			else
-			    p.setCursor(UIPanel.makeawtcurs(curs.flayer(Resource.imgc).img, curs.flayer(Resource.negc).cc));
+			} else {
+			    curshotspot = curs.flayer(Resource.negc).cc;
+			    p.setCursor(UIPanel.makeawtcurs(curs.flayer(Resource.imgc).img, curshotspot));
+			}
 		    } catch(Exception e) {
 			cursmode = "tex";
 		    }
 		}
 	    } else if(cursmode == "tex") {
 		if(curs == null) {
+		    curshotspot = Coord.z;
 		    if(lastcursor != null)
 			p.setCursor(null);
 		} else {
 		    if(lastcursor == null)
 			p.setCursor(emptycurs);
-		    Coord dc = ui.mc.add(curs.flayer(Resource.negc).cc.inv());
+		    curshotspot = UI.scale(curs.flayer(Resource.negc).cc);
+		    Coord dc = ui.mc.sub(curshotspot);
 		    g.image(curs.flayer(Resource.imgc), dc);
 		}
 	    }
@@ -278,7 +284,14 @@ public interface GLPanel extends UIPanel, UI.Context {
 	    int rqd = Resource.local().qdepth() + Resource.remote().qdepth();
 	    if(rqd > 0)
 		FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "RQ depth: %d (%d)", rqd, Resource.local().numloaded() + Resource.remote().numloaded());
+	    synchronized(Debug.framestats) {
+		for(String line : Debug.framestats)
+		    FastText.aprint(g, new Coord(10, y -= dy), 0, 1, line);
+		Debug.framestats.clear();
+	    }
 	}
+
+	private StreamOut streamout = null;
 
 	private void display(UI ui, GLRender buf) {
 	    Pipe wnd = p.basestate();
@@ -289,10 +302,20 @@ public interface GLPanel extends UIPanel, UI.Context {
 	    synchronized(ui) {
 		ui.draw(g);
 	    }
-	    if(Config.dbtext)
+	    if(dbtext.get())
 		drawstats(ui, g, buf);
 	    drawtooltip(ui, g);
 	    drawcursor(ui, g);
+	    if(StreamOut.path.get() != null) {
+		if(streamout == null) {
+		    try {
+			streamout = new StreamOut(p.shape().sz(), StreamOut.path.get());
+		    } catch(java.io.IOException e) {
+			throw(new RuntimeException(e));
+		    }
+		}
+		streamout.accept(buf, state);
+	    }
 	}
 
 	public void run() throws InterruptedException {
@@ -315,8 +338,8 @@ public interface GLPanel extends UIPanel, UI.Context {
 		    Debug.cycle(ui.modflags());
 		    GSettings prefs = ui.gprefs;
 		    SyncMode syncmode = prefs.syncmode.val;
-		    CPUProfile.Frame curf = Config.profile ? uprof.new Frame() : null;
-		    GPUProfile.Frame curgf = Config.profilegpu ? gprof.new Frame(buf) : null;
+		    CPUProfile.Frame curf = profile.get() ? uprof.new Frame() : null;
+		    GPUProfile.Frame curgf = profilegpu.get() ? gprof.new Frame(buf) : null;
 		    BufferBGL.Profile frameprof = false ? new BufferBGL.Profile() : null;
 		    if(frameprof != null) buf.submit(frameprof.start);
 		    buf.submit(new ProfileTick(rprofc, "wait"));
@@ -379,7 +402,7 @@ public interface GLPanel extends UIPanel, UI.Context {
 		    }
 		    if(syncmode != SyncMode.FRAME)
 			buf.submit(curframe);
-		    if(Config.profile)
+		    if(profile.get())
 			buf.submit(rprofc = new ProfileCycle(rprof, rprofc, "aux"));
 		    else
 			rprofc = null;

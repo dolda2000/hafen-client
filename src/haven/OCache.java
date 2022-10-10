@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.lang.annotation.*;
 import java.lang.reflect.*;
-import haven.render.Render;
+import haven.render.*;
 
 public class OCache implements Iterable<Gob> {
     public static final int OD_REM = 0;
@@ -121,7 +121,7 @@ public class OCache implements Iterable<Gob> {
 		g.ctick(dt);
 	    }
 	};
-	if(!Config.par)
+	if(!Config.par.get())
 	    copy.forEach(task);
 	else
 	    copy.parallelStream().forEach(task);
@@ -133,7 +133,7 @@ public class OCache implements Iterable<Gob> {
 	    for(Gob ob : this)
 		copy.add(ob);
 	}
-	if(!Config.par) {
+	if(!Config.par.get()) {
 	    copy.forEach(ob -> {
 		    synchronized(ob) {
 			ob.gtick(g);
@@ -206,6 +206,27 @@ public class OCache implements Iterable<Gob> {
 	    super(OCache.this.glob, c, nextvirt.getAndDecrement());
 	    this.a = a;
 	    virtual = true;
+	}
+    }
+
+    public class FixedPlace extends Virtual {
+	public final Coord3f fc;
+
+	public FixedPlace(Coord3f fc, double a) {
+	    super(Coord2d.of(fc), a);
+	    this.fc = fc;
+	}
+
+	public FixedPlace() {
+	    this(Coord3f.o, 0);
+	}
+
+	public Coord3f getc() {
+	    return(fc);
+	}
+
+	protected Pipe.Op getmapstate(Coord3f pc) {
+	    return(null);
 	}
     }
 

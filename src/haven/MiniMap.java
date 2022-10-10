@@ -606,31 +606,24 @@ public class MiniMap extends Widget {
     }
 
     public void remparty() {
-	Set<Long> memb = new HashSet<>();
-	synchronized(ui.sess.glob.party.memb) {
-	    for(Party.Member m : ui.sess.glob.party.memb.values()) {
-		memb.add(m.gobid);
-	    }
-	}
+	Map<Long, Party.Member> memb = ui.sess.glob.party.memb;
 	for(Iterator<DisplayIcon> it = icons.iterator(); it.hasNext();) {
 	    DisplayIcon icon = it.next();
-	    if(memb.contains(icon.gob.id))
+	    if(memb.containsKey(icon.gob.id))
 		it.remove();
 	}
     }
 
     public void drawparty(GOut g) {
-	synchronized(ui.sess.glob.party.memb) {
-	    for(Party.Member m : ui.sess.glob.party.memb.values()) {
-		try {
-		    Coord2d ppc = m.getc();
-		    if(ppc == null)
-			continue;
-		    g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 255);
-		    g.rotimage(plp, p2c(ppc), plp.sz().div(2), -m.geta() - (Math.PI / 2));
-		    g.chcolor();
-		} catch(Loading l) {}
-	    }
+	for(Party.Member m : ui.sess.glob.party.memb.values()) {
+	    try {
+		Coord2d ppc = m.getc();
+		if(ppc == null)
+		    continue;
+		g.chcolor(m.col.getRed(), m.col.getGreen(), m.col.getBlue(), 255);
+		g.rotimage(plp, p2c(ppc), plp.sz().div(2), -m.geta() - (Math.PI / 2));
+		g.chcolor();
+	    } catch(Loading l) {}
 	}
     }
 

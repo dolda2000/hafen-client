@@ -33,8 +33,8 @@ import java.awt.event.KeyEvent;
 import java.awt.image.WritableRaster;
 import static haven.Inventory.invsq;
 
-public class GameUI extends ConsoleHost implements Console.Directory {
-    public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
+public class GameUI extends ConsoleHost implements Console.Directory, UI.MessageWidget {
+    public static final Text.Foundry msgfoundry = RootWidget.msgfoundry;
     private static final int blpw = UI.scale(142), brpw = UI.scale(142);
     public final String chrid, genus;
     public final long plid;
@@ -121,7 +121,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	    if(local && (menu != null)) {
 		if(res != null) {
-		    MenuGrid.Pagina pag = menu.paginafor(slot.res);
+		    MenuGrid.Pagina pag;
+		    /* XXX: This is a hack. The pagina system needs to be remade. */
+		    if(res != null)
+			pag = menu.paginafor(res.indir());
+		    else
+			pag = menu.paginafor(slot.res);
 		    try {
 			MenuGrid.PagButton btn = pag.button();
 			menu.use(btn, iact, false);
@@ -753,9 +758,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		mapfile = null;
 	    }
 	    ResCache mapstore = ResCache.global;
-	    if(Config.mapbase != null) {
+	    if(MapFile.mapbase.get() != null) {
 		try {
-		    mapstore = HashDirCache.get(Config.mapbase.toURI());
+		    mapstore = HashDirCache.get(MapFile.mapbase.get().toURI());
 		} catch(java.net.URISyntaxException e) {
 		}
 	    }
@@ -1366,7 +1371,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    super(mapmenubg.sz());
 	    add(new MenuCheckBox("lbtn-claim", kb_claim, "Display personal claims"), 0, 0).changed(a -> toggleol("cplot", a));
 	    add(new MenuCheckBox("lbtn-vil", kb_vil, "Display village claims"), 0, 0).changed(a -> toggleol("vlg", a));
-	    add(new MenuCheckBox("lbtn-rlm", kb_rlm, "Display realms"), 0, 0).changed(a -> toggleol("realm", a));
+	    add(new MenuCheckBox("lbtn-rlm", kb_rlm, "Display provinces"), 0, 0).changed(a -> toggleol("prov", a));
 	    add(new MenuCheckBox("lbtn-map", kb_map, "Map")).state(() -> wndstate(mapfile)).click(() -> {
 		    togglewnd(mapfile);
 		    if(mapfile != null)
@@ -1400,8 +1405,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(key == ':') {
 	    entercmd();
 	    return(true);
-	} else if((Config.screenurl != null) && kb_shoot.key().match(ev)) {
-	    Screenshooter.take(this, Config.screenurl);
+	} else if((Screenshooter.screenurl.get() != null) && kb_shoot.key().match(ev)) {
+	    Screenshooter.take(this, Screenshooter.screenurl.get());
 	    return(true);
 	} else if(kb_hide.key().match(ev)) {
 	    toggleui();
@@ -1492,24 +1497,22 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	msg(msg, color, color);
     }
 
-    private static final Resource errsfx = Resource.local().loadwait("sfx/error");
     private double lasterrsfx = 0;
     public void error(String msg) {
 	msg(msg, new Color(192, 0, 0), new Color(255, 0, 0));
 	double now = Utils.rtime();
 	if(now - lasterrsfx > 0.1) {
-	    ui.sfx(errsfx);
+	    ui.sfx(RootWidget.errsfx);
 	    lasterrsfx = now;
 	}
     }
 
-    private static final Resource msgsfx = Resource.local().loadwait("sfx/msg");
     private double lastmsgsfx = 0;
     public void msg(String msg) {
 	msg(msg, Color.WHITE, Color.WHITE);
 	double now = Utils.rtime();
 	if(now - lastmsgsfx > 0.1) {
-	    ui.sfx(msgsfx);
+	    ui.sfx(RootWidget.msgsfx);
 	    lastmsgsfx = now;
 	}
     }

@@ -30,7 +30,7 @@ import java.awt.event.*;
 import static java.awt.event.KeyEvent.VK_UNDEFINED;
 
 public class KeyMatch {
-    public static final int S = UI.MOD_SHIFT, C = UI.MOD_CTRL, M = UI.MOD_META, MODS = S | C | M;
+    public static final int S = 1, C = 2, M = 4, SUPER = 8, MODS = S | C | M;
     public static final KeyMatch nil = new KeyMatch('\0', false, VK_UNDEFINED, false, "None", 0, 0);
     public char chr;
     public boolean casematch, extmatch;

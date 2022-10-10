@@ -27,39 +27,84 @@
 package haven.render;
 
 import haven.*;
+import java.util.function.*;
 
 public abstract class Transform extends State {
     private static final Pair<Matrix4f, Matrix4f> NONE = new Pair<>(null, null);
-    private Matrix4f xf;
+    private final Function<Matrix4f, Matrix4f> xf;
     private Pair<Matrix4f, Matrix4f> last = NONE;
-    
-    public Transform(Matrix4f xf) {
+
+    public Transform(Function<Matrix4f, Matrix4f> xf) {
 	this.xf = xf;
     }
-    
+
+    public Transform(Matrix4f xf) {
+	this(new ByMatrix(xf));
+    }
+
     public haven.render.sl.ShaderMacro shader() {return(null);}
 
-    public void update(Matrix4f xf) {
-	this.xf = xf;
-    }
-    
     public Matrix4f fin(Matrix4f p) {
-	if(p == Matrix4f.id)
-	    return(xf);
 	Pair<Matrix4f, Matrix4f> last = this.last;
 	if(p != last.a)
-	    this.last = last = new Pair<>(p, p.mul(xf));
+	    this.last = last = new Pair<>(p, xf.apply(p));
 	return(last.b);
     }
 
     public boolean equals(Object o) {
-	return((o instanceof Transform) && ((Transform)o).xf.equals(this.xf));
+	return((o instanceof Transform) && Utils.eq(((Transform)o).xf, this.xf));
     }
 
     public int hashCode() {
 	return(xf.hashCode());
     }
-    
+
+    public static class ByMatrix implements Function<Matrix4f, Matrix4f> {
+	public final Matrix4f xf;
+
+	public ByMatrix(Matrix4f xf) {
+	    this.xf = xf;
+	}
+
+	public Matrix4f apply(Matrix4f p) {
+	    if(p == Matrix4f.id)
+		return(xf);
+	    return(p.mul(xf));
+	}
+
+	public boolean equals(Object o) {
+	    return((o instanceof ByMatrix) && Utils.eq(((ByMatrix)o).xf, this.xf));
+	}
+
+	public int hashCode() {
+	    return(xf.hashCode());
+	}
+
+	public String toString() {
+	    return(xf.toString());
+	}
+    }
+
+    public static final Function<Matrix4f, Matrix4f> nullrot = new Function<Matrix4f, Matrix4f>() {
+	public Matrix4f apply(Matrix4f p) {
+	    if(p == Matrix4f.id)
+		return(p);
+	    Matrix4f r = new Matrix4f(p);
+	    /* XXX: This is only actually correct for input matrices
+	     * that are only rotating and translating. Tthat's
+	     * probably not a problem for now, but please consider a
+	     * fix. */
+	    r.m[0] = r.m[5] = r.m[10] = 1.0f;
+	    r.m[1] = r.m[2] = r.m[4] =
+	    r.m[6] = r.m[8] = r.m[9] = 0.0f;
+	    return(r);
+	}
+
+	public String toString() {
+	    return("#nullrot");
+	}
+    };
+
     public static Matrix4f makexlate(Matrix4f d, Coord3f c) {
 	d.m[ 0] = d.m[ 5] = d.m[10] = d.m[15] = 1.0f;
 	d.m[ 1] = d.m[ 2] = d.m[ 3] =
@@ -81,7 +126,7 @@ public abstract class Transform extends State {
 	d.m[ 2] = (x * z * C) - (y * s); d.m[ 6] = (y * z * C) + (x * s); d.m[10] = (z * z * C) + c;
 	return(d);
     }
-    
+
     public static Matrix4f rxinvert(Matrix4f m) {
 	/* This assumes that m is merely a composition of rotations
 	 * and translations. */

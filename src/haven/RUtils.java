@@ -86,7 +86,8 @@ public class RUtils {
     public abstract static class StateNode<R extends RenderTree.Node> implements Node {
 	public final R r;
 	private final Collection<Slot> slots = new ArrayList<>(1);
-	private Op cstate = null;
+	private Op cstate;
+	private boolean inited = false;
 
 	public StateNode(R r) {
 	    this.r = r;
@@ -96,8 +97,6 @@ public class RUtils {
 
 	public void update() {
 	    Op nstate = state();
-	    if(nstate == null)
-		throw(new NullPointerException("state"));
 	    if(Utils.eq(cstate, nstate))
 		return;
 	    for(Slot slot : slots)
@@ -106,10 +105,8 @@ public class RUtils {
 	}
 
 	public void added(Slot slot) {
-	    if(cstate == null) {
-		if((cstate = state()) == null)
-		    throw(new NullPointerException("state"));
-	    }
+	    if(!inited)
+		cstate = state();
 	    slot.ostate(cstate);
 	    slot.add(r);
 	    slots.add(slot);
@@ -236,5 +233,46 @@ public class RUtils {
 	public void apply(Pipe buf) {
 	    buf.put(adhocg, this);
 	}
+    }
+
+    public static class ComposedNode implements Node {
+	private final Node[] children;
+
+	public ComposedNode(Node... children) {
+	    this.children = children;
+	}
+
+	public void added(Slot slot) {
+	    for(Node ch : children)
+		slot.add(ch);
+	}
+    }
+
+    public static Node compose(Node... children) {
+	int n = 0;
+	Node last = null;
+	for(int i = 0; i < children.length; i++) {
+	    if(children[i] != null) {
+		last = children[i];
+		n++;
+	    }
+	}
+	if(n == 0)
+	    return(Node.nil);
+	if(n == 1)
+	    return(last);
+	if(n != children.length) {
+	    Node[] buf = new Node[n];
+	    for(int i = 0, o = 0; i < children.length; i++) {
+		if(children[i] != null)
+		    buf[o++] = children[i];
+	    }
+	    children = buf;
+	}
+	return(new ComposedNode(children));
+    }
+
+    public static Node compose(Collection<? extends Node> children) {
+	return(compose(children.toArray(new Node[0])));
     }
 }

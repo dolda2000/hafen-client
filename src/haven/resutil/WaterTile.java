@@ -420,6 +420,9 @@ public class WaterTile extends Tiler {
 	}
     }
 
+    public static final Pipe.Op clickstate = Pipe.Op.compose(MapMesh.clickpost, States.maskdepth);
+    public Pipe.Op clickstate() {return(clickstate);}
+
     public Pipe.Op drawstate(Glob glob, Coord3f c) {
 	float mz = glob.map.getcz(c.x, c.y);
 	return(new ObFog(mz));
