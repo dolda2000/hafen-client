@@ -471,18 +471,23 @@ public class MCache implements MapSource {
 	    }
 	}
 
-	private void filltiles(Message buf) {
+	private void filltiles(Message buf, int ver) {
+	    int[] tileids = new int[255];
 	    while(true) {
-		int tileid = buf.uint8();
-		if(tileid == 255)
+		int encid = buf.uint8();
+		if(encid == 255)
 		    break;
+		int tileid = (ver >= 2) ? buf.uint16() : encid;
+		tileids[encid] = tileid;
 		String resnm = buf.string();
 		int resver = buf.uint16();
 		cktileid(tileid);
+		if(nsets[tileid] == null)
+		    Debug.dump(tileid, resnm, resver);
 		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
 	    }
 	    for(int i = 0; i < tiles.length; i++) {
-		tiles[i] = buf.uint8();
+		tiles[i] = tileids[buf.uint8()];
 		if(nsets[tiles[i]] == null)
 		    throw(new Message.FormatError(String.format("Got undefined tile: " + tiles[i])));
 	    }
@@ -591,7 +596,10 @@ public class MCache implements MapSource {
 		    id = buf.int64();
 		    break;
 		case "t":
-		    filltiles(buf);
+		    filltiles(buf, 1);
+		    break;
+		case "t2":
+		    filltiles(buf, 2);
 		    break;
 		case "h":
 		    fillz(buf);
