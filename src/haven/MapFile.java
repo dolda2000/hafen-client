@@ -446,8 +446,8 @@ public class MapFile {
 	}
 
 	public BufferedImage render(Coord off) {
-	    BufferedImage[] texes = new BufferedImage[256];
-	    boolean[] cached = new boolean[256];
+	    BufferedImage[] texes = new BufferedImage[tilesets.length];
+	    boolean[] cached = new boolean[tilesets.length];
 	    WritableRaster buf = PUtils.imgraster(cmaps);
 	    Coord c = new Coord();
 	    for(c.y = 0; c.y < cmaps.y; c.y++) {
@@ -640,9 +640,8 @@ public class MapFile {
 	public static Grid from(MCache map, MCache.Grid cg) {
 	    int oseq = cg.seq;
 	    int nt = 0;
-	    Resource.Spec[] sets = new Resource.Spec[256];
-	    int[] tmap = new int[256];
-	    boolean[] norepl = new boolean[256];
+	    int[] tmap = new int[0];
+	    int[] rmap = new int[16];
 	    Arrays.fill(tmap, -1);
 	    for(int tn : cg.tiles) {
 		if(tn >= tmap.length) {
@@ -652,25 +651,23 @@ public class MapFile {
 		}
 		if(tmap[tn] == -1) {
 		    tmap[tn] = nt;
-		    sets[nt] = map.tilesetn(tn);
-		    try {
-			for(String tag : map.tileset(tn).tags) {
-			    if(tag.equals("norepl"))
-				norepl[nt] = true;
-			}
-		    } catch(Loading l) {
-		    }
-		    nt++;
+		    if(nt >= rmap.length)
+			rmap = Utils.extend(rmap, rmap.length * 2);
+		    rmap[nt++] = tn;
 		}
 	    }
+	    TileInfo[] infos = new TileInfo[nt];
+	    boolean[] norepl = new boolean[nt];
 	    int[] prios = new int[nt];
+	    for(int i = 0; i < nt; i++) {
+		int tn = rmap[i];
+		infos[i] = new TileInfo(map.tilesetn(tn), prios[i]);
+		norepl[i] = (Utils.index(Loading.waitfor(() -> map.tileset(tn)).tags, "norepl") >= 0);
+	    }
 	    for(int i = 0, tn = 0; i < tmap.length; i++) {
 		if(tmap[i] != -1)
 		    prios[tmap[i]] = tn++;
 	    }
-	    TileInfo[] infos = new TileInfo[nt];
-	    for(int i = 0; i < nt; i++)
-		infos[i] = new TileInfo(sets[i], prios[i]);
 	    byte[] tiles = new byte[cmaps.x * cmaps.y];
 	    float[] zmap = new float[cmaps.x * cmaps.y];
 	    for(int i = 0; i < cg.tiles.length; i++) {
