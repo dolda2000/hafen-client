@@ -471,21 +471,43 @@ public class MCache implements MapSource {
 	    }
 	}
 
-	private void filltiles(Message buf, int ver) {
-	    int[] tileids = new int[255];
+	private void filltiles(Message buf) {
 	    while(true) {
-		int encid = buf.uint8();
-		if(encid == 255)
+		int tileid = buf.uint8();
+		if(tileid == 255)
 		    break;
-		int tileid = (ver >= 2) ? buf.uint16() : encid;
-		tileids[encid] = tileid;
 		String resnm = buf.string();
 		int resver = buf.uint16();
 		cktileid(tileid);
 		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
 	    }
 	    for(int i = 0; i < tiles.length; i++) {
-		tiles[i] = tileids[buf.uint8()];
+		tiles[i] = buf.uint8();
+		if(nsets[tiles[i]] == null)
+		    throw(new Message.FormatError(String.format("Got undefined tile: " + tiles[i])));
+	    }
+	}
+
+	private void filltiles2(Message buf) {
+	    int[] tileids = new int[1];
+	    int maxid = 0;
+	    while(true) {
+		int encid = buf.uint16();
+		if(encid == 65535)
+		    break;
+		maxid = Math.max(maxid, encid);
+		int tileid = buf.uint16();
+		if(encid >= tileids.length)
+		    tileids = Utils.extend(tileids, Integer.highestOneBit(encid) * 2);
+		tileids[encid] = tileid;
+		String resnm = buf.string();
+		int resver = buf.uint16();
+		cktileid(tileid);
+		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
+	    }
+	    boolean lg = maxid >= 256;
+	    for(int i = 0; i < tiles.length; i++) {
+		tiles[i] = tileids[lg ? buf.uint16() : buf.uint8()];
 		if(nsets[tiles[i]] == null)
 		    throw(new Message.FormatError(String.format("Got undefined tile: " + tiles[i])));
 	    }
@@ -594,10 +616,10 @@ public class MCache implements MapSource {
 		    id = buf.int64();
 		    break;
 		case "t":
-		    filltiles(buf, 1);
+		    filltiles(buf);
 		    break;
 		case "t2":
-		    filltiles(buf, 2);
+		    filltiles2(buf);
 		    break;
 		case "h":
 		    fillz(buf);
