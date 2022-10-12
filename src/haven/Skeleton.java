@@ -396,13 +396,13 @@ public class Skeleton {
     
     public interface ModOwner extends OwnerContext {
 	public double getv();
-	public Coord3f getc();
+	public Collection<Location.Chain> getloc();
 	@Deprecated
 	public default Glob glob() {return(context(Glob.class));}
 
 	public static final ModOwner nil = new ModOwner() {
 		public double getv() {return(0);}
-		public Coord3f getc() {return(Coord3f.o);}
+		public Collection<Location.Chain> getloc() {return(Collections.emptyList());}
 		public <T> T context(Class<T> cl) {throw(new NoContext(cl));}
 	    };
     }
@@ -694,9 +694,6 @@ public class Skeleton {
 	}
 
 	private void playfx(float ot, float nt) {
-	    if(!(owner instanceof Gob))
-		return;
-	    Gob gob = (Gob)owner;
 	    if(ot > nt) {
 		playfx(Math.min(ot, len), len);
 		playfx(0, Math.max(0, nt));
@@ -706,7 +703,7 @@ public class Skeleton {
 			if((ev.time >= ot) && (ev.time < nt)) {
 			    for(FxTrack.EventListener l : cbl)
 				l.event(ev);
-			    ev.trigger(gob);
+			    ev.trigger(owner);
 			}
 		    }
 		}
@@ -825,7 +822,7 @@ public class Skeleton {
 		this.time = time;
 	    }
 
-	    public abstract void trigger(Gob gob);
+	    public abstract void trigger(ModOwner owner);
 	}
 
 	public FxTrack(Event[] events) {
@@ -835,38 +832,36 @@ public class Skeleton {
 	public static class SpawnSprite extends Event {
 	    public final Indir<Resource> res;
 	    public final byte[] sdt;
-	    public final Location loc;
+	    public final Function<ModOwner, Pipe.Op> loc;
 
-	    public SpawnSprite(float time, Indir<Resource> res, byte[] sdt, Location loc) {
+	    public SpawnSprite(float time, Indir<Resource> res, byte[] sdt, Function<ModOwner, Pipe.Op> loc) {
 		super(time);
 		this.res = res;
 		this.sdt = (sdt == null)?new byte[0]:sdt;
 		this.loc = loc;
 	    }
 
-	    public void trigger(Gob gob) {
-		final Coord3f fc;
-		try {
-		    fc = gob.getc();
-		} catch(Loading e) {
-		    return;
-		}
-		gob.glob.loader.defer(() -> {
-			Gob n = gob.glob.oc.new Virtual(gob.rc, gob.a) {
-				public Coord3f getc() {
-				    return(new Coord3f(fc));
-				}
-
-				/* XXXRENDER
-				   public boolean setup(RenderList rl) {
-				   if(SpawnSprite.this.loc != null)
-				   rl.prepc(SpawnSprite.this.loc);
-				   return(super.setup(rl));
-				   }
-				*/
-			    };
-			n.addol(new Gob.Overlay(n, -1, res, new MessageBuf(sdt)), false);
-			gob.glob.oc.add(n);
+	    public void trigger(ModOwner owner) {
+		Glob glob = owner.context(Glob.class);
+		Collection<Location.Chain> locs = owner.getloc();
+		Loader l = glob.loader;
+		l.defer(() -> {
+			Pipe.Op ploc = (this.loc != null) ? this.loc.apply(owner) : null;
+			for(Location.Chain loc : locs) {
+			    Coord3f o = loc.fin(Matrix4f.id).mul4(Coord3f.o);
+			    Location lxf = new Location(loc.fin(Location.makexlate(new Matrix4f(), o.inv())));
+			    l.defer(() -> {
+				    Gob n = glob.oc.new FixedPlace(o.invy(), 0) {
+					    protected void obstate(Pipe buf) {
+						buf.prep(lxf);
+						if(ploc != null)
+						    buf.prep(ploc);
+					    }
+					};
+				    n.addol(new Gob.Overlay(n, -1, res, new MessageBuf(sdt)), false);
+				    glob.oc.add(n);
+				}, null);
+			}
 		    }, null);
 	    }
 	}
@@ -879,7 +874,7 @@ public class Skeleton {
 		this.id = id.intern();
 	    }
 
-	    public void trigger(Gob gob) {}
+	    public void trigger(ModOwner owner) {}
 	}
     }
 
@@ -926,18 +921,40 @@ public class Skeleton {
 	    for(int i = 0; i < events.length; i++) {
 		float tm = (fmt == 0) ? (float)buf.cpfloat() : (buf.unorm16() * len);
 		int t = buf.uint8();
+		Message sub = buf;
+		if((t & 0x80) != 0) {
+		    sub = new MessageBuf(buf.bytes(buf.uint16()));
+		    t &= 0x7f;
+		}
 		switch(t) {
-		case 0:
+		case 0: case 2: {
 		    String resnm = buf.string();
 		    int resver = buf.uint16();
 		    byte[] sdt = buf.bytes(buf.uint8());
+		    int fl = (t == 2) ? buf.uint8() : 0;
 		    Indir<Resource> res = getres().pool.load(resnm, resver);
-		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt, null);
+		    Function<ModOwner, Pipe.Op> ploc = null;
+		    if((fl & 1) != 0) {
+			String eqnm = buf.string();
+			Indir<Resource> src = ((fl & 2) == 0) ? getres().indir() : res;
+			ploc = new Function<ModOwner, Pipe.Op>() {
+				BoneOffset eqp = null;
+
+				public Pipe.Op apply(ModOwner owner) {
+				    if(eqp == null)
+					eqp = src.get().flayer(BoneOffset.class, eqnm);
+				    return(eqp.forpose(getpose(owner)).get());
+				}
+			    };
+		    }
+		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt, ploc);
 		    break;
-		case 1:
+		}
+		case 1: {
 		    String id = buf.string();
 		    events[i] = new FxTrack.Trigger(tm, id);
 		    break;
+		}
 		default:
 		    throw(new Resource.LoadException("Illegal control event: " + t, getres()));
 		}
@@ -1020,20 +1037,10 @@ public class Skeleton {
 	    return(new ResMod(owner, skel, mode));
 	}
 
-	@Deprecated
-	public TrackMod forskel(Skeleton skel, WrapMode mode) {
-	    return(forskel(ModOwner.nil, skel, mode));
-	}
-
-	@Deprecated
-	public TrackMod forgob(Skeleton skel, WrapMode mode, Gob gob) {
-	    return(forskel(gob, skel, mode));
-	}
-	
 	public Integer layerid() {
 	    return(id);
 	}
-	
+
 	public void init() {}
     }
 
@@ -1101,6 +1108,9 @@ public class Skeleton {
 		    }
 		};
 	    */
+	    opcodes[4] = buf -> {
+		return(pose -> () -> Location.nullrot);
+	    };
 	}
 
 	@SuppressWarnings("unchecked")

@@ -27,15 +27,25 @@
 package haven.render;
 
 import haven.*;
+import java.util.function.*;
 import haven.render.sl.ShaderMacro;
 import haven.render.sl.InstancedAttribute;
 
 public class Location extends Transform {
     public final String id;
 
+    public Location(Function<Matrix4f, Matrix4f> xf, String id) {
+	super(xf);
+	this.id = id;
+    }
+
     public Location(Matrix4f xf, String id) {
 	super(xf);
 	this.id = id;
+    }
+
+    public Location(Function<Matrix4f, Matrix4f> xf) {
+	this(xf, null);
     }
 
     public Location(Matrix4f xf) {
@@ -143,6 +153,8 @@ public class Location extends Transform {
     public static Location rot(Coord3f axis, float angle) {
 	return(new Location(makerot(new Matrix4f(), axis.norm(), angle)));
     }
+
+    public static final Location nullrot = new Location(Transform.nullrot);
 
     public static final Location onlyxl = new Location(Matrix4f.id) {
 	    private Matrix4f lp = null, fin;

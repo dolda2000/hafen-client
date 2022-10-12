@@ -33,7 +33,7 @@ public class Party {
     public static final int PD_LIST = 0;
     public static final int PD_LEADER = 1;
     public static final int PD_MEMBER = 2;
-    public Map<Long, Member> memb = new TreeMap<Long, Member>();
+    public Map<Long, Member> memb = Collections.emptyMap();
     public Member leader = null;
     private final Glob glob;
     private int mseq = 0;
@@ -93,7 +93,7 @@ public class Party {
 			break;
 		    ids.add(id);
 		}
-		Map<Long, Member> nmemb = new TreeMap<Long, Member>();
+		Map<Long, Member> nmemb = new HashMap<Long, Member>();
 		for(long id : ids) {
 		    Member m = memb.get(id);
 		    if(m == null)

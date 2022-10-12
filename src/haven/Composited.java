@@ -203,7 +203,9 @@ public class Composited implements RenderTree.Node {
 	}
     }
 
-    public class SpriteEqu extends Equ<Sprite> {
+    private static final OwnerContext.ClassResolver<SpriteEqu> eqctxr = new OwnerContext.ClassResolver<SpriteEqu>()
+	.add(SpriteEqu.class, eq -> eq);
+    public class SpriteEqu extends Equ<Sprite> implements Sprite.Owner, Skeleton.HasPose {
 	private SpriteEqu(ED ed) {
 	    super(Sprite.create(eqowner, ed.res.res.get(), ed.res.sdt.clone()), ed);
 	}
@@ -216,6 +218,22 @@ public class Composited implements RenderTree.Node {
 	public void gtick(Render g) {
 	    super.gtick(g);
 	    r.gtick(g);
+	}
+
+	public <T> T context(Class<T> cl) {
+	    return(OwnerContext.orparent(cl, eqctxr.context(cl, this, false), eqowner));
+	}
+
+	public Resource getres() {
+	    return(r.res);
+	}
+
+	public Random mkrandoom() {
+	    return((eqowner != null) ? eqowner.mkrandoom() : new Random());
+	}
+
+	public Pose getpose() {
+	    return(Skeleton.getpose(r));
 	}
     }
 

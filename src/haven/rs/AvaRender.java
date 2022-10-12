@@ -58,7 +58,7 @@ public class AvaRender {
 		tcomp = compose(base.get(), mod, equ);
 		Pipe buf = new BufPipe();
 		buf.prep(camoff.forpose(tcomp.pose).get());
-		tcam = new LocationCam(buf.get(Homo3D.loc));
+		tcam = Camera.placed(buf.get(Homo3D.loc));
 		break;
 	    } catch(Loading ev) {
 		ev.waitfor();

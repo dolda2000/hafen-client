@@ -103,6 +103,10 @@ public class Coord3f {
     public Coord3f inv() {
 	return(of(-x, -y, -z));
     }
+
+    public Coord3f invy() {
+	return(of(x, -y, z));
+    }
     
     public float dmul(float X, float Y, float Z) {
 	return(x * X + y * Y + z * Z);

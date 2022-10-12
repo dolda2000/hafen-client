@@ -39,13 +39,14 @@ public class MCache implements MapSource {
     public static final Coord cmaps = Coord.of(100, 100);
     public static final Coord cutsz = Coord.of(25, 25);
     public static final Coord cutn = cmaps.div(cutsz);
-    public final Resource.Spec[] nsets = new Resource.Spec[256];
+    private final Object setmon = new Object();
+    private Resource.Spec[] nsets = new Resource.Spec[0];
     @SuppressWarnings("unchecked")
-    private final Reference<Resource>[] sets = new Reference[256];
+    private Reference<Resource>[] sets = new Reference[0];
     @SuppressWarnings("unchecked")
-    private final Reference<Tileset>[] csets = new Reference[256];
+    private Reference<Tileset>[] csets = new Reference[0];
     @SuppressWarnings("unchecked")
-    private final Reference<Tiler>[] tiles = new Reference[256];
+    private Reference<Tiler>[] tiles = new Reference[0];
     private final Waitable.Queue gridwait = new Waitable.Queue();
     Map<Coord, Request> req = new HashMap<Coord, Request>();
     Map<Coord, Grid> grids = new HashMap<Coord, Grid>();
@@ -185,6 +186,19 @@ public class MCache implements MapSource {
 
 	@Deprecated public void update(Coord c1, Coord c2) {
 	    update(new Area(c1, c2.add(1, 1)));
+	}
+    }
+
+    private void cktileid(int id) {
+	if(id >= nsets.length) {
+	    synchronized(setmon) {
+		if(id >= nsets.length) {
+		    nsets = Utils.extend(nsets, Integer.highestOneBit(id) * 2);
+		    sets  = Utils.extend(sets,  Integer.highestOneBit(id) * 2);
+		    csets = Utils.extend(csets, Integer.highestOneBit(id) * 2);
+		    tiles = Utils.extend(tiles, Integer.highestOneBit(id) * 2);
+		}
+	    }
 	}
     }
 
@@ -464,10 +478,36 @@ public class MCache implements MapSource {
 		    break;
 		String resnm = buf.string();
 		int resver = buf.uint16();
+		cktileid(tileid);
 		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
 	    }
 	    for(int i = 0; i < tiles.length; i++) {
 		tiles[i] = buf.uint8();
+		if(nsets[tiles[i]] == null)
+		    throw(new Message.FormatError(String.format("Got undefined tile: " + tiles[i])));
+	    }
+	}
+
+	private void filltiles2(Message buf) {
+	    int[] tileids = new int[1];
+	    int maxid = 0;
+	    while(true) {
+		int encid = buf.uint16();
+		if(encid == 65535)
+		    break;
+		maxid = Math.max(maxid, encid);
+		int tileid = buf.uint16();
+		if(encid >= tileids.length)
+		    tileids = Utils.extend(tileids, Integer.highestOneBit(encid) * 2);
+		tileids[encid] = tileid;
+		String resnm = buf.string();
+		int resver = buf.uint16();
+		cktileid(tileid);
+		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
+	    }
+	    boolean lg = maxid >= 256;
+	    for(int i = 0; i < tiles.length; i++) {
+		tiles[i] = tileids[lg ? buf.uint16() : buf.uint8()];
 		if(nsets[tiles[i]] == null)
 		    throw(new Message.FormatError(String.format("Got undefined tile: " + tiles[i])));
 	    }
@@ -577,6 +617,9 @@ public class MCache implements MapSource {
 		    break;
 		case "t":
 		    filltiles(buf);
+		    break;
+		case "t2":
+		    filltiles2(buf);
 		    break;
 		case "h":
 		    fillz(buf);
@@ -824,44 +867,53 @@ public class MCache implements MapSource {
 	}
     }
 
+    public Resource.Spec tilesetn(int i) {
+	Resource.Spec[] nsets = this.nsets;
+	if(i >= nsets.length)
+	    return(null);
+	return(nsets[i]);
+    }
+
     public Resource tilesetr(int i) {
-	synchronized(sets) {
-	    Resource res = (sets[i] == null)?null:(sets[i].get());
-	    if(res == null) {
-		if(nsets[i] == null)
-		    return(null);
-		res = nsets[i].get();
-		sets[i] = new SoftReference<Resource>(res);
-	    }
-	    return(res);
+	Reference<Resource>[] sets = this.sets;
+	if(i >= sets.length)
+	    return(null);
+	Resource res = (sets[i] == null) ? null : sets[i].get();
+	if(res == null) {
+	    Resource.Spec[] nsets = this.nsets;
+	    if(nsets[i] == null)
+		return(null);
+	    sets[i] = new SoftReference<>(res = nsets[i].get());
 	}
+	return(res);
     }
 
     public Tileset tileset(int i) {
-	synchronized(csets) {
-	    Tileset cset = (csets[i] == null)?null:(csets[i].get());
-	    if(cset == null) {
-		Resource res = tilesetr(i);
-		if(res == null)
-		    return(null);
-		csets[i] = new SoftReference<Tileset>(cset = res.flayer(Tileset.class));
-	    }
-	    return(cset);
+	Reference<Tileset>[] csets = this.csets;
+	if(i >= csets.length)
+	    return(null);
+	Tileset cset = (csets[i] == null) ? null : csets[i].get();
+	if(cset == null) {
+	    Resource res = tilesetr(i);
+	    if(res == null)
+		return(null);
+	    csets[i] = new SoftReference<>(cset = res.flayer(Tileset.class));
 	}
+	return(cset);
     }
 
     public Tiler tiler(int i) {
-	synchronized(tiles) {
-	    Tiler tile = (tiles[i] == null)?null:(tiles[i].get());
-	    if(tile == null) {
-		Tileset set = tileset(i);
-		if(set == null)
-		    return(null);
-		tile = set.tfac().create(i, set);
-		tiles[i] = new SoftReference<Tiler>(tile);
-	    }
-	    return(tile);
+	Reference<Tiler>[] tiles = this.tiles;
+	if(i >= tiles.length)
+	    return(null);
+	Tiler tile = (tiles[i] == null) ? null : tiles[i].get();
+	if(tile == null) {
+	    Tileset set = tileset(i);
+	    if(set == null)
+		return(null);
+	    tiles[i] = new SoftReference<>(tile = set.tfac().create(i, set));
 	}
+	return(tile);
     }
 
     public void trimall() {
