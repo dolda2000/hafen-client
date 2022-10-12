@@ -1653,20 +1653,13 @@ public class MapFile {
 		    continue;
 		}
 		MessageBuf buf = new MessageBuf();
-		buf.adduint8(3);
+		buf.adduint8(4);
 		buf.addint64(gd.b);
 		buf.addint64(seg.id);
 		buf.addint64(grid.mtime);
 		buf.addcoord(gd.a);
-		buf.adduint8(grid.tilesets.length);
-		for(TileInfo tinf : grid.tilesets) {
-		    buf.addstring(tinf.res.name);
-		    buf.adduint16(tinf.res.ver);
-		    buf.adduint8(tinf.prio);
-		}
 		buf.addint32(cmaps.x * cmaps.y);
-		for(int tn : grid.tiles)
-		    buf.adduint8(tn);
+		DataGrid.savetiles(buf, grid.tilesets, grid.tiles);
 		DataGrid.savez(buf, grid.zmap);
 		DataGrid.saveols(buf, grid.ols);
 		byte[] od = buf.fin();
@@ -1710,31 +1703,41 @@ public class MapFile {
 
 	ImportedGrid(Message data) {
 	    int ver = data.uint8();
-	    if((ver < 1) || (ver > 3))
+	    if((ver < 1) || (ver > 4))
 		throw(new Message.FormatError("Unknown grid data version: " + ver));
 	    gid = data.int64();
 	    segid = data.int64();
 	    mtime = data.int64();
 	    sc = data.coord();
-	    tilesets = new TileInfo[data.uint8()];
-	    for(int i = 0; i < tilesets.length; i++)
-		tilesets[i] = new TileInfo(new Resource.Spec(Resource.remote(), data.string(), data.uint16()), data.uint8());
-	    if(ver >= 2) {
+	    if(ver >= 4) {
 		int len = data.int32();
 		if(len != (cmaps.x * cmaps.y))
 		    throw(new Message.FormatError("Bad grid data dimensions: " + len));
-		tiles = new int[len];
-		for(int i = 0; i < len; i++)
-		    tiles[i] = data.uint8();
+		Pair<TileInfo[], int[]> tileinfo = DataGrid.loadtiles(data, 2);
+		tilesets = tileinfo.a;
+		tiles = tileinfo.b;
 		zmap = DataGrid.loadz(data, String.format("%x", gid));
 	    } else {
-		byte[] raw = data.bytes();
-		if(raw.length != (cmaps.x * cmaps.y))
-		    throw(new Message.FormatError("Bad grid data dimensions: " + tiles.length));
-		tiles = new int[raw.length];
-		for(int i = 0; i < raw.length; i++)
-		    tiles[i] = raw[i] & 0xff;
-		zmap = new float[cmaps.x * cmaps.y];
+		tilesets = new TileInfo[data.uint8()];
+		for(int i = 0; i < tilesets.length; i++)
+		    tilesets[i] = new TileInfo(new Resource.Spec(Resource.remote(), data.string(), data.uint16()), data.uint8());
+		if(ver >= 2) {
+		    int len = data.int32();
+		    if(len != (cmaps.x * cmaps.y))
+			throw(new Message.FormatError("Bad grid data dimensions: " + len));
+		    tiles = new int[len];
+		    for(int i = 0; i < len; i++)
+			tiles[i] = data.uint8();
+		    zmap = DataGrid.loadz(data, String.format("%x", gid));
+		} else {
+		    byte[] raw = data.bytes();
+		    if(raw.length != (cmaps.x * cmaps.y))
+			throw(new Message.FormatError("Bad grid data dimensions: " + tiles.length));
+		    tiles = new int[raw.length];
+		    for(int i = 0; i < raw.length; i++)
+			tiles[i] = raw[i] & 0xff;
+		    zmap = new float[cmaps.x * cmaps.y];
+		}
 	    }
 	    if(ver >= 3)
 		DataGrid.loadols(ols, data, String.format("%x", gid));
