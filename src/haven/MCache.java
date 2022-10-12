@@ -482,8 +482,6 @@ public class MCache implements MapSource {
 		String resnm = buf.string();
 		int resver = buf.uint16();
 		cktileid(tileid);
-		if(nsets[tileid] == null)
-		    Debug.dump(tileid, resnm, resver);
 		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
 	    }
 	    for(int i = 0; i < tiles.length; i++) {
