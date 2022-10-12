@@ -520,23 +520,33 @@ public class MapFile {
 	}
 
 	public static void savetiles(Message fp, TileInfo[] tilesets, int[] tiles) {
-	    fp.adduint8(tilesets.length);
+	    fp.adduint16(tilesets.length);
 	    for(int i = 0; i < tilesets.length; i++) {
 		fp.addstring(tilesets[i].res.name);
 		fp.adduint16(tilesets[i].res.ver);
 		fp.adduint8(tilesets[i].prio);
 	    }
-	    for(int tn : tiles)
-		fp.adduint8(tn);
+	    if(tilesets.length <= 256) {
+		for(int tn : tiles)
+		    fp.adduint8(tn);
+	    } else {
+		for(int tn : tiles)
+		    fp.adduint16(tn);
+	    }
 	}
 
-	public static Pair<TileInfo[], int[]> loadtiles(Message fp) {
-	    TileInfo[] tilesets = new TileInfo[fp.uint8()];
+	public static Pair<TileInfo[], int[]> loadtiles(Message fp, int ver) {
+	    TileInfo[] tilesets = new TileInfo[(ver >= 2) ? fp.uint16() : fp.uint8()];
 	    for(int i = 0; i < tilesets.length; i++)
 		tilesets[i] = new TileInfo(new Resource.Spec(Resource.remote(), fp.string(), fp.uint16()), fp.uint8());
 	    int[] tiles = new int[cmaps.x * cmaps.y];
-	    for(int i = 0; i < cmaps.x * cmaps.y; i++)
-		tiles[i] = fp.uint8();
+	    if(tilesets.length <= 256) {
+		for(int i = 0; i < cmaps.x * cmaps.y; i++)
+		    tiles[i] = fp.uint8();
+	    } else {
+		for(int i = 0; i < cmaps.x * cmaps.y; i++)
+		    tiles[i] = fp.uint16();
+	    }
 	    return(new Pair<>(tilesets, tiles));
 	}
 
@@ -752,7 +762,7 @@ public class MapFile {
 	}
 
 	public void save(Message fp) {
-	    fp.adduint8(4);
+	    fp.adduint8(5);
 	    ZMessage z = new ZMessage(fp);
 	    z.addint64(id);
 	    z.addint64(mtime);
@@ -784,13 +794,13 @@ public class MapFile {
 	    }
 	    try(StreamMessage data = new StreamMessage(fp)) {
 		int ver = data.uint8();
-		if((ver >= 1) && (ver <= 4)) {
+		if((ver >= 1) && (ver <= 5)) {
 		    ZMessage z = new ZMessage(data);
 		    long storedid = z.int64();
 		    if(storedid != id)
 			throw(new Message.FormatError(String.format("Grid ID mismatch: expected %s, got %s", id, storedid)));
 		    long mtime = (ver >= 2) ? z.int64() : System.currentTimeMillis();
-		    Pair<TileInfo[], int[]> tiles = loadtiles(z);
+		    Pair<TileInfo[], int[]> tiles = loadtiles(z, (ver >= 5) ? 2 : 1);
 		    float[] zmap;
 		    if(ver >= 3)
 			zmap = loadz(z, String.format("%x", id));
@@ -983,7 +993,7 @@ public class MapFile {
 	}
 
 	public void save(Message fp) {
-	    fp.adduint8(3);
+	    fp.adduint8(4);
 	    ZMessage z = new ZMessage(fp);
 	    z.addint64(seg);
 	    z.addint32(lvl);
@@ -1021,7 +1031,7 @@ public class MapFile {
 		if(data.eom())
 		    return(null);
 		int ver = data.uint8();
-		if((ver >= 1) && (ver <= 3)) {
+		if((ver >= 1) && (ver <= 4)) {
 		    ZMessage z = new ZMessage(data);
 		    long storedseg = z.int64();
 		    if(storedseg != seg)
@@ -1034,7 +1044,7 @@ public class MapFile {
 			throw(new Message.FormatError(String.format("Zoomgrid coord mismatch: expected %s, got %s", sc, storedsc)));
 
 		    long mtime = z.int64();
-		    Pair<TileInfo[], int[]> tiles = loadtiles(z);
+		    Pair<TileInfo[], int[]> tiles = loadtiles(z, (ver >= 4) ? 2 : 1);
 		    float[] zmap;
 		    if(ver >= 2)
 			zmap = loadz(z, String.format("(%d, %d) in %x@d", sc.x, sc.y, seg, lvl));
