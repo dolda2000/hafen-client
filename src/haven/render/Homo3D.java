@@ -183,7 +183,7 @@ public class Homo3D {
     }
 
     public static HomoCoord4f obj2clip(Coord3f objc, Pipe state) {
-	HomoCoord4f c = new HomoCoord4f(objc);
+	HomoCoord4f c = HomoCoord4f.of(objc);
 	Location.Chain s_loc = state.get(loc);
 	if(s_loc != null) c = s_loc.fin(Matrix4f.id).mul4(c);
 	Camera s_cam = state.get(cam);

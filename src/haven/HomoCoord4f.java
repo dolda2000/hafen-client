@@ -36,12 +36,16 @@ public class HomoCoord4f {
 	this.w = w;
     }
 
-    public HomoCoord4f(float x, float y, float z) {
-	this(x, y, z, 1.0f);
+    public static HomoCoord4f of(float x, float y, float z, float w) {
+	return(new HomoCoord4f(x, y, z, w));
     }
 
-    public HomoCoord4f(Coord3f c) {
-	this(c.x, c.y, c.z);
+    public static HomoCoord4f of(float x, float y, float z) {
+	return(of(x, y, z, 1.0f));
+    }
+
+    public static HomoCoord4f of(Coord3f c) {
+	return(of(c.x, c.y, c.z));
     }
 
     public boolean equals(HomoCoord4f o) {
