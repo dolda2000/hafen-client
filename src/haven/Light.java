@@ -81,7 +81,7 @@ public abstract class Light implements RenderTree.Node {
     public static final class LightList extends State {
 	public final List<RenderList.Slot<Light>> ll = new ArrayList<>();
 
-	public State compile() {
+	public Object[][] params() {
 	    Object[][] cl;
 	    synchronized(ll) {
 		cl = new Object[ll.size()][];
@@ -89,7 +89,11 @@ public abstract class Light implements RenderTree.Node {
 		    cl[i] = ll.get(i).obj().params(ll.get(i).state());
 		}
 	    }
-	    return(new Lighting.SimpleLights(cl));
+	    return(cl);
+	}
+
+	public State compile() {
+	    return(new Lighting.SimpleLights(params()));
 	}
 
 	public void add(RenderList.Slot<Light> light) {
