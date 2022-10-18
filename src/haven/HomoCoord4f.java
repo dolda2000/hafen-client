@@ -56,10 +56,13 @@ public class HomoCoord4f {
 	return((o instanceof HomoCoord4f) && equals((HomoCoord4f)o));
     }
 
+    public static HomoCoord4f fromiclip(Matrix4f iproj, Coord3f cc) {
+	float w = (1.0f - (cc.x * iproj.m[3]) - (cc.y * iproj.m[7]) - (cc.z * iproj.m[11])) / iproj.m[15];
+	return(iproj.mul4(new HomoCoord4f(cc.x, cc.y, cc.z, w)));
+    }
+
     public static HomoCoord4f fromclip(Matrix4f proj, Coord3f cc) {
-	Matrix4f ip = proj.invert();
-	float w = (1.0f - (cc.x * ip.m[3]) - (cc.y * ip.m[7]) - (cc.z * ip.m[11])) / ip.m[15];
-	return(ip.mul4(new HomoCoord4f(cc.x, cc.y, cc.z, w)));
+	return(fromiclip(proj.invert(), cc));
     }
 
     public static HomoCoord4f fromndc(Matrix4f proj, Coord3f nc) {
