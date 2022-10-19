@@ -229,9 +229,9 @@ public interface Lighting {
 		if((px < 0) || (py < 0) || (pz < 0) || (nx > w) || (ny > h) || (nz > d))
 		    return;
 		int ng = 0;
-		for(int gz = Math.max(nz, 0); gz < Math.min(pz, d - 1); gz++) {
-		    for(int gy = Math.max(ny, 0); gy < Math.min(py, h - 1); gy++) {
-			for(int gx = Math.max(nx, 0); gx < Math.min(px, w - 1); gx++) {
+		for(int gz = Math.max(nz, 0); gz < Math.min(pz, d); gz++) {
+		    for(int gy = Math.max(ny, 0); gy < Math.min(py, h); gy++) {
+			for(int gx = Math.max(nx, 0); gx < Math.min(px, w); gx++) {
 			    float gnx = (gx * gsz.x) + bbox.n.x, gpx = gnx + gsz.x;
 			    float gny = (gy * gsz.y) + bbox.n.y, gpy = gny + gsz.y;
 			    float gnz = (gz * gsz.z) + bbox.n.z, gpz = gnz + gsz.z;
@@ -244,9 +244,9 @@ public interface Lighting {
 			}
 		    }
 		}
-		for(int gz = Math.max(nz, 0); gz < Math.min(pz, d - 1); gz++) {
-		    for(int gy = Math.max(ny, 0); gy < Math.min(py, h - 1); gy++) {
-			for(int gx = Math.max(nx, 0); gx < Math.min(px, w - 1); gx++) {
+		for(int gz = Math.max(nz, 0); gz < Math.min(pz, d); gz++) {
+		    for(int gy = Math.max(ny, 0); gy < Math.min(py, h); gy++) {
+			for(int gx = Math.max(nx, 0); gx < Math.min(px, w); gx++) {
 			    float gnx = (gx * gsz.x) + bbox.n.x, gpx = gnx + gsz.x;
 			    float gny = (gy * gsz.y) + bbox.n.y, gpy = gny + gsz.y;
 			    float gnz = (gz * gsz.z) + bbox.n.z, gpz = gnz + gsz.z;
