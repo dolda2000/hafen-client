@@ -26,6 +26,8 @@
 
 package haven.render;
 
+import java.util.*;
+import haven.*;
 import haven.render.sl.*;
 import static haven.render.sl.Cons.*;
 import static haven.render.sl.Function.PDir.*;
@@ -93,6 +95,215 @@ public interface Lighting {
 
 	public void apply(Pipe p) {
 	    p.put(lights, this);
+	}
+    }
+
+    public static class LightGrid {
+	public static final int maxlights = 4;
+	public static final float threshold = 1f / 256f;
+	public final int w, h, d;
+
+	public LightGrid(int w, int h, int d) {
+	    this.w = w;
+	    this.h = h;
+	    this.d = d;
+	}
+
+	private static final Hash<short[]> sahash = new Hash<short[]>() {
+		public int hash(short[] ob) {return(Arrays.hashCode(ob));}
+		public boolean equal(short[] x, short[] y) {return(Arrays.equals(x, y));}
+	    };
+
+	private static final Coord3f[] clipcorn = {
+	    Coord3f.of(-1, -1, -1), Coord3f.of( 1, -1, -1), Coord3f.of( 1,  1, -1), Coord3f.of(-1,  1, -1),
+	    Coord3f.of(-1, -1,  1), Coord3f.of( 1, -1,  1), Coord3f.of( 1,  1,  1), Coord3f.of(-1,  1,  1),
+	};
+
+	private class Compiler {
+	    final Volume3f bbox;
+	    final Coord3f gsz, szf;
+	    final Collection<Short> global = new ArrayList<>();
+	    final short[] grid = new short[w * h * d];
+	    short[][] lists = new short[][] {new short[0]};
+	    short[][] table = new short[32][];
+	    int nlists = 1;
+	    int maxlist = 0;
+
+	    Compiler(Projection proj) {
+		Matrix4f iproj = proj.fin(Matrix4f.id).invert();
+		Volume3f bbox = Volume3f.point(Coord3f.of(HomoCoord4f.fromiclip(iproj, clipcorn[0])));
+		for(int i = 1; i < clipcorn.length; i++)
+		    bbox = bbox.include(Coord3f.of(HomoCoord4f.fromiclip(iproj, clipcorn[i])));
+		this.bbox = bbox;
+		gsz = bbox.sz().div(w, h, d);
+		szf = Coord3f.of(1, 1, 1).div(gsz);
+	    }
+
+	    int us(short v) {
+		return(v & 0xffff);
+	    }
+
+	    void rehash(int nlen) {
+		short[][] ntab = new short[nlen][];
+		short[] ntnum = new short[nlen];
+		for(int b = 0; b < table.length; b++) {
+		    for(int bi = 0; (bi < table[b].length) && (table[b][bi] != -1); bi++) {
+			int ln = us(table[b][bi]);
+			short[] list = lists[ln];
+			int hash = 0;
+			for(int i = 0; i < list.length; i++)
+			    hash = (hash * 31) + list[i];
+			int nb = hash & (nlen - 1);
+			if(ntab[nb] == null) {
+			    ntab[nb] = new short[] {(short)ln, -1, -1, -1};
+			    ntnum[nb] = 1;
+			} else {
+			    int tlen = us(ntnum[nb]);
+			    if(tlen == ntab[nb].length) {
+				ntab[nb] = Arrays.copyOf(ntab[nb], tlen * 2);
+				Arrays.fill(ntab[nb], tlen, tlen * 2, (short)-1);
+			    }
+			    ntab[nb][tlen] = (short)ln;
+			    ntnum[nb] = (short)(tlen + 1);
+			}
+		    }
+		}
+		table = ntab;
+	    }
+
+	    short addlist(short[] plist, short add) {
+		if(nlists >= table.length / 2)
+		    rehash(table.length * 2);
+		if(nlists == lists.length)
+		    lists = Arrays.copyOf(lists, lists.length * 2);
+		lists[nlists] = Arrays.copyOf(plist, plist.length + 1);
+		lists[nlists][plist.length] = add;
+		if(Debug.ff)
+		    Debug.dump(lists[nlists]);
+		maxlist = Math.max(maxlist, lists[nlists].length);
+		return((short)nlists++);
+	    }
+
+	    short getlist(short[] plist, short add) {
+		int hash = 0;
+		for(int i = 0; i < plist.length; i++)
+		    hash = (hash * 31) + plist[i];
+		hash = (hash * 31) + add;
+		int b = hash & (table.length - 1);
+		if(table[b] == null) {
+		    table[b] = new short[] {addlist(plist, add), -1, -1, -1};
+		    return(table[b][0]);
+		} else {
+		    list: for(int bi = 0; bi < table[b].length; bi++) {
+			if(table[b][bi] == -1)
+			    return(table[b][bi] = addlist(plist, add));
+			int ln = us(table[b][bi]);
+			if((lists[ln].length == (plist.length + 1))) {
+			    for(int li = 0; li < plist.length; li++) {
+				if(plist[li] != lists[ln][li])
+				    continue list;
+			    }
+			    if(lists[ln][plist.length] == add)
+				return((short)ln);
+			}
+		    }
+		    int n = table[b].length;
+		    table[b] = Arrays.copyOf(table[b], n * 2);
+		    Arrays.fill(table[b], n, table[b].length, (short)-1);
+		    return(table[b][n] = addlist(plist, add));
+		}
+	    }
+
+	    void addpoint(int idx, Object[] light, float[] pos) {
+		float lx = pos[0], ly = pos[1], lz = pos[2];
+		float ac = (Float)light[4];
+		float al = (Float)light[5];
+		float aq = (Float)light[6];
+		float aqi = 1f / aq;
+		float r = -(al * aqi * 0.5f) + (float)Math.sqrt((aqi / threshold) - (ac * aqi) + (al * al * aqi * aqi * 0.25f));
+		int nx = (int)Math.floor((lx - r - bbox.n.x) * szf.x), px = (int)Math.ceil((lx + r - bbox.n.x) * szf.x);
+		int ny = (int)Math.floor((ly - r - bbox.n.y) * szf.y), py = (int)Math.ceil((ly + r - bbox.n.y) * szf.y);
+		int nz = (int)Math.floor((lz - r - bbox.n.z) * szf.z), pz = (int)Math.ceil((lz + r - bbox.n.z) * szf.z);
+		if((px < 0) || (py < 0) || (pz < 0) || (nx > w) || (ny > h) || (nz > d))
+		    return;
+		int ng = 0;
+		for(int gz = Math.max(nz, 0); gz < Math.min(pz, d - 1); gz++) {
+		    for(int gy = Math.max(ny, 0); gy < Math.min(py, h - 1); gy++) {
+			for(int gx = Math.max(nx, 0); gx < Math.min(px, w - 1); gx++) {
+			    float gnx = (gx * gsz.x) + bbox.n.x, gpx = gnx + gsz.x;
+			    float gny = (gy * gsz.y) + bbox.n.y, gpy = gny + gsz.y;
+			    float gnz = (gz * gsz.z) + bbox.n.z, gpz = gnz + gsz.z;
+			    float cx = Utils.clip(lx, gnx, gpx), cy = Utils.clip(ly, gny, gpy), cz = Utils.clip(lz, gnz, gpz);
+			    if(Math.sqrt(((cx - lx) * (cx - lx)) + ((cy - ly) * (cy - ly)) + ((cz - lz) * (cz - lz))) > r)
+				continue;
+			    int gri = gx + (gy * w) + (gz * w * h);
+			    if((lists[us(grid[gri])].length + global.size()) >= maxlights)
+				return;
+			}
+		    }
+		}
+		for(int gz = Math.max(nz, 0); gz < Math.min(pz, d - 1); gz++) {
+		    for(int gy = Math.max(ny, 0); gy < Math.min(py, h - 1); gy++) {
+			for(int gx = Math.max(nx, 0); gx < Math.min(px, w - 1); gx++) {
+			    float gnx = (gx * gsz.x) + bbox.n.x, gpx = gnx + gsz.x;
+			    float gny = (gy * gsz.y) + bbox.n.y, gpy = gny + gsz.y;
+			    float gnz = (gz * gsz.z) + bbox.n.z, gpz = gnz + gsz.z;
+			    float cx = Utils.clip(lx, gnx, gpx), cy = Utils.clip(ly, gny, gpy), cz = Utils.clip(lz, gnz, gpz);
+			    if(Math.sqrt(((cx - lx) * (cx - lx)) + ((cy - ly) * (cy - ly)) + ((cz - lz) * (cz - lz))) > r)
+				continue;
+			    int gri = gx + (gy * w) + (gz * w * h);
+			    grid[gri] = getlist(lists[grid[gri]], (short)idx);
+			    ng++;
+			}
+		    }
+		}
+		if(Debug.ff)
+		    Debug.dump(ng);
+	    }
+
+	    void addglobal(int idx, Object[] light) {
+		if(global.size() + maxlist >= maxlights)
+		    return;
+		global.add((short)idx);
+	    }
+
+	    void addlight(int idx, Object[] light) {
+		float[] pos = (float[])light[3];
+		if(pos[3] == 0) {
+		    addglobal(idx, light);
+		} else {
+		    addpoint(idx, light, pos);
+		}
+	    }
+	}
+
+	public State compile(Object[][] lights, Projection proj) {
+	    Compiler c = new Compiler(proj);
+	    if(Debug.ff)
+		Debug.dump(c.bbox, c.gsz);
+	    int n = Math.min(lights.length, 65535);
+	    for(int i = 0; i < n; i++)
+		c.addlight(i, lights[i]);
+	    if(Debug.ff)
+		Debug.dump(c.maxlist, c.nlists);
+	    return(null);
+	}
+
+	public static class GridLights extends State {
+	    public GridLights(Object[][] lights) {
+	    }
+
+	    private static final ShaderMacro shader = prog -> {
+		prog.module(new LightList() {
+			public void construct(Block blk, java.util.function.Function<Params, Statement> body) {
+			}
+		    });
+	    };
+	    public ShaderMacro shader() {return(shader);}
+
+	    public void apply(Pipe p) {
+		p.put(lights, this);
+	    }
 	}
     }
 }
