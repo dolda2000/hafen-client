@@ -221,6 +221,8 @@ public interface Lighting {
 		float aq = (Float)light[6];
 		float aqi = 1f / aq;
 		float r = -(al * aqi * 0.5f) + (float)Math.sqrt((aqi / threshold) - (ac * aqi) + (al * al * aqi * aqi * 0.25f));
+		if(Debug.ff)
+		    Debug.dump(r);
 		int nx = (int)Math.floor((lx - r - bbox.n.x) * szf.x), px = (int)Math.ceil((lx + r - bbox.n.x) * szf.x);
 		int ny = (int)Math.floor((ly - r - bbox.n.y) * szf.y), py = (int)Math.ceil((ly + r - bbox.n.y) * szf.y);
 		int nz = (int)Math.floor((lz - r - bbox.n.z) * szf.z), pz = (int)Math.ceil((lz + r - bbox.n.z) * szf.z);
@@ -275,6 +277,31 @@ public interface Lighting {
 		    addpoint(idx, light, pos);
 		}
 	    }
+
+	    void dump() {
+		try(java.io.BufferedWriter fp = java.nio.file.Files.newBufferedWriter(Debug.somedir("clight-dump"))) {
+		    for(int z = 0; z < d; z++) {
+			fp.write(Integer.toString(z));
+			fp.write('\n');
+			for(int y = 0; y < h; y++) {
+			    for(int x = 0; x < w; x++)
+				fp.write('0' + grid[x + (y * w) + (z * w * h)]);
+			    fp.write('\n');
+			}
+			fp.write('\n');
+		    }
+		    for(int i = 0; i < nlists; i++) {
+			fp.write(String.format("%d:", i));
+			for(short v : lists[i]) {
+			    fp.write(' ');
+			    fp.write(Integer.toString(v));
+			}
+			fp.write('\n');
+		    }
+		} catch(java.io.IOException e) {
+		    e.printStackTrace();
+		}
+	    }
 	}
 
 	public State compile(Object[][] lights, Projection proj) {
@@ -286,6 +313,8 @@ public interface Lighting {
 		c.addlight(i, lights[i]);
 	    if(Debug.ff)
 		Debug.dump(c.maxlist, c.nlists);
+	    if(Debug.ff)
+		c.dump();
 	    return(null);
 	}
 
