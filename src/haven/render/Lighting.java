@@ -147,6 +147,8 @@ public interface Lighting {
 		short[][] ntab = new short[nlen][];
 		short[] ntnum = new short[nlen];
 		for(int b = 0; b < table.length; b++) {
+		    if(table[b] == null)
+			continue;
 		    for(int bi = 0; (bi < table[b].length) && (table[b][bi] != -1); bi++) {
 			int ln = us(table[b][bi]);
 			short[] list = lists[ln];
@@ -171,9 +173,12 @@ public interface Lighting {
 		table = ntab;
 	    }
 
-	    short addlist(short[] plist, short add) {
+	    void ckrehash() {
 		if(nlists >= table.length / 2)
 		    rehash(table.length * 2);
+	    }
+
+	    short addlist(short[] plist, short add) {
 		if(nlists == lists.length)
 		    lists = Arrays.copyOf(lists, lists.length * 2);
 		lists[nlists] = Arrays.copyOf(plist, plist.length + 1);
@@ -191,12 +196,17 @@ public interface Lighting {
 		hash = (hash * 31) + add;
 		int b = hash & (table.length - 1);
 		if(table[b] == null) {
-		    table[b] = new short[] {addlist(plist, add), -1, -1, -1};
-		    return(table[b][0]);
+		    short ret = addlist(plist, add);
+		    table[b] = new short[] {ret, -1, -1, -1};
+		    ckrehash();
+		    return(ret);
 		} else {
 		    list: for(int bi = 0; bi < table[b].length; bi++) {
-			if(table[b][bi] == -1)
-			    return(table[b][bi] = addlist(plist, add));
+			if(table[b][bi] == -1) {
+			    short ret = table[b][bi] = addlist(plist, add);
+			    ckrehash();
+			    return(ret);
+			}
 			int ln = us(table[b][bi]);
 			if((lists[ln].length == (plist.length + 1))) {
 			    for(int li = 0; li < plist.length; li++) {
@@ -210,7 +220,9 @@ public interface Lighting {
 		    int n = table[b].length;
 		    table[b] = Arrays.copyOf(table[b], n * 2);
 		    Arrays.fill(table[b], n, table[b].length, (short)-1);
-		    return(table[b][n] = addlist(plist, add));
+		    short ret = table[b][n] = addlist(plist, add);
+		    ckrehash();
+		    return(ret);
 		}
 	    }
 
