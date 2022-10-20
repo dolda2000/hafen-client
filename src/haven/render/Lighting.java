@@ -228,6 +228,7 @@ public interface Lighting {
 
 	    void addpoint(int idx, Object[] light, float[] pos) {
 		float lx = pos[0], ly = pos[1], lz = pos[2];
+		Coord3f lc = Coord3f.of(lx, ly, lz);
 		float ac = (Float)light[4];
 		float al = (Float)light[5];
 		float aq = (Float)light[6];
@@ -235,38 +236,47 @@ public interface Lighting {
 		float r = -(al * aqi * 0.5f) + (float)Math.sqrt((aqi / threshold) - (ac * aqi) + (al * al * aqi * aqi * 0.25f));
 		if(Debug.ff)
 		    Debug.dump(r);
-		int nx = (int)Math.floor((lx - r - bbox.n.x) * szf.x), px = (int)Math.ceil((lx + r - bbox.n.x) * szf.x);
-		int ny = (int)Math.floor((ly - r - bbox.n.y) * szf.y), py = (int)Math.ceil((ly + r - bbox.n.y) * szf.y);
-		int nz = (int)Math.floor((lz - r - bbox.n.z) * szf.z), pz = (int)Math.ceil((lz + r - bbox.n.z) * szf.z);
-		if((px < 0) || (py < 0) || (pz < 0) || (nx > w) || (ny > h) || (nz > d))
+		if(bbox.closest(lc).dist(lc) > r)
 		    return;
+		int nz = (int)Math.floor((lz - r - bbox.n.z) * szf.z), pz = (int)Math.ceil((lz + r - bbox.n.z) * szf.z);
 		int ng = 0;
 		for(int gz = Math.max(nz, 0); gz < Math.min(pz, d); gz++) {
+		    float gnz = (gz * gsz.z) + bbox.n.z, gpz = gnz + gsz.z;
+		    float cz = Utils.clip(lz, gnz, gpz), dz = lz - cz;
+		    float ey = (float)Math.sqrt((r * r) - (dz * dz));
+		    int ny = (int)Math.floor((ly - ey - bbox.n.y) * szf.y), py = (int)Math.ceil((ly + ey - bbox.n.y) * szf.y);
 		    for(int gy = Math.max(ny, 0); gy < Math.min(py, h); gy++) {
+			float gny = (gy * gsz.y) + bbox.n.y, gpy = gny + gsz.y;
+			float cy = Utils.clip(ly, gny, gpy), dy = ly - cy;
+			float ex = (float)Math.sqrt(((r * r) - (dy * dy) - (dz * dz)));
+			int nx = (int)Math.floor((lx - ex - bbox.n.x) * szf.x), px = (int)Math.ceil((lx + ex - bbox.n.x) * szf.x);
 			for(int gx = Math.max(nx, 0); gx < Math.min(px, w); gx++) {
-			    float gnx = (gx * gsz.x) + bbox.n.x, gpx = gnx + gsz.x;
-			    float gny = (gy * gsz.y) + bbox.n.y, gpy = gny + gsz.y;
-			    float gnz = (gz * gsz.z) + bbox.n.z, gpz = gnz + gsz.z;
-			    float cx = Utils.clip(lx, gnx, gpx), cy = Utils.clip(ly, gny, gpy), cz = Utils.clip(lz, gnz, gpz);
-			    if(Math.sqrt(((cx - lx) * (cx - lx)) + ((cy - ly) * (cy - ly)) + ((cz - lz) * (cz - lz))) > r)
-				continue;
 			    int gri = gx + (gy * w) + (gz * w * h);
 			    if((lists[us(grid[gri])].length + global.size()) >= maxlights)
 				return;
 			}
 		    }
 		}
+		short cpval = -1, cnval = -1;
 		for(int gz = Math.max(nz, 0); gz < Math.min(pz, d); gz++) {
+		    float gnz = (gz * gsz.z) + bbox.n.z, gpz = gnz + gsz.z;
+		    float cz = Utils.clip(lz, gnz, gpz), dz = lz - cz;
+		    float ey = (float)Math.sqrt((r * r) - (dz * dz));
+		    int ny = (int)Math.floor((ly - ey - bbox.n.y) * szf.y), py = (int)Math.ceil((ly + ey - bbox.n.y) * szf.y);
 		    for(int gy = Math.max(ny, 0); gy < Math.min(py, h); gy++) {
+			float gny = (gy * gsz.y) + bbox.n.y, gpy = gny + gsz.y;
+			float cy = Utils.clip(ly, gny, gpy), dy = ly - cy;
+			float ex = (float)Math.sqrt(((r * r) - (dy * dy) - (dz * dz)));
+			int nx = (int)Math.floor((lx - ex - bbox.n.x) * szf.x), px = (int)Math.ceil((lx + ex - bbox.n.x) * szf.x);
 			for(int gx = Math.max(nx, 0); gx < Math.min(px, w); gx++) {
-			    float gnx = (gx * gsz.x) + bbox.n.x, gpx = gnx + gsz.x;
-			    float gny = (gy * gsz.y) + bbox.n.y, gpy = gny + gsz.y;
-			    float gnz = (gz * gsz.z) + bbox.n.z, gpz = gnz + gsz.z;
-			    float cx = Utils.clip(lx, gnx, gpx), cy = Utils.clip(ly, gny, gpy), cz = Utils.clip(lz, gnz, gpz);
-			    if(Math.sqrt(((cx - lx) * (cx - lx)) + ((cy - ly) * (cy - ly)) + ((cz - lz) * (cz - lz))) > r)
-				continue;
 			    int gri = gx + (gy * w) + (gz * w * h);
-			    grid[gri] = getlist(lists[grid[gri]], (short)idx);
+			    short val = grid[gri];
+			    if(val == cpval) {
+				grid[gri] = cnval;
+			    } else {
+				cpval = val;
+				cnval = grid[gri] = getlist(lists[grid[gri]], (short)idx);
+			    }
 			    ng++;
 			}
 		    }
