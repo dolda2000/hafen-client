@@ -250,8 +250,9 @@ public interface Lighting {
 			float cy = Utils.clip(ly, gny, gpy), dy = ly - cy;
 			float ex = (float)Math.sqrt(((r * r) - (dy * dy) - (dz * dz)));
 			int nx = (int)Math.floor((lx - ex - bbox.n.x) * szf.x), px = (int)Math.ceil((lx + ex - bbox.n.x) * szf.x);
-			for(int gx = Math.max(nx, 0); gx < Math.min(px, w); gx++) {
-			    int gri = gx + (gy * w) + (gz * w * h);
+			int ygi = (gy * w) + (gz * w * h);
+			int lgi = Math.max(nx, 0) + ygi, hgi = Math.min(px, w) + ygi;
+			for(int gri = lgi; gri < hgi; gri++) {
 			    if((lists[us(grid[gri])].length + global.size()) >= maxlights)
 				return;
 			}
@@ -268,8 +269,9 @@ public interface Lighting {
 			float cy = Utils.clip(ly, gny, gpy), dy = ly - cy;
 			float ex = (float)Math.sqrt(((r * r) - (dy * dy) - (dz * dz)));
 			int nx = (int)Math.floor((lx - ex - bbox.n.x) * szf.x), px = (int)Math.ceil((lx + ex - bbox.n.x) * szf.x);
-			for(int gx = Math.max(nx, 0); gx < Math.min(px, w); gx++) {
-			    int gri = gx + (gy * w) + (gz * w * h);
+			int ygi = (gy * w) + (gz * w * h);
+			int lgi = Math.max(nx, 0) + ygi, hgi = Math.min(px, w) + ygi;
+			for(int gri = lgi; gri < hgi; gri++) {
 			    short val = grid[gri];
 			    if(val == cpval) {
 				grid[gri] = cnval;
