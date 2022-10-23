@@ -160,6 +160,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		case UNORM16: return(GL3.GL_R16);
 		case SNORM16: return(GL3.GL_R16_SNORM);
 		case FLOAT16: return(GL3.GL_R16F);
+		case FLOAT32: return(GL3.GL_R32F);
 		case SINT8: return(GL3.GL_R8I);
 		case UINT8: return(GL3.GL_R8UI);
 		case SINT16: return(GL3.GL_R16I);
@@ -181,6 +182,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		case SINT32: return(GL3.GL_RG32I);
 		case UINT32: return(GL3.GL_RG32UI);
 		case FLOAT16: return(GL3.GL_RG16F);
+		case FLOAT32: return(GL3.GL_RG32F);
 		}
 	    case 3:
 		switch(fmt.cf) {
@@ -195,6 +197,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		case SINT32: return(GL3.GL_RGB32I);
 		case UINT32: return(GL3.GL_RGB32UI);
 		case FLOAT16: return(GL3.GL_RGB16F);
+		case FLOAT32: return(GL3.GL_RGB32F);
 		}
 	    case 4:
 		switch(fmt.cf) {
@@ -209,6 +212,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		case SINT32: return(GL3.GL_RGBA32I);
 		case UINT32: return(GL3.GL_RGBA32UI);
 		case FLOAT16: return(GL3.GL_RGBA16F);
+		case FLOAT32: return(GL3.GL_RGBA32F);
 		}
 	    }
 	} else {
