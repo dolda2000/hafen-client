@@ -77,12 +77,15 @@ public class Cons {
     public static Vec4Cons vec4(Expression... els) {return(new Vec4Cons(els));}
     public static Vec3Cons vec3(Expression... els) {return(new Vec3Cons(els));}
     public static Vec2Cons vec2(Expression... els) {return(new Vec2Cons(els));}
+    public static FloatCons floatcons(Expression init) {return(new FloatCons(init));}
     public static IVec4Cons ivec4(Expression... els) {return(new IVec4Cons(els));}
     public static IVec3Cons ivec3(Expression... els) {return(new IVec3Cons(els));}
     public static IVec2Cons ivec2(Expression... els) {return(new IVec2Cons(els));}
+    public static IntCons intcons(Expression init) {return(new IntCons(init));}
     public static UVec4Cons uvec4(Expression... els) {return(new UVec4Cons(els));}
     public static UVec3Cons uvec3(Expression... els) {return(new UVec3Cons(els));}
     public static UVec2Cons uvec2(Expression... els) {return(new UVec2Cons(els));}
+    public static UIntCons uintcons(Expression init) {return(new UIntCons(init));}
     public static Mat3Cons mat3(Expression... els) {return(new Mat3Cons(els));}
 
     public static Expression sin(Expression x) {return(Function.Builtin.sin.call(x));}
