@@ -60,6 +60,8 @@ public class Cons {
     public static BinOp.And and(Expression l, Expression r) {return(new BinOp.And(l, r));}
     public static BinOp.BitOr bitor(Expression l, Expression r) {return(new BinOp.BitOr(l, r));}
     public static BinOp.BitAnd bitand(Expression l, Expression r) {return(new BinOp.BitAnd(l, r));}
+    public static BinOp.LShift lshift(Expression l, Expression r) {return(new BinOp.LShift(l, r));}
+    public static BinOp.RShift rshift(Expression l, Expression r) {return(new BinOp.RShift(l, r));}
 
     public static LPick pick(LValue val, String el)     {return(new LPick(val, el));}
     public static Pick  pick(Expression val, String el) {return(new Pick(val, el));}
