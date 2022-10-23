@@ -27,6 +27,7 @@
 package haven.render;
 
 import java.util.*;
+import java.nio.*;
 import haven.*;
 import haven.render.sl.*;
 import static haven.render.sl.Cons.*;
@@ -102,11 +103,22 @@ public interface Lighting {
 	public static final int maxlights = 4;
 	public static final float threshold = 1f / 256f;
 	public final int w, h, d;
+	public final int wb, hb, db;
+	private final int lswb;
+	private final ShaderMacro shader;
 
 	public LightGrid(int w, int h, int d) {
+	    if(w != Integer.highestOneBit(w)) throw(new IllegalArgumentException("not a power of two: " + w));
+	    if(h != Integer.highestOneBit(h)) throw(new IllegalArgumentException("not a power of two: " + h));
+	    if(d != Integer.highestOneBit(d)) throw(new IllegalArgumentException("not a power of two: " + d));
 	    this.w = w;
 	    this.h = h;
 	    this.d = d;
+	    this.wb = Integer.numberOfTrailingZeros(w);
+	    this.hb = Integer.numberOfTrailingZeros(h);
+	    this.db = Integer.numberOfTrailingZeros(d);
+	    lswb = (wb + hb + db + 1) / 2;
+	    shader = new Shader();
 	}
 
 	private static final Hash<short[]> sahash = new Hash<short[]>() {
@@ -124,6 +136,8 @@ public interface Lighting {
 	    final Coord3f gsz, szf;
 	    final Collection<Short> global = new ArrayList<>();
 	    final short[] grid = new short[w * h * d];
+	    short[] listbuf = new short[256];
+	    int lboff = 0;
 	    short[][] lists = new short[][] {new short[0]};
 	    short[][] table = new short[32][];
 	    int nlists = 1;
@@ -306,6 +320,26 @@ public interface Lighting {
 		}
 	    }
 
+	    void compact() {
+		short[] conv = new short[nlists];
+		Arrays.fill(conv, (short)-1);
+		for(int i = 0; i < grid.length; i++) {
+		    short cval = conv[grid[i]];
+		    if(cval == -1) {
+			cval = conv[grid[i]] = (short)lboff;
+			short[] list = lists[grid[i]];
+			while(listbuf.length < lboff + global.size() + list.length + 1)
+			    listbuf = Arrays.copyOf(listbuf, listbuf.length * 2);
+			for(short gidx : global)
+			    listbuf[lboff++] = gidx;
+			for(int o = 0; o < list.length; o++)
+			    listbuf[lboff++] = list[o];
+			listbuf[lboff++] = -1;
+		    }
+		    grid[i] = cval;
+		}
+	    }
+
 	    void dump() {
 		try(java.io.BufferedWriter fp = java.nio.file.Files.newBufferedWriter(Debug.somedir("clight-dump"))) {
 		    for(int z = 0; z < d; z++) {
@@ -339,27 +373,122 @@ public interface Lighting {
 	    int n = Math.min(lights.length, 65535);
 	    for(int i = 0; i < n; i++)
 		c.addlight(i, lights[i]);
+	    c.compact();
 	    if(Debug.ff)
 		Debug.dump(c.maxlist, c.nlists);
 	    if(Debug.ff)
 		c.dump();
-	    return(null);
+	    return(new GridLights(lights, c.bbox, c.grid, c.listbuf, c.lboff));
 	}
 
-	public static class GridLights extends State {
-	    public GridLights(Object[][] lights) {
-	    }
+	private static final Uniform u_bboxm = new Uniform(VEC3, "lboxm", p -> ((GridLights)p.get(lights)).bboxm(), lights);
+	private static final Uniform u_bboxk = new Uniform(VEC3, "lboxk", p -> ((GridLights)p.get(lights)).bboxk(), lights);
+	private static final Uniform u_lstex = new Uniform(USAMPLER2D, "lstex", p -> ((GridLights)p.get(lights)).lstex, lights);
+	private static final Uniform u_ldtex = new Uniform(SAMPLER2D, "ldtex", p -> ((GridLights)p.get(lights)).ldtex, lights);
+	private class Shader implements ShaderMacro {
+	    final Function getlist = new Function.Def(UINT, "getlist") {{
+		Expression gc = code.local(IVEC3, clamp(ivec3(mul(add(Homo3D.frageyev.ref(), u_bboxm.ref()), u_bboxk.ref())),
+						   ivec3(0, 0, 0), ivec3(w - 1, h - 1, d - 1))).ref();
+		Expression gidx = code.local(INT, add(pick(gc, "x"), lshift(pick(gc, "y"), l(wb)), lshift(pick(gc, "z"), l(wb + hb)))).ref();
+		Expression lsidx = pick(texelFetch(u_lstex.ref(), ivec2(bitand(gidx, l((1 << lswb) - 1)), rshift(gidx, l(lswb))), l(0)), "r");
+		code.add(new Return(lsidx));
+	    }};
 
-	    private static final ShaderMacro shader = prog -> {
+	    final Function getlidx = new Function.Def(UINT, "getlidx") {{
+		Expression lsidx = param(IN, UINT).ref();
+		Expression lidx = pick(texelFetch(u_lstex.ref(), ivec2(bitand(lsidx, l((1 << lswb) - 1)), add(rshift(lsidx, l(lswb)), l(1 << (wb + hb + db - lswb)))), l(0)), "r");
+		code.add(new Return(lidx));
+	    }};
+
+	    final Function getlight = new Function.Def(s_light, "getlight") {{
+		Expression lidx = param(IN, UINT).ref();
+		Expression base = code.local(IVEC2, ivec2(mul(bitand(lidx, l((1 << 5) - 1)), l(5)), rshift(lidx, l(5)))).ref();
+		Expression amb = code.local(VEC4, texelFetch(u_ldtex.ref(), base, l(0))).ref();
+		Expression dif = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(1), l(0))), l(0))).ref();
+		Expression spc = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(2), l(0))), l(0))).ref();
+		Expression pos = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(3), l(0))), l(0))).ref();
+		Expression att = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(4), l(0))), l(0))).ref();
+		code.add(new Return(s_light.construct(amb, dif, spc, pos, pick(att, "r"), pick(att, "g"), pick(att, "b"))));
+	    }};
+
+	    public void modify(ProgramContext prog) {
 		prog.module(new LightList() {
 			public void construct(Block blk, java.util.function.Function<Params, Statement> body) {
+			    Expression lsidx = blk.local(UINT, getlist.call()).ref();
+			    Variable i = blk.local(INT, "i", null);
+			    Variable lidx = blk.local(UINT, null);
+			    blk.add(new For(ass(i, l(0)), and(lt(i.ref(), l(maxlights)), ne(ass(lidx, getlidx.call(add(lsidx, i.ref()))), l(0xffff))), linc(i.ref()),
+					    body.apply(new Params(lidx.ref(), getlight.call(lidx.ref())))));
 			}
 		    });
-	    };
+	    }
+	}
+
+	public class GridLights extends State {
+	    public final Texture2D.Sampler2D ldtex, lstex;
+	    public final Volume3f bbox;
+
+	    public GridLights(Object[][] lights, Volume3f bbox, short[] grid, short[] lists, int listlen) {
+		this.bbox = bbox;
+		this.ldtex = new Texture2D.Sampler2D(lighttex(lights));
+		this.lstex = new Texture2D.Sampler2D(listtex(grid, lists, listlen));
+	    }
+
+	    private Texture2D listtex(short[] grid, short[] lists, int listlen) {
+		int tw = 1 << lswb;
+		int th = (1 << (wb + hb + db - lswb)) + (Math.max(listlen - 1, 0) / tw) + 1;
+		DataBuffer.Filler<Texture2D.Image> init = (img, env) -> {
+		    if(img.level != 0)
+			return(null);
+		    FillBuffer ret = env.fillbuf(img);
+		    ShortBuffer buf = ret.push().asShortBuffer();
+		    buf.position(0);
+		    buf.put(grid);
+		    buf.put(lists, 0, listlen);
+		    return(ret);
+		};
+		return(new Texture2D(tw, th, DataBuffer.Usage.STATIC, new VectorFormat(1, NumberFormat.UINT16), init));
+	    }
+
+	    private Texture2D lighttex(Object[][] lights) {
+		int st = 5, w = st * 32, h = (Math.max(lights.length - 1, 0) / w) + 1;
+		DataBuffer.Filler<Texture2D.Image> init = (img, env) -> {
+		    if(img.level != 0)
+			return(null);
+		    FillBuffer ret = env.fillbuf(img);
+		    FloatBuffer buf = ret.push().asFloatBuffer();
+		    for(int i = 0; i < lights.length; i++) {
+			int o = i * st * 4;
+			float[] amb = (float[])lights[i][0];
+			float[] dif = (float[])lights[i][1];
+			float[] spc = (float[])lights[i][3];
+			float[] pos = (float[])lights[i][3];
+			float ac = (Float)lights[i][4];
+			float al = (Float)lights[i][5];
+			float aq = (Float)lights[i][6];
+			buf.put(o +  0, amb[0]).put(o +  1, amb[1]).put(o +  2, amb[2]).put(o +  3, amb[3]);
+			buf.put(o +  4, dif[0]).put(o +  5, dif[1]).put(o +  6, dif[2]).put(o +  7, dif[3]);
+			buf.put(o +  8, spc[0]).put(o +  9, spc[1]).put(o + 10, spc[2]).put(o + 11, spc[3]);
+			buf.put(o + 12, pos[0]).put(o + 13, pos[1]).put(o + 14, pos[2]).put(o + 15, pos[3]);
+			buf.put(o + 16, ac).put(o + 17, al).put(o + 18, aq);
+		    }
+		    return(ret);
+		};
+		return(new Texture2D(w, h, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.FLOAT32), init));
+	    }
+
 	    public ShaderMacro shader() {return(shader);}
 
 	    public void apply(Pipe p) {
 		p.put(lights, this);
+	    }
+
+	    public Coord3f bboxm() {
+		return(bbox.n.inv());
+	    }
+
+	    public Coord3f bboxk() {
+		return(Coord3f.of(w, h, d).div(bbox.sz()));
 	    }
 	}
     }
