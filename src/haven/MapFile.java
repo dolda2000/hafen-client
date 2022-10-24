@@ -671,7 +671,7 @@ public class MapFile {
 	public static Grid from(MCache map, MCache.Grid cg) {
 	    int oseq = cg.seq;
 	    int nt = 0;
-	    int[] tmap = new int[0];
+	    int[] tmap = new int[16];
 	    int[] rmap = new int[16];
 	    Arrays.fill(tmap, -1);
 	    for(int tn : cg.tiles) {
