@@ -172,7 +172,8 @@ public class Phong extends ValBlock.Group implements Lighting{
 	bcol.tgt = blk.local(VEC3, pick(fref(material.ref(), "emi"), "rgb")).ref();
 	scol.tgt = blk.local(VEC3, Vec3Cons.z).ref();
 	LightList ls = prog.getmod(LightList.class);
-	ls.construct(blk, par -> stmt(dolight.call(par.lpar, par.idx, vert, edir, norm, bcol.tgt, scol.tgt)));
+	if(ls != null)
+	    ls.construct(blk, par -> stmt(dolight.call(par.lpar, par.idx, vert, edir, norm, bcol.tgt, scol.tgt)));
 	bcol.addmods(blk); scol.addmods(blk);
     }
 
