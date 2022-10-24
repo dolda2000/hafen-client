@@ -396,13 +396,13 @@ public interface Lighting {
 
 	    final Function getlidx = new Function.Def(UINT, "getlidx") {{
 		Expression lsidx = param(IN, UINT).ref();
-		Expression lidx = pick(texelFetch(u_lstex.ref(), ivec2(bitand(lsidx, l((1 << lswb) - 1)), add(rshift(lsidx, l(lswb)), l(1 << (wb + hb + db - lswb)))), l(0)), "r");
+		Expression lidx = pick(texelFetch(u_lstex.ref(), ivec2(bitand(lsidx, ul((1 << lswb) - 1)), add(rshift(lsidx, l(lswb)), ul(1 << (wb + hb + db - lswb)))), l(0)), "r");
 		code.add(new Return(lidx));
 	    }};
 
 	    final Function getlight = new Function.Def(s_light, "getlight") {{
 		Expression lidx = param(IN, UINT).ref();
-		Expression base = code.local(IVEC2, ivec2(mul(bitand(lidx, l((1 << 5) - 1)), l(5)), rshift(lidx, l(5)))).ref();
+		Expression base = code.local(IVEC2, ivec2(mul(bitand(lidx, ul((1 << 5) - 1)), ul(5)), rshift(lidx, l(5)))).ref();
 		Expression amb = code.local(VEC4, texelFetch(u_ldtex.ref(), base, l(0))).ref();
 		Expression dif = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(1), l(0))), l(0))).ref();
 		Expression spc = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(2), l(0))), l(0))).ref();
@@ -415,10 +415,10 @@ public interface Lighting {
 		prog.module(new LightList() {
 			public void construct(Block blk, java.util.function.Function<Params, Statement> body) {
 			    Expression lsidx = blk.local(UINT, getlist.call()).ref();
-			    Variable i = blk.local(INT, "i", null);
+			    Variable i = blk.local(UINT, "i", null);
 			    Variable lidx = blk.local(UINT, null);
-			    blk.add(new For(ass(i, l(0)), and(lt(i.ref(), l(maxlights)), ne(ass(lidx, getlidx.call(add(lsidx, i.ref()))), l(0xffff))), linc(i.ref()),
-					    body.apply(new Params(lidx.ref(), getlight.call(lidx.ref())))));
+			    blk.add(new For(ass(i, ul(0)), and(lt(i.ref(), ul(maxlights)), ne(ass(lidx, getlidx.call(add(lsidx, i.ref()))), ul(0xffff))), linc(i.ref()),
+					    body.apply(new Params(intcons(lidx.ref()), getlight.call(lidx.ref())))));
 			}
 		    });
 	    }
