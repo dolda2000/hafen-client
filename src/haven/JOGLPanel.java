@@ -468,8 +468,8 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	if(rqd > 0)
 	    FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "RQ depth: %d (%d)", rqd, Resource.local().numloaded() + Resource.remote().numloaded());
 	synchronized(Debug.framestats) {
-	    for(String line : Debug.framestats)
-		FastText.aprint(g, new Coord(10, y -= dy), 0, 1, line);
+	    for(Object line : Debug.framestats)
+		FastText.aprint(g, new Coord(10, y -= dy), 0, 1, String.valueOf(line));
 	}
     }
 
