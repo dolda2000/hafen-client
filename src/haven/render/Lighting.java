@@ -100,7 +100,7 @@ public interface Lighting {
     }
 
     public static class LightGrid {
-	public static final boolean stats = true;
+	public static final boolean stats = false;
 	public static final int maxlights = 4;
 	public static final float threshold = 1f / 256f;
 	public final int w, h, d;
