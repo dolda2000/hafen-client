@@ -448,7 +448,7 @@ public interface Lighting {
 	    }
 
 	    private Texture2D lighttex(Object[][] lights) {
-		int st = 5, w = st * 32, h = (Math.max(lights.length - 1, 0) / w) + 1;
+		int st = 5, lw = 32, tw = lw * 32, th = (Math.max(lights.length - 1, 0) / lw) + 1;
 		DataBuffer.Filler<Texture2D.Image> init = (img, env) -> {
 		    if(img.level != 0)
 			return(null);
@@ -471,7 +471,7 @@ public interface Lighting {
 		    }
 		    return(ret);
 		};
-		return(new Texture2D(w, h, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.FLOAT32), init));
+		return(new Texture2D(tw, th, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.FLOAT32), init));
 	    }
 
 	    public ShaderMacro shader() {return(shader);}
