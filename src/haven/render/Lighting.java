@@ -461,7 +461,7 @@ public interface Lighting {
 			int o = i * st * 4;
 			float[] amb = (float[])lights[i][0];
 			float[] dif = (float[])lights[i][1];
-			float[] spc = (float[])lights[i][3];
+			float[] spc = (float[])lights[i][2];
 			float[] pos = (float[])lights[i][3];
 			float ac = (Float)lights[i][4];
 			float al = (Float)lights[i][5];
