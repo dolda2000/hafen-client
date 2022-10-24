@@ -1051,6 +1051,26 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    s_amblight = basic.add(amblight);
     }
 
+    private Lighting.LightGrid lgrid;
+    protected void lights() {
+	GSettings gprefs = basic.state().get(GSettings.slot);
+	boolean clight = (gprefs != null) && (gprefs.lightmode.val == GSettings.LightMode.CLUSTERED);
+	if(clight) {
+	    if(lgrid == null) {
+		basic(Light.class, null);
+		lgrid = new Lighting.LightGrid(64, 64, 64);
+	    }
+	    Projection proj = (camera == null) ? new Projection(Matrix4f.id) : camera.proj;
+	    basic(Light.class, Pipe.Op.compose(lights, lgrid.compile(lights.params(), proj)));
+	} else if(!clight) {
+	    if(lgrid != null) {
+		lgrid = null;
+		basic(Light.class, null);
+	    }
+	    super.lights();
+	}
+    }
+
     public static final Uniform amblight_idx = new Uniform(Type.INT, p -> {
 	    DirLight light = ((MapView)((WidgetContext)p.get(RenderContext.slot)).widget()).amblight;
 	    Light.LightList lights = p.get(Light.lights);
