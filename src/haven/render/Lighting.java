@@ -100,6 +100,7 @@ public interface Lighting {
     }
 
     public static class LightGrid {
+	public static final boolean stats = true;
 	public static final int maxlights = 4;
 	public static final float threshold = 1f / 256f;
 	public final int w, h, d;
@@ -197,8 +198,6 @@ public interface Lighting {
 		    lists = Arrays.copyOf(lists, lists.length * 2);
 		lists[nlists] = Arrays.copyOf(plist, plist.length + 1);
 		lists[nlists][plist.length] = add;
-		if(Debug.ff)
-		    Debug.dump(lists[nlists]);
 		maxlist = Math.max(maxlist, lists[nlists].length);
 		return((short)nlists++);
 	    }
@@ -248,10 +247,10 @@ public interface Lighting {
 		float aq = (Float)light[6];
 		float aqi = 1f / aq;
 		float r = -(al * aqi * 0.5f) + (float)Math.sqrt((aqi / threshold) - (ac * aqi) + (al * al * aqi * aqi * 0.25f));
-		if(Debug.ff)
-		    Debug.dump(r);
-		if(bbox.closest(lc).dist(lc) > r)
+		if(bbox.closest(lc).dist(lc) > r) {
+		    Debug.statprint(Utils.formatter("Light %d: Out-of-bounds", idx), stats);
 		    return;
+		}
 		int nz = (int)Math.floor((lz - r - bbox.n.z) * szf.z), pz = (int)Math.ceil((lz + r - bbox.n.z) * szf.z);
 		int lightlim = maxlights - global.size();
 		for(int gz = Math.max(nz, 0); gz < Math.min(pz, d); gz++) {
@@ -267,8 +266,10 @@ public interface Lighting {
 			int ygi = (gy * w) + (gz * w * h);
 			int lgi = Math.max(nx, 0) + ygi, hgi = Math.min(px, w) + ygi;
 			for(int gri = lgi; gri < hgi; gri++) {
-			    if(lists[us(grid[gri])].length >= lightlim)
+			    if(lists[us(grid[gri])].length >= lightlim) {
+				Debug.statprint(Utils.formatter("Light %d: Disabled", idx), stats);
 				return;
+			    }
 			}
 		    }
 		}
@@ -301,8 +302,7 @@ public interface Lighting {
 			}
 		    }
 		}
-		if(Debug.ff)
-		    Debug.dump(ng);
+		Debug.statprint(Utils.formatter("Light %d: %.2f %,d", idx, r, ng), stats);
 	    }
 
 	    void addglobal(int idx, Object[] light) {
@@ -374,10 +374,7 @@ public interface Lighting {
 	    for(int i = 0; i < n; i++)
 		c.addlight(i, lights[i]);
 	    c.compact();
-	    if(Debug.ff)
-		Debug.dump(c.maxlist, c.nlists);
-	    if(Debug.ff)
-		c.dump();
+	    Debug.statprint(Utils.formatter("C-lights: %d lists, max %d, bounds %s, cell %s", c.nlists, c.maxlist, c.bbox, c.gsz), stats);
 	    return(new GridLights(lights, c.bbox, c.grid, c.listbuf, c.lboff));
 	}
 
