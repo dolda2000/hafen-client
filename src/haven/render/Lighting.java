@@ -107,6 +107,7 @@ public interface Lighting {
 	public final int wb, hb, db;
 	private final int lswb;
 	private final ShaderMacro shader;
+	private GridLights last;
 
 	public LightGrid(int w, int h, int d) {
 	    if(w != Integer.highestOneBit(w)) throw(new IllegalArgumentException("not a power of two: " + w));
@@ -373,7 +374,11 @@ public interface Lighting {
 		c.addlight(i, lights[i]);
 	    c.compact();
 	    Debug.statprint(Utils.formatter("C-lights: %d lists, max %d, bounds %s, cell %s", c.nlists, c.maxlist, c.bbox, c.gsz), stats);
-	    return(new GridLights(lights, c.bbox, c.grid, c.listbuf, c.lboff));
+	    if(last != null) {
+		last.dispose();
+		last = null;
+	    }
+	    return(last = new GridLights(lights, c.bbox, c.grid, c.listbuf, c.lboff));
 	}
 
 	private static final Uniform u_bboxm = new Uniform(VEC3, "lboxm", p -> ((GridLights)p.get(lights)).bboxm(), lights);
@@ -419,7 +424,7 @@ public interface Lighting {
 	    }
 	}
 
-	public class GridLights extends State {
+	public class GridLights extends State implements Disposable {
 	    public final Texture2D.Sampler2D ldtex, lstex;
 	    public final Volume3f bbox;
 
@@ -484,6 +489,11 @@ public interface Lighting {
 
 	    public Coord3f bboxk() {
 		return(Coord3f.of(w, h, d).div(bbox.sz()));
+	    }
+
+	    public void dispose() {
+		ldtex.dispose();
+		lstex.dispose();
 	    }
 	}
     }
