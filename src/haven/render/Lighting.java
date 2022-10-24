@@ -288,7 +288,7 @@ public interface Lighting {
 			int nx = (int)Math.floor((lx - ex - bbox.n.x) * szf.x), px = (int)Math.ceil((lx + ex - bbox.n.x) * szf.x);
 			int ygi = (gy * w) + (gz * w * h);
 			int lgi = Math.max(nx, 0) + ygi, hgi = Math.min(px, w) + ygi;
-			ng += hgi - lgi;
+			ng += Math.max(hgi - lgi, 0);
 			x: for(int gri = lgi; gri < hgi; gri++) {
 			    short val;
 			    while(true) {
