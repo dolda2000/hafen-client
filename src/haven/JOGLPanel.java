@@ -470,7 +470,6 @@ public class JOGLPanel extends GLCanvas implements Runnable, UIPanel, Console.Di
 	synchronized(Debug.framestats) {
 	    for(String line : Debug.framestats)
 		FastText.aprint(g, new Coord(10, y -= dy), 0, 1, line);
-	    Debug.framestats.clear();
 	}
     }
 

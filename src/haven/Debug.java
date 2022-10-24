@@ -47,6 +47,9 @@ public class Debug {
 	kf3 = (modflags & 4) != 0;
 	kf4 = (modflags & 8) != 0;
 	ff = fdk && !pfdk; pfdk = fdk;
+	synchronized(framestats) {
+	    framestats.clear();
+	}
     }
 
     public static void dumpimage(BufferedImage img, Path path) {
