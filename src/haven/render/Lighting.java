@@ -368,8 +368,6 @@ public interface Lighting {
 
 	public State compile(Object[][] lights, Projection proj) {
 	    Compiler c = new Compiler(proj);
-	    if(Debug.ff)
-		Debug.dump(c.bbox, c.gsz);
 	    int n = Math.min(lights.length, 65535);
 	    for(int i = 0; i < n; i++)
 		c.addlight(i, lights[i]);
