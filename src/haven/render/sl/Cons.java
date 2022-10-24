@@ -72,6 +72,7 @@ public class Cons {
     public static Index idx(Expression val, Expression idx) {return(new Index(val, idx));}
 
     public static IntLiteral   l(int val)    {return(new IntLiteral(val));}
+    public static UIntLiteral ul(int val)    {return(new UIntLiteral(val));}
     public static FloatLiteral l(double val) {return(new FloatLiteral(val));}
 
     public static Vec4Cons vec4(Expression... els) {return(new Vec4Cons(els));}
