@@ -120,7 +120,7 @@ public interface Lighting {
 	    this.hb = Integer.numberOfTrailingZeros(h);
 	    this.db = Integer.numberOfTrailingZeros(d);
 	    lswb = (wb + hb + db + 1) / 2;
-	    shader = new Shader();
+	    shader = mkshader(this);
 	}
 
 	private static final Hash<short[]> sahash = new Hash<short[]>() {
@@ -386,33 +386,41 @@ public interface Lighting {
 	private static final Uniform u_bboxk = new Uniform(VEC3, "lboxk", p -> ((GridLights)p.get(lights)).bboxk(), lights);
 	private static final Uniform u_lstex = new Uniform(USAMPLER2D, "lstex", p -> ((GridLights)p.get(lights)).lstex, lights);
 	private static final Uniform u_ldtex = new Uniform(SAMPLER2D, "ldtex", p -> ((GridLights)p.get(lights)).ldtex, lights);
-	private class Shader implements ShaderMacro {
-	    final Function getlist = new Function.Def(UINT, "getlist") {{
-		Expression gc = code.local(IVEC3, clamp(ivec3(mul(add(Homo3D.frageyev.ref(), u_bboxm.ref()), u_bboxk.ref())),
-						   ivec3(0, 0, 0), ivec3(w - 1, h - 1, d - 1))).ref();
-		Expression gidx = code.local(INT, add(pick(gc, "x"), lshift(pick(gc, "y"), l(wb)), lshift(pick(gc, "z"), l(wb + hb)))).ref();
-		Expression lsidx = pick(texelFetch(u_lstex.ref(), ivec2(bitand(gidx, l((1 << lswb) - 1)), rshift(gidx, l(lswb))), l(0)), "r");
-		code.add(new Return(lsidx));
-	    }};
+	private static class Shader implements ShaderMacro {
+	    private final int w, h, d, wb, hb, db, lswb;
 
-	    final Function getlidx = new Function.Def(UINT, "getlidx") {{
-		Expression lsidx = param(IN, UINT).ref();
-		Expression lidx = pick(texelFetch(u_lstex.ref(), ivec2(bitand(lsidx, ul((1 << lswb) - 1)), add(rshift(lsidx, l(lswb)), ul(1 << (wb + hb + db - lswb)))), l(0)), "r");
-		code.add(new Return(lidx));
-	    }};
-
-	    final Function getlight = new Function.Def(s_light, "getlight") {{
-		Expression lidx = param(IN, UINT).ref();
-		Expression base = code.local(IVEC2, ivec2(mul(bitand(lidx, ul((1 << 5) - 1)), ul(5)), rshift(lidx, l(5)))).ref();
-		Expression amb = code.local(VEC4, texelFetch(u_ldtex.ref(), base, l(0))).ref();
-		Expression dif = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(1), l(0))), l(0))).ref();
-		Expression spc = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(2), l(0))), l(0))).ref();
-		Expression pos = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(3), l(0))), l(0))).ref();
-		Expression att = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(4), l(0))), l(0))).ref();
-		code.add(new Return(s_light.construct(amb, dif, spc, pos, pick(att, "r"), pick(att, "g"), pick(att, "b"), pick(att, "a"))));
-	    }};
+	    Shader(LightGrid pars) {
+		this.w = pars.w; this.h = pars.h; this.d = pars.d;
+		this.wb = pars.wb; this.hb = pars.hb; this.db = pars.db;
+		this.lswb = pars.lswb;
+	    }
 
 	    public void modify(ProgramContext prog) {
+		Function getlist = new Function.Def(UINT, "getlist") {{
+		    Expression gc = code.local(IVEC3, clamp(ivec3(mul(add(Homo3D.frageyev.ref(), u_bboxm.ref()), u_bboxk.ref())),
+							    ivec3(0, 0, 0), ivec3(w - 1, h - 1, d - 1))).ref();
+		    Expression gidx = code.local(INT, add(pick(gc, "x"), lshift(pick(gc, "y"), l(wb)), lshift(pick(gc, "z"), l(wb + hb)))).ref();
+		    Expression lsidx = pick(texelFetch(u_lstex.ref(), ivec2(bitand(gidx, l((1 << lswb) - 1)), rshift(gidx, l(lswb))), l(0)), "r");
+		    code.add(new Return(lsidx));
+		}};
+
+		Function getlidx = new Function.Def(UINT, "getlidx") {{
+		    Expression lsidx = param(IN, UINT).ref();
+		    Expression lidx = pick(texelFetch(u_lstex.ref(), ivec2(bitand(lsidx, ul((1 << lswb) - 1)), add(rshift(lsidx, l(lswb)), ul(1 << (wb + hb + db - lswb)))), l(0)), "r");
+		    code.add(new Return(lidx));
+		}};
+
+		Function getlight = new Function.Def(s_light, "getlight") {{
+		    Expression lidx = param(IN, UINT).ref();
+		    Expression base = code.local(IVEC2, ivec2(mul(bitand(lidx, ul((1 << 5) - 1)), ul(5)), rshift(lidx, l(5)))).ref();
+		    Expression amb = code.local(VEC4, texelFetch(u_ldtex.ref(), base, l(0))).ref();
+		    Expression dif = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(1), l(0))), l(0))).ref();
+		    Expression spc = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(2), l(0))), l(0))).ref();
+		    Expression pos = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(3), l(0))), l(0))).ref();
+		    Expression att = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(4), l(0))), l(0))).ref();
+		    code.add(new Return(s_light.construct(amb, dif, spc, pos, pick(att, "r"), pick(att, "g"), pick(att, "b"), pick(att, "a"))));
+		}};
+
 		prog.module(new LightList() {
 			public void construct(Block blk, java.util.function.Function<Params, Statement> body) {
 			    Expression lsidx = blk.local(UINT, getlist.call()).ref();
@@ -422,6 +430,23 @@ public interface Lighting {
 					    body.apply(new Params(intcons(lidx.ref()), getlight.call(lidx.ref())))));
 			}
 		    });
+	    }
+
+	    public int hashCode() {
+		return(Objects.hash(w, h, d, lswb));
+	    }
+	    public boolean equals(Shader o) {
+		return((w == o.w) && (h == o.h) && (d == o.d) && (lswb == o.lswb));
+	    }
+	    public boolean equals(Object o) {
+		return((o instanceof Shader) && equals((Shader)o));
+	    }
+	}
+
+	private static HashedSet<Shader> shaders = new HashedSet<>(Hash.eq);
+	private static ShaderMacro mkshader(LightGrid pars) {
+	    synchronized(shaders) {
+		return(shaders.intern(new Shader(pars)));
 	    }
 	}
 
