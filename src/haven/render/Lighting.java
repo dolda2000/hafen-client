@@ -43,7 +43,8 @@ public interface Lighting {
 						     VEC4, "pos",
 						     FLOAT, "ac",
 						     FLOAT, "al",
-						     FLOAT, "aq");
+						     FLOAT, "aq",
+						     FLOAT, "at");
 
     public static abstract class LightList implements ShaderMacro {
 	public abstract void construct(Block blk, java.util.function.Function<Params, Statement> body);
@@ -100,9 +101,8 @@ public interface Lighting {
     }
 
     public static class LightGrid {
-	public static final boolean stats = false;
-	public static final int maxlights = 4;
-	public static final float threshold = 1f / 256f;
+	public static final boolean stats = true;
+	public static final int maxlights = 8;
 	public final int w, h, d;
 	public final int wb, hb, db;
 	private final int lswb;
@@ -246,8 +246,9 @@ public interface Lighting {
 		float ac = (Float)light[4];
 		float al = (Float)light[5];
 		float aq = (Float)light[6];
+		float at = (Float)light[7];
 		float aqi = 1f / aq;
-		float r = -(al * aqi * 0.5f) + (float)Math.sqrt((aqi / threshold) - (ac * aqi) + (al * al * aqi * aqi * 0.25f));
+		float r = -(al * aqi * 0.5f) + (float)Math.sqrt((aqi / at) - (ac * aqi) + (al * al * aqi * aqi * 0.25f));
 		if(bbox.closest(lc).dist(lc) > r) {
 		    Debug.statprint(Utils.formatter("Light %d: Out-of-bounds", idx), stats);
 		    return;
@@ -408,7 +409,7 @@ public interface Lighting {
 		Expression spc = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(2), l(0))), l(0))).ref();
 		Expression pos = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(3), l(0))), l(0))).ref();
 		Expression att = code.local(VEC4, texelFetch(u_ldtex.ref(), add(base, ivec2(l(4), l(0))), l(0))).ref();
-		code.add(new Return(s_light.construct(amb, dif, spc, pos, pick(att, "r"), pick(att, "g"), pick(att, "b"))));
+		code.add(new Return(s_light.construct(amb, dif, spc, pos, pick(att, "r"), pick(att, "g"), pick(att, "b"), pick(att, "a"))));
 	    }};
 
 	    public void modify(ProgramContext prog) {
@@ -466,11 +467,12 @@ public interface Lighting {
 			float ac = (Float)lights[i][4];
 			float al = (Float)lights[i][5];
 			float aq = (Float)lights[i][6];
+			float at = (Float)lights[i][7];
 			buf.put(o +  0, amb[0]).put(o +  1, amb[1]).put(o +  2, amb[2]).put(o +  3, amb[3]);
 			buf.put(o +  4, dif[0]).put(o +  5, dif[1]).put(o +  6, dif[2]).put(o +  7, dif[3]);
 			buf.put(o +  8, spc[0]).put(o +  9, spc[1]).put(o + 10, spc[2]).put(o + 11, spc[3]);
 			buf.put(o + 12, pos[0]).put(o + 13, pos[1]).put(o + 14, pos[2]).put(o + 15, pos[3]);
-			buf.put(o + 16, ac).put(o + 17, al).put(o + 18, aq);
+			buf.put(o + 16, ac).put(o + 17, al).put(o + 18, aq).put(o + 19, at);
 		    }
 		    return(ret);
 		};

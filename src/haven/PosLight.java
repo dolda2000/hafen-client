@@ -31,7 +31,7 @@ import haven.render.*;
 
 public class PosLight extends Light {
     public float[] pos;
-    public float ac = 1.0f, al = 0.0f, aq = 0.0f;
+    public float ac = 1.0f, al = 0.0f, aq = 0.0f, at = 0.2f;
 
     public PosLight(FColor col, Coord3f pos) {
 	super(col);
@@ -65,6 +65,6 @@ public class PosLight extends Light {
 
     public Object[] params(GroupPipe state) {
 	float[] pos = Homo3D.camxf(state).mul(Homo3D.locxf(state)).mul4(this.pos);
-	return(new Object[] {amb, dif, spc, pos, ac, al, aq});
+	return(new Object[] {amb, dif, spc, pos, ac, al, aq, at});
     }
 }

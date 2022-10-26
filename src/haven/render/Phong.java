@@ -115,7 +115,10 @@ public class Phong extends ValBlock.Group implements Lighting{
 						  stmt(ass(lvl.tgt, min(inv(add(fref(ls, "ac"),
 										mul(fref(ls, "al"), dst.ref()),
 										mul(fref(ls, "aq"), dst.ref(), dst.ref()))),
-									l(1.0)))))));
+									l(1.0)))),
+						  stmt(ass(lvl.tgt, mul(lvl.tgt,
+									clamp(mul(sub(lvl.tgt, fref(ls, "at")), l(1.0 / 0.05)),
+									      l(0.0), l(1.0))))))));
 		    }
 		};
 	    lvl = tdep.new GValue(FLOAT);
