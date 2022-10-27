@@ -477,7 +477,7 @@ public interface Lighting {
 	    }
 
 	    private Texture2D lighttex(Object[][] lights) {
-		int st = 5, lw = 32, tw = lw * 32, th = (Math.max(lights.length - 1, 0) / lw) + 1;
+		int st = 5, lw = 32, tw = lw * st, th = (Math.max(lights.length - 1, 0) / lw) + 1;
 		DataBuffer.Filler<Texture2D.Image> init = (img, env) -> {
 		    if(img.level != 0)
 			return(null);
