@@ -157,7 +157,7 @@ public class Phong extends ValBlock.Group implements Lighting{
 	    scalc.add(scurs = new Placeholder());
 	    scalc.add(aadd(spec, mul(pick(fref(mat, "spc"), "rgb"),
 				     pick(fref(ls,  "spc"), "rgb"),
-				     sl.ref())));
+				     sl.ref(), lvl.ref())));
 
 	    for(Runnable mod : mods)
 		mod.run();
