@@ -212,7 +212,34 @@ public class OptWnd extends Window {
 			   },
 			   dpy);
 		}
-		prev = add(new Label("Frame sync mode"), prev.pos("bl").adds(0, 5));
+		prev = add(new Label("Lighting mode:"), prev.pos("bl").adds(0, 5));
+		{
+		    boolean[] done = {false};
+		    RadioGroup grp = new RadioGroup(this) {
+			    public void changed(int btn, String lbl) {
+				if(!done[0])
+				    return;
+				try {
+				    ui.setgprefs(prefs = prefs.update(null, prefs.lightmode, GSettings.LightMode.values()[btn]));
+				} catch(GSettings.SettingException e) {
+				    error(e.getMessage());
+				    return;
+				}
+			    }
+			};
+		    prev = grp.add("Global", prev.pos("bl").adds(5, 2));
+		    prev.settip("Global lighting supports fewer light sources, and scales worse in " +
+				"performance per additional light source, than zoned lighting, but " +
+				"has lower baseline performance requirements.", true);
+		    prev = grp.add("Zoned", prev.pos("bl").adds(0, 2));
+		    prev.settip("Zoned lighting supports far more light sources than global " +
+				"lighting with better performance, but may have higher performance " +
+				"requirements in cases with few light sources, and may also have " +
+				"issues on old graphics hardware.", true);
+		    grp.check(prefs.lightmode.val.ordinal());
+		    done[0] = true;
+		}
+		prev = add(new Label("Frame sync mode:"), prev.pos("bl").adds(0, 5).x(0));
 		{
 		    boolean[] done = {false};
 		    RadioGroup grp = new RadioGroup(this) {

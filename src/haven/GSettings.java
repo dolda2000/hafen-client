@@ -213,7 +213,7 @@ public class GSettings extends State implements Serializable {
 	};
 
     public static enum LightMode {
-	SIMPLE, CLUSTERED
+	SIMPLE, ZONED
     }
 
     public EnumSetting<LightMode> lightmode = new EnumSetting<LightMode>("lighting", LightMode.class) {

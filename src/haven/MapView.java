@@ -1054,15 +1054,15 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Lighting.LightGrid lgrid;
     protected void lights() {
 	GSettings gprefs = basic.state().get(GSettings.slot);
-	boolean clight = (gprefs != null) && (gprefs.lightmode.val == GSettings.LightMode.CLUSTERED);
-	if(clight) {
+	boolean zlight = (gprefs != null) && (gprefs.lightmode.val == GSettings.LightMode.ZONED);
+	if(zlight) {
 	    if(lgrid == null) {
 		basic(Light.class, null);
 		lgrid = new Lighting.LightGrid(64, 64, 64);
 	    }
 	    Projection proj = (camera == null) ? new Projection(Matrix4f.id) : camera.proj;
 	    basic(Light.class, Pipe.Op.compose(lights, lgrid.compile(lights.params(), proj)));
-	} else if(!clight) {
+	} else {
 	    if(lgrid != null) {
 		lgrid = null;
 		basic(Light.class, null);
