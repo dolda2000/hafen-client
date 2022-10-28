@@ -63,8 +63,17 @@ public class PosLight extends Light {
 	aq = q;
     }
 
+    public static float atoverride = 0;
     public Object[] params(GroupPipe state) {
 	float[] pos = Homo3D.camxf(state).mul(Homo3D.locxf(state)).mul4(this.pos);
-	return(new Object[] {amb, dif, spc, pos, ac, al, aq, at});
+	return(new Object[] {amb, dif, spc, pos, ac, al, aq, (atoverride != 0) ? atoverride : at});
+    }
+
+    static {
+	Console.setscmd("lightcut", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    atoverride = Float.parseFloat(args[1]);
+		}
+	    });
     }
 }
