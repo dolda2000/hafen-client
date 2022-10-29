@@ -216,7 +216,7 @@ public class GSettings extends State implements Serializable {
 	SIMPLE, ZONED
     }
     public EnumSetting<LightMode> lightmode = new EnumSetting<LightMode>("lighting", LightMode.class) {
-	    public LightMode defval() {return(LightMode.SIMPLE);}
+	    public LightMode defval() {return(LightMode.ZONED);}
 	};
     public IntSetting maxlights = new IntSetting("maxlights") {
 	    public Integer defval() {return(0);}
