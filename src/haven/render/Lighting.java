@@ -135,7 +135,7 @@ public interface Lighting {
 
     public static class LightGrid {
 	public static final boolean stats = false;
-	public static final int defmax = 8;
+	public static final int defmax = 16;
 	public final int w, h, d;
 	public final int wb, hb, db;
 	public int maxlights = defmax;
