@@ -179,9 +179,9 @@ public interface Lighting {
 
 	    Compiler(Projection proj) {
 		Matrix4f iproj = proj.fin(Matrix4f.id).invert();
-		Volume3f bbox = Volume3f.point(Coord3f.of(HomoCoord4f.fromiclip(iproj, clipcorn[0])));
+		Volume3f bbox = Volume3f.point(Coord3f.of(HomoCoord4f.fromindc(iproj, clipcorn[0])));
 		for(int i = 1; i < clipcorn.length; i++)
-		    bbox = bbox.include(Coord3f.of(HomoCoord4f.fromiclip(iproj, clipcorn[i])));
+		    bbox = bbox.include(Coord3f.of(HomoCoord4f.fromindc(iproj, clipcorn[i])));
 		this.bbox = bbox;
 		gsz = bbox.sz().div(w, h, d);
 		szf = Coord3f.of(1, 1, 1).div(gsz);
