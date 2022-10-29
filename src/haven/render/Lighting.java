@@ -61,39 +61,72 @@ public interface Lighting {
     }
 
     public static class SimpleLights extends State {
-	public static final int maxlights = 4;
 	public static final boolean unroll = true;
-	public static final Uniform u_nlights = new Uniform(INT, "nlights", p -> ((SimpleLights)p.get(lights)).list.length, lights);
-	public static final Uniform u_lights = new Uniform(new Array(s_light, maxlights), "lights", p -> ((SimpleLights)p.get(lights)).list, lights);
+	public static final int defmax = 4;
 	private final Object[][] list;
+	public int maxlights = defmax;
 
 	public SimpleLights(Object[][] lights) {
 	    this.list = lights;
 	}
 
-	private static final ShaderMacro shader = prog -> {
-	    prog.module(new LightList() {
-		    public void construct(Block blk, java.util.function.Function<Params, Statement> body) {
-			if(!unroll) {
-			    Variable i = blk.local(INT, "i", null);
-			    blk.add(new For(ass(i, l(0)), lt(i.ref(), u_nlights.ref()), linc(i.ref()),
-					    body.apply(new Params(i.ref(), idx(u_lights.ref(), i.ref())))));
-			} else {
-			    for(int i = 0; i < maxlights; i++) {
-				/* Some old drivers and/or hardware seem to be
-				 * having trouble with the for loop. Might not be
-				 * as much of a problem these days as it used to
-				 * be, but keep this for now, especially if
-				 * SimpleLights are to be more of a legacy
-				 * concern. */
-				blk.add(new If(gt(u_nlights.ref(), l(i)),
-					       body.apply(new Params(l(i), idx(u_lights.ref(), l(i))))));
+	public static class Shader implements ShaderMacro {
+	    public final int maxlights;
+
+	    public Shader(int maxlights) {
+		this.maxlights = maxlights;
+	    }
+
+	    public void modify(ProgramContext prog) {
+		prog.module(new LightList() {
+			final Uniform u_nlights = new Uniform(INT, "nlights", p -> ((SimpleLights)p.get(lights)).list.length, lights);
+			final Uniform u_lights = new Uniform(new Array(s_light, maxlights), "lights", p -> ((SimpleLights)p.get(lights)).list, lights);
+
+			public void construct(Block blk, java.util.function.Function<Params, Statement> body) {
+			    if(!unroll || (maxlights > 4)) {
+				Variable i = blk.local(INT, "i", null);
+				blk.add(new For(ass(i, l(0)), lt(i.ref(), u_nlights.ref()), linc(i.ref()),
+						body.apply(new Params(i.ref(), idx(u_lights.ref(), i.ref())))));
+			    } else {
+				for(int i = 0; i < maxlights; i++) {
+				    /* Some old drivers and/or hardware seem to be
+				     * having trouble with the for loop. Might not be
+				     * as much of a problem these days as it used to
+				     * be, but keep this for now, especially if
+				     * SimpleLights are to be more of a legacy
+				     * concern. */
+				    blk.add(new If(gt(u_nlights.ref(), l(i)),
+						   body.apply(new Params(l(i), idx(u_lights.ref(), l(i))))));
+				}
 			    }
 			}
-		    }
-		});
-	};
-	public ShaderMacro shader() {return(shader);}
+		    });
+	    }
+
+	    public int hashCode() {
+		return(maxlights);
+	    }
+	    public boolean equals(Shader o) {
+		return(maxlights == o.maxlights);
+	    }
+	    public boolean equals(Object o) {
+		return((o instanceof Shader) && equals((Shader)o));
+	    }
+
+	    private static WeakHashedSet<Shader> interned = new WeakHashedSet<>(Hash.eq);
+	    public static ShaderMacro get(int maxlights) {
+		synchronized(interned) {
+		    return(interned.intern(new Shader(maxlights)));
+		}
+	    }
+	}
+
+	private ShaderMacro shader = null;
+	public ShaderMacro shader() {
+	    if(shader == null)
+		shader = Shader.get(maxlights);
+	    return(shader);
+	}
 
 	public void apply(Pipe p) {
 	    p.put(lights, this);
@@ -102,11 +135,11 @@ public interface Lighting {
 
     public static class LightGrid {
 	public static final boolean stats = false;
-	public static final int maxlights = 8;
+	public static final int defmax = 8;
 	public final int w, h, d;
 	public final int wb, hb, db;
+	public int maxlights = defmax;
 	private final int lswb;
-	private final ShaderMacro shader;
 	private GridLights last;
 
 	public LightGrid(int w, int h, int d) {
@@ -120,7 +153,6 @@ public interface Lighting {
 	    this.hb = Integer.numberOfTrailingZeros(h);
 	    this.db = Integer.numberOfTrailingZeros(d);
 	    lswb = (wb + hb + db + 1) / 2;
-	    shader = mkshader(this);
 	}
 
 	private static final Hash<short[]> sahash = new Hash<short[]>() {
@@ -387,12 +419,13 @@ public interface Lighting {
 	private static final Uniform u_lstex = new Uniform(USAMPLER2D, "lstex", p -> ((GridLights)p.get(lights)).lstex, lights);
 	private static final Uniform u_ldtex = new Uniform(SAMPLER2D, "ldtex", p -> ((GridLights)p.get(lights)).ldtex, lights);
 	private static class Shader implements ShaderMacro {
-	    private final int w, h, d, wb, hb, db, lswb;
+	    private final int w, h, d, wb, hb, db, lswb, maxlights;
 
 	    Shader(LightGrid pars) {
 		this.w = pars.w; this.h = pars.h; this.d = pars.d;
 		this.wb = pars.wb; this.hb = pars.hb; this.db = pars.db;
 		this.lswb = pars.lswb;
+		this.maxlights = pars.maxlights;
 	    }
 
 	    public void modify(ProgramContext prog) {
@@ -433,21 +466,28 @@ public interface Lighting {
 	    }
 
 	    public int hashCode() {
-		return(Objects.hash(w, h, d, lswb));
+		return(Objects.hash(w, h, d, lswb, maxlights));
 	    }
 	    public boolean equals(Shader o) {
-		return((w == o.w) && (h == o.h) && (d == o.d) && (lswb == o.lswb));
+		return((w == o.w) && (h == o.h) && (d == o.d) && (lswb == o.lswb) && (maxlights == o.maxlights));
 	    }
 	    public boolean equals(Object o) {
 		return((o instanceof Shader) && equals((Shader)o));
 	    }
+
+	    private static WeakHashedSet<Shader> interned = new WeakHashedSet<>(Hash.eq);
+	    private static ShaderMacro get(LightGrid pars) {
+		synchronized(interned) {
+		    return(interned.intern(new Shader(pars)));
+		}
+	    }
 	}
 
-	private static HashedSet<Shader> shaders = new HashedSet<>(Hash.eq);
-	private static ShaderMacro mkshader(LightGrid pars) {
-	    synchronized(shaders) {
-		return(shaders.intern(new Shader(pars)));
-	    }
+	private ShaderMacro shader = null;
+	public ShaderMacro shader() {
+	    if(shader == null)
+		shader = Shader.get(LightGrid.this);
+	    return(shader);
 	}
 
 	public class GridLights extends State implements Disposable {
@@ -504,7 +544,7 @@ public interface Lighting {
 		return(new Texture2D(tw, th, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.FLOAT32), init));
 	    }
 
-	    public ShaderMacro shader() {return(shader);}
+	    public ShaderMacro shader() {return(LightGrid.this.shader());}
 
 	    public void apply(Pipe p) {
 		p.put(lights, this);
