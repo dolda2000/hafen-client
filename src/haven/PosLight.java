@@ -31,7 +31,7 @@ import haven.render.*;
 
 public class PosLight extends Light {
     public float[] pos;
-    public float ac = 1.0f, al = 0.0f, aq = 0.0f, at = 0.2f;
+    public float ac = 1.0f, al = 0.0f, aq = 0.0f, at = 0.1f;
 
     public PosLight(FColor col, Coord3f pos) {
 	super(col);
