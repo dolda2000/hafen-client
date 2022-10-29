@@ -65,10 +65,13 @@ public class HomoCoord4f {
 	return(fromiclip(proj.invert(), cc));
     }
 
+    public static HomoCoord4f fromindc(Matrix4f iproj, Coord3f nc) {
+	float w = 1.0f / ((nc.x * iproj.m[3]) + (nc.y * iproj.m[7]) + (nc.z * iproj.m[11]) + iproj.m[15]);
+	return(iproj.mul4(new HomoCoord4f(nc.x * w, nc.y * w, nc.z * w, w)));
+    }
+
     public static HomoCoord4f fromndc(Matrix4f proj, Coord3f nc) {
-	Matrix4f ip = proj.invert();
-	float w = 1.0f / ((nc.x * ip.m[3]) + (nc.y * ip.m[7]) + (nc.z * ip.m[11]) + ip.m[15]);
-	return(ip.mul4(new HomoCoord4f(nc.x * w, nc.y * w, nc.z * w, w)));
+	return(fromindc(proj.invert(), nc));
     }
 
     public static HomoCoord4f lineclip(HomoCoord4f a, HomoCoord4f b) {
