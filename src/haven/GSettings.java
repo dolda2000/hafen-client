@@ -220,6 +220,10 @@ public class GSettings extends State implements Serializable {
 	};
     public IntSetting maxlights = new IntSetting("maxlights") {
 	    public Integer defval() {return(0);}
+	    public void validate(Environment env, Integer val) {
+		if(val < 0)
+		    throw(new SettingException("Must support at least one light source."));
+	    }
 	};
 
     public Setting<?> find(String name) {
