@@ -213,6 +213,16 @@ public interface UniformApplier<T> {
 		    gl.glActiveTexture(GL.GL_TEXTURE0 + var.sampler);
 		    smp.bind(gl);
 		});
+	    TypeMapping.register(Type.ISAMPLER2D, GLTexture.Tex2D.class, (gl, var, type, smp) -> {
+		    if(var.sampler < 0) throw(new RuntimeException());
+		    gl.glActiveTexture(GL.GL_TEXTURE0 + var.sampler);
+		    smp.bind(gl);
+		});
+	    TypeMapping.register(Type.USAMPLER2D, GLTexture.Tex2D.class, (gl, var, type, smp) -> {
+		    if(var.sampler < 0) throw(new RuntimeException());
+		    gl.glActiveTexture(GL.GL_TEXTURE0 + var.sampler);
+		    smp.bind(gl);
+		});
 	    TypeMapping.register(Type.SAMPLER3D, GLTexture.Tex3D.class, (gl, var, type, smp) -> {
 		    if(var.sampler < 0) throw(new RuntimeException());
 		    gl.glActiveTexture(GL.GL_TEXTURE0 + var.sampler);

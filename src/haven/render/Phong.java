@@ -112,9 +112,13 @@ public class Phong extends ValBlock.Group implements Lighting{
 					new Block(rel.new Def(sub(pick(fref(ls, "pos"), "xyz"), vert)),
 						  stmt(ass(dir.tgt, normalize(rel.ref()))),
 						  dst.new Def(length(rel.ref())),
-						  stmt(ass(lvl.tgt, inv(add(fref(ls, "ac"),
-									    mul(fref(ls, "al"), dst.ref()),
-									    mul(fref(ls, "aq"), dst.ref(), dst.ref()))))))));
+						  stmt(ass(lvl.tgt, min(inv(add(fref(ls, "ac"),
+										mul(fref(ls, "al"), dst.ref()),
+										mul(fref(ls, "aq"), dst.ref(), dst.ref()))),
+									l(1.0)))),
+						  stmt(ass(lvl.tgt, mul(lvl.tgt,
+									clamp(mul(sub(lvl.tgt, fref(ls, "at")), l(1.0 / 0.05)),
+									      l(0.0), l(1.0))))))));
 		    }
 		};
 	    lvl = tdep.new GValue(FLOAT);
@@ -153,7 +157,7 @@ public class Phong extends ValBlock.Group implements Lighting{
 	    scalc.add(scurs = new Placeholder());
 	    scalc.add(aadd(spec, mul(pick(fref(mat, "spc"), "rgb"),
 				     pick(fref(ls,  "spc"), "rgb"),
-				     sl.ref())));
+				     sl.ref(), lvl.ref())));
 
 	    for(Runnable mod : mods)
 		mod.run();
@@ -172,7 +176,8 @@ public class Phong extends ValBlock.Group implements Lighting{
 	bcol.tgt = blk.local(VEC3, pick(fref(material.ref(), "emi"), "rgb")).ref();
 	scol.tgt = blk.local(VEC3, Vec3Cons.z).ref();
 	LightList ls = prog.getmod(LightList.class);
-	ls.construct(blk, par -> stmt(dolight.call(par.lpar, par.idx, vert, edir, norm, bcol.tgt, scol.tgt)));
+	if(ls != null)
+	    ls.construct(blk, par -> stmt(dolight.call(par.lpar, par.idx, vert, edir, norm, bcol.tgt, scol.tgt)));
 	bcol.addmods(blk); scol.addmods(blk);
     }
 

@@ -109,7 +109,7 @@ public class Volume3f {
 
     public Volume3f include(Coord3f c) {
 	return(corn(Coord3f.of(Math.min(n.x, c.x), Math.min(n.y, c.y), Math.min(n.z, c.z)),
-		    Coord3f.of(Math.max(p.x, c.x), Math.max(p.y, c.x), Math.max(p.z, c.z))));
+		    Coord3f.of(Math.max(p.x, c.x), Math.max(p.y, c.y), Math.max(p.z, c.z))));
     }
 
     public String toString() {

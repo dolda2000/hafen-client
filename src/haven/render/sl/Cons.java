@@ -60,6 +60,8 @@ public class Cons {
     public static BinOp.And and(Expression l, Expression r) {return(new BinOp.And(l, r));}
     public static BinOp.BitOr bitor(Expression l, Expression r) {return(new BinOp.BitOr(l, r));}
     public static BinOp.BitAnd bitand(Expression l, Expression r) {return(new BinOp.BitAnd(l, r));}
+    public static BinOp.LShift lshift(Expression l, Expression r) {return(new BinOp.LShift(l, r));}
+    public static BinOp.RShift rshift(Expression l, Expression r) {return(new BinOp.RShift(l, r));}
 
     public static LPick pick(LValue val, String el)     {return(new LPick(val, el));}
     public static Pick  pick(Expression val, String el) {return(new Pick(val, el));}
@@ -70,14 +72,21 @@ public class Cons {
     public static Index idx(Expression val, Expression idx) {return(new Index(val, idx));}
 
     public static IntLiteral   l(int val)    {return(new IntLiteral(val));}
+    public static UIntLiteral ul(int val)    {return(new UIntLiteral(val));}
     public static FloatLiteral l(double val) {return(new FloatLiteral(val));}
 
     public static Vec4Cons vec4(Expression... els) {return(new Vec4Cons(els));}
     public static Vec3Cons vec3(Expression... els) {return(new Vec3Cons(els));}
     public static Vec2Cons vec2(Expression... els) {return(new Vec2Cons(els));}
+    public static FloatCons floatcons(Expression init) {return(new FloatCons(init));}
     public static IVec4Cons ivec4(Expression... els) {return(new IVec4Cons(els));}
     public static IVec3Cons ivec3(Expression... els) {return(new IVec3Cons(els));}
     public static IVec2Cons ivec2(Expression... els) {return(new IVec2Cons(els));}
+    public static IntCons intcons(Expression init) {return(new IntCons(init));}
+    public static UVec4Cons uvec4(Expression... els) {return(new UVec4Cons(els));}
+    public static UVec3Cons uvec3(Expression... els) {return(new UVec3Cons(els));}
+    public static UVec2Cons uvec2(Expression... els) {return(new UVec2Cons(els));}
+    public static UIntCons uintcons(Expression init) {return(new UIntCons(init));}
     public static Mat3Cons mat3(Expression... els) {return(new Mat3Cons(els));}
 
     public static Expression sin(Expression x) {return(Function.Builtin.sin.call(x));}
@@ -130,10 +139,14 @@ public class Cons {
     public static Expression vec2(double a, double b)                     {return(vec2(l(a), l(b)));}
     public static Expression vec3(double a, double b, double c)           {return(vec3(l(a), l(b), l(c)));}
     public static Expression vec4(double a, double b, double c, double d) {return(vec4(l(a), l(b), l(c), l(d)));}
-    public static Expression ivec2(haven.Coord c)    {return(ivec2(l(c.x), l(c.y)));}
+    public static Expression ivec2(haven.Coord c)              {return(ivec2(l(c.x), l(c.y)));}
     public static Expression ivec2(int a, int b)               {return(ivec2(l(a), l(b)));}
     public static Expression ivec3(int a, int b, int c)        {return(ivec3(l(a), l(b), l(c)));}
     public static Expression ivec4(int a, int b, int c, int d) {return(ivec4(l(a), l(b), l(c), l(d)));}
+    public static Expression uvec2(haven.Coord c)              {return(uvec2(l(c.x), l(c.y)));}
+    public static Expression uvec2(int a, int b)               {return(uvec2(l(a), l(b)));}
+    public static Expression uvec3(int a, int b, int c)        {return(uvec3(l(a), l(b), l(c)));}
+    public static Expression uvec4(int a, int b, int c, int d) {return(uvec4(l(a), l(b), l(c), l(d)));}
 
     public static <T> T id(T a) {return(a);}
     public static final UnaryOperator<Expression> idm = in -> in;

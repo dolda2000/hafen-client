@@ -1989,6 +1989,14 @@ public class Utils {
 	return(0);
     }
 
+    public static final Object formatter(String fmt, Object... args) {
+	return(new Object() {
+		public String toString() {
+		    return(String.format(fmt, args));
+		}
+	    });
+    }
+
     public static final Comparator<Object> idcmp = new Comparator<Object>() {
 	int eid = 0;
 	final Map<Ref, Long> emerg = new HashMap<Ref, Long>();

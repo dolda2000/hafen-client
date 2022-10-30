@@ -93,7 +93,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public void resized() {
 	    float field = 0.5f;
 	    float aspect = ((float)sz.y) / ((float)sz.x);
-	    proj = Projection.frustum(-field, field, -aspect * field, aspect * field, 1, 5000);
+	    proj = Projection.frustum(-field, field, -aspect * field, aspect * field, 1, 2000);
 	}
 
 	public void apply(Pipe p) {
@@ -186,7 +186,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    
 	    float field = field(elev);
 	    view = haven.render.Camera.pointed(curc.add(camoff).add(0.0f, 0.0f, h), dist(elev), elev, angl);
-	    proj = Projection.frustum(-field, field, -ca * field, ca * field, 1, 5000);
+	    proj = Projection.frustum(-field, field, -ca * field, ca * field, 1, 2000);
 	}
 
 	public float angle() {
@@ -1049,6 +1049,51 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 	if(amblight != null)
 	    s_amblight = basic.add(amblight);
+    }
+
+    public static class LightCompiler {
+	public final GSettings gprefs;
+	private final Lighting.LightGrid zgrid;
+	private final int maxlights;
+
+	public LightCompiler(GSettings gprefs) {
+	    this.gprefs = gprefs;
+	    if(gprefs == null) {
+		zgrid = null;
+		maxlights = 0;
+	    } else {
+		maxlights = gprefs.maxlights.val;
+		if(gprefs.lightmode.val == GSettings.LightMode.ZONED) {
+		    zgrid = new Lighting.LightGrid(64, 64, 64);
+		    if(maxlights != 0)
+			zgrid.maxlights = maxlights;
+		} else {
+		    zgrid = null;
+		}
+	    }
+	}
+
+	public Pipe.Op compile(Object[][] params, Projection proj) {
+	    if(zgrid == null) {
+		Lighting.SimpleLights ret = new Lighting.SimpleLights(params);
+		if(maxlights != 0)
+		    ret.maxlights = maxlights;
+		return(ret);
+	    } else {
+		return(zgrid.compile(params, proj));
+	    }
+	}
+    }
+
+    private LightCompiler lighting;
+    protected void lights() {
+	GSettings gprefs = basic.state().get(GSettings.slot);
+	if((lighting == null) || (lighting.gprefs != gprefs)) {
+	    basic(Light.class, null);
+	    lighting = new LightCompiler(gprefs);
+	}
+	Projection proj = (camera == null) ? new Projection(Matrix4f.id) : camera.proj;
+	basic(Light.class, Pipe.Op.compose(lights, lighting.compile(lights.params(), proj)));
     }
 
     public static final Uniform amblight_idx = new Uniform(Type.INT, p -> {

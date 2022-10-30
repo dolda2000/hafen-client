@@ -122,6 +122,10 @@ public class GLRender implements Render, Disposable {
     public static int glsamplertarget(Type type) {
 	if(type == Type.SAMPLER2D)
 	    return(GL.GL_TEXTURE_2D);
+	else if(type == Type.ISAMPLER2D)
+	    return(GL.GL_TEXTURE_2D);
+	else if(type == Type.USAMPLER2D)
+	    return(GL.GL_TEXTURE_2D);
 	else if(type == Type.SAMPLER2DMS)
 	    return(GL3.GL_TEXTURE_2D_MULTISAMPLE);
 	else if(type == Type.SAMPLER2DMSARRAY)

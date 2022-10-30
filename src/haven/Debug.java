@@ -38,7 +38,7 @@ public class Debug {
     public static boolean pk1, pk2, pk3, pk4;
     public static boolean fdk, pfdk, ff;
     public static PrintWriter log = new PrintWriter(System.err);
-    public static List<String> framestats = new ArrayList<>();
+    public static List<Object> framestats = new ArrayList<>();
 
     public static void cycle(int modflags) {
 	pk1 = kf1; pk2 = kf2; pk3 = kf3; pk4 = kf4;
@@ -47,6 +47,9 @@ public class Debug {
 	kf3 = (modflags & 4) != 0;
 	kf4 = (modflags & 8) != 0;
 	ff = fdk && !pfdk; pfdk = fdk;
+	synchronized(framestats) {
+	    framestats.clear();
+	}
     }
 
     public static void dumpimage(BufferedImage img, Path path) {
@@ -133,7 +136,7 @@ public class Debug {
     public static <T> T statprint(T line, boolean cond) {
 	if(cond) {
 	    synchronized(framestats) {
-		framestats.add(String.valueOf(line));
+		framestats.add(line);
 	    }
 	}
 	return(line);
