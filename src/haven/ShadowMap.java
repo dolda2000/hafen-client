@@ -245,8 +245,8 @@ public class ShadowMap extends State {
 	out.clear(bstate, 1.0);
 	data.basic(basic);
 	data.draw(out);
-	if(false)
-	    GOut.getimage(out, lbuf.image(0), false, Debug::dumpimage);
+	if(Debug.ff)
+	    GOut.debugimage(out, lbuf.image(0), new VectorFormat(1, NumberFormat.DEPTH), false, Debug::dumpimage);
     }
 
     public void apply(Pipe buf) {
