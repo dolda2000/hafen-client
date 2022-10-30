@@ -497,9 +497,7 @@ public interface Lighting {
 	    public GridLights(Object[][] lights, Volume3f bbox, short[] grid, short[] lists, int listlen) {
 		this.bbox = bbox;
 		this.ldtex = new Texture2D.Sampler2D(lighttex(lights));
-		this.ldtex.minfilter(Texture.Filter.NEAREST).magfilter(Texture.Filter.NEAREST);
 		this.lstex = new Texture2D.Sampler2D(listtex(grid, lists, listlen));
-		this.lstex.minfilter(Texture.Filter.NEAREST).magfilter(Texture.Filter.NEAREST);
 	    }
 
 	    private Texture2D listtex(short[] grid, short[] lists, int listlen) {

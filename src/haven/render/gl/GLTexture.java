@@ -95,6 +95,8 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
     public abstract void unbind(BGL gl);
 
     static int magfilter(Sampler smp) {
+	if(glattribint(smp.tex.ifmt.cf))
+	    return(GL.GL_NEAREST);
 	switch(smp.magfilter) {
 	case NEAREST: return(GL.GL_NEAREST);
 	case LINEAR:  return(GL.GL_LINEAR);
@@ -102,6 +104,8 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 	}
     }
     static int minfilter(Sampler smp) {
+	if(glattribint(smp.tex.ifmt.cf))
+	    return(GL.GL_NEAREST);
 	if(smp.mipfilter == null) {
 	    switch(smp.minfilter) {
 	    case NEAREST: return(GL.GL_NEAREST);
