@@ -498,7 +498,8 @@ public class GOut {
 	    flipimage(fmt, sz.x, data);
 	switch(fmt.cf) {
 	case UNORM8: case SNORM8: {
-	    int b = fmt.nc;
+	    int b = Math.max(fmt.nc, 3);
+	    data = filltorgb(data, fmt);
 	    boolean a = b == 4;
 	    int[] offs = new int[b];
 	    for(int i = 0; i < b; i++) offs[i] = i;
