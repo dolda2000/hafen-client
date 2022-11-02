@@ -154,6 +154,18 @@ public class Location extends Transform {
 	return(new Location(makerot(new Matrix4f(), axis.norm(), angle)));
     }
 
+    public static Location scale(float x, float y, float z) {
+	return(new Location(makescale(new Matrix4f(), x, y, z)));
+    }
+
+    public static Location scale(Coord3f c) {
+	return(new Location(makescale(new Matrix4f(), c.x, c.y, c.z)));
+    }
+
+    public static Location scale(float s) {
+	return(new Location(makescale(new Matrix4f(), s, s, s)));
+    }
+
     public static final Location nullrot = new Location(Transform.nullrot);
 
     public static final Location onlyxl = new Location(Matrix4f.id) {
