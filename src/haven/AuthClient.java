@@ -34,7 +34,7 @@ import java.security.cert.*;
 import java.security.MessageDigest;
 
 public class AuthClient implements Closeable {
-    public static final Config.Variable<Boolean> strictcert = Config.Variable.propb("haven.auth-cert-strict", false);
+    public static final Config.Variable<Boolean> strictcert = Config.Variable.propb("haven.auth-cert-strict", true);
     private static final SslHelper ssl;
     private final Socket sk;
     private final InputStream skin;
