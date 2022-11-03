@@ -105,6 +105,32 @@ public class Config {
 	}
     }
 
+    public static void parsesvcaddr(String spec, Consumer<String> host, Consumer<Integer> port) {
+	if((spec.length() > 0) && (spec.charAt(0) == '[')) {
+	    int p = spec.indexOf(']');
+	    if(p > 0) {
+		String hspec = spec.substring(1, p);
+		if(spec.length() == p + 1) {
+		    host.accept(hspec);
+		    return;
+		} else if((spec.length() > p + 1) && (spec.charAt(p + 1) == ':')) {
+		    host.accept(hspec);
+		    port.accept(Integer.parseInt(spec.substring(p + 2)));
+		    return;
+		}
+	    }
+	}
+	int p = spec.indexOf(':');
+	if(p >= 0) {
+	    host.accept(spec.substring(0, p));
+	    port.accept(Integer.parseInt(spec.substring(p + 1)));
+	    return;
+	} else {
+	    host.accept(spec);
+	    return;
+	}
+    }
+
     public static class Variable<T> {
 	public final Function<Config, T> init;
 	private boolean inited = false;
@@ -217,13 +243,7 @@ public class Config {
 		Resource.resdir.set(Utils.path(opt.arg));
 		break;
 	    case 'A':
-		int p = opt.arg.indexOf(':');
-		if(p >= 0) {
-		    Bootstrap.authserv.set(opt.arg.substring(0, p));
-		    Bootstrap.authport.set(Integer.parseInt(opt.arg.substring(p + 1)));
-		} else {
-		    Bootstrap.authserv.set(opt.arg);
-		}
+		parsesvcaddr(opt.arg, Bootstrap.authserv::set, Bootstrap.authport::set);
 		break;
 	    case 'U':
 		try {
@@ -244,15 +264,8 @@ public class Config {
 		break;
 	    }
 	}
-	if(opt.rest.length > 0) {
-	    int p = opt.rest[0].indexOf(':');
-	    if(p >= 0) {
-		Bootstrap.defserv.set(opt.rest[0].substring(0, p));
-		Bootstrap.mainport.set(Integer.parseInt(opt.rest[0].substring(p + 1)));
-	    } else {
-		Bootstrap.defserv.set(opt.rest[0]);
-	    }
-	}
+	if(opt.rest.length > 0)
+	    parsesvcaddr(opt.rest[0], Bootstrap.defserv::set, Bootstrap.mainport::set);
 	if(opt.rest.length > 1)
 	    Bootstrap.servargs.set(Utils.splice(opt.rest, 1));
     }
