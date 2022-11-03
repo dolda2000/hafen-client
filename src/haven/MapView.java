@@ -1733,7 +1733,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public boolean rotate(Plob plob, int amount, int modflags) {
-	    if((modflags & UI.MOD_CTRL) == 0)
+	    if((modflags & (UI.MOD_CTRL | UI.MOD_SHIFT)) == 0)
 		return(false);
 	    freerot = true;
 	    double na;
