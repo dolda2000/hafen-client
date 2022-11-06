@@ -129,6 +129,7 @@ public interface GL {
     public static final int GL_R16 = com.jogamp.opengl.GL3.GL_R16;
     public static final int GL_R16_SNORM = com.jogamp.opengl.GL3.GL_R16_SNORM;
     public static final int GL_R16F = com.jogamp.opengl.GL3.GL_R16F;
+    public static final int GL_R32F = com.jogamp.opengl.GL3.GL_R32F;
     public static final int GL_R8I = com.jogamp.opengl.GL3.GL_R8I;
     public static final int GL_R8UI = com.jogamp.opengl.GL3.GL_R8UI;
     public static final int GL_R16I = com.jogamp.opengl.GL3.GL_R16I;
@@ -145,6 +146,7 @@ public interface GL {
     public static final int GL_RG16I = com.jogamp.opengl.GL3.GL_RG16I;
     public static final int GL_RG16UI = com.jogamp.opengl.GL3.GL_RG16UI;
     public static final int GL_RG16F = com.jogamp.opengl.GL3.GL_RG16F;
+    public static final int GL_RG32F = com.jogamp.opengl.GL3.GL_RG32F;
     public static final int GL_RG32I = com.jogamp.opengl.GL3.GL_RG32I;
     public static final int GL_RG32UI = com.jogamp.opengl.GL3.GL_RG32UI;
     public static final int GL_RGB8 = com.jogamp.opengl.GL3.GL_RGB8;
@@ -158,6 +160,7 @@ public interface GL {
     public static final int GL_RGB32I = com.jogamp.opengl.GL3.GL_RGB32I;
     public static final int GL_RGB32UI = com.jogamp.opengl.GL3.GL_RGB32UI;
     public static final int GL_RGB16F = com.jogamp.opengl.GL3.GL_RGB16F;
+    public static final int GL_RGB32F = com.jogamp.opengl.GL3.GL_RGB32F;
     public static final int GL_RGBA8 = com.jogamp.opengl.GL3.GL_RGBA8;
     public static final int GL_RGBA8_SNORM = com.jogamp.opengl.GL3.GL_RGBA8_SNORM;
     public static final int GL_RGBA16 = com.jogamp.opengl.GL3.GL_RGBA16;
@@ -169,6 +172,7 @@ public interface GL {
     public static final int GL_RGBA32I = com.jogamp.opengl.GL3.GL_RGBA32I;
     public static final int GL_RGBA32UI = com.jogamp.opengl.GL3.GL_RGBA32UI;
     public static final int GL_RGBA16F = com.jogamp.opengl.GL3.GL_RGBA16F;
+    public static final int GL_RGBA32F = com.jogamp.opengl.GL3.GL_RGBA32F;
     public static final int GL_SRGB8 = com.jogamp.opengl.GL3.GL_SRGB8;
     public static final int GL_SRGB8_ALPHA8 = com.jogamp.opengl.GL3.GL_SRGB8_ALPHA8;
     public static final int GL_RED = com.jogamp.opengl.GL3.GL_RED;

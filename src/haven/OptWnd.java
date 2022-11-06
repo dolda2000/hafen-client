@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.render.*;
 import java.awt.event.KeyEvent;
 
 public class OptWnd extends Window {
@@ -212,7 +213,75 @@ public class OptWnd extends Window {
 			   },
 			   dpy);
 		}
-		prev = add(new Label("Frame sync mode"), prev.pos("bl").adds(0, 5));
+		prev = add(new Label("Lighting mode"), prev.pos("bl").adds(0, 5));
+		{
+		    boolean[] done = {false};
+		    RadioGroup grp = new RadioGroup(this) {
+			    public void changed(int btn, String lbl) {
+				if(!done[0])
+				    return;
+				try {
+				    ui.setgprefs(prefs = prefs
+						 .update(null, prefs.lightmode, GSettings.LightMode.values()[btn])
+						 .update(null, prefs.maxlights, 0));
+				} catch(GSettings.SettingException e) {
+				    error(e.getMessage());
+				    return;
+				}
+				resetcf();
+			    }
+			};
+		    prev = grp.add("Global", prev.pos("bl").adds(5, 2));
+		    prev.settip("Global lighting supports fewer light sources, and scales worse in " +
+				"performance per additional light source, than zoned lighting, but " +
+				"has lower baseline performance requirements.", true);
+		    prev = grp.add("Zoned", prev.pos("bl").adds(0, 2));
+		    prev.settip("Zoned lighting supports far more light sources than global " +
+				"lighting with better performance, but may have higher performance " +
+				"requirements in cases with few light sources, and may also have " +
+				"issues on old graphics hardware.", true);
+		    grp.check(prefs.lightmode.val.ordinal());
+		    done[0] = true;
+		}
+		prev = add(new Label("Light-source limit"), prev.pos("bl").adds(0, 5).x(0));
+		{
+		    Label dpy = new Label("");
+		    int val = prefs.maxlights.val;
+		    if(val == 0) {    /* XXX: This is just ugly. */
+			if(prefs.lightmode.val == GSettings.LightMode.ZONED)
+			    val = Lighting.LightGrid.defmax;
+			else
+			    val = Lighting.SimpleLights.defmax;
+		    }
+		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
+			   prev = new HSlider(UI.scale(160), 1, 32, val / 4) {
+			       protected void added() {
+				   dpy();
+			       }
+			       void dpy() {
+				   dpy.settext(Integer.toString(this.val * 4));
+			       }
+			       public void changed() {dpy();}
+			       public void fchanged() {
+				   try {
+				       ui.setgprefs(prefs = prefs.update(null, prefs.maxlights, this.val * 4));
+				   } catch(GSettings.SettingException e) {
+				       error(e.getMessage());
+				       return;
+				   }
+				   dpy();
+			       }
+			       {
+				   settip("The light-source limit means different things depending on the " +
+					  "selected lighting mode. For Global lighting, it limits the total "+
+					  "number of light-sources globally. For Zoned lighting, it limits the " +
+					  "total number of overlapping light-sources at any point in space.",
+					  true);
+			       }
+			   },
+			   dpy);
+		}
+		prev = add(new Label("Frame sync mode"), prev.pos("bl").adds(0, 5).x(0));
 		{
 		    boolean[] done = {false};
 		    RadioGroup grp = new RadioGroup(this) {
@@ -313,14 +382,17 @@ public class OptWnd extends Window {
 	}
 
 	public void draw(GOut g) {
-	    if((curcf == null) || (ui.gprefs != curcf.prefs)) {
-		if(curcf != null)
-		    curcf.destroy();
-		curcf = add(new CPanel(ui.gprefs), 0, 0);
-		back.move(curcf.pos("bl").adds(0, 15));
-		pack();
-	    }
+	    if((curcf == null) || (ui.gprefs != curcf.prefs))
+		resetcf();
 	    super.draw(g);
+	}
+
+	private void resetcf() {
+	    if(curcf != null)
+		curcf.destroy();
+	    curcf = add(new CPanel(ui.gprefs), 0, 0);
+	    back.move(curcf.pos("bl").adds(0, 15));
+	    pack();
 	}
     }
 

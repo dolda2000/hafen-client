@@ -717,7 +717,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		if(tarea.contains(plc))
 		    score -= 100;
 		else
-		    score -= (1 - Math.pow(tarea.closest(plc).dist(plc) / sz.dist(Coord.z), 2)) * 1.5;
+		    score -= (1 - Math.pow(tarea.closest(plc).dist(plc) / sz.dist(Coord.z), 0.5)) * 1.5;
 	    }
 	    score -= (cur.dist(org) / sz.dist(Coord.z)) * 0.75;
 	    if(score > optscore) {

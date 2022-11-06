@@ -127,6 +127,19 @@ public abstract class Transform extends State {
 	return(d);
     }
 
+    public static Matrix4f makescale(Matrix4f d, float x, float y, float z) {
+	d.m[0] = x; d.m[5] = y; d.m[10] = z; d.m[15] = 1.0f;
+	d.m[ 1] = d.m[ 2] = d.m[ 3] =
+	d.m[ 4] = d.m[ 6] = d.m[ 7] =
+	d.m[ 8] = d.m[ 9] = d.m[11] =
+	d.m[12] = d.m[13] = d.m[14] = 0.0f;
+	return(d);
+    }
+
+    public static Matrix4f makescale(Matrix4f d, float s) {
+	return(makescale(d, s, s, s));
+    }
+
     public static Matrix4f rxinvert(Matrix4f m) {
 	/* This assumes that m is merely a composition of rotations
 	 * and translations. */

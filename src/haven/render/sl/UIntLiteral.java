@@ -24,36 +24,20 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render.sl;
 
-import java.awt.Color;
-import haven.render.*;
+public class UIntLiteral extends Expression {
+    public static final UIntLiteral z = new UIntLiteral(0);
+    public static final UIntLiteral u = new UIntLiteral(1);
+    public final int val;
 
-public class DirLight extends Light {
-    public float[] dir;
-
-    public DirLight(FColor col, Coord3f dir) {
-	super(col);
-	this.dir = dir.norm().to4a(0.0f);
+    public UIntLiteral(int val) {
+	this.val = val;
     }
 
-    public DirLight(Color col, Coord3f dir) {
-	super(col);
-	this.dir = dir.norm().to4a(0.0f);
-    }
+    public void walk(Walker w) {}
 
-    public DirLight(FColor amb, FColor dif, FColor spc, Coord3f dir) {
-	super(amb, dif, spc);
-	this.dir = dir.norm().to4a(0.0f);
-    }
-
-    public DirLight(Color amb, Color dif, Color spc, Coord3f dir) {
-	super(amb, dif, spc);
-	this.dir = dir.norm().to4a(0.0f);
-    }
-
-    public Object[] params(GroupPipe state) {
-	float[] dir = Homo3D.camxf(state).mul(Homo3D.locxf(state)).mul4(this.dir);
-	return(new Object[] {amb, dif, spc, dir, 0f, 0f, 0f, 0f});
+    public void output(Output out) {
+	out.write(Integer.toString(val) + "U");
     }
 }

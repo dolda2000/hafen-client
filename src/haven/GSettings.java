@@ -207,10 +207,24 @@ public class GSettings extends State implements Serializable {
 	};
 
     public EnumSetting<JOGLPanel.SyncMode> syncmode = new EnumSetting<JOGLPanel.SyncMode>("syncmode", JOGLPanel.SyncMode.class) {
-	public JOGLPanel.SyncMode defval() {
-	    return(JOGLPanel.SyncMode.FRAME);
-	}
-    };
+	    public JOGLPanel.SyncMode defval() {
+		return(JOGLPanel.SyncMode.FRAME);
+	    }
+	};
+
+    public static enum LightMode {
+	SIMPLE, ZONED
+    }
+    public EnumSetting<LightMode> lightmode = new EnumSetting<LightMode>("lighting", LightMode.class) {
+	    public LightMode defval() {return(LightMode.ZONED);}
+	};
+    public IntSetting maxlights = new IntSetting("maxlights") {
+	    public Integer defval() {return(0);}
+	    public void validate(Environment env, Integer val) {
+		if(val < 0)
+		    throw(new SettingException("Must support at least one light source."));
+	    }
+	};
 
     public Setting<?> find(String name) {
 	try {

@@ -24,36 +24,31 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render.sl;
 
-import java.awt.Color;
-import haven.render.*;
+public class UVec3Cons extends Expression {
+    public static final UVec3Cons z = new UVec3Cons(IntLiteral.z, IntLiteral.z, IntLiteral.z);
+    public static final UVec3Cons u = new UVec3Cons(IntLiteral.u, IntLiteral.u, IntLiteral.u);
+    public final Expression[] els;
 
-public class DirLight extends Light {
-    public float[] dir;
-
-    public DirLight(FColor col, Coord3f dir) {
-	super(col);
-	this.dir = dir.norm().to4a(0.0f);
+    public UVec3Cons(Expression... els) {
+	if((els.length < 1) || (els.length > 3))
+	    throw(new RuntimeException("Invalid number of arguments for uvec3: " + els.length));
+	this.els = els;
     }
 
-    public DirLight(Color col, Coord3f dir) {
-	super(col);
-	this.dir = dir.norm().to4a(0.0f);
+    public void walk(Walker w) {
+	for(Expression el : els)
+	    w.el(el);
     }
 
-    public DirLight(FColor amb, FColor dif, FColor spc, Coord3f dir) {
-	super(amb, dif, spc);
-	this.dir = dir.norm().to4a(0.0f);
-    }
-
-    public DirLight(Color amb, Color dif, Color spc, Coord3f dir) {
-	super(amb, dif, spc);
-	this.dir = dir.norm().to4a(0.0f);
-    }
-
-    public Object[] params(GroupPipe state) {
-	float[] dir = Homo3D.camxf(state).mul(Homo3D.locxf(state)).mul4(this.dir);
-	return(new Object[] {amb, dif, spc, dir, 0f, 0f, 0f, 0f});
+    public void output(Output out) {
+	out.write("uvec3(");
+	els[0].output(out);
+	for(int i = 1; i < els.length; i++) {
+	    out.write(", ");
+	    els[i].output(out);
+	}
+	out.write(")");
     }
 }

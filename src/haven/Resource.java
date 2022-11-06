@@ -245,7 +245,20 @@ public class Resource implements Serializable {
 					"lpt0", "lpt1", "lpt2", "lpt3", "lpt4",
 					"lpt5", "lpt6", "lpt7", "lpt8", "lpt9"));
 	public static final boolean windows = System.getProperty("os.name", "").startsWith("Windows");
+	private static final boolean[] winsafe;
 	public final Path base;
+
+	static {
+	    boolean[] buf = new boolean[128];
+	    String safe = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_@";
+	    for(int i = 0; i < safe.length(); i++)
+		buf[safe.charAt(i)] = true;
+	    winsafe = buf;
+	}
+
+	public static boolean winsafechar(char c) {
+	    return((c >= winsafe.length) || winsafe[c]);
+	}
 
 	public FileSource(Path base) {
 	    this.base = base;

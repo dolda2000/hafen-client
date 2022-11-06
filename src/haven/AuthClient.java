@@ -29,9 +29,12 @@ package haven;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import javax.net.ssl.*;
+import java.security.cert.*;
 import java.security.MessageDigest;
 
 public class AuthClient implements Closeable {
+    public static final Config.Variable<Boolean> strictcert = Config.Variable.propb("haven.auth-cert-strict", true);
     private static final SslHelper ssl;
     private final Socket sk;
     private final InputStream skin;
@@ -47,9 +50,57 @@ public class AuthClient implements Closeable {
     }
 
     public AuthClient(String host, int port) throws IOException {
-	sk = ssl.connect(host, port);
-	skin = sk.getInputStream();
-	skout = sk.getOutputStream();
+	boolean fin = false;
+	SSLSocket sk = ssl.connect(host, port);
+	try {
+	    if(strictcert.get())
+		checkname(host, sk.getSession());
+	    this.sk = sk;
+	    skin = sk.getInputStream();
+	    skout = sk.getOutputStream();
+	    fin = true;
+	} finally {
+	    if(!fin)
+		sk.close();
+	}
+    }
+
+    private void checkname(String host, SSLSession sess) throws IOException {
+	Certificate peer = sess.getPeerCertificates()[0];
+	String dns = null;
+	InetAddress ip = null;
+	try {
+	    ip = Utils.inet_pton(host);
+	} catch(IllegalArgumentException e) {
+	    dns = host;
+	}
+	if(peer instanceof X509Certificate) {
+	    X509Certificate xc = (X509Certificate)peer;
+	    try {
+		Collection<List<?>> altnames = xc.getSubjectAlternativeNames();
+		if(altnames == null)
+		    throw(new SSLException("Unnamed authentication server certificate"));
+		for(List<?> name : altnames) {
+		    int type = ((Number)name.get(0)).intValue();
+		    if((type == 2) && (dns != null)) {
+			if(Utils.eq(name.get(1), dns))
+			    return;
+		    } else if((type == 7) && (ip != null)) {
+			try {
+			    if(Utils.eq(Utils.inet_pton((String)name.get(1)), ip))
+				return;
+			} catch(IllegalArgumentException e) {
+			}
+		    }
+		}
+	    } catch(CertificateException e) {
+		throw(new SSLException("Illegal authentication server certificate", e));
+	    }
+	    throw(new SSLException("Authentication server name mismatch"));
+	} else {
+	    throw(new SSLException("Unknown certificate type, cannot validate: " + peer.getClass().getName()));
+	}
+	// throw(new AssertionError("unreachable"));
     }
 
     public SocketAddress address() {

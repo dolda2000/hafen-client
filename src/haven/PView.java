@@ -37,12 +37,12 @@ public abstract class PView extends Widget {
     public final RenderTree.Slot basic;
     public Texture2D fragcol = null;
     public Texture2D depth = null;
+    protected final Light.LightList lights = new Light.LightList();
     protected Environment env = null;
     protected InstanceList instancer;
     protected DrawList back = null;
     protected Coord rsz;
     private final Map<Object, Pipe.Op> basicstates = new IdentityHashMap<>();
-    private final Light.LightList lights = new Light.LightList();
     private ActAudio audio;
     private final ScreenList list2d = new ScreenList();
     private final TickList ticklist = new TickList();
