@@ -37,6 +37,9 @@ import static haven.render.sl.Type.*;
 
 public class ShadowMap extends State {
     public final static Slot<ShadowMap> smap = new Slot<ShadowMap>(Slot.Type.DRAW, ShadowMap.class);
+    public final static State.StandAlone maskshadow = new State.StandAlone(Slot.Type.GEOM) {
+	    public ShaderMacro shader() {return(null);}
+	};
     public final Texture2D lbuf;
     public final Texture2D.Sampler2D lsamp;
     private final Projection lproj;
@@ -48,6 +51,11 @@ public class ShadowMap extends State {
 							 0.0f, 0.5f, 0.0f, 0.5f,
 							 0.0f, 0.0f, 0.5f, 0.5f,
 							 0.0f, 0.0f, 0.0f, 1.0f);
+
+    @Material.ResName("maskshadow")
+    public static class $maskshadow implements Material.ResCons {
+	public Pipe.Op cons(Resource res, Object... args) {return(maskshadow);}
+    }
 
     public ShadowMap(Coord res, float size, float depth, float dthr) {
 	lbuf = new Texture2D(res, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null);
@@ -129,7 +137,7 @@ public class ShadowMap extends State {
 	}
 
 	public void add(Slot<? extends Rendered> slot) {
-	    if(slot.state().get(Light.lighting) == null)
+	    if((slot.state().get(Light.lighting) == null) || (slot.state().get(maskshadow.slot) != null))
 		return;
 	    Shadowslot ns = new Shadowslot(slot);
 	    if(back != null)
@@ -192,10 +200,10 @@ public class ShadowMap extends State {
 	}
 
 	public void draw(Render out) {
-	    if((back == null) || !back.compatible(out.env())) {
+	    if((back == null) || !out.env().compatible(back)) {
 		if(back != null)
 		    back.dispose();
-		back = out.env().drawlist();
+		back = out.env().drawlist().desc("shadow-list: " + this);
 		back.asyncadd(this, Rendered.class);
 	    }
 	    back.draw(out);
@@ -215,9 +223,12 @@ public class ShadowMap extends State {
 	return(ret);
     }
 
+    public boolean haspos() {
+	return(lcam != null);
+    }
+
     public ShadowMap setpos(Coord3f base, Coord3f dir) {
-	DirCam lcam = new DirCam();
-	lcam.update(base, dir);
+	Camera lcam = Camera.dir(base, dir);
 	if(Utils.eq(this.lcam, lcam))
 	    return(this);
 	ShadowMap ret = new ShadowMap(this);
@@ -227,12 +238,15 @@ public class ShadowMap extends State {
     }
 
     public void update(Render out, ShadowList data) {
-	Pipe bstate = new BufPipe().prep(curbasic);
+	/* XXX: FrameInfo, and potentially others, should quite
+	 * arguably be inherited from some parent context instead. */
+	Pipe.Op basic = Pipe.Op.compose(curbasic, new FrameInfo());
+	Pipe bstate = new BufPipe().prep(basic);
 	out.clear(bstate, 1.0);
-	data.basic(curbasic);
+	data.basic(basic);
 	data.draw(out);
 	if(false)
-	    GOut.getimage(out, lbuf.image(0), Debug::dumpimage);
+	    GOut.debugimage(out, lbuf.image(0), new VectorFormat(1, NumberFormat.DEPTH), false, Debug::dumpimage);
     }
 
     public void apply(Pipe buf) {
@@ -243,7 +257,9 @@ public class ShadowMap extends State {
 	public static final Uniform txf = new Uniform(MAT4, p -> {
 		ShadowMap sm = p.get(smap);
 		Matrix4f cm = Transform.rxinvert(p.get(Homo3D.cam).fin(Matrix4f.id));
-		Matrix4f txf = texbias.mul(sm.lproj.fin(Matrix4f.id)).mul(sm.lcam.fin(Matrix4f.id)).mul(cm);
+		Matrix4f proj = sm.lproj.fin(Matrix4f.id);
+		Matrix4f lcam = sm.lcam.fin(Matrix4f.id);
+		Matrix4f txf = texbias.mul(proj).mul(lcam).mul(cm);
 		return(txf);
 	    }, smap, Homo3D.cam);
 	public static final Uniform sl = new Uniform(INT, p -> {

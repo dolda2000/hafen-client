@@ -28,6 +28,7 @@ package haven.render.gl;
 
 import java.nio.*;
 import java.util.function.*;
+import java.util.concurrent.atomic.*;
 import com.jogamp.opengl.*;
 import haven.*;
 import haven.render.*;
@@ -39,11 +40,13 @@ public class GLRender implements Render, Disposable {
     BufferBGL gl = null;
     final Applier state;
     Applier init = null;
-    int dispseq = 0;
+    private final GLEnvironment.Sequence seq;
+    private final AtomicBoolean disposed = new AtomicBoolean(false);
 
     GLRender(GLEnvironment env) {
 	this.env = env;
 	this.state = new Applier(env);
+	this.seq = env.new Sequence(this);
     }
 
     public GLEnvironment env() {return(env);}
@@ -119,6 +122,10 @@ public class GLRender implements Render, Disposable {
     public static int glsamplertarget(Type type) {
 	if(type == Type.SAMPLER2D)
 	    return(GL.GL_TEXTURE_2D);
+	else if(type == Type.ISAMPLER2D)
+	    return(GL.GL_TEXTURE_2D);
+	else if(type == Type.USAMPLER2D)
+	    return(GL.GL_TEXTURE_2D);
 	else if(type == Type.SAMPLER2DMS)
 	    return(GL3.GL_TEXTURE_2D_MULTISAMPLE);
 	else if(type == Type.SAMPLER2DMSARRAY)
@@ -150,13 +157,17 @@ public class GLRender implements Render, Disposable {
 	if(sub.env != this.env)
 	    throw(new IllegalArgumentException());
 	if(sub.gl == null) {
-	    sub.env.sequnreg(sub);
+	    sub.dispose();
 	    return;
 	}
 	state.apply(this.gl, sub.init);
 	BGL gl = gl();
 	gl.bglCallList(sub.gl);
-	gl.bglSubmit(rgl -> sub.env.sequnreg(sub));
+	gl.bglSubmit(new BGL.Request() {
+		public void run(GL3 gl) {abort();}
+		public void abort() {sub.dispose();}
+	    });
+	gl.bglSubmit(rgl -> sub.dispose());
 	state.apply(null, sub.state);
     }
 
@@ -205,7 +216,7 @@ public class GLRender implements Render, Disposable {
 			    }
 			}
 		    }
-		    gl.glBufferData(GL.GL_ARRAY_BUFFER, data.va.bufs[sbuf].size(), ByteBuffer.wrap(((HeapBuffer)bufs[sbuf]).buf), GL3.GL_STREAM_DRAW);
+		    gl.glBufferData(GL.GL_ARRAY_BUFFER, data.va.bufs[sbuf].size(), ((HeapBuffer)bufs[sbuf]).buf, GL3.GL_STREAM_DRAW);
 		    offsets[sbuf] = 0;
 		} else {
 		    int sz = 0;
@@ -252,7 +263,7 @@ public class GLRender implements Render, Disposable {
 	    } else {
 		if(data.ind.usage == EPHEMERAL) {
 		    Vao0State.apply(this.env, gl, state, env.tempindex.get());
-		    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, data.ind.size(), ByteBuffer.wrap(((HeapBuffer)indo).buf), GL3.GL_STREAM_DRAW);
+		    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, data.ind.size(), ((HeapBuffer)indo).buf, GL3.GL_STREAM_DRAW);
 		} else {
 		    throw(new NotImplemented("non-ephemeral index arrays"));
 		}
@@ -316,7 +327,7 @@ public class GLRender implements Render, Disposable {
 		FillBuffers.Array data = (FillBuffers.Array)fill.fill(buf, env);
 		Vao0State.apply(this.env, this.gl, state, (GLBuffer)env.prepare(ibuf));
 		BGL gl = gl();
-		gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
+		gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), data.data(), GL.GL_STATIC_DRAW);
 		break;
 	    }
 	    case STREAM: {
@@ -339,7 +350,7 @@ public class GLRender implements Render, Disposable {
 		FillBuffers.Array data = (FillBuffers.Array)fill.fill(buf, env);
 		VboState.apply(this.gl, state, (GLBuffer)env.prepare(vbuf));
 		BGL gl = gl();
-		gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), ByteBuffer.wrap(data.data), GL.GL_STATIC_DRAW);
+		gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), data.data(), GL.GL_STATIC_DRAW);
 		break;
 	    }
 	    case STREAM: {
@@ -354,6 +365,60 @@ public class GLRender implements Render, Disposable {
 	    }
 	    default:
 		throw(new NotImplemented("update " + vbuf.usage + " vertex buffer"));
+	    }
+	} else if(buf instanceof Texture.Image) {
+	    Texture.Image img = (Texture.Image)buf;
+	    /* XXX: Textures marked for streaming usage should
+	     * probably support stream-buffers. Luckily, there are
+	     * currently no textures marked as such. */
+	    ByteBuffer data = ((FillBuffers.Array)fill.fill(buf, env)).data();
+	    if(img.tex instanceof Texture2D) {
+		GLTexture.Tex2D tex = env.prepare((Texture2D)img.tex);
+		BGL gl = gl();
+		state.apply(gl, Pipe.nil);
+		gl.glActiveTexture(GL.GL_TEXTURE0);
+		tex.bind(gl);
+		gl.glTexImage2D(GL.GL_TEXTURE_2D, img.level, GLTexture.texifmt(img.tex), img.w, img.h, 0,
+				GLTexture.texefmt1(img.tex.ifmt, img.tex.efmt, img.tex.eperm),
+				GLTexture.texefmt2(img.tex.ifmt, img.tex.efmt),
+				data);
+		tex.unbind(gl);
+	    } else if(img.tex instanceof Texture3D) {
+		GLTexture.Tex3D tex = env.prepare((Texture3D)img.tex);
+		BGL gl = gl();
+		state.apply(gl, Pipe.nil);
+		gl.glActiveTexture(GL.GL_TEXTURE0);
+		tex.bind(gl);
+		gl.glTexImage3D(GL3.GL_TEXTURE_3D, img.level, GLTexture.texifmt(img.tex), img.w, img.h, img.d, 0,
+				GLTexture.texefmt1(img.tex.ifmt, img.tex.efmt, img.tex.eperm),
+				GLTexture.texefmt2(img.tex.ifmt, img.tex.efmt),
+				data);
+		tex.unbind(gl);
+	    } else if(img.tex instanceof Texture2DArray) {
+		TextureArray.ArrayImage<?> aimg = (TextureArray.ArrayImage<?>)buf;
+		GLTexture.Tex2DArray tex = env.prepare((Texture2DArray)img.tex);
+		BGL gl = gl();
+		state.apply(gl, Pipe.nil);
+		gl.glActiveTexture(GL.GL_TEXTURE0);
+		tex.bind(gl);
+		gl.glTexSubImage3D(GL3.GL_TEXTURE_2D_ARRAY, img.level,
+				   0, 0, aimg.layer, img.w, img.h, 1,
+				   GLTexture.texefmt1(img.tex.ifmt, img.tex.efmt, img.tex.eperm),
+				   GLTexture.texefmt2(img.tex.ifmt, img.tex.efmt),
+				   data);
+		tex.unbind(gl);
+	    } else if(img.tex instanceof TextureCube) {
+		TextureCube.CubeImage cimg = (TextureCube.CubeImage)buf;
+		GLTexture.TexCube tex = env.prepare((TextureCube)img.tex);
+		BGL gl = gl();
+		state.apply(gl, Pipe.nil);
+		gl.glActiveTexture(GL.GL_TEXTURE0);
+		tex.bind(gl);
+		gl.glTexImage2D(GLTexture.texface(cimg.face), img.level, GLTexture.texifmt(img.tex), img.w, img.h, 0,
+				GLTexture.texefmt1(img.tex.ifmt, img.tex.efmt, img.tex.eperm),
+				GLTexture.texefmt2(img.tex.ifmt, img.tex.efmt),
+				data);
+		tex.unbind(gl);
 	    }
 	} else {
 	    throw(new NotImplemented("updating buffer of type: " + buf.getClass().getName()));
@@ -375,7 +440,7 @@ public class GLRender implements Render, Disposable {
 	    GLBuffer glbuf = (ro instanceof StreamBuffer) ? ((StreamBuffer)ro).rbuf : (GLBuffer) ro;
 	    Vao0State.apply(this.env, this.gl, state, glbuf);
 	    BGL gl = gl();
-	    gl.glBufferSubData(GL.GL_ELEMENT_ARRAY_BUFFER, from, to - from, ByteBuffer.wrap(data.data));
+	    gl.glBufferSubData(GL.GL_ELEMENT_ARRAY_BUFFER, from, to - from, data.data());
 	} else if(buf instanceof VertexArray.Buffer) {
 	    VertexArray.Buffer vbuf = (VertexArray.Buffer)buf;
 	    FillBuffers.Array data = (FillBuffers.Array)fill.fill(buf, env, from, to);
@@ -383,13 +448,15 @@ public class GLRender implements Render, Disposable {
 	    GLBuffer glbuf = (ro instanceof StreamBuffer) ? ((StreamBuffer)ro).rbuf : (GLBuffer) ro;
 	    VboState.apply(this.gl, state, glbuf);
 	    BGL gl = gl();
-	    gl.glBufferSubData(GL.GL_ARRAY_BUFFER, from, to - from, ByteBuffer.wrap(data.data));
+	    gl.glBufferSubData(GL.GL_ARRAY_BUFFER, from, to - from, data.data());
 	} else {
 	    throw(new NotImplemented("updating buffer of type: " + buf.getClass().getName()));
 	}
     }
 
-    public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback) {
+    public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, ByteBuffer dstbuf, Consumer<ByteBuffer> callback) {
+	if(dstbuf.remaining() < fmt.size() * area.area())
+	    throw(new IllegalArgumentException("destination buffer needs at least " + fmt.size() * area.area() + " bytes, has only " + dstbuf.remaining()));
 	state.apply(this.gl, pipe);
 	GLProgram prog = state.prog();
 	FboState fc = (FboState)state.glstates[FboState.slot];
@@ -403,12 +470,6 @@ public class GLRender implements Render, Disposable {
 	if(n < 0)
 	    throw(new IllegalArgumentException(String.format("%s is not on current framebuffer", buf)));
 	BGL gl = gl();
-	Area wnd;
-	if(fc.fbo == null)
-	    wnd = env.wnd;
-	else
-	    wnd = Area.sized(Coord.z, fc.fbo.sz);
-	int gly = wnd.br.y - area.br.y;
 	Coord sz = area.sz();
 
 	/*
@@ -428,39 +489,33 @@ public class GLRender implements Render, Disposable {
 	gl.glBufferData(GL3.GL_PIXEL_PACK_BUFFER, fmt.size() * area.area(), null, GL3.GL_STREAM_READ);
 	gl.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
 	gl.glReadBuffer(fc.dbufs[n]);
-	gl.glReadPixels(area.ul.x, gly, sz.x, sz.y, GLTexture.texefmt1(fmt, fmt, null), GLTexture.texefmt2(fmt, fmt), 0);
-	gl.bglCreate(new GLFence(env, cgl -> {
+	gl.glReadPixels(area.ul.x, area.ul.y, sz.x, sz.y, GLTexture.texefmt1(fmt, fmt, null), GLTexture.texefmt2(fmt, fmt), 0);
+	gl.bglCreate(new GLFence(env, new Abortable.Consumer<GL3>() {
+		public void accept(GL3 cgl) {
 		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, pbo.glid());
-		    ByteBuffer data = Utils.mkbbuf(fmt.size() * area.area()).order(ByteOrder.nativeOrder());
-		    cgl.glGetBufferSubData(GL3.GL_PIXEL_PACK_BUFFER, 0, fmt.size() * area.area(), data);
+		    cgl.glGetBufferSubData(GL3.GL_PIXEL_PACK_BUFFER, 0, fmt.size() * area.area(), dstbuf);
 		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, 0);
 		    pbo.dispose();
 		    GLException.checkfor(cgl, env);
-		    data.rewind();
-		    /* XXX: It's not particularly nice to do the
-		     * flipping on the dispatch thread, but OpenGL
-		     * does not seem to offer any GPU-assisted
-		     * flipping. */
-		    int el = fmt.size();
-		    for(int y = 0; y < sz.y / 2; y++) {
-			int to = y * sz.x * el, bo = (sz.y - y - 1) * sz.x * el;
-			for(int o = 0; o < sz.x * el; o++, to++, bo++) {
-			    byte t = data.get(to);
-			    data.put(to, data.get(bo));
-			    data.put(bo, t);
-			}
-		    }
-		    callback.accept(data);
-	}));
+		    env.callback(() -> callback.accept(dstbuf));
+		}
+
+		public void abort() {
+		    if(callback instanceof Abortable)
+			env.callback(() -> ((Abortable)callback).abort());
+		}
+	    }));
 	gl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, null);
     }
 
-    public void pget(Texture.Image img, VectorFormat fmt, Consumer<ByteBuffer> callback) {
-	BGL gl = gl();
+    public void pget(Texture.Image img, VectorFormat fmt, ByteBuffer dstbuf, Consumer<ByteBuffer> callback) {
+	final int dsz = fmt.size() * img.w * img.h * img.d;
+	if(dstbuf.remaining() < dsz)
+	    throw(new IllegalArgumentException("destination buffer needs at least " + dsz + " bytes, has only " + dstbuf.remaining()));
 
+	BGL gl = gl();
 	state.apply(gl, new Applier(env));
 	GLBuffer pbo = new GLBuffer(env);
-	final int dsz = fmt.size() * img.w * img.h * img.d;
 	gl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, pbo);
 	gl.glBufferData(GL3.GL_PIXEL_PACK_BUFFER, dsz, null, GL3.GL_STREAM_READ);
 	gl.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
@@ -479,40 +534,36 @@ public class GLRender implements Render, Disposable {
 	} else {
 	    throw(new NotImplemented("texture-get for " + img.tex.getClass()));
 	}
-	gl.bglCreate(new GLFence(env, cgl -> {
+	gl.bglCreate(new GLFence(env, new Abortable.Consumer<GL3>() {
+		public void accept(GL3 cgl) {
 		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, pbo.glid());
-		    ByteBuffer data = Utils.mkbbuf(dsz).order(ByteOrder.nativeOrder());
-		    cgl.glGetBufferSubData(GL3.GL_PIXEL_PACK_BUFFER, 0, dsz, data);
+		    cgl.glGetBufferSubData(GL3.GL_PIXEL_PACK_BUFFER, 0, dsz, dstbuf);
 		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, 0);
 		    pbo.dispose();
 		    GLException.checkfor(cgl, env);
-		    data.rewind();
-		    /* XXX: It's not particularly nice to do the
-		     * flipping on the dispatch thread, but OpenGL
-		     * does not seem to offer any GPU-assisted
-		     * flipping. */
-		    if(img.d == 1) {
-			int el = fmt.size();
-			for(int y = 0; y < img.h / 2; y++) {
-			    int to = y * img.w * el, bo = (img.h - y - 1) * img.w * el;
-			    for(int o = 0; o < img.w * el; o++, to++, bo++) {
-				byte t = data.get(to);
-				data.put(to, data.get(bo));
-				data.put(bo, t);
-			    }
-			}
-		    }
-		    callback.accept(data);
-	}));
+		    env.callback(() -> callback.accept(dstbuf));
+		}
+
+		public void abort() {
+		    if(callback instanceof Abortable)
+			env.callback(() -> ((Abortable)callback).abort());
+		}
+	    }));
 	gl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, null);
     }
 
     public void timestamp(Consumer<Long> callback) {
-	gl().bglCreate(new GLTimestamp(env, callback));
+	gl().bglCreate(new GLTimestamp(env, ts -> env.callback(() -> callback.accept(ts))));
     }
 
     public void fence(Runnable callback) {
-	gl().bglSubmit(g -> callback.run());
+	gl().bglSubmit(new BGL.Request() {
+		public void run(GL3 g) {env.callback(callback);}
+		public void abort() {
+		    if(callback instanceof Abortable)
+			env.callback(() -> ((Abortable)callback).abort());
+		}
+	    });
     }
 
     public void submit(BGL.Request req) {
@@ -520,13 +571,6 @@ public class GLRender implements Render, Disposable {
     }
 
     public void dispose() {
-	env.sequnreg(this);
-    }
-
-    protected void finalize() {
-	if(dispseq != 0) {
-	    Warning.warn("warning: gl-render was leaked without being disposed");
-	    dispose();
-	}
+	seq.dispose();
     }
 }

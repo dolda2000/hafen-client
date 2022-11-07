@@ -51,4 +51,8 @@ public class ClickData {
     public Object[] clickargs() {
 	return(ci.clickargs(this));
     }
+
+    public String toString() {
+	return(String.format("#<clickdata %s %s>", ci, slot));
+    }
 }

@@ -1,6 +1,7 @@
 package haven;
 
 import java.util.*;
+import java.awt.image.BufferedImage;
 import java.awt.event.KeyEvent;
 import haven.MenuGrid.Pagina;
 import haven.MenuGrid.PagButton;
@@ -16,8 +17,6 @@ public class MenuSearch extends Window {
 
     public class Result {
 	public final PagButton btn;
-	private Text rname;
-	private Tex rimg;
 
 	private Result(PagButton btn) {
 	    this.btn = btn;
@@ -25,56 +24,53 @@ public class MenuSearch extends Window {
     }
 
     private static final Text.Foundry elf = CharWnd.attrf;
-    private static final int elh = elf.height() + 2;
-    public class Results extends Listbox<Result> {
-	private Results(int w, int h) {
-	    super(w, h, elh);
+    private static final int elh = elf.height() + UI.scale(2);
+    public class Results extends SListBox<Result, Widget> {
+	private Results(Coord sz) {
+	    super(sz, elh);
 	}
 
-	protected void drawbg(GOut g) {}
-	protected Result listitem(int i) {return(filtered.get(i));}
-	protected int listitems() {return(filtered.size());}
+	protected List<Result> items() {return(filtered);}
 
-	protected void drawitem(GOut g, Result el, int idx) {
-	    g.chcolor((((idx % 2) == 0) ? CharWnd.every : CharWnd.other));
-	    g.frect(Coord.z, g.sz());
-	    g.chcolor();
-	    if(el.rname == null)
-		el.rname = elf.render(el.btn.name());
-	    if(el.rimg == null)
-		el.rimg = new TexI(PUtils.convolvedown(el.btn.img(), new Coord(elh, elh), CharWnd.iconfilter));
-	    g.image(el.rimg, Coord.z);
-	    g.image(el.rname.tex(), new Coord(elh + 5, 0));
-	}
+	protected Widget makeitem(Result el, int idx, Coord sz) {
+	    return(new ItemWidget<Result>(this, sz, el) {
+		    {
+			add(new IconText(sz) {
+				protected BufferedImage img() {return(item.btn.img());}
+				protected String text() {return(el.btn.name());}
+				protected int margin() {return(0);}
+				protected Text.Foundry foundry() {return(elf);}
+			    }, Coord.z);
+		    }
 
-	private Result prevsel = null;
-	private double lastcl = 0;
-	public boolean mousedown(Coord c, int button) {
-	    super.mousedown(c, button);
-	    double now = Utils.rtime();
-	    if(prevsel == sel) {
-		if((sel != null) && (now - lastcl < 0.5))
-		    menu.use(sel.btn, false);
-	    } else {
-		prevsel = sel;
-	    }
-	    lastcl = now;
-	    return(true);
+		    private double lastcl = 0;
+		    public boolean mousedown(Coord c, int button) {
+			boolean psel = sel == item;
+			super.mousedown(c, button);
+			double now = Utils.rtime();
+			if(psel) {
+			    if(now - lastcl < 0.5)
+				menu.use(item.btn, new MenuGrid.Interaction(1, ui.modflags()), false);
+			}
+			lastcl = now;
+			return(true);
+		    }
+		});
 	}
     }
 
     public MenuSearch(MenuGrid menu) {
 	super(Coord.z, "Action search");
 	this.menu = menu;
-	rls = add(new Results(250, 25), Coord.z);
-	sbox = add(new TextEntry(250, "") {
+	rls = add(new Results(UI.scale(250, 500)), Coord.z);
+	sbox = add(new TextEntry(UI.scale(250), "") {
 		protected void changed() {
 		    refilter();
 		}
 
 		public void activate(String text) {
 		    if(rls.sel != null)
-			menu.use(rls.sel.btn, false);
+			menu.use(rls.sel.btn, new MenuGrid.Interaction(1, ui.modflags()), false);
 		    if(!ui.modctrl)
 			MenuSearch.this.wdgmsg("close");
 		}
@@ -85,16 +81,16 @@ public class MenuSearch extends Window {
 
     private void refilter() {
 	List<Result> found = new ArrayList<>();
-	String needle = sbox.text.toLowerCase();
+	String needle = sbox.text().toLowerCase();
 	for(Result res : this.cur) {
 	    if(res.btn.name().toLowerCase().indexOf(needle) >= 0)
 		found.add(res);
 	}
 	this.filtered = found;
-	int idx = rls.find(rls.sel);
+	int idx = filtered.indexOf(rls.sel);
 	if(idx < 0) {
-	    if(rls.listitems() > 0) {
-		rls.change(rls.listitem(0));
+	    if(filtered.size() > 0) {
+		rls.change(filtered.get(0));
 		rls.display(0);
 	    }
 	} else {
@@ -155,22 +151,23 @@ public class MenuSearch extends Window {
 	    setroot(menu.cur);
 	if(recons)
 	    updlist();
+	super.tick(dt);
     }
 
     public boolean keydown(KeyEvent ev) {
 	if(ev.getKeyCode() == KeyEvent.VK_DOWN) {
-	    int idx = rls.find(rls.sel);
-	    if((idx >= 0) && (idx < rls.listitems() - 1)) {
+	    int idx = filtered.indexOf(rls.sel);
+	    if((idx >= 0) && (idx < filtered.size() - 1)) {
 		idx++;
-		rls.change(rls.listitem(idx));
+		rls.change(filtered.get(idx));
 		rls.display(idx);
 	    }
 	    return(true);
 	} else if(ev.getKeyCode() == KeyEvent.VK_UP) {
-	    int idx = rls.find(rls.sel);
+	    int idx = filtered.indexOf(rls.sel);
 	    if(idx > 0) {
 		idx--;
-		rls.change(rls.listitem(idx));
+		rls.change(filtered.get(idx));
 		rls.display(idx);
 	    }
 	    return(true);

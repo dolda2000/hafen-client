@@ -27,7 +27,6 @@
 package haven;
 
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.image.BufferedImage;
 import static haven.PUtils.*;
 
@@ -36,7 +35,7 @@ public class Window extends Widget implements DTarget {
     public static final Tex bgl = Resource.loadtex("gfx/hud/wnd/lg/bgl");
     public static final Tex bgr = Resource.loadtex("gfx/hud/wnd/lg/bgr");
     public static final Tex cl = Resource.loadtex("gfx/hud/wnd/lg/cl");
-    public static final TexI cm = new TexI(Resource.loadimg("gfx/hud/wnd/lg/cm"));
+    public static final TexI cm = new TexI(Resource.loadsimg("gfx/hud/wnd/lg/cm"));
     public static final Tex cr = Resource.loadtex("gfx/hud/wnd/lg/cr");
     public static final Tex tm = Resource.loadtex("gfx/hud/wnd/lg/tm");
     public static final Tex tr = Resource.loadtex("gfx/hud/wnd/lg/tr");
@@ -46,17 +45,22 @@ public class Window extends Widget implements DTarget {
     public static final Tex bl = Resource.loadtex("gfx/hud/wnd/lg/bl");
     public static final Tex bm = Resource.loadtex("gfx/hud/wnd/lg/bm");
     public static final Tex br = Resource.loadtex("gfx/hud/wnd/lg/br");
-    public static final Coord tlm = new Coord(18, 30), brm = new Coord(13, 22), cpo = new Coord(36, 17);
+    public static final Tex sizer = Resource.loadtex("gfx/hud/wnd/sizer");
+    public static final Coord tlm = UI.scale(18, 30);
+    public static final Coord brm = UI.scale(13, 22);
+    public static final Coord cpo = UI.rscale(36, 16.4);
     public static final int capo = 7, capio = 2;
-    public static final Coord dlmrgn = new Coord(23, 14), dsmrgn = new Coord(9, 9);
+    public static final Coord dlmrgn = UI.scale(23, 14);
+    public static final Coord dsmrgn = UI.scale(9, 9);
     public static final BufferedImage ctex = Resource.loadimg("gfx/hud/fonttex");
     public static final Text.Furnace cf = new Text.Imager(new PUtils.TexFurn(new Text.Foundry(Text.fraktur, 15).aa(true), ctex)) {
 	    protected BufferedImage proc(Text text) {
-		return(rasterimg(blurmask2(text.img.getRaster(), 1, 1, Color.BLACK)));
+		// return(rasterimg(blurmask2(text.img.getRaster(), 1, 1, Color.BLACK)));
+		return(rasterimg(blurmask2(text.img.getRaster(), UI.rscale(0.75), UI.rscale(1.0), Color.BLACK)));
 	    }
 	};
     public static final IBox wbox = new IBox("gfx/hud/wnd", "tl", "tr", "bl", "br", "extvl", "extvr", "extht", "exthb") {
-	    final Coord co = new Coord(3, 3), bo = new Coord(2, 2);
+	    final Coord co = UI.scale(3, 3), bo = UI.scale(2, 2);
 
 	    public Coord btloff() {return(super.btloff().sub(bo));}
 	    public Coord ctloff() {return(super.ctloff().sub(co));}
@@ -64,9 +68,9 @@ public class Window extends Widget implements DTarget {
 	    public Coord cisz() {return(super.cisz().sub(co.mul(2)));}
 	};
     private static final BufferedImage[] cbtni = new BufferedImage[] {
-	Resource.loadimg("gfx/hud/wnd/lg/cbtnu"),
-	Resource.loadimg("gfx/hud/wnd/lg/cbtnd"),
-	Resource.loadimg("gfx/hud/wnd/lg/cbtnh")};
+	Resource.loadsimg("gfx/hud/wnd/lg/cbtnu"),
+	Resource.loadsimg("gfx/hud/wnd/lg/cbtnd"),
+	Resource.loadsimg("gfx/hud/wnd/lg/cbtnh")};
     public final Coord tlo, rbo, mrgn;
     public final IButton cbtn;
     public boolean dt = false;
@@ -75,13 +79,14 @@ public class Window extends Widget implements DTarget {
     public int cmw;
     private UI.Grab dm = null;
     private Coord doff;
+    public boolean decohide = false;
 
     @RName("wnd")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    Coord sz = (Coord)args[0];
-	    String cap = (args.length > 1)?(String)args[1]:null;
-	    boolean lg = (args.length > 2)?((Integer)args[2] != 0):false;
+	    Coord sz = UI.scale((Coord)args[0]);
+	    String cap = (args.length > 1) ? (String)args[1] : null;
+	    boolean lg = (args.length > 2) ? ((Integer)args[2] != 0) : false;
 	    return(new Window(sz, cap, lg, Coord.z, Coord.z));
 	}
     }
@@ -89,7 +94,7 @@ public class Window extends Widget implements DTarget {
     public Window(Coord sz, String cap, boolean lg, Coord tlo, Coord rbo) {
 	this.tlo = tlo;
 	this.rbo = rbo;
-	this.mrgn = lg?dlmrgn:dsmrgn;
+	this.mrgn = lg ? dlmrgn : dsmrgn;
 	cbtn = add(new IButton(cbtni[0], cbtni[1], cbtni[2]));
 	chcap(cap);
 	resize2(sz);
@@ -116,6 +121,21 @@ public class Window extends Widget implements DTarget {
     }
 
     public void cdraw(GOut g) {
+    }
+
+    protected void drawbg(GOut g) {
+	Coord bgc = new Coord();
+	Coord cbr = ctl.add(csz);
+	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bg.sz().y) {
+	    for(bgc.x = ctl.x; bgc.x < cbr.x; bgc.x += bg.sz().x)
+		g.image(bg, bgc, ctl, cbr);
+	}
+	bgc.x = ctl.x;
+	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgl.sz().y)
+	    g.image(bgl, bgc, ctl, cbr);
+	bgc.x = cbr.x - bgr.sz().x;
+	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgr.sz().y)
+	    g.image(bgr, bgc, ctl, cbr);
     }
 
     protected void drawframe(GOut g) {
@@ -155,32 +175,16 @@ public class Window extends Widget implements DTarget {
 	g.image(br, tlo.add(wsz.sub(br.sz())));
     }
 
-    public void draw(GOut g) {
-	Coord bgc = new Coord();
-	Coord cbr = ctl.add(csz);
-	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bg.sz().y) {
-	    for(bgc.x = ctl.x; bgc.x < cbr.x; bgc.x += bg.sz().x)
-		g.image(bg, bgc, ctl, cbr);
-	}
-	bgc.x = ctl.x;
-	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgl.sz().y)
-	    g.image(bgl, bgc, ctl, cbr);
-	bgc.x = cbr.x - bgr.sz().x;
-	for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bgr.sz().y)
-	    g.image(bgr, bgc, ctl, cbr);
+    protected void drawwnd(GOut g) {
+	if(!decohide)
+	    drawbg(g);
 	cdraw(g.reclip(atl, asz));
-	drawframe(g);
-	/*
-	wbox.draw(g, wtl, wsz);
-	if(cap != null) {
-	    int w = cap.sz().x;
-	    int y = wtl.y - capo;
-	    g.image(cl, new Coord(wtl.x + (wsz.x / 2) - (w / 2) - cl.sz().x, y));
-	    g.image(cm, new Coord(wtl.x + (wsz.x / 2) - (w / 2), y), new Coord(w, cm.sz().y));
-	    g.image(cr, new Coord(wtl.x + (wsz.x / 2) + (w / 2), y));
-	    g.image(cap.tex(), new Coord(wtl.x + (wsz.x / 2) - (w / 2), y + capio));
-	}
-	*/
+	if(!decohide)
+	    drawframe(g);
+    }
+
+    public void draw(GOut g) {
+	drawwnd(g);
 	super.draw(g);
     }
 
@@ -200,10 +204,6 @@ public class Window extends Widget implements DTarget {
 	return(max);
     }
 
-    private void placecbtn() {
-	cbtn.c = xlate(new Coord(ctl.x + csz.x - cbtn.sz.x, ctl.y).add(2, -2), false);
-    }
-
     private void resize2(Coord sz) {
 	asz = sz;
 	csz = asz.add(mrgn.mul(2));
@@ -211,11 +211,11 @@ public class Window extends Widget implements DTarget {
 	this.sz = wsz.add(tlo).add(rbo);
 	ctl = tlo.add(tlm);
 	atl = ctl.add(mrgn);
-	cmw = (cap == null)?0:(cap.sz().x);
+	cmw = (cap == null) ? 0 : cap.sz().x;
 	cmw = Math.max(cmw, wsz.x / 4);
 	cptl = new Coord(ctl.x, tlo.y);
 	cpsz = tlo.add(cpo.x + cmw, cm.sz().y).sub(cptl);
-	cmw = cmw - (cl.sz().x - cpo.x) - 5;
+	cmw = cmw - (cl.sz().x - cpo.x) - UI.scale(5);
 	cbtn.c = xlate(tlo.add(wsz.x - cbtn.sz.x, 0), false);
 	for(Widget ch = child; ch != null; ch = ch.next)
 	    ch.presize();
@@ -225,14 +225,23 @@ public class Window extends Widget implements DTarget {
 	resize2(sz);
     }
 
+    public void decohide(boolean h) {
+	this.decohide = h;
+	cbtn.show(!h);
+    }
+
+    public boolean decohide() {
+	return(decohide);
+    }
+
     public void uimsg(String msg, Object... args) {
-	if(msg == "pack") {
-	    pack();
-	} else if(msg == "dt") {
+	if(msg == "dt") {
 	    dt = (Integer)args[0] != 0;
 	} else if(msg == "cap") {
 	    String cap = (String)args[0];
-	    chcap(cap.equals("")?null:cap);
+	    chcap(cap.equals("") ? null : cap);
+	} else if(msg == "dhide") {
+	    decohide((Integer)args[0] != 0);
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -245,21 +254,32 @@ public class Window extends Widget implements DTarget {
 	    return(c.sub(atl));
     }
 
+    public void drag(Coord off) {
+	dm = ui.grabmouse(this);
+	doff = off;
+    }
+
+    public boolean checkhit(Coord c) {
+	if(decohide)
+	    return(c.isect(atl, asz));
+	Coord cpc = c.sub(cptl);
+	return(c.isect(ctl, csz) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128)));
+    }
+
     public boolean mousedown(Coord c, int button) {
 	if(super.mousedown(c, button)) {
 	    parent.setfocus(this);
 	    raise();
 	    return(true);
 	}
-	Coord cpc = c.sub(cptl);
-	if(c.isect(ctl, csz) || (c.isect(cptl, cpsz) && (cm.back.getRaster().getSample(cpc.x % cm.back.getWidth(), cpc.y, 3) >= 128))) {
-	    if(button == 1) {
-		dm = ui.grabmouse(this);
-		doff = c;
+	if(!decohide) {
+	    if(checkhit(c)) {
+		if(button == 1)
+		    drag(c);
+		parent.setfocus(this);
+		raise();
+		return(true);
 	    }
-	    parent.setfocus(this);
-	    raise();
-	    return(true);
 	}
 	return(false);
     }
@@ -293,7 +313,7 @@ public class Window extends Widget implements DTarget {
     public boolean keydown(java.awt.event.KeyEvent ev) {
 	if(super.keydown(ev))
 	    return(true);
-	if(ev.getKeyChar() == 27) {
+	if(key_esc.match(ev)) {
 	    wdgmsg("close");
 	    return(true);
 	}
@@ -313,10 +333,21 @@ public class Window extends Widget implements DTarget {
     }
 
     public Object tooltip(Coord c, Widget prev) {
+	if(!checkhit(c))
+	    return(super.tooltip(c, prev));
 	Object ret = super.tooltip(c, prev);
 	if(ret != null)
 	    return(ret);
 	else
 	    return("");
+    }
+
+    public static void main(String[] args) {
+	Window wnd = new Window(new Coord(300, 200), "Inventory", true);
+	new haven.rs.DrawBuffer(haven.rs.Context.getdefault().env(), new Coord(512, 512))
+	    .draw(g -> {
+		    wnd.draw(g);
+		    g.getimage(img -> Debug.dumpimage(img, args[0]));
+	    });
     }
 }

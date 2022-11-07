@@ -41,12 +41,12 @@ public class HelpWnd extends Window {
     public HelpWnd(Indir<Resource> res) {
 	super(Coord.z, "Help!", true);
 	this.res = res;
-	this.text = add(new RichTextBox(new Coord(300, 400), "", fnd), Coord.z);
-	add(new Button(100, "Dismiss") {
+	this.text = add(new RichTextBox(UI.scale(300, 400), "", fnd), Coord.z);
+	add(new Button(UI.scale(100), "Dismiss") {
 		public void click() {
 		    HelpWnd.this.wdgmsg("close");
 		}
-	    }, new Coord(100, 410));
+	    }, UI.scale(100, 410));
 	pack();
     }
     
@@ -54,7 +54,7 @@ public class HelpWnd extends Window {
 	super.tick(dt);
 	if(res != showing) {
 	    try {
-		text.settext(res.get().layer(Resource.pagina).text);
+		text.settext(res.get().flayer(Resource.pagina).text);
 		showing = res;
 	    } catch(Loading e) {}
 	}

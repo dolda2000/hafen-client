@@ -1,0 +1,187 @@
+	 On modifying code dynamically loaded from resources
+	 ===================================================
+
+			  Brief introduction
+
+This source tree does not contain the complete set of code that makes
+up the full game. Rather, some of it is loaded at runtime via
+resources, using Java's dynamic class-loading framework. Common
+examples include specific UI widgets, sprites requiring custom code,
+and so on. This has numerous benefits to game development, the most
+important of which is the ability to include new client code in
+updates without requiring every player to update their clients.
+
+Unfortunately, it also means that some of the code that is interesting
+for client modification is not available in this source tree. The
+problem is exacerbated by the fact that, the more specific some piece
+of code is to a specific game mechanic, not only is it more likely to
+be located in a resource, it is also more likely to be interesting for
+client modification.
+
+In an attempt to alleviate this problem, resources that contain
+dynamic code have also been made to incorporate the corresponding Java
+source code, so that it is available for client modification. This
+documentation covers the tools available to fetch, extract, manage and
+update such source code.
+
+
+			Fetching resource code
+
+The `haven.Resource' class has a static main() function that can be
+called from the command-line to fetch and maintain resource code. It
+currently has two sub-commands: `get-code' and `find-updates'. In
+order to fetch the source code from a particular resource, the
+`get-code' command is used. For example, to fetch the code from the
+`ui/tt/name' resource, invoke Java as such:
+
+ > java -cp bin/hafen.jar haven.Resource get-code ui/tt/name
+
+By default, this puts any source files found in the resource in the
+`src' subdirectory of the current working directory. In other words,
+it is mainly meant to be run from the root of the client source
+tree. In case it is desired to run the command from another directory,
+or to use a staging directory, or for any other reason put the files
+into some other directory, the desired target directory can be
+specified with the `-o' command-line argument. For example:
+
+ > java -cp bin/hafen.jar haven.Resource get-code -o staging ui/tt/name
+
+If need be, the `get-code' command can also fetch multiple resources
+in one invocation. For example:
+
+ > java -cp bin/hafen.jar haven.Resource get-code ui/tt/name ui/tt/wear
+
+All sub-commands use standard Posix command-line syntax and support
+the `-h' option to print a brief usage message for shorthand use. For
+example:
+
+ > java -cp bin/hafen.jar haven.Resource get-code -h
+
+It should be noted that source files are extracted into subdirectories
+corresponding to their Java packages. For example, if extracting the
+`ui/tt/name' resource as above, it will extract the file
+`src/haven/res/ui/tt/name/Name.java'. The files extracted will be
+listed in the command output for reference.
+
+NOTE: The `get-code' command always overwrites any files that it would
+extract without asking, so it is recommended to check if there are any
+uncommitted changes to potentially affected files before running it.
+
+
+		      Source referral annotation
+
+As part of fetching resource source code, `get-code' also annotates
+the top-level class in each fetched file with a `haven.FromResource'
+annotation, which contains information about the name and version of
+the resource it was fetched from. This annotation serves two purposes,
+documented below under "updating resource code" and "version override".
+
+
+		   Using and compiling fetched code
+
+Since `get-code' extracts files into the `src' directory, anything
+thus fetched will be compiled and included in the compiled client by
+default. Since the code compiled along with the client is loaded by a
+classloader that is a parent of resource-loaded classes, Java's
+default classloading behavior implies that code thus included is also
+used in preference to that fetched at runtime. This is *mostly* true
+in this case, but the resource classloader implements an exception to
+this behavior, as documented below, under "version override".
+
+Since any fetched code is in the same compilation tree as the rest of
+the client code, the compiler considers them part of the same
+classpath, and as such they can refer freely back and forth between
+each other. No use of reflection should be necessary.
+
+
+			Updating resource code
+
+The `find-updates` sub-command can be used to check for updates to any
+fetched resource code. It iterates through all source code files,
+looking for the `haven.FromResource' annotation (described above), and
+checks the origin server for newer versions of the referred
+resources. If there are any updated versions, they are listed on
+standard output. It would usually be invoked as such:
+
+ > java -cp bin/hafen.jar haven.Resource find-updates
+
+Note that `find-updates' only lists found updates; it does not
+actually fetch any updated code, so that it is always "safe" to
+run. Use `get-code' to fetch updated resources, but note, as described
+above, that `get-code' overwrites files without asking.
+
+Like `get-code', `find-updates' looks for source files in the `src'
+subdirectory of the current working directory by default. Like
+`get-code', it can take an explicit directory to search through, by
+way of an optional command-line argument. For example:
+
+ > java -cp bin/hafen.jar haven.Resource find-updates src/haven/res
+
+Like `get-code', it also uses standard Posix command-line syntax and
+supports the `-h' option to print a brief usage message.
+
+
+			   Version override
+
+Other than for finding updates, the secondary purpose of the
+`haven.FromResource' annotation is to allow the resource classloader
+to override local (fetched) code selectively. The default behavior is
+to allow a local class to override the same class available from a
+resource only if it has the `FromResource' annotation, and the
+resource name and version in the annotation matches the name and
+version of the resource whose code would be overridden.
+
+The reason this behavior differs from Java's default classloading
+behavior is to allow modified clients to degrade gracefully in
+functionality in case of resource updates, until such time as the
+client can be updated to reflect the newer resources. Updates to a
+resource may include changes that break compatibility (either from
+incompatible Java linkage, or from decoding of updated protocol
+formats, or otherwise), in which case a client which still uses local,
+out-of-date copies of said code is likely to outright crash. While
+using code from more up-to-date resources is likely to degrade the
+client in functionality, it should normally be able to keep running
+with whatever other functionality it has until it can be updated to
+reflect changes in the updated resource code, avoiding outright
+crashes.
+
+In cases where it may be useful, there are ways to override this
+behavior. Primarily, it can toggled on a file-by-file basis by setting
+`override = true' in the `FromResource' annotation in a particular
+class. Doing so will make sure the local code with said annotation
+always overrides the same code from a fetched resource. There also
+exists the `OVERRIDE_ALL' constant in Resource.java, which causes all
+local code to always override code from resources. None of these
+measures are particularly recommended, since, as described,
+out-of-date local code is likely to crash in case of unexpected
+resource updates, but the mechanism is available in case it is
+desired.
+
+
+			    Tips & Tricks
+
+In case you want to use Git to manage merges and conflicts of upstream
+resource code, one tip is to create a secondary branch containing only
+the unmodified resource code. Using the branch name
+`upstream-resources' here (for illustrative purposes only), this would
+be done by creating the branch from the upstream history,
+`origin/master', fetch the resource code there, commit said code, and
+then merge the `upstream-resource' branch into your main development
+branch. Assuming that your main development branch is named `master',
+the procedure might look like this:
+
+ > git checkout -b upstream-resources origin/master
+ > java -cp bin/hafen.jar haven.Resource get-code ui/tt/name
+ > git add src/haven/res
+ > git commit -m "Fetched ui/tt/name"
+ > git checkout master
+ > git merge upstream-resources
+
+Naturally, on subsequent fetches and/or updates, you would merely
+check out `upstream-resources' instead of creating it, but otherwise
+the procedure should be the same, and Git, then having been given a
+merge-base to work from, should be able to handle merges and conflicts
+as it normally does. It may be a good idea to keep the
+`upstream-resources' branch up-to-date with the rest of the
+development history, but generally speaking, it should not make a
+difference.

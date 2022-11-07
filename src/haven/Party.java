@@ -30,72 +30,92 @@ import java.util.*;
 import java.awt.Color;
 
 public class Party {
-    Map<Long, Member> memb = new TreeMap<Long, Member>();
-    Member leader = null;
     public static final int PD_LIST = 0;
     public static final int PD_LEADER = 1;
     public static final int PD_MEMBER = 2;
-    private Glob glob;
-	
+    public Map<Long, Member> memb = Collections.emptyMap();
+    public Member leader = null;
+    private final Glob glob;
+    private int mseq = 0;
+
     public Party(Glob glob) {
 	this.glob = glob;
     }
-	
+
     public class Member {
-	long gobid;
+	public final long gobid;
+	public final int seq;
 	private Coord2d c = null;
-	Color col = Color.BLACK;
-	
+	private double ma = Math.random() * Math.PI * 2;
+	private double oa = Double.NaN;
+	public Color col = Color.BLACK;
+
+	public Member(long gobid) {
+	    this.gobid = gobid;
+	    this.seq = mseq++;
+	}
+
 	public Gob getgob() {
 	    return(glob.oc.getgob(gobid));
 	}
-	
+
 	public Coord2d getc() {
 	    Gob gob;
 	    try {
-		if((gob = getgob()) != null)
+		if((gob = getgob()) != null) {
+		    this.oa = gob.a;
 		    return(new Coord2d(gob.getc()));
+		}
 	    } catch(Loading e) {}
+	    this.oa = Double.NaN;
 	    return(c);
 	}
+
+	void setc(Coord2d c) {
+	    if((this.c != null) && (c != null))
+		ma = this.c.angle(c);
+	    this.c = c;
+	}
+
+	public double geta() {
+	    return(Double.isNaN(oa) ? ma : oa);
+	}
     }
-	
+
     public void msg(Message msg) {
 	while(!msg.eom()) {
 	    int type = msg.uint8();
 	    if(type == PD_LIST) {
 		ArrayList<Long> ids = new ArrayList<Long>();
 		while(true) {
-		    long id = msg.int32();
-		    if(id < 0)
+		    long id = msg.uint32();
+		    if(id == 0xffffffffl)
 			break;
 		    ids.add(id);
 		}
-		Map<Long, Member> nmemb = new TreeMap<Long, Member>();
+		Map<Long, Member> nmemb = new HashMap<Long, Member>();
 		for(long id : ids) {
 		    Member m = memb.get(id);
-		    if(m == null) {
-			m = new Member();
-			m.gobid = id;
-		    }
+		    if(m == null)
+			m = new Member(id);
 		    nmemb.put(id, m);
 		}
 		long lid = (leader == null)?-1:leader.gobid;
 		memb = nmemb;
 		leader = memb.get(lid);
 	    } else if(type == PD_LEADER) {
-		Member m = memb.get((long)msg.int32());
+		Member m = memb.get(msg.uint32());
 		if(m != null)
 		    leader = m;
 	    } else if(type == PD_MEMBER) {
-		Member m = memb.get((long)msg.int32());
+		Member m = memb.get(msg.uint32());
 		Coord2d c = null;
 		boolean vis = msg.uint8() == 1;
 		if(vis)
 		    c = msg.coord().mul(OCache.posres);
 		Color col = msg.color();
 		if(m != null) {
-		    m.c = c;
+		    m.setc(c);
 		    m.col = col;
 		}
 	    }

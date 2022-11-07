@@ -30,41 +30,59 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 public class IButton extends SIWidget {
-    BufferedImage up, down, hover;
-    boolean h = false;
-    boolean a = false;
-    UI.Grab d = null;
+    public final BufferedImage up, down, hover;
+    public boolean h = false, a = false;
+    public Runnable action = null;
+    private UI.Grab d = null;
 
     @RName("ibtn")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(new IButton(Resource.loadimg((String)args[0]), Resource.loadimg((String)args[1])));
+	    return(new IButton(Resource.loadsimg((String)args[0]), Resource.loadsimg((String)args[1])));
 	}
     }
 
-    public IButton(BufferedImage up, BufferedImage down, BufferedImage hover) {
+    public IButton(BufferedImage up, BufferedImage down, BufferedImage hover, Runnable action) {
 	super(Utils.imgsz(up));
 	this.up = up;
 	this.down = down;
 	this.hover = hover;
+	this.action = action;
+    }
+
+    public IButton(BufferedImage up, BufferedImage down, BufferedImage hover) {
+	this(up, down, hover, null);
+	this.action = () -> wdgmsg("activate");
     }
 
     public IButton(BufferedImage up, BufferedImage down) {
 	this(up, down, up);
     }
 
+    public IButton(String base, String up, String down, String hover, Runnable action) {
+	this(Resource.loadsimg(base + up), Resource.loadsimg(base + down), Resource.loadsimg(base + (hover == null?up:hover)), action);
+    }
+
     public IButton(String base, String up, String down, String hover) {
-	this(Resource.loadimg(base + up), Resource.loadimg(base + down), Resource.loadimg(base + (hover == null?up:hover)));
+	this(base, up, down, hover, null);
+	this.action = () -> wdgmsg("activate");
+    }
+
+    public IButton action(Runnable action) {
+	this.action = action;
+	return(this);
     }
 
     public void draw(BufferedImage buf) {
 	Graphics g = buf.getGraphics();
+	BufferedImage img;
 	if(a)
-	    g.drawImage(down, 0, 0, null);
+	    img = down;
 	else if(h)
-	    g.drawImage(hover, 0, 0, null);
+	    img = hover;
 	else
-	    g.drawImage(up, 0, 0, null);
+	    img = up;
+	g.drawImage(img, 0, 0, null);
 	g.dispose();
     }
 
@@ -77,9 +95,15 @@ public class IButton extends SIWidget {
     }
 
     public void click() {
-	wdgmsg("activate");
+	if(action != null)
+	    action.run();
     }
 
+    public boolean gkeytype(java.awt.event.KeyEvent ev) {
+	click();
+	return(true);
+    }
+    
     protected void depress() {
     }
 

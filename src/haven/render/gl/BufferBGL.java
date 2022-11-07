@@ -28,7 +28,9 @@ package haven.render.gl;
 
 import haven.Utils;
 import java.util.*;
+import java.util.regex.*;
 import java.io.*;
+import java.nio.file.*;
 import com.jogamp.opengl.*;
 
 public class BufferBGL extends BGL {
@@ -65,6 +67,7 @@ public class BufferBGL extends BGL {
 	}
     }
 
+    private static final Pattern joglerrp = Pattern.compile("GL-Error 0x([0-9a-fA-F]+)\\s");
     private void checkdebuggl(Exception exc) {
 	String msg = exc.getMessage();
 	GLException wrap = null;
@@ -76,6 +79,15 @@ public class BufferBGL extends BGL {
 	    wrap = new GLException.GLInvalidOperationException();
 	} else if(msg.indexOf("GL_OUT_OF_MEMORY") >= 0) {
 	    wrap = new GLException.GLOutOfMemoryException();
+	} else {
+	    Matcher m = joglerrp.matcher(msg);
+	    if(m.find()) {
+		try {
+		    wrap = GLException.glexcfor(Integer.parseInt(m.group(1), 16));
+		} catch(NumberFormatException e) {
+		    exc.addSuppressed(e);
+		}
+	    }
 	}
 	if(wrap != null) {
 	    wrap.initCause(exc);
@@ -153,9 +165,9 @@ public class BufferBGL extends BGL {
 		out.printf("%f\t%f\t%s\n", (times[i] - stime) * 1000, ((i < n - 1) ? times[i + 1] - times[i] : 0) * 1000, cmds[i]);
 	}
 
-	public Request dump(File out) {
+	public Request dump(Path out) {
 	    return(gl -> {
-		    try(OutputStream fp = new BufferedOutputStream(new FileOutputStream(out))) {
+		    try(OutputStream fp = new BufferedOutputStream(Files.newOutputStream(out))) {
 			dump(new PrintStream(fp));
 		    } catch(IOException e) {
 			throw(new RuntimeException(e));

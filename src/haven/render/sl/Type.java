@@ -46,6 +46,7 @@ public abstract class Type {
 
     public static final Type VOID = new Simple("void");
     public static final Type INT = new Simple("int");
+    public static final Type UINT = new Simple("uint");
     public static final Type FLOAT = new Simple("float");
     public static final Type VEC2 = new Simple("vec2");
     public static final Type VEC3 = new Simple("vec3");
@@ -53,20 +54,47 @@ public abstract class Type {
     public static final Type IVEC2 = new Simple("ivec2");
     public static final Type IVEC3 = new Simple("ivec3");
     public static final Type IVEC4 = new Simple("ivec4");
+    public static final Type UVEC2 = new Simple("uvec2");
+    public static final Type UVEC3 = new Simple("uvec3");
+    public static final Type UVEC4 = new Simple("uvec4");
     public static final Type MAT3 = new Simple("mat3");
     public static final Type MAT4 = new Simple("mat4");
+
     public static final Type SAMPLER1D = new Sampler("sampler1D");
     public static final Type SAMPLER1DARRAY = new Sampler("sampler1DArray");
     public static final Type SAMPLER2D = new Sampler("sampler2D");
     public static final Type SAMPLER2DARRAY = new Sampler("sampler2DArray");
-    public static final Type SAMPLER2DSHADOW = new Sampler("sampler2DShadow");
     public static final Type SAMPLER2DMS = new Sampler("sampler2DMS");
     public static final Type SAMPLER2DMSARRAY = new Sampler("sampler2DMSArray");
     public static final Type SAMPLER3D = new Sampler("sampler3D");
     public static final Type SAMPLERCUBE = new Sampler("samplerCube");
     public static final Type SAMPLERCUBEARRAY = new Sampler("samplerCubeArray");
-    public static final Type SAMPLERCUBESHADOW = new Sampler("samplerCubeShadow");
     public static final Type SAMPLERBUFFER = new Sampler("samplerBuffer");
+
+    public static final Type ISAMPLER1D = new Sampler("isampler1D");
+    public static final Type ISAMPLER1DARRAY = new Sampler("isampler1DArray");
+    public static final Type ISAMPLER2D = new Sampler("isampler2D");
+    public static final Type ISAMPLER2DARRAY = new Sampler("isampler2DArray");
+    public static final Type ISAMPLER2DMS = new Sampler("isampler2DMS");
+    public static final Type ISAMPLER2DMSARRAY = new Sampler("isampler2DMSArray");
+    public static final Type ISAMPLER3D = new Sampler("isampler3D");
+    public static final Type ISAMPLERCUBE = new Sampler("isamplerCube");
+    public static final Type ISAMPLERCUBEARRAY = new Sampler("isamplerCubeArray");
+    public static final Type ISAMPLERBUFFER = new Sampler("isamplerBuffer");
+
+    public static final Type USAMPLER1D = new Sampler("usampler1D");
+    public static final Type USAMPLER1DARRAY = new Sampler("usampler1DArray");
+    public static final Type USAMPLER2D = new Sampler("usampler2D");
+    public static final Type USAMPLER2DARRAY = new Sampler("usampler2DArray");
+    public static final Type USAMPLER2DMS = new Sampler("usampler2DMS");
+    public static final Type USAMPLER2DMSARRAY = new Sampler("usampler2DMSArray");
+    public static final Type USAMPLER3D = new Sampler("usampler3D");
+    public static final Type USAMPLERCUBE = new Sampler("usamplerCube");
+    public static final Type USAMPLERCUBEARRAY = new Sampler("usamplerCubeArray");
+    public static final Type USAMPLERBUFFER = new Sampler("usamplerBuffer");
+
+    public static final Type SAMPLER2DSHADOW = new Sampler("sampler2DShadow");
+    public static final Type SAMPLERCUBESHADOW = new Sampler("samplerCubeShadow");
 
     public abstract String name(Context ctx);
     public void use(Context ctx) {}

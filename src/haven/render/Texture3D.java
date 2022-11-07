@@ -90,7 +90,9 @@ public class Texture3D extends Texture {
 	}
     }
 
+    public Sampler3D sampler() {return(new Sampler3D(this));}
+
     public String toString() {
-	return(String.format("#<tex3d %sx%d %dx%dx%d>", ifmt.cf, ifmt.nc, w, h, d));
+	return(String.format("#<tex3d %sx%d %dx%dx%d%s>", ifmt.cf, ifmt.nc, w, h, d, descfmt()));
     }
 }

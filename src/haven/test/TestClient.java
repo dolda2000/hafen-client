@@ -90,7 +90,8 @@ public class TestClient implements Runnable, UI.Context {
 
     public class TestUI extends UI {
 	public TestUI(Coord sz, Session sess) {
-	    super(TestClient.this, sz, sess);
+	    super(TestClient.this, sz, null);
+	    this.sess = sess;
 	}
 	
 	public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {

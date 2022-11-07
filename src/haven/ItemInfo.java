@@ -34,13 +34,13 @@ import java.awt.Graphics;
 
 public abstract class ItemInfo {
     public final Owner owner;
-    
+
     public interface Owner extends OwnerContext {
 	@Deprecated
 	public default Glob glob() {return(context(Glob.class));}
 	public List<ItemInfo> info();
     }
-    
+
     public interface ResOwner extends Owner {
 	public Resource resource();
     }
@@ -48,7 +48,7 @@ public abstract class ItemInfo {
     public interface SpriteOwner extends ResOwner {
 	public GSprite sprite();
     }
-    
+
     public static class Raw {
 	public final Object[] data;
 	public final double time;
@@ -74,34 +74,41 @@ public abstract class ItemInfo {
 	}
     }
 
-    public static class FactMaker implements Resource.PublishedCode.Instancer {
-	public InfoFactory make(Class<?> cl) {
-	    if(InfoFactory.class.isAssignableFrom(cl))
-		return(Utils.construct(cl.asSubclass(InfoFactory.class)));
-	    try {
-		Function<Object[], ItemInfo> make = Utils.smthfun(cl, "mkinfo", ItemInfo.class, Owner.class, Object[].class);
-		return(new InfoFactory() {
-			public ItemInfo build(Owner owner, Raw raw, Object... args) {
-			    return(make.apply(new Object[]{owner, args}));
-			}
-		    });
-	    } catch(NoSuchMethodException e) {}
-	    try {
-		Function<Object[], ItemInfo> make = Utils.smthfun(cl, "mkinfo", ItemInfo.class, Owner.class, Raw.class, Object[].class);
-		return(new InfoFactory() {
-			public ItemInfo build(Owner owner, Raw raw, Object... args) {
-			    return(make.apply(new Object[]{owner, raw, args}));
-			}
-		    });
-	    } catch(NoSuchMethodException e) {}
-	    return(null);
+    public static class FactMaker extends Resource.PublishedCode.Instancer.Chain<InfoFactory> {
+	public FactMaker() {super(InfoFactory.class);}
+	{
+	    add(new Direct<>(InfoFactory.class));
+	    add(new StaticCall<>(InfoFactory.class, "mkinfo", ItemInfo.class, new Class<?>[] {Owner.class, Object[].class},
+				 (make) -> new InfoFactory() {
+					 public ItemInfo build(Owner owner, Raw raw, Object... args) {
+					     return(make.apply(new Object[]{owner, args}));
+					 }
+				     }));
+	    add(new StaticCall<>(InfoFactory.class, "mkinfo", ItemInfo.class, new Class<?>[] {Owner.class, Raw.class, Object[].class},
+				 (make) -> new InfoFactory() {
+					 public ItemInfo build(Owner owner, Raw raw, Object... args) {
+					     return(make.apply(new Object[]{owner, raw, args}));
+					 }
+				     }));
+	    add(new Construct<>(InfoFactory.class, ItemInfo.class, new Class<?>[] {Owner.class, Object[].class},
+				(cons) -> new InfoFactory() {
+					public ItemInfo build(Owner owner, Raw raw, Object... args) {
+					    return(cons.apply(new Object[] {owner, args}));
+					}
+				    }));
+	    add(new Construct<>(InfoFactory.class, ItemInfo.class, new Class<?>[] {Owner.class, Raw.class, Object[].class},
+				(cons) -> new InfoFactory() {
+					public ItemInfo build(Owner owner, Raw raw, Object... args) {
+					    return(cons.apply(new Object[] {owner, raw, args}));
+					}
+				    }));
 	}
     }
-    
+
     public ItemInfo(Owner owner) {
 	this.owner = owner;
     }
-    
+
     public static class Layout {
 	private final List<Tip> tips = new ArrayList<Tip>();
 	private final Map<ID, Tip> itab = new HashMap<ID, Tip>();
@@ -155,15 +162,15 @@ public abstract class ItemInfo {
 	}
 	public int order() {return(100);}
     }
-    
+
     public static class AdHoc extends Tip {
 	public final Text str;
-	
+
 	public AdHoc(Owner owner, String str) {
 	    super(owner);
 	    this.str = Text.render(str);
 	}
-	
+
 	public BufferedImage tipimg() {
 	    return(str.img);
 	}
@@ -171,16 +178,16 @@ public abstract class ItemInfo {
 
     public static class Name extends Tip {
 	public final Text str;
-	
+
 	public Name(Owner owner, Text str) {
 	    super(owner);
 	    this.str = str;
 	}
-	
+
 	public Name(Owner owner, String str) {
 	    this(owner, Text.render(str));
 	}
-	
+
 	public BufferedImage tipimg() {
 	    return(str.img);
 	}
@@ -192,6 +199,27 @@ public abstract class ItemInfo {
 		    public BufferedImage tipimg() {return(str.img);}
 		    public int order() {return(0);}
 		});
+	}
+
+	public static interface Dynamic {
+	    public String name();
+	}
+
+	public static class Default implements InfoFactory {
+	    public ItemInfo build(Owner owner, Object... args) {
+		if(owner instanceof SpriteOwner) {
+		    GSprite spr = ((SpriteOwner)owner).sprite();
+		    if(spr instanceof Dynamic)
+			return(new Name(owner, ((Dynamic)spr).name()));
+		}
+		if(!(owner instanceof ResOwner))
+		    return(null);
+		Resource res = ((ResOwner)owner).resource();
+		Resource.Tooltip tt = res.layer(Resource.tooltip);
+		if(tt == null)
+		    throw(new RuntimeException("Item resource " + res + " is missing default tooltip"));
+		return(new Name(owner, tt.t));
+	    }
 	}
     }
 
@@ -208,9 +236,9 @@ public abstract class ItemInfo {
 	}
 
 	public void layout(Layout l) {
-	    BufferedImage t = tipimg((l.width == 0) ? 200 : l.width);
+	    BufferedImage t = tipimg((l.width == 0) ? UI.scale(200) : l.width);
 	    if(t != null)
-		l.cmp.add(t, new Coord(0, l.cmp.sz.y + 10));
+		l.cmp.add(t, new Coord(0, l.cmp.sz.y + UI.scale(10)));
 	}
 
 	public int order() {return(10000);}
@@ -227,10 +255,10 @@ public abstract class ItemInfo {
 	
 	public BufferedImage tipimg() {
 	    BufferedImage stip = longtip(sub);
-	    BufferedImage img = TexI.mkbuf(new Coord(stip.getWidth() + 10, stip.getHeight() + 15));
+	    BufferedImage img = TexI.mkbuf(Coord.of(stip.getWidth(), stip.getHeight()).add(UI.scale(10, 15)));
 	    Graphics g = img.getGraphics();
 	    g.drawImage(ch.img, 0, 0, null);
-	    g.drawImage(stip, 10, 15, null);
+	    g.drawImage(stip, UI.scale(10), UI.scale(15), null);
 	    g.dispose();
 	    return(img);
 	}
@@ -414,5 +442,9 @@ public abstract class ItemInfo {
 		    return(() -> ret);
 		});
 	}
+    }
+
+    public static interface InfoTip {
+	public List<ItemInfo> info();
     }
 }

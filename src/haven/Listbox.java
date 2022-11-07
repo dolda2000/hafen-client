@@ -78,8 +78,20 @@ public abstract class Listbox<T> extends ListWidget<T> {
 	    change(item);
     }
 
+    protected void itemclick(T item, Coord c, int button) {
+	itemclick(item, button);
+    }
+
+    public Coord idxc(int idx) {
+	return(new Coord(0, (idx - sb.val) * itemh));
+    }
+
+    public int idxat(Coord c) {
+	return((c.y / itemh) + sb.val);
+    }
+
     public T itemat(Coord c) {
-	int idx = (c.y / itemh) + sb.val;
+	int idx = idxat(c);
 	if(idx >= listitems())
 	    return(null);
 	return(listitem(idx));
@@ -88,11 +100,12 @@ public abstract class Listbox<T> extends ListWidget<T> {
     public boolean mousedown(Coord c, int button) {
 	if(super.mousedown(c, button))
 	    return(true);
-	T item = itemat(c);
+	int idx = idxat(c);
+	T item = (idx >= listitems()) ? null : listitem(idx);
 	if((item == null) && (button == 1))
 	    change(null);
 	else if(item != null)
-	    itemclick(item, button);
+	    itemclick(item, c.sub(idxc(idx)), button);
 	return(true);
     }
 

@@ -42,4 +42,8 @@ public class Clickable extends State {
     public void apply(Pipe p) {
 	p.put(slot, this);
     }
+
+    public String toString() {
+	return(String.format("#<clickable>"));
+    }
 }

@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.io.*;
+import java.nio.file.*;
 import javax.sound.sampled.*;
 import dolda.xiphutil.*;
 
@@ -35,13 +36,9 @@ public class Audio {
     public static boolean enabled = true;
     private static Player player;
     public static final AudioFormat fmt = new AudioFormat(44100, 16, 2, true, false);
-    private static int bufsize = 4096;
-    public static double volume = 1.0;
-    
-    static {
-	volume = Double.parseDouble(Utils.getpref("sfxvol", "1.0"));
-    }
-    
+    private static int bufsize = Utils.getprefi("audiobuf", 2048) * 4;
+    public static double volume = Double.parseDouble(Utils.getpref("sfxvol", "1.0"));
+
     public static void setvolume(double volume) {
 	Audio.volume = volume;
 	Utils.setpref("sfxvol", Double.toString(volume));
@@ -50,7 +47,14 @@ public class Audio {
     public interface CS {
 	public int get(double[][] buf, int len);
     }
-    
+
+    public interface Clip extends Resource.IDLayer<String> {
+	public CS stream();
+	public default String layerid() {return("");}
+	public default double bvol() {return(1.0);}
+    }
+    public static final Class<Clip> clip = Clip.class;
+
     public static class Mixer implements CS {
 	public final boolean cont;
 	private final Collection<CS> clips = new LinkedList<CS>();
@@ -130,6 +134,12 @@ public class Audio {
 	    return(false);
 	}
 
+	public int size() {
+	    synchronized(clips) {
+		return(clips.size());
+	    }
+	}
+
 	public boolean empty() {
 	    synchronized(clips) {
 		return(clips.isEmpty());
@@ -150,48 +160,173 @@ public class Audio {
     }
 
     public static class PCMClip implements CS {
+	public static final int UN8 = 0, SN8 = 1, SN16 = 2, SN32 = 3;
 	public final InputStream clip;
-	public final int sch;
+	public final int sch, sfmt, ssz;
+	public int size = -1;
 	private final byte[] dbuf = new byte[256];
 	private int head = 0, tail = 0;
+	private boolean eof = false;
 
-	public PCMClip(InputStream clip, int nch) {
+	public PCMClip(InputStream clip, int nch, int sfmt) {
 	    this.clip = clip;
 	    this.sch = nch;
+	    switch(this.sfmt = sfmt) {
+	    case UN8:  ssz = 1; break;
+	    case SN8:  ssz = 1; break;
+	    case SN16: ssz = 2; break;
+	    case SN32: ssz = 4; break;
+	    default: throw(new IllegalArgumentException("sfmt " + sfmt));
+	    }
+	}
+
+	public PCMClip size(int size) {
+	    this.size = size;
+	    return(this);
+	}
+
+	private int read(byte[] buf, int off, int len) {
+	    if(eof)
+		return(-1);
+	    if(size >= 0)
+		len = Math.min(len, size);
+	    try {
+		int ret = clip.read(buf, off, len);
+		if(ret < 0) {
+		    eof = true;
+		    clip.close();
+		    return(-1);
+		}
+		if((size >= 0) && ((size -= ret) <= 0)) {
+		    eof = true;
+		    clip.close();
+		}
+		return(ret);
+	    } catch(IOException e) {
+		eof = true;
+		try {
+		    clip.close();
+		} catch(IOException e2) {}
+		return(-1);
+	    }
 	}
 
 	public int get(double[][] dst, int ns) {
 	    int nch = dst.length;
 	    double[] dec = new double[sch];
 	    for(int sm = 0; sm < ns; sm++) {
-		while(tail - head < 2 * sch) {
+		while(tail - head < ssz * sch) {
 		    if(head > 0) {
 			for(int i = 0; i < tail - head; i++)
 			    dbuf[i] = dbuf[head + i];
 			tail -= head;
 			head = 0;
 		    }
-		    try {
-			int ret = clip.read(dbuf, tail, dbuf.length - tail);
-			if(ret < 0)
-			    return((sm > 0)?sm:-1);
-			tail += ret;
-		    } catch(IOException e) {
-			return(-1);
-		    }
+		    int ret = read(dbuf, tail, dbuf.length - tail);
+		    if(ret < 0)
+			return((sm > 0) ? sm : -1);
+		    tail += ret;
 		}
 		for(int ch = 0; ch < sch; ch++) {
-		    int b1 = dbuf[head++] & 0xff;
-		    int b2 = dbuf[head++] & 0xff;
-		    int v = b1 + (b2 << 8);
-		    if(v >= 32768)
-			v -= 65536;
-		    dec[ch] = v * 0x1.0p-15;
+		    switch(sfmt) {
+		    case UN8:
+			dec[ch] = ((dbuf[head++] & 0xff) - 0x80) * 0x1.0p-7;
+			break;
+		    case SN8:
+			dec[ch] = dbuf[head++] * 0x1.0p-7;
+			break;
+		    case SN16:
+			dec[ch] = ((int)(short)((dbuf[head++] & 0xff) |
+						((dbuf[head++] & 0xff) << 8)))
+			    * 0x1.0p-15;
+			break;
+		    case SN32:
+			dec[ch] = ((dbuf[head++] & 0xff) |
+				   ((dbuf[head++] & 0xff) << 8) |
+				   ((dbuf[head++] & 0xff) << 16) |
+				   ((dbuf[head++] & 0xff) << 24))
+			    * 0x1.0p-31;
+			break;
+		    }
 		}
 		for(int ch = 0; ch < nch; ch++)
 		    dst[ch][sm] = dec[ch % sch];
 	    }
 	    return(ns);
+	}
+
+	public static CS fromwav(InputStream clip) throws IOException {
+	    if(s32(clip) != 0x46464952)
+		throw(new IOException("Not a WAVE file (non-RIFF header)"));
+	    int tsz = s32(clip);
+	    if(s32(clip) != 0x45564157)
+		throw(new IOException("Not a WAVE file (non-WAVE format)"));
+
+	    int nch = -1, rate = -1, fmt = -1;
+	    while(true) {
+		int id, sz;
+		try {
+		    id = s32(clip);
+		    sz = s32(clip);
+		} catch(EOFException e) {
+		    throw(new IOException("Malformed wave file (no data chunk)"));
+		}
+		if(id == 0x20746d66) {
+		    if(sz < 16)
+			throw(new IOException("Malformed wave file (too small fmt chunk)"));
+		    int law = u16(clip);
+		    if(law != 1)
+			throw(new IOException("Not a PCM wave file (" + law + ")"));
+		    nch = u16(clip);
+		    rate = s32(clip);
+		    int brate = s32(clip);
+		    int blsz = u16(clip);
+		    int bits = u16(clip);
+		    for(int i = 16; i < sz; i++)
+			u8(clip);
+		    if((bits & 7) != 0)
+			throw(new IOException("Malformed wave file (non-whole-byte sample size)"));
+		    int ssz = bits >> 3;
+		    if(((ssz * nch) != blsz) || ((ssz * nch * rate) != brate))
+			throw(new IOException("Malformed wave file (non-matching sample sizes)"));
+		    switch(ssz) {
+		    case 1: fmt = UN8;  break;
+		    case 2: fmt = SN16; break;
+		    case 4: fmt = SN32; break;
+		    default:
+			throw(new IOException("Unexpected sample format: " + ssz));
+		    }
+		} else if(id == 0x61746164) {
+		    if(nch < 0)
+			throw(new IOException("Malformed wave file (no fmt chunk)"));
+		    CS ret = new PCMClip(clip, nch, fmt).size(sz);
+		    int orate = Math.round(Audio.fmt.getSampleRate());
+		    if(rate != orate)
+			ret = new Resampler(ret, rate, orate);
+		    return(ret);
+		} else {
+		    byte[] disc = new byte[256];
+		    for(int r = 0; r < sz;) {
+			int rv = clip.read(disc, 0, Math.min(sz - r, disc.length));
+			if(rv < 0)
+			    throw(new EOFException("unexpected end-of-file"));
+			r += rv;
+		    }
+		}
+	    }
+	}
+
+	private static int u8(InputStream clip) throws IOException {
+	    int ret = clip.read();
+	    if(ret < 0)
+		throw(new EOFException("unexpected end-of-file"));
+	    return(ret & 0xff);
+	}
+	private static int u16(InputStream clip) throws IOException {
+	    return(u8(clip) | (u8(clip) << 8));
+	}
+	private static int s32(InputStream clip) throws IOException {
+	    return(u8(clip) | (u8(clip) << 8) | (u8(clip) << 16) | (u8(clip) << 24));
 	}
     }
 
@@ -202,6 +337,10 @@ public class Audio {
 
 	public VorbisClip(VorbisStream clip) {
 	    this.clip = clip;
+	}
+
+	public VorbisClip(InputStream bs) throws IOException {
+	    this(new VorbisStream(bs));
 	}
 
 	public int get(double[][] dst, int ns) {
@@ -264,7 +403,7 @@ public class Audio {
     public static class Resampler implements CS {
 	public final CS bk;
 	public double irate, orate;
-	public double sp;
+	public double sp = 1.0;
 	private double ack;
 	private double[] lval = {0}, nval = {0};
 	private double[][] data = {};
@@ -298,7 +437,7 @@ public class Audio {
 		while(ack >= 1.0) {
 		    while(dp >= dl) {
 			if((dl = bk.get(data, 512)) < 0)
-			    return((sm > 0)?sm:-1);
+			    return( (sm > 0) ? sm : -1);
 			dp = 0;
 		    }
 		    for(int ch = 0; ch < nch; ch++) {
@@ -313,6 +452,8 @@ public class Audio {
 	    }
 	    return(ns);
 	}
+
+	public Resampler sp(double sp) {this.sp = sp; return(this);}
     }
 
     public static class Monitor implements CS {
@@ -405,17 +546,15 @@ public class Audio {
     private static class Player extends HackThread {
 	private final CS stream;
 	private final int nch;
-	private final Object queuemon = new Object();
-	private Collection<Runnable> queue = new LinkedList<Runnable>();
 	private volatile boolean reopen = false;
-	
+
 	Player(CS stream) {
 	    super("Haven audio player");
 	    this.stream = stream;
 	    nch = fmt.getChannels();
 	    setDaemon(true);
 	}
-	
+
 	private int fillbuf(byte[] dst, int off, int len) {
 	    int ns = len / (2 * nch);
 	    double[][] val = new double[nch][ns];
@@ -465,14 +604,6 @@ public class Audio {
 		    while(true) {
 			if(Thread.interrupted())
 			    throw(new InterruptedException());
-			synchronized(queuemon) {
-			    Collection<Runnable> queue = this.queue;
-			    if(queue.size() > 0) {
-				this.queue = new LinkedList<Runnable>();
-				for(Runnable r : queue)
-				    r.run();
-			    }
-			}
 			int ret = fillbuf(buf, 0, buf.length);
 			if(ret < 0)
 			    return;
@@ -523,7 +654,7 @@ public class Audio {
 	    }
 	}
     }
-    
+
     public static void play(CS clip) {
 	if(clip == null)
 	    throw(new NullPointerException());
@@ -537,23 +668,16 @@ public class Audio {
 	if(pl != null)
 	    ((Mixer)pl.stream).stop(clip);
     }
-    
-    public static void queue(Runnable d) {
-	Player pl = ckpl(true);
-	synchronized(pl.queuemon) {
-	    pl.queue.add(d);
-	}
-    }
 
-    private static Map<Resource, Resource.Audio> reslastc = new HashMap<Resource, Resource.Audio>();
+    private static Map<Resource, Clip> reslastc = new HashMap<Resource, Clip>();
     public static CS fromres(Resource res) {
-	Collection<Resource.Audio> clips = res.layers(Resource.audio);
+	Collection<Clip> clips = res.layers(Audio.clip, null);
 	synchronized(reslastc) {
-	    Resource.Audio last = reslastc.get(res);
+	    Clip last = reslastc.get(res);
 	    int sz = clips.size();
-	    int s = (int)(Math.random() *  (((sz > 2) && (last != null))?(sz - 1):sz));
-	    Resource.Audio clip = null;
-	    for(Resource.Audio cp : clips) {
+	    int s = (int)(Math.random() * (((sz > 2) && (last != null)) ? (sz - 1) : sz));
+	    Clip clip = null;
+	    for(Clip cp : clips) {
 		if(cp == last)
 		    continue;
 		clip = cp;
@@ -570,25 +694,13 @@ public class Audio {
 	play(fromres(res));
     }
 
-    public static void play(final Indir<Resource> clip) {
-	queue(new Runnable() {
-		public void run() {
-		    try {
-			play(clip.get());
-		    } catch(Loading e) {
-			queue(this);
-		    }
-		}
-	    });
-    }
-    
     public static void main(String[] args) throws Exception {
 	Collection<Monitor> clips = new LinkedList<Monitor>();
 	for(int i = 0; i < args.length; i++) {
 	    if(args[i].equals("-b")) {
 		bufsize = Integer.parseInt(args[++i]);
 	    } else {
-		Monitor c = new Monitor(new PCMClip(new FileInputStream(args[i]), 2));
+		Monitor c = new Monitor(PCMClip.fromwav(Files.newInputStream(Utils.path(args[i]))));
 		clips.add(c);
 	    }
 	}
@@ -597,11 +709,11 @@ public class Audio {
 	for(Monitor c : clips)
 	    c.finwait();
     }
-    
+
     static {
 	Console.setscmd("sfx", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    play(Resource.remote().load(args[1]));
+		    play(Loading.waitfor(Resource.remote().load(args[1])));
 		}
 	    });
 	Console.setscmd("sfxvol", new Console.Command() {
@@ -618,6 +730,7 @@ public class Audio {
 		    Player pl = ckpl(false);
 		    if(pl != null)
 			pl.reopen();
+		    Utils.setprefi("audiobuf", nsz);
 		}
 	    });
     }

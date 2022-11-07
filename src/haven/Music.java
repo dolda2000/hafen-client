@@ -66,7 +66,7 @@ public class Music {
 		    seq = MidiSystem.getSequencer(false);
 		    synth = MidiSystem.getSynthesizer();
 		    seq.open();
-		    seq.setSequence(res.layer(Resource.Music.class).seq);
+		    seq.setSequence(res.flayer(Resource.Music.class).seq);
 		    synth.open();
 		    seq.getTransmitter().setReceiver(synth.getReceiver());
 		} catch(MidiUnavailableException e) {

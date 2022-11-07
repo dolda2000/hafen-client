@@ -220,12 +220,12 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		if(p.equals("common-mat")) {
 		    if(desc[1] instanceof Integer) {
 			int mid = (Integer)desc[1];
-			commat = res.layer(Material.Res.class, mid).get();
+			commat = res.flayer(Material.Res.class, mid).get();
 		    } else if(desc[1] instanceof String) {
 			String mnm = (String)desc[1];
 			int mver = (Integer)desc[2];
 			if(desc.length > 3) {
-			    commat = res.pool.load(mnm, mver).get().layer(Material.Res.class, (Integer)desc[3]).get();
+			    commat = res.pool.load(mnm, mver).get().flayer(Material.Res.class, (Integer)desc[3]).get();
 			} else {
 			    commat = Material.fromres((Material.Owner)null, res.pool.load(mnm, mver).get(), Message.nil);
 			}
@@ -237,7 +237,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		String p = (String)desc[0];
 		if(p.equals("base")) {
 		    int mid = (Integer)desc[1];
-		    base = NodeWrap.compose(commat, res.layer(Material.Res.class, mid).get());
+		    base = NodeWrap.compose(commat, res.flayer(Material.Res.class, mid).get());
 		} else if(p.equals("var")) {
 		    int mid = (Integer)desc[1];
 		    double thrl, thrh;
@@ -249,7 +249,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 			thrh = Double.MAX_VALUE;
 		    }
 		    double nz = (res.name.hashCode() * mid * 8129) % 10000;
-		    NodeWrap mat = NodeWrap.compose(commat, res.layer(Material.Res.class, mid).get());
+		    NodeWrap mat = NodeWrap.compose(commat, res.flayer(Material.Res.class, mid).get());
 		    var.add(new Var(mat, thrl, thrh, nz));
 		} else if(p.equals("trans")) {
 		    Resource tres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
@@ -383,7 +383,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		    String p = (String)desc[0];
 		    if(p.equals("rmat")) {
 			Resource mres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
-			mat = mres.layer(Material.Res.class).get();
+			mat = mres.flayer(Material.Res.class).get();
 			if(desc.length > 3)
 			    texh = (Float)desc[3];
 		    } else if(p.equals("rthres")) {

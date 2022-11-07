@@ -26,6 +26,7 @@
 
 package haven.render.gl;
 
+import java.lang.ref.*;
 import java.util.*;
 import com.jogamp.opengl.*;
 import haven.Disposable;
@@ -156,18 +157,20 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 			}
 		    }
 		}
+		if(env.labels && (mod.desc != null))
+		    gl.glObjectLabel(GL2.GL_VERTEX_ARRAY, this, String.valueOf(mod.desc));
 	    });
     }
 
     static class ProgIndex implements Disposable {
-	final Model mod;
 	final GLEnvironment env;
+	final WeakReference<Model> desc;
 	Indexed[] vaos = new Indexed[2];
 	int n = 0;
 
-	ProgIndex(Model mod, GLEnvironment env) {
-	    this.mod = mod;
+	public ProgIndex(GLEnvironment env, Model desc) {
 	    this.env = env;
+	    this.desc = new WeakReference<>(desc);
 	}
 
 	class Indexed extends GLVertexArray {
@@ -220,7 +223,7 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	    clean();
 	}
 
-	GLVertexArray get(GLProgram prog) {
+	GLVertexArray get(GLProgram prog, Model mod) {
 	    Attribute[] attr = prog.attribs;
 	    for(int i = 0; i < n; i++) {
 		if(Arrays.equals(attr, vaos[i].attribs)) {
@@ -238,6 +241,10 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	public void dispose() {
 	    for(int i = 0; (i < vaos.length) && (vaos[i] != null); i++)
 		vaos[i].dispose();
+	}
+
+	public String toString() {
+	    return(String.format("#<vao-idx %s n:%d>", desc.get(), n));
 	}
     }
 }

@@ -37,7 +37,7 @@ public class Progress extends Widget {
     }
 
     public Progress(int p) {
-	super(new Coord(75, 20));
+	super(UI.scale(new Coord(75, 20)));
 	text = Text.renderf(FlowerMenu.pink, "%d%%", p);
     }
 

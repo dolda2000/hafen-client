@@ -76,6 +76,36 @@ public class Struct extends Type {
 	return((o instanceof Struct) && Objects.equals(fields, ((Struct)o).fields));
     }
 
+    public class Constructor extends Expression {
+	public final Expression[] els;
+
+	public Constructor(Expression... els) {
+	    if((els.length > fields.size()))
+		throw(new RuntimeException("Invalid number of arguments for struct: " + els.length));
+	    this.els = els;
+	}
+
+	public void walk(Walker w) {
+	    for(Expression el : els)
+		w.el(el);
+	}
+
+	public void output(Output out) {
+	    out.write(name);
+	    out.write("(");
+	    els[0].output(out);
+	    for(int i = 1; i < els.length; i++) {
+		out.write(", ");
+		els[i].output(out);
+	    }
+	    out.write(")");
+	}
+    }
+
+    public Constructor construct(Expression... els) {
+	return(new Constructor(els));
+    }
+
     public class Definition extends Toplevel {
 	public void walk(Walker w) {}
 

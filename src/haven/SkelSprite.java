@@ -32,7 +32,7 @@ import haven.render.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 
-public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose, EquipTarget {
+public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skeleton.HasPose, Skeleton.ModOwner {
     public static final Pipe.Op
 	rigid = new BaseColor(FColor.GREEN),
 	morphed = new BaseColor(FColor.RED),
@@ -91,6 +91,21 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose,
 	// slot.add(pose.debug); XXXRENDER
     }
 
+    public <T> T context(Class<T> cl) {
+	if(owner == null)
+	    throw(new NoContext(cl));
+	return(owner.context(cl));
+    }
+    public Collection<Location.Chain> getloc() {
+	Collection<Location.Chain> ret = new ArrayList<>(slots.size());
+	for(RenderTree.Slot slot : slots)
+	    ret.add(slot.state().get(Homo3D.loc));
+	return(ret);
+    }
+    public double getv() {
+	return((owner instanceof Skeleton.ModOwner) ? ((Skeleton.ModOwner)owner).getv() : 0);
+    }
+
     /* XXX: It's ugly to snoop inside a wrapping, but I can't think of
      * a better way to apply morphing to renderlinks right now. */
     protected RenderTree.Node animwrap(Pipe.Op.Wrapping wrap, Collection<Runnable> tbuf, Collection<Consumer<Render>> gbuf) {
@@ -143,9 +158,12 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose,
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0)))
 		rbuf.add(animwrap(mr.mat.get().apply(mr.m), tbuf, gbuf));
 	}
+	Owner rec = null;
 	for(RenderLink.Res lr : res.layers(RenderLink.Res.class)) {
 	    if((lr.id < 0) || (((1 << lr.id) & mask) != 0)) {
-		RenderTree.Node r = lr.l.make();
+		if(rec == null)
+		    rec = new RecOwner();
+		RenderTree.Node r = lr.l.make(rec);
 		if(r instanceof Pipe.Op.Wrapping)
 		    r = animwrap((Pipe.Op.Wrapping)r, tbuf, gbuf);
 		rbuf.add(r);
@@ -195,13 +213,12 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose,
 	}
 	Collection<PoseMod> poses = new LinkedList<PoseMod>();
 	stat = true;
-	Skeleton.ModOwner mo = (owner instanceof Skeleton.ModOwner)?(Skeleton.ModOwner)owner:Skeleton.ModOwner.nil;
 	Map<Skeleton.ResPose, PoseMod> newids = new HashMap<Skeleton.ResPose, PoseMod>();
 	for(Skeleton.ResPose p : res.layers(Skeleton.ResPose.class)) {
 	    if((p.id < 0) || ((mask & (1 << p.id)) != 0)) {
 		Skeleton.PoseMod mod;
 		if((mod = modids.get(p)) == null) {
-		    mod = p.forskel(mo, skel, p.defmode);
+		    mod = p.forskel(this, skel, p.defmode);
 		    if(old)
 			mod.age();
 		}

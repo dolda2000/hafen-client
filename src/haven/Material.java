@@ -116,6 +116,8 @@ public class Material implements Pipe.Op {
 		return(Rendered.first);
 	    } else if(nm.equals("last")) {
 		return(Rendered.last);
+	    } else if(nm.equals("def")) {
+		return(Rendered.deflt);
 	    } else if(nm.equals("pfx")) {
 		return(Rendered.postpfx);
 	    } else if(nm.equals("eye")) {

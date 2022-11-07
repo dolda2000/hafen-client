@@ -29,7 +29,8 @@ package haven;
 import java.awt.RenderingHints;
 import java.io.*;
 import java.nio.*;
-import java.net.URL;
+import java.nio.file.*;
+import java.net.*;
 import java.lang.ref.*;
 import java.lang.reflect.*;
 import java.util.prefs.*;
@@ -48,7 +49,18 @@ public class Utils {
     static Coord imgsz(BufferedImage img) {
 	return(new Coord(img.getWidth(), img.getHeight()));
     }
-	
+
+    public static boolean checkhit(BufferedImage img, Coord c, int thres) {
+	if(!c.isect(Coord.z, imgsz(img)))
+	    return(false);
+	if(img.getRaster().getNumBands() < 4)
+	    return(true);
+	return(img.getRaster().getSample(c.x, c.y, 3) >= thres);
+    }
+    public static boolean checkhit(BufferedImage img, Coord c) {
+	return(checkhit(img, c, 128));
+    }
+
     public static void defer(final Runnable r) {
 	Defer.later(new Defer.Callable<Object>() {
 		public Object call() {
@@ -57,7 +69,7 @@ public class Utils {
 		}
 	    });
     }
-	
+
     static void drawgay(BufferedImage t, BufferedImage img, Coord c) {
 	Coord sz = imgsz(img);
 	for(int y = 0; y < sz.y; y++) {
@@ -72,25 +84,49 @@ public class Utils {
 	    }
 	}
     }
-	
+
+    public static Path path(String path) {
+	return(FileSystems.getDefault().getPath(path));
+    }
+
+    public static Path pj(Path base, String... els) {
+	for(String el : els)
+	    base = base.resolve(el);
+	return(base);
+    }
+
+    public static Path srcpath(Class<?> cl) {
+	java.security.ProtectionDomain d = cl.getProtectionDomain();
+	if(d == null) throw(new IllegalArgumentException(String.valueOf(cl) + " has no prortection domain"));
+	java.security.CodeSource s = d.getCodeSource();
+	if(s == null) throw(new IllegalArgumentException(String.valueOf(cl) + " has no code source"));
+	URL url = s.getLocation();
+	if(url == null) throw(new IllegalArgumentException(String.valueOf(cl) + " has no location"));
+	try {
+	    return(Paths.get(url.toURI()));
+	} catch(java.net.URISyntaxException e) {
+	    throw(new IllegalArgumentException(String.valueOf(cl) + " has a malformed location", e));
+	}
+    }
+
     public static int drawtext(Graphics g, String text, Coord c) {
 	java.awt.FontMetrics m = g.getFontMetrics();
 	g.drawString(text, c.x, c.y + m.getAscent());
 	return(m.getHeight());
     }
-	
+
     static Coord textsz(Graphics g, String text) {
 	java.awt.FontMetrics m = g.getFontMetrics();
 	java.awt.geom.Rectangle2D ts = m.getStringBounds(text, g);
 	return(new Coord((int)ts.getWidth(), (int)ts.getHeight()));
     }
-	
+
     static void aligntext(Graphics g, String text, Coord c, double ax, double ay) {
 	java.awt.FontMetrics m = g.getFontMetrics();
 	java.awt.geom.Rectangle2D ts = m.getStringBounds(text, g);
 	g.drawString(text, (int)(c.x - ts.getWidth() * ax), (int)(c.y + m.getAscent() - ts.getHeight() * ay));
     }
-    
+
     public static String fpformat(int num, int div, int dec) {
 	StringBuilder buf = new StringBuilder();
 	boolean s = false;
@@ -141,7 +177,7 @@ public class Utils {
 	buf.append(dp);
 	return(buf.toString());
     }
-    
+
     public static String odformat2(double num, int md) {
 	if(num < 0)
 	    return("-" + odformat2(-num, md));
@@ -170,7 +206,7 @@ public class Utils {
     static void line(Graphics g, Coord c1, Coord c2) {
 	g.drawLine(c1.x, c1.y, c2.x, c2.y);
     }
-	
+
     static void AA(Graphics g) {
 	java.awt.Graphics2D g2 = (java.awt.Graphics2D)g;
 	g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);		
@@ -198,62 +234,114 @@ public class Utils {
 	return((raw - 186) * (1.0 / 31.0));
     }
 
-    static synchronized Preferences prefs() {
+    private static Map<Object, Object> sysprefs() {
+	try {
+	    Properties buf = new Properties();
+	    Optional<Path> pfile = Optional.ofNullable(System.getProperty("haven.prefs", null)).map(Utils::path);
+	    if(pfile.isPresent() && Files.exists(pfile.get())) {
+		try(InputStream fp = Files.newInputStream(pfile.get())) {
+		    buf.load(fp);
+		} catch(IOException e) {
+		    new Warning(e, "could not read preferences file").level(Warning.ERROR).issue();
+		}
+	    }
+	    for(Map.Entry<?, ?> ent : System.getProperties().entrySet()) {
+		if((ent.getKey() instanceof String) && (ent.getValue() instanceof String) &&
+		   ((String)ent.getKey()).startsWith("haven.prefs."))
+		{
+		    buf.put(((String)ent.getKey()).substring(12), (String)ent.getValue());
+		}
+	    }
+	    return(buf);
+	} catch(SecurityException e) {
+	    return(Collections.emptyMap());
+	}
+    }
+
+    public static final Config.Variable<String> prefspec = Config.Variable.prop("haven.prefspec", "hafen");
+    public static Preferences prefs() {
 	if(prefs == null) {
-	    Preferences node = Preferences.userNodeForPackage(Utils.class);
-	    if(Config.prefspec != null)
-		node = node.node(Config.prefspec);
-	    prefs = node;
+	    synchronized(Utils.class) {
+		if(prefs == null) {
+		    Map<Object, Object> sysprefs = sysprefs();
+		    if(!sysprefs.isEmpty()) {
+			prefs = new MapPrefs("haven", sysprefs);
+		    } else {
+			Preferences node = Preferences.userNodeForPackage(Utils.class);
+			if(prefspec.get() != null)
+			    node = node.node(prefspec.get());
+			prefs = node;
+		    }
+		}
+	    }
 	}
 	return(prefs);
     }
 
-    static String getpref(String prefname, String def) {
+    public static String getpref(String prefname, String def) {
 	try {
 	    return(prefs().get(prefname, def));
 	} catch(SecurityException e) {
 	    return(def);
 	}
     }
-	
-    static void setpref(String prefname, String val) {
+
+    public static void setpref(String prefname, String val) {
 	try {
-	    prefs().put(prefname, val);
+	    if(val == null)
+		prefs().remove(prefname);
+	    else
+		prefs().put(prefname, val);
 	} catch(SecurityException e) {
 	}
     }
-    
-    static int getprefi(String prefname, int def) {
+
+    public static int getprefi(String prefname, int def) {
 	try {
 	    return(prefs().getInt(prefname, def));
 	} catch(SecurityException e) {
 	    return(def);
 	}
     }
-    
-    static void setprefi(String prefname, int val) {
+
+    public static void setprefi(String prefname, int val) {
 	try {
 	    prefs().putInt(prefname, val);
 	} catch(SecurityException e) {
 	}
     }
 
-    static boolean getprefb(String prefname, boolean def) {
+    public static double getprefd(String prefname, double def) {
+	try {
+	    return(prefs().getDouble(prefname, def));
+	} catch(SecurityException e) {
+	    return(def);
+	}
+    }
+
+    public static void setprefd(String prefname, double val) {
+	try {
+	    prefs().putDouble(prefname, val);
+	} catch(SecurityException e) {
+	}
+    }
+
+    public static boolean getprefb(String prefname, boolean def) {
 	try {
 	    return(prefs().getBoolean(prefname, def));
 	} catch(SecurityException e) {
 	    return(def);
 	}
     }
-    
-    static void setprefb(String prefname, boolean val) {
+
+    public static void setprefb(String prefname, boolean val) {
 	try {
 	    prefs().putBoolean(prefname, val);
 	} catch(SecurityException e) {
 	}
     }
 
-    static Coord getprefc(String prefname, Coord def) {
+    public static Coord getprefc(String prefname, Coord def) {
 	try {
 	    String val = prefs().get(prefname, null);
 	    if(val == null)
@@ -266,40 +354,75 @@ public class Utils {
 	    return(def);
 	}
     }
-    
-    static void setprefc(String prefname, Coord val) {
+
+    public static void setprefc(String prefname, Coord val) {
 	try {
 	    prefs().put(prefname, val.x + "x" + val.y);
 	} catch(SecurityException e) {
 	}
     }
 
-    static byte[] getprefb(String prefname, byte[] def) {
+    public static byte[] getprefb(String prefname, byte[] def) {
 	try {
 	    return(prefs().getByteArray(prefname, def));
 	} catch(SecurityException e) {
 	    return(def);
 	}
     }
-	
-    static void setprefb(String prefname, byte[] val) {
+
+    public static void setprefb(String prefname, byte[] val) {
 	try {
 	    prefs().putByteArray(prefname, val);
 	} catch(SecurityException e) {
 	}
     }
-    
+
+    public static List<String> getprefsl(String prefname, String[] def) {
+	byte[] enc = getprefb(prefname, null);
+	if(enc == null)
+	    return((def == null) ? null : Arrays.asList(def));
+	ByteBuffer buf = ByteBuffer.wrap(enc);
+	ArrayList<String> ret = new ArrayList<>();
+	for(int i = 0, s = 0; i < buf.capacity(); i++) {
+	    if(buf.get(i) == 0) {
+		buf.position(s).limit(i);
+		CharBuffer dec = utf8.decode(buf);
+		ret.add(dec.toString());
+		s = i + 1;
+		buf.limit(buf.capacity());
+	    }
+	}
+	ret.trimToSize();
+	return(ret);
+    }
+
+    public static void setprefsl(String prefname, Iterable<? extends CharSequence> val) {
+	ByteBuffer buf = ByteBuffer.allocate(1024);
+	for(CharSequence str : val) {
+	    ByteBuffer enc = utf8.encode(CharBuffer.wrap(str));
+	    buf = growbuf(buf, enc.remaining() + 1);
+	    buf.put(enc);
+	    buf.put((byte)0);
+	}
+	buf.flip();
+	byte[] enc = new byte[buf.remaining()];
+	buf.get(enc);
+	setprefb(prefname, enc);
+    }
+
     public static String getprop(String propname, String def) {
 	try {
 	    String ret;
 	    if((ret = System.getProperty(propname)) != null)
 		return(ret);
-	    if((ret = System.getProperty("jnlp." + propname)) != null)
-		return(ret);
 	    return(def);
 	} catch(SecurityException e) {
 	    return(def);
 	}
+    }
+
+    public static int sb(int n, int b) {
+	return((n << (32 - b)) >> (32 - b));
     }
 
     public static int ub(byte b) {
@@ -325,31 +448,45 @@ public class Utils {
     public static int uint16d(byte[] buf, int off) {
 	return(ub(buf[off]) | (ub(buf[off + 1]) << 8));
     }
-	
+
     public static int int16d(byte[] buf, int off) {
 	return((int)(short)uint16d(buf, off));
     }
-	
+
     public static long uint32d(byte[] buf, int off) {
 	return((long)ub(buf[off]) | ((long)ub(buf[off + 1]) << 8) | ((long)ub(buf[off + 2]) << 16) | ((long)ub(buf[off + 3]) << 24));
     }
-	
+
     public static void uint32e(long num, byte[] buf, int off) {
 	buf[off] = (byte)(num & 0xff);
 	buf[off + 1] = (byte)((num & 0x0000ff00) >> 8);
 	buf[off + 2] = (byte)((num & 0x00ff0000) >> 16);
 	buf[off + 3] = (byte)((num & 0xff000000) >> 24);
     }
-	
+
     public static int int32d(byte[] buf, int off) {
 	return((int)uint32d(buf, off));
     }
-    
+
     public static long int64d(byte[] buf, int off) {
 	long b = 0;
 	for(int i = 0; i < 8; i++)
 	    b |= ((long)ub(buf[off + i])) << (i * 8);
 	return(b);
+    }
+
+    public static int intvard(byte[] buf, int off) {
+	int len = buf.length - off;
+	switch(len) {
+	case 4:
+	    return(int32d(buf, off));
+	case 2:
+	    return(int16d(buf, off));
+	case 1:
+	    return(buf[off]);
+	default:
+	    throw(new IllegalArgumentException(Integer.toString(len)));
+	}
     }
 
     public static void int64e(long num, byte[] buf, int off) {
@@ -384,7 +521,7 @@ public class Utils {
 	off[0] = i + 1;
 	return(ret);
     }
-    
+
     public static double floatd(byte[] buf, int off) {
 	int e = buf[off];
 	long t = uint32d(buf, off + 1);
@@ -557,7 +694,7 @@ public class Utils {
 	else
 	    return((char)('A' + num - 10));
     }
-	
+
     static int hex2num(char hex) {
 	if((hex >= '0') && (hex <= '9'))
 	    return(hex - '0');
@@ -586,7 +723,7 @@ public class Utils {
 	    ret[o] = (byte)((hex2num(hex.charAt(i)) << 4) | hex2num(hex.charAt(i + 1)));
 	return(ret);
     }
-    
+
     private final static String base64set = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     private final static int[] base64rev;
     static {
@@ -641,7 +778,7 @@ public class Utils {
 	}
 	return(buf.toByteArray());
     }
-	
+
     public static String[] splitwords(String text) {
 	ArrayList<String> words = new ArrayList<String>();
 	StringBuilder buf = new StringBuilder();
@@ -696,7 +833,7 @@ public class Utils {
 	    return(null);
 	return(words.toArray(new String[0]));
     }
-	
+
     public static String[] splitlines(String text) {
 	ArrayList<String> ret = new ArrayList<String>();
 	int p = 0;
@@ -719,7 +856,7 @@ public class Utils {
 	    return(0);
 	}
     }
-    
+
     static void readtileof(InputStream in) throws IOException {
         byte[] buf = new byte[4096];
         while(true) {
@@ -727,7 +864,7 @@ public class Utils {
                 return;
         }
     }
-    
+
     public static byte[] readall(InputStream in) throws IOException {
 	byte[] buf = new byte[4096];
 	int off = 0;
@@ -746,7 +883,51 @@ public class Utils {
 	    off += ret;
 	}
     }
-    
+
+    public static interface IOFunction<T> {
+	/* Checked exceptions banzai :P */
+	public T run() throws IOException;
+    }
+
+    /* XXX: Sometimes, the client is getting strange and weird OS
+     * errors on Windows. For example, file sharing violations are
+     * sometimes returned even though Java always opens
+     * RandomAccessFiles in non-exclusive mode, and other times,
+     * permission is spuriously denied. I've had zero luck in trying
+     * to find a root cause for these errors, so just assume the error
+     * is transient and retry. :P */
+    public static <T> T ioretry(IOFunction<? extends T> task) throws IOException {
+	double[] retimes = {0.01, 0.1, 0.5, 1.0, 5.0};
+	Throwable last = null;
+	boolean intr = false;
+	try {
+	    for(int r = 0; true; r++) {
+		try {
+		    return(task.run());
+		} catch(RuntimeException | IOException exc) {
+		    if(last == null)
+			new Warning(exc, "weird I/O error occurred on " + String.valueOf(task)).issue();
+		    if(last != null)
+			exc.addSuppressed(last);
+		    last = exc;
+		    if(r < retimes.length) {
+			try {
+			    Thread.sleep((long)(retimes[r] * 1000));
+			} catch(InterruptedException irq) {
+			    Thread.currentThread().interrupted();
+			    intr = true;
+			}
+		    } else {
+			throw(exc);
+		    }
+		}
+	    }
+	} finally {
+	    if(intr)
+		Thread.currentThread().interrupt();
+	}
+    }
+
     private static void dumptg(ThreadGroup tg, PrintWriter out, int indent) {
 	for(int o = 0; o < indent; o++)
 	    out.print("    ");
@@ -791,6 +972,21 @@ public class Utils {
 	if(term) out.println();
     }
 
+    public static void dumparr(double[] arr, PrintStream out, boolean term) {
+	if(arr == null) {
+	    out.print("null");
+	} else {
+	    out.print('[');
+	    boolean f = true;
+	    for(double v : arr) {
+		if(!f) out.print(", "); f = false;
+		out.print(v);
+	    }
+	    out.print(']');
+	}
+	if(term) out.println();
+    }
+
     public static void dumparr(float[] arr, PrintStream out, boolean term) {
 	if(arr == null) {
 	    out.print("null");
@@ -800,6 +996,21 @@ public class Utils {
 	    for(float v : arr) {
 		if(!f) out.print(", "); f = false;
 		out.print(v);
+	    }
+	    out.print(']');
+	}
+	if(term) out.println();
+    }
+
+    public static void dumparr(long[] arr, PrintStream out, boolean term) {
+	if(arr == null) {
+	    out.print("null");
+	} else {
+	    out.print('[');
+	    boolean f = true;
+	    for(long i : arr) {
+		if(!f) out.print(", "); f = false;
+		out.print(i);
 	    }
 	    out.print(']');
 	}
@@ -849,6 +1060,15 @@ public class Utils {
 		if(o > 0) out.print(' ');
 		out.printf("%02x", arr[i + o]);
 	    }
+	    for(int o = (Math.min(width, arr.length - i) * 3) - 1, w = (width * 3) - 1 + 8; o < w; o++)
+		out.print(' ');
+	    for(int o = 0; (o < width) && (i + o < arr.length); o++) {
+		int b = arr[i + o] & 0xff;
+		if((b < 32) || (b >= 127))
+		    out.print('.');
+		else
+		    out.print((char)b);
+	    }
 	    out.print('\n');
 	}
     }
@@ -866,6 +1086,15 @@ public class Utils {
 		if(o > 0) out.print(' ');
 		out.printf("%02x", arr.get(i + o) & 0xff);
 	    }
+	    for(int o = (Math.min(width, arr.capacity() - i) * 3) - 1, w = (width * 3) - 1 + 8; o < w; o++)
+		out.print(' ');
+	    for(int o = 0; (o < width) && (i + o < arr.capacity()); o++) {
+		int b = arr.get(i + o) & 0xff;
+		if((b < 32) || (b >= 127))
+		    out.print('.');
+		else
+		    out.print((char)b);
+	    }
 	    out.print('\n');
 	}
     }
@@ -873,7 +1102,7 @@ public class Utils {
     public static String titlecase(String str) {
 	return(Character.toTitleCase(str.charAt(0)) + str.substring(1));
     }
-    
+
     public static Color contrast(Color col) {
 	int max = Math.max(col.getRed(), Math.max(col.getGreen(), col.getBlue()));
 	if(max > 128) {
@@ -904,7 +1133,7 @@ public class Utils {
                          ((col & 0x00f0) >>  4) * 17,
                          ((col & 0x000f) >>  0) * 17));
     }
-    
+
     public static BufferedImage outline(BufferedImage img, Color col) {
 	Coord sz = imgsz(img).add(2, 2);
 	BufferedImage ol = TexI.mkbuf(sz);
@@ -930,7 +1159,7 @@ public class Utils {
 	}
 	return(ol);
     }
-    
+
     public static BufferedImage outline2(BufferedImage img, Color col) {
 	BufferedImage ol = outline(img, col);
 	Graphics g = ol.getGraphics();
@@ -945,7 +1174,7 @@ public class Utils {
 	else
 	    return(a / b);
     }
-    
+
     public static int floormod(int a, int b) {
 	int r = a % b;
 	if(r < 0)
@@ -966,7 +1195,7 @@ public class Utils {
 	double q = a / b;
 	return((q < 0)?(((int)q) - 1):((int)q));
     }
-    
+
     public static float floormod(float a, float b) {
 	float r = a % b;
 	return((a < 0)?(r + b):r);
@@ -999,7 +1228,7 @@ public class Utils {
 	    return(max);
 	return(d);
     }
-    
+
     public static float clip(float d, float min, float max) {
 	if(d < min)
 	    return(min);
@@ -1007,7 +1236,7 @@ public class Utils {
 	    return(max);
 	return(d);
     }
-    
+
     public static int clip(int i, int min, int max) {
 	if(i < min)
 	    return(min);
@@ -1022,6 +1251,45 @@ public class Utils {
 	if(d > max)
 	    return(1.0);
 	return((d - min) / (max - min));
+    }
+
+    public static <E, O extends Comparable<? super O>> E max(Collection<E> from, Function<? super E, O> key) {
+	E ret = null;
+	O max = null;
+	for(E el : from) {
+	    O score = key.apply(el);
+	    if((max == null) || (score.compareTo(max) > 0)) {
+		ret = el;
+		max = score;
+	    }
+	}
+	return(ret);
+    }
+
+    public static <E, O extends Comparable<? super O>> E min(Collection<E> from, Function<? super E, O> key) {
+	E ret = null;
+	O max = null;
+	for(E el : from) {
+	    O score = key.apply(el);
+	    if((max == null) || (score.compareTo(max) < 0)) {
+		ret = el;
+		max = score;
+	    }
+	}
+	return(ret);
+    }
+
+    public static <E extends Comparable<? super E>> E max(Collection<E> from) {return(max(from, Function.identity()));}
+    public static <E extends Comparable<? super E>> E min(Collection<E> from) {return(min(from, Function.identity()));}
+
+    public static float gcd(float x, float y, float E) {
+	float a = Math.max(x, y), b = Math.min(x, y);
+	while(b > E) {
+	    float c = a % b;
+	    a = b;
+	    b = c;
+	}
+	return(a);
     }
 
     public static double smoothstep(double d) {
@@ -1044,7 +1312,7 @@ public class Utils {
 			 ((x.getBlue()  * f2) + (y.getBlue()  * f1)) / 255,
 			 ((x.getAlpha() * f2) + (y.getAlpha() * f1)) / 255));
     }
-    
+
     public static Color preblend(Color c1, Color c2) {
 	double a1 = c1.getAlpha() / 255.0;
 	double a2 = c2.getAlpha() / 255.0;
@@ -1062,7 +1330,7 @@ public class Utils {
 	oout.writeObject(obj);
 	oout.flush();
     }
-    
+
     public static byte[] serialize(Object obj) {
 	ByteArrayOutputStream out = new ByteArrayOutputStream();
 	try {
@@ -1072,7 +1340,7 @@ public class Utils {
 	}
 	return(out.toByteArray());
     }
-    
+
     public static Object deserialize(InputStream in) throws IOException {
 	ObjectInputStream oin = new ObjectInputStream(in);
 	try {
@@ -1081,7 +1349,7 @@ public class Utils {
 	    return(null);
 	}
     }
-    
+
     public static Object deserialize(byte[] buf) {
 	if(buf == null)
 	    return(null);
@@ -1092,7 +1360,7 @@ public class Utils {
 	    return(null);
 	}
     }
-    
+
     public static boolean parsebool(String s) {
 	if(s == null)
 	    throw(new IllegalArgumentException(s));
@@ -1114,7 +1382,7 @@ public class Utils {
 	    return(def);
 	}
     }
-    
+
     /* Just in case anyone doubted that Java is stupid. :-/ */
     public static FloatBuffer bufcp(float[] a) {
 	FloatBuffer b = mkfbuf(a.length);
@@ -1217,7 +1485,7 @@ public class Utils {
 		((float)c.getAlpha() / 255.0f)
 	    });
     }
-    
+
     @SuppressWarnings("unchecked")
     public static <T> T[] mkarray(Class<T> cl, int len) {
 	return((T[])Array.newInstance(cl, len));
@@ -1279,7 +1547,7 @@ public class Utils {
     public static <T> T[] extend(T[] src, int nl) {
 	return(extend(src, 0, nl));
     }
-    
+
     public static <T, E extends T> T[] extend(T[] src, E ne) {
 	T[] ret = extend(src, 0, src.length + 1);
 	ret[src.length] = ne;
@@ -1297,25 +1565,25 @@ public class Utils {
 	System.arraycopy(src, 0, dst, 0, Math.min(src.length, dst.length));
 	return(dst);
     }
-    
+
     public static double[] extend(double[] src, int nl) {
 	double[] dst = new double[nl];
 	System.arraycopy(src, 0, dst, 0, Math.min(src.length, dst.length));
 	return(dst);
     }
-    
+
     public static float[] extend(float[] src, int nl) {
 	float[] dst = new float[nl];
 	System.arraycopy(src, 0, dst, 0, Math.min(src.length, dst.length));
 	return(dst);
     }
-    
+
     public static short[] extend(short[] src, int nl) {
 	short[] dst = new short[nl];
 	System.arraycopy(src, 0, dst, 0, Math.min(src.length, dst.length));
 	return(dst);
     }
-    
+
     public static <T> T el(Iterable<T> c) {
 	Iterator<T> i = c.iterator();
 	if(!i.hasNext()) return(null);
@@ -1328,6 +1596,53 @@ public class Utils {
 	T ret = i.next();
 	i.remove();
 	return(ret);
+    }
+
+    public static <T> List<T> reversed(List<T> ls) {
+	return(new AbstractList<T>() {
+		public int size() {
+		    return(ls.size());
+		}
+
+		public T get(int i) {
+		    return(ls.get(ls.size() - 1 - i));
+		}
+
+		public ListIterator<T> listIterator(int first) {
+		    ListIterator<T> bk = ls.listIterator(ls.size() - first);
+		    return(new ListIterator<T>() {
+			    public boolean hasNext() {return(bk.hasPrevious());}
+			    public boolean hasPrevious() {return(bk.hasNext());}
+			    public T next() {return(bk.previous());}
+			    public T previous() {return(bk.next());}
+			    public int nextIndex() {return(ls.size() - bk.previousIndex() - 1);}
+			    public int previousIndex() {return(ls.size() - bk.nextIndex() - 1);}
+
+			    public void set(T el) {bk.set(el);}
+			    public void remove() {bk.remove();}
+			    public void add(T el) {bk.add(el);}
+			});
+		}
+
+		public ListIterator<T> listIterator() {return(listIterator(0));}
+		public Iterator<T> iterator() {return(listIterator());}
+
+		public T set(int i, T el) {
+		    return(ls.set(ls.size() - 1 - i, el));
+		}
+
+		public void add(int i, T el) {
+		    ls.add(ls.size() - i, el);
+		}
+
+		public T remove(int i) {
+		    return(ls.remove(ls.size() - 1 - i));
+		}
+
+		public String toString() {
+		    return(String.format("#<reversed %s>", ls));
+		}
+	    });
     }
 
     public static <T> int index(T[] arr, T el) {
@@ -1499,6 +1814,42 @@ public class Utils {
 	}
     }
 
+    public static class Range extends AbstractCollection<Integer> {
+	public final int min, max, step;
+
+	public Range(int min, int max, int step) {
+	    if(step == 0)
+		throw(new IllegalArgumentException());
+	    this.min = min; this.max = max; this.step = step;
+	}
+
+	public int size() {
+	    return(Math.max((max - min + step - 1) / step, 0));
+	}
+
+	public Iterator<Integer> iterator() {
+	    return(new Iterator<Integer>() {
+		    private int cur = min;
+
+		    public boolean hasNext() {
+			return((step > 0) ? (cur < max) : (cur > max));
+		    }
+
+		    public Integer next() {
+			if(!hasNext())
+			    throw(new NoSuchElementException());
+			int ret = cur;
+			cur += step;
+			return(ret);
+		    }
+		});
+	}
+    }
+
+    public static Collection<Integer> range(int min, int max, int step) {return(new Range(min, max, step));}
+    public static Collection<Integer> range(int min, int max) {return(range(min, max, 1));}
+    public static Collection<Integer> range(int max) {return(range(0, max));}
+
     public static <T> Indir<T> cache(Indir<T> src) {
 	return(new Indir<T>() {
 		private T val;
@@ -1518,7 +1869,7 @@ public class Utils {
 	return(new MapBuilder<K, V>(new HashMap<K, V>()));
     }
 
-    public static <F, T> Iterator<T> map(Iterator<F> from, Function<F, T> fn) {
+    public static <F, T> Iterator<T> map(Iterator<F> from, Function<? super F, ? extends T> fn) {
 	return(new Iterator<T>() {
 		boolean h = false;
 		T n;
@@ -1548,7 +1899,7 @@ public class Utils {
 	    });
     }
 
-    public static <E> Iterator<E> filter(Iterator<E> from, Predicate<E> filter) {
+    public static <E> Iterator<E> filter(Iterator<E> from, Predicate<? super E> filter) {
 	return(new Iterator<E>() {
 		boolean h = false;
 		E n;
@@ -1622,6 +1973,12 @@ public class Utils {
 	return(dst);
     }
 
+    public static <T> Optional<T> ocast(Object x, Class<T> cl) {
+	if(cl.isInstance(x))
+	    return(Optional.of(cl.cast(x)));
+	return(Optional.empty());
+    }
+
     public static int sidcmp(Object a, Object b) {
 	int ah = System.identityHashCode(a);
 	int bh = System.identityHashCode(b);
@@ -1630,6 +1987,177 @@ public class Utils {
 	else if(ah > bh)
 	    return(1);
 	return(0);
+    }
+
+    public static final Object formatter(String fmt, Object... args) {
+	return(new Object() {
+		public String toString() {
+		    return(String.format(fmt, args));
+		}
+	    });
+    }
+
+    public static Inet4Address in4_pton(CharSequence as) {
+	int dbuf = -1, o = 0;
+	byte[] abuf = new byte[4];
+	for(int i = 0; i < as.length(); i++) {
+	    char c = as.charAt(i);
+	    if((c >= '0') && (c <= '9')) {
+		dbuf = (((dbuf < 0) ? 0 : dbuf) * 10) + (c - '0');
+		if(dbuf >= 256)
+		    throw(new IllegalArgumentException("illegal octet"));
+	    } else if(c == '.') {
+		if(dbuf < 0)
+		    throw(new IllegalArgumentException("dot without preceding octet"));
+		if(o >= 3)
+		    throw(new IllegalArgumentException("too many address octets"));
+		abuf[o++] = (byte)dbuf;
+		dbuf = -1;
+	    } else {
+		throw(new IllegalArgumentException("illegal address character"));
+	    }
+	}
+	if(dbuf < 0)
+	    throw(new IllegalArgumentException("end without preceding octet"));
+	if(o != 3)
+	    throw(new IllegalArgumentException("too few address octets"));
+	abuf[o++] = (byte)dbuf;
+	try {
+	    return((Inet4Address)InetAddress.getByAddress(abuf));
+	} catch(UnknownHostException e) {
+	    throw(new RuntimeException(e));
+	}
+    }
+
+    public static InetAddress in6_pton(CharSequence as) {
+	int hbuf = -1, dbuf = -1, p = 0, v4map = -1;
+	int[] o = {0, 0};
+	byte[][] abuf = {new byte[16], new byte[16]};
+	String scope = null;
+	for(int i = 0; i < as.length(); i++) {
+	    char c = as.charAt(i);
+	    int dv = -1;
+	    if((c >= '0') && (c <= '9'))
+		dv = c - '0';
+	    else if((c >= 'A') && (c <= 'F'))
+		dv = c + 10 - 'A';
+	    else if((c >= 'a') && (c <= 'f'))
+		dv = c + 10 - 'a';
+	    if(dv >= 0) {
+		if(hbuf < 0)
+		    hbuf = dbuf = 0;
+		hbuf = (hbuf * 16) + dv;
+		if(hbuf >= 65536)
+		    throw(new IllegalArgumentException("illegal address number"));
+		if(dbuf >= 0)
+		    dbuf = (dv >= 10) ? -1 : ((dbuf * 10) + dv);
+		if(dbuf >= 256)
+		    dbuf = -1;
+	    } else if(c == ':') {
+		if(v4map >= 0)
+		    throw(new IllegalArgumentException("illegal embedded v4 address"));
+		if(hbuf < 0) {
+		    if(p == 0) {
+			if(o[p] == 0) {
+			    if((i < as.length() - 1) && (as.charAt(i + 1) == ':')) {
+				p = 1;
+				i++;
+			    } else {
+				throw(new IllegalArgumentException("colon without preceeding address number"));
+			    }
+			} else {
+			    p = 1;
+			}
+		    } else {
+			throw(new IllegalArgumentException("duplicate zero-string"));
+		    }
+		} else {
+		    if(o[p] >= 14)
+			throw(new IllegalArgumentException("too many address numbers"));
+		    abuf[p][o[p]++] = (byte)((hbuf & 0xff00) >> 8);
+		    abuf[p][o[p]++] = (byte) (hbuf & 0x00ff);
+		    hbuf = -1;
+		}
+	    } else if(c == '.') {
+		if((hbuf < 0) || (dbuf < 0))
+		    throw(new IllegalArgumentException("illegal embedded v4 octet"));
+		if((p == 0) && (o[p] == 0))
+		    throw(new IllegalArgumentException("embedded v4 at start of address"));
+		if(v4map++ >= 2)
+		    throw(new IllegalArgumentException("too many embedded v4 octets"));
+		if(o[p] >= 15)
+		    throw(new IllegalArgumentException("too many address numbers"));
+		abuf[p][o[p]++] = (byte)dbuf;
+		hbuf = -1;
+	    } else if(c == '%') {
+		scope = as.subSequence(i + 1, as.length()).toString();
+		break;
+	    } else {
+		throw(new IllegalArgumentException("illegal address character"));
+	    }
+	}
+	if(hbuf < 0) {
+	    if((p < 1) || (o[p] > 0))
+		throw(new IllegalArgumentException("unterminated address"));
+	} else {
+	    if(v4map < 0) {
+		if(o[p] >= 15)
+		    throw(new IllegalArgumentException("too many address numbers"));
+		abuf[p][o[p]++] = (byte)((hbuf & 0xff00) >> 8);
+		abuf[p][o[p]++] = (byte) (hbuf & 0x00ff);
+	    } else {
+		if(dbuf < 0)
+		    throw(new IllegalArgumentException("illegal embedded v4 octet"));
+		if(v4map != 2)
+		    throw(new IllegalArgumentException("too few embedded v4 octets"));
+		if(o[p] >= 16)
+		    throw(new IllegalArgumentException("too many address numbers"));
+		abuf[p][o[p]++] = (byte)dbuf;
+	    }
+	}
+	byte[] fbuf;
+	if(p == 0) {
+	    if(o[0] != 16)
+		throw(new IllegalArgumentException("too few address numbers"));
+	    fbuf = abuf[0];
+	} else {
+	    if((o[0] + o[1]) >= 16)
+		throw(new IllegalArgumentException("illegal zero-string"));
+	    fbuf = new byte[16];
+	    System.arraycopy(abuf[0], 0, fbuf, 0, o[0]);
+	    System.arraycopy(abuf[1], 0, fbuf, 16 - o[1], o[1]);
+	}
+	try {
+	    if(scope == null)
+		return(InetAddress.getByAddress(fbuf));
+	    try {
+		return(Inet6Address.getByAddress(null, fbuf, Integer.parseInt(scope)));
+	    } catch(NumberFormatException e) {
+		try {
+		    NetworkInterface iface = NetworkInterface.getByName(scope);
+		    if(iface == null)
+			throw(new IllegalArgumentException("could not resolve scoped interface: " + scope));
+		    return(Inet6Address.getByAddress(null, fbuf, iface));
+		} catch(SocketException e2) {
+		    throw(new IllegalArgumentException("could not resolve scoped interface: " + scope, e));
+		}
+	    }
+	} catch(UnknownHostException e) {
+	    throw(new RuntimeException(e));
+	}
+    }
+
+    public static InetAddress inet_pton(CharSequence as) {
+	try {
+	    return(in4_pton(as));
+	} catch(IllegalArgumentException e) {
+	    try {
+		return(in6_pton(as));
+	    } catch(IllegalArgumentException e2) {
+		e2.addSuppressed(e);
+		throw(e2);
+	    }
+	}
     }
 
     public static final Comparator<Object> idcmp = new Comparator<Object>() {
@@ -1703,6 +2231,17 @@ public class Utils {
 	Console.setscmd("die", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    throw(new Error("Triggered death"));
+		}
+	    });
+	Console.setscmd("sleep", new Console.Command() {
+		public void run(Console cons, String[] args) {
+		    long ms = (long)(Double.parseDouble(args[1]) * 1000);
+		    try {
+			Thread.sleep(ms);
+		    } catch(InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw(new RuntimeException(e));
+		    }
 		}
 	    });
 	Console.setscmd("lockdie", new Console.Command() {

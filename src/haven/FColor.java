@@ -108,4 +108,14 @@ public class FColor {
     public String toString() {
 	return(String.format("color(%f, %f, %f, %f)", r, g, b, a));
     }
+
+    public FColor lin2srgb() {
+	float F = 1.0f / 2.2f;
+	return(new FColor((float)Math.pow(r, F), (float)Math.pow(g, F), (float)Math.pow(b, F), a));
+    }
+
+    public FColor srgb2lin() {
+	float F = 2.2f;
+	return(new FColor((float)Math.pow(r, F), (float)Math.pow(g, F), (float)Math.pow(b, F), a));
+    }
 }

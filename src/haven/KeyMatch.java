@@ -30,7 +30,7 @@ import java.awt.event.*;
 import static java.awt.event.KeyEvent.VK_UNDEFINED;
 
 public class KeyMatch {
-    public static final int S = 1, C = 2, M = 4, MODS = S | C | M;
+    public static final int S = 1, C = 2, M = 4, SUPER = 8, MODS = S | C | M;
     public static final KeyMatch nil = new KeyMatch('\0', false, VK_UNDEFINED, false, "None", 0, 0);
     public char chr;
     public boolean casematch, extmatch;
@@ -48,13 +48,7 @@ public class KeyMatch {
 	this.modmatch = modmatch & MODS;
     }
 
-    private static int mods(KeyEvent ev) {
-	int ret = 0;
-	if((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0) ret |= S;
-	if((ev.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0) ret |= C;
-	if((ev.getModifiersEx() & (InputEvent.META_DOWN_MASK | InputEvent.ALT_DOWN_MASK)) != 0) ret |= M;
-	return(ret);
-    }
+    public static int mods(KeyEvent ev) {return(UI.modflags(ev));}
 
     public boolean match(KeyEvent ev, int modign) {
 	int mod = mods(ev);
@@ -118,7 +112,7 @@ public class KeyMatch {
 	return(new KeyMatch(chr, false, VK_UNDEFINED, false, Character.toString(chr), modmask, modmatch));
     }
     public static KeyMatch forchar(char chr, int mods) {
-	return(forchar(chr, C | M, mods));
+	return(forchar(chr, S | C | M, mods));
     }
 
     public static KeyMatch forcode(int code, int modmask, int modmatch) {

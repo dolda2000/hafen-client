@@ -58,7 +58,7 @@ public class WItem extends Widget implements DTarget {
 	BufferedImage img = ItemInfo.longtip(info);
 	Resource.Pagina pg = item.res.get().layer(Resource.pagina);
 	if(pg != null)
-	    img = ItemInfo.catimgs(0, img, RichText.render("\n" + pg.text, 200).img);
+	    img = ItemInfo.catimgs(0, img, RichText.render("\n" + pg.text, UI.scale(200)).img);
 	return(img);
     }
 
@@ -66,7 +66,7 @@ public class WItem extends Widget implements DTarget {
 	return(longtip(item, info));
     }
 
-    public class ItemTip implements Indir<Tex> {
+    public class ItemTip implements Indir<Tex>, ItemInfo.InfoTip {
 	private final TexI tex;
 
 	public ItemTip(BufferedImage img) {
@@ -75,13 +75,9 @@ public class WItem extends Widget implements DTarget {
 	    tex = new TexI(img);
 	}
 
-	public GItem item() {
-	    return(item);
-	}
-
-	public Tex get() {
-	    return(tex);
-	}
+	public GItem item() {return(item);}
+	public List<ItemInfo> info() {return(item.info());}
+	public Tex get() {return(tex);}
     }
 
     public class ShortTip extends ItemTip {
@@ -131,16 +127,25 @@ public class WItem extends Widget implements DTarget {
 
     private List<ItemInfo> info() {return(item.info());}
     public final AttrCache<Color> olcol = new AttrCache<>(this::info, info -> {
-	    Color ret = null;
+	    ArrayList<GItem.ColorInfo> ols = new ArrayList<>();
 	    for(ItemInfo inf : info) {
-		if(inf instanceof GItem.ColorInfo) {
-		    Color c = ((GItem.ColorInfo)inf).olcol();
-		    if(c != null)
-			ret = (ret == null) ? c : Utils.preblend(ret, c);
-		}
+		if(inf instanceof GItem.ColorInfo)
+		    ols.add((GItem.ColorInfo)inf);
 	    }
-	    Color fret = ret;
-	    return(() -> fret);
+	    if(ols.size() == 0)
+		return(() -> null);
+	    if(ols.size() == 1)
+		return(ols.get(0)::olcol);
+	    ols.trimToSize();
+	    return(() -> {
+		    Color ret = null;
+		    for(GItem.ColorInfo ci : ols) {
+			Color c = ci.olcol();
+			if(c != null)
+			    ret = (ret == null) ? c : Utils.preblend(ret, c);
+		    }
+		    return(ret);
+		});
 	});
     public final AttrCache<GItem.InfoOverlay<?>[]> itemols = new AttrCache<>(this::info, info -> {
 	    ArrayList<GItem.InfoOverlay<?>> buf = new ArrayList<>();

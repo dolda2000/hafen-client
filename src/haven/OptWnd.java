@@ -26,21 +26,26 @@
 
 package haven;
 
+import haven.render.*;
 import java.awt.event.KeyEvent;
-import java.util.*;
-import java.awt.font.TextAttribute;
 
 public class OptWnd extends Window {
     public final Panel main, video, audio, keybind;
     public Panel current;
 
     public void chpanel(Panel p) {
-	Coord cc = this.c.add(this.sz.div(2));
 	if(current != null)
 	    current.hide();
 	(current = p).show();
-	pack();
-	move(cc.sub(this.sz.div(2)));
+	cresize(p);
+    }
+
+    public void cresize(Widget ch) {
+	if(ch == current) {
+	    Coord cc = this.c.add(this.sz.div(2));
+	    pack();
+	    move(cc.sub(this.sz.div(2)));
+	}
     }
 
     public class PButton extends Button {
@@ -48,7 +53,7 @@ public class OptWnd extends Window {
 	public final int key;
 
 	public PButton(int w, String title, int key, Panel tgt) {
-	    super(w, title);
+	    super(w, title, false);
 	    this.tgt = tgt;
 	    this.key = key;
 	}
@@ -80,10 +85,12 @@ public class OptWnd extends Window {
     }
 
     public class VideoPanel extends Panel {
-	public VideoPanel(Panel back) {
+	private final Widget back;
+	private CPanel curcf;
+
+	public VideoPanel(Panel prev) {
 	    super();
-	    add(new PButton(200, "Back", 27, back), new Coord(0, 310));
-	    pack();
+	    back = add(new PButton(UI.scale(200), "Back", 27, prev));
 	}
 
 	public class CPanel extends Widget {
@@ -91,8 +98,9 @@ public class OptWnd extends Window {
 
 	    public CPanel(GSettings gprefs) {
 		this.prefs = gprefs;
-		int y = 0;
-		add(new CheckBox("Render shadows") {
+		Widget prev;
+		int marg = UI.scale(5);
+		prev = add(new CheckBox("Render shadows") {
 			{a = prefs.lshadow.val;}
 
 			public void set(boolean val) {
@@ -105,34 +113,33 @@ public class OptWnd extends Window {
 			    }
 			    a = val;
 			}
-		    }, new Coord(0, y));
-		y += 20;
-		add(new Label("Render scale"), new Coord(0, y));
+		    }, Coord.z);
+		prev = add(new Label("Render scale"), prev.pos("bl").adds(0, 5));
 		{
-		    Label dpy = add(new Label(""), new Coord(165, y + 15));
+		    Label dpy = new Label("");
 		    final int steps = 4;
-		    add(new HSlider(160, -2 * steps, 2 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
-			    protected void added() {
-				dpy();
-				this.c.y = dpy.c.y + ((dpy.sz.y - this.sz.y) / 2);
-			    }
-			    void dpy() {
-				dpy.settext(String.format("%.2f\u00d7", Math.pow(2, this.val / (double)steps)));
-			    }
-			    public void changed() {
-				try {
-				    float val = (float)Math.pow(2, this.val / (double)steps);
-				    ui.setgprefs(prefs = prefs.update(null, prefs.rscale, val));
-				} catch(GSettings.SettingException e) {
-				    error(e.getMessage());
-				    return;
-				}
-				dpy();
-			    }
-			}, new Coord(0, y + 15));
+		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
+			   prev = new HSlider(UI.scale(160), -2 * steps, 2 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
+			       protected void added() {
+				   dpy();
+			       }
+			       void dpy() {
+				   dpy.settext(String.format("%.2f\u00d7", Math.pow(2, this.val / (double)steps)));
+			       }
+			       public void changed() {
+				   try {
+				       float val = (float)Math.pow(2, this.val / (double)steps);
+				       ui.setgprefs(prefs = prefs.update(null, prefs.rscale, val));
+				   } catch(GSettings.SettingException e) {
+				       error(e.getMessage());
+				       return;
+				   }
+				   dpy();
+			       }
+			   },
+			   dpy);
 		}
-		y += 45;
-		add(new CheckBox("Vertical sync") {
+		prev = add(new CheckBox("Vertical sync") {
 			{a = prefs.vsync.val;}
 
 			public void set(boolean val) {
@@ -145,70 +152,136 @@ public class OptWnd extends Window {
 			    }
 			    a = val;
 			}
-		    }, new Coord(0, y));
-		y += 20;
-		add(new Label("Framerate limit (active window)"), new Coord(0, y));
+		    }, prev.pos("bl").adds(0, 5));
+		prev = add(new Label("Framerate limit (active window)"), prev.pos("bl").adds(0, 5));
 		{
-		    Label dpy = add(new Label(""), new Coord(165, y + 15));
+		    Label dpy = new Label("");
 		    final int max = 250;
-		    add(new HSlider(160, 1, max, (prefs.hz.val == Float.POSITIVE_INFINITY) ? max : prefs.hz.val.intValue()) {
-			    protected void added() {
-				dpy();
-				this.c.y = dpy.c.y + ((dpy.sz.y - this.sz.y) / 2);
-			    }
-			    void dpy() {
-				if(this.val == max)
-				    dpy.settext("None");
-				else
-				    dpy.settext(Integer.toString(this.val));
-			    }
-			    public void changed() {
+		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
+			   prev = new HSlider(UI.scale(160), 1, max, (prefs.hz.val == Float.POSITIVE_INFINITY) ? max : prefs.hz.val.intValue()) {
+			       protected void added() {
+				   dpy();
+			       }
+			       void dpy() {
+				   if(this.val == max)
+				       dpy.settext("None");
+				   else
+				       dpy.settext(Integer.toString(this.val));
+			       }
+			       public void changed() {
+				   try {
+				       if(this.val > 10)
+					   this.val = (this.val / 2) * 2;
+				       float val = (this.val == max) ? Float.POSITIVE_INFINITY : this.val;
+				       ui.setgprefs(prefs = prefs.update(null, prefs.hz, val));
+				   } catch(GSettings.SettingException e) {
+				       error(e.getMessage());
+				       return;
+				   }
+				   dpy();
+			       }
+			   },
+			   dpy);
+		}
+		prev = add(new Label("Framerate limit (background window)"), prev.pos("bl").adds(0, 5));
+		{
+		    Label dpy = new Label("");
+		    final int max = 250;
+		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
+			   prev = new HSlider(UI.scale(160), 1, max, (prefs.bghz.val == Float.POSITIVE_INFINITY) ? max : prefs.bghz.val.intValue()) {
+			       protected void added() {
+				   dpy();
+			       }
+			       void dpy() {
+				   if(this.val == max)
+				       dpy.settext("None");
+				   else
+				       dpy.settext(Integer.toString(this.val));
+			       }
+			       public void changed() {
+				   try {
+				       if(this.val > 10)
+					   this.val = (this.val / 2) * 2;
+				       float val = (this.val == max) ? Float.POSITIVE_INFINITY : this.val;
+				       ui.setgprefs(prefs = prefs.update(null, prefs.bghz, val));
+				   } catch(GSettings.SettingException e) {
+				       error(e.getMessage());
+				       return;
+				   }
+				   dpy();
+			       }
+			   },
+			   dpy);
+		}
+		prev = add(new Label("Lighting mode"), prev.pos("bl").adds(0, 5));
+		{
+		    boolean[] done = {false};
+		    RadioGroup grp = new RadioGroup(this) {
+			    public void changed(int btn, String lbl) {
+				if(!done[0])
+				    return;
 				try {
-				    if(this.val > 10)
-					this.val = (this.val / 2) * 2;
-				    float val = (this.val == max) ? Float.POSITIVE_INFINITY : this.val;
-				    ui.setgprefs(prefs = prefs.update(null, prefs.hz, val));
+				    ui.setgprefs(prefs = prefs
+						 .update(null, prefs.lightmode, GSettings.LightMode.values()[btn])
+						 .update(null, prefs.maxlights, 0));
 				} catch(GSettings.SettingException e) {
 				    error(e.getMessage());
 				    return;
 				}
-				dpy();
+				resetcf();
 			    }
-			}, new Coord(0, y + 15));
+			};
+		    prev = grp.add("Global", prev.pos("bl").adds(5, 2));
+		    prev.settip("Global lighting supports fewer light sources, and scales worse in " +
+				"performance per additional light source, than zoned lighting, but " +
+				"has lower baseline performance requirements.", true);
+		    prev = grp.add("Zoned", prev.pos("bl").adds(0, 2));
+		    prev.settip("Zoned lighting supports far more light sources than global " +
+				"lighting with better performance, but may have higher performance " +
+				"requirements in cases with few light sources, and may also have " +
+				"issues on old graphics hardware.", true);
+		    grp.check(prefs.lightmode.val.ordinal());
+		    done[0] = true;
 		}
-		y += 35;
-		add(new Label("Framerate limit (background window)"), new Coord(0, y));
+		prev = add(new Label("Light-source limit"), prev.pos("bl").adds(0, 5).x(0));
 		{
-		    Label dpy = add(new Label(""), new Coord(165, y + 15));
-		    final int max = 250;
-		    add(new HSlider(160, 1, max, (prefs.bghz.val == Float.POSITIVE_INFINITY) ? max : prefs.bghz.val.intValue()) {
-			    protected void added() {
-				dpy();
-				this.c.y = dpy.c.y + ((dpy.sz.y - this.sz.y) / 2);
-			    }
-			    void dpy() {
-				if(this.val == max)
-				    dpy.settext("None");
-				else
-				    dpy.settext(Integer.toString(this.val));
-			    }
-			    public void changed() {
-				try {
-				    if(this.val > 10)
-					this.val = (this.val / 2) * 2;
-				    float val = (this.val == max) ? Float.POSITIVE_INFINITY : this.val;
-				    ui.setgprefs(prefs = prefs.update(null, prefs.bghz, val));
-				} catch(GSettings.SettingException e) {
-				    error(e.getMessage());
-				    return;
-				}
-				dpy();
-			    }
-			}, new Coord(0, y + 15));
+		    Label dpy = new Label("");
+		    int val = prefs.maxlights.val;
+		    if(val == 0) {    /* XXX: This is just ugly. */
+			if(prefs.lightmode.val == GSettings.LightMode.ZONED)
+			    val = Lighting.LightGrid.defmax;
+			else
+			    val = Lighting.SimpleLights.defmax;
+		    }
+		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
+			   prev = new HSlider(UI.scale(160), 1, 32, val / 4) {
+			       protected void added() {
+				   dpy();
+			       }
+			       void dpy() {
+				   dpy.settext(Integer.toString(this.val * 4));
+			       }
+			       public void changed() {dpy();}
+			       public void fchanged() {
+				   try {
+				       ui.setgprefs(prefs = prefs.update(null, prefs.maxlights, this.val * 4));
+				   } catch(GSettings.SettingException e) {
+				       error(e.getMessage());
+				       return;
+				   }
+				   dpy();
+			       }
+			       {
+				   settip("The light-source limit means different things depending on the " +
+					  "selected lighting mode. For Global lighting, it limits the total "+
+					  "number of light-sources globally. For Zoned lighting, it limits the " +
+					  "total number of overlapping light-sources at any point in space.",
+					  true);
+			       }
+			   },
+			   dpy);
 		}
-		y += 35;
-		add(new Label("Frame sync mode"), new Coord(0, y));
-		y += 15;
+		prev = add(new Label("Frame sync mode"), prev.pos("bl").adds(0, 5).x(0));
 		{
 		    boolean[] done = {false};
 		    RadioGroup grp = new RadioGroup(this) {
@@ -223,24 +296,17 @@ public class OptWnd extends Window {
 				}
 			    }
 			};
-		    Widget prev;
-		    prev = add(new Label("\u2191 Better performance, worse latency"), new Coord(5, y));
-		    y += prev.sz.y + 2;
-		    prev = grp.add("One-frame overlap", new Coord(5, y));
-		    y += prev.sz.y + 2;
-		    prev = grp.add("Tick overlap", new Coord(5, y));
-		    y += prev.sz.y + 2;
-		    prev = grp.add("CPU-sequential", new Coord(5, y));
-		    y += prev.sz.y + 2;
-		    prev = grp.add("GPU-sequential", new Coord(5, y));
-		    y += prev.sz.y + 2;
-		    prev = add(new Label("\u2193 Worse performance, better latency"), new Coord(5, y));
-		    y += prev.sz.y + 2;
+		    prev = add(new Label("\u2191 Better performance, worse latency"), prev.pos("bl").adds(5, 2));
+		    prev = grp.add("One-frame overlap", prev.pos("bl").adds(0, 2));
+		    prev = grp.add("Tick overlap", prev.pos("bl").adds(0, 2));
+		    prev = grp.add("CPU-sequential", prev.pos("bl").adds(0, 2));
+		    prev = grp.add("GPU-sequential", prev.pos("bl").adds(0, 2));
+		    prev = add(new Label("\u2193 Worse performance, better latency"), prev.pos("bl").adds(0, 2));
 		    grp.check(prefs.syncmode.val.ordinal());
 		    done[0] = true;
 		}
 		/* XXXRENDER
-		add(new CheckBox("Antialiasing") {
+		composer.add(new CheckBox("Antialiasing") {
 			{a = cf.fsaa.val;}
 
 			public void set(boolean val) {
@@ -253,17 +319,16 @@ public class OptWnd extends Window {
 			    a = val;
 			    cf.dirty = true;
 			}
-		    }, new Coord(0, y));
-		y += 25;
-		add(new Label("Anisotropic filtering"), new Coord(0, y));
+		    });
+		composer.add(new Label("Anisotropic filtering"));
 		if(cf.anisotex.max() <= 1) {
-		    add(new Label("(Not supported)"), new Coord(15, y + 15));
+		    composer.add(new Label("(Not supported)"));
 		} else {
-		    final Label dpy = add(new Label(""), new Coord(165, y + 15));
-		    add(new HSlider(160, (int)(cf.anisotex.min() * 2), (int)(cf.anisotex.max() * 2), (int)(cf.anisotex.val * 2)) {
+		    final Label dpy = new Label("");
+		    composer.addRow(
+			    new HSlider(UI.scale(160), (int)(cf.anisotex.min() * 2), (int)(cf.anisotex.max() * 2), (int)(cf.anisotex.val * 2)) {
 			    protected void added() {
 				dpy();
-				this.c.y = dpy.c.y + ((dpy.sz.y - this.sz.y) / 2);
 			    }
 			    void dpy() {
 				if(val < 2)
@@ -281,28 +346,53 @@ public class OptWnd extends Window {
 				dpy();
 				cf.dirty = true;
 			    }
-			}, new Coord(0, y + 15));
+			},
+			dpy
+		    );
 		}
 		*/
-		add(new Button(200, "Reset to defaults") {
-			public void click() {
+		prev = add(new Label("UI scale (requires restart)"), prev.pos("bl").adds(0, 5).x(0));
+		{
+		    Label dpy = new Label("");
+		    final double smin = 1, smax = Math.floor(UI.maxscale() / 0.25) * 0.25;
+		    final int steps = (int)Math.round((smax - smin) / 0.25);
+		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
+			   prev = new HSlider(UI.scale(160), 0, steps, (int)Math.round(steps * (Utils.getprefd("uiscale", 1.0) - smin) / (smax - smin))) {
+			       protected void added() {
+				   dpy();
+			       }
+			       void dpy() {
+				   dpy.settext(String.format("%.2f\u00d7", smin + (((double)this.val / steps) * (smax - smin))));
+			       }
+			       public void changed() {
+				   double val = smin + (((double)this.val / steps) * (smax - smin));
+				   Utils.setprefd("uiscale", val);
+				   dpy();
+			       }
+			   },
+			   dpy);
+		}
+		add(new Button(UI.scale(200), "Reset to defaults", false).action(() -> {
 			    ui.setgprefs(GSettings.defaults());
 			    curcf.destroy();
 			    curcf = null;
-			}
-		    }, new Coord(0, 280));
+		}), prev.pos("bl").adds(0, 5));
 		pack();
 	    }
 	}
 
-	private CPanel curcf = null;
 	public void draw(GOut g) {
-	    if((curcf == null) || (ui.gprefs != curcf.prefs)) {
-		if(curcf != null)
-		    curcf.destroy();
-		curcf = add(new CPanel(ui.gprefs), Coord.z);
-	    }
+	    if((curcf == null) || (ui.gprefs != curcf.prefs))
+		resetcf();
 	    super.draw(g);
+	}
+
+	private void resetcf() {
+	    if(curcf != null)
+		curcf.destroy();
+	    curcf = add(new CPanel(ui.gprefs), 0, 0);
+	    back.move(curcf.pos("bl").adds(0, 15));
+	    pack();
 	}
     }
 
@@ -311,16 +401,18 @@ public class OptWnd extends Window {
 						     "$col[255,255,0]{Delete}: Disable keybinding", 0);
     public class BindingPanel extends Panel {
 	private int addbtn(Widget cont, String nm, KeyBinding cmd, int y) {
-	    Widget btn = cont.add(new SetButton(175, cmd), 100, y);
-	    cont.adda(new Label(nm), 0, y + (btn.sz.y / 2), 0, 0.5);
-	    return(y + 30);
+	    return(cont.addhl(new Coord(0, y), cont.sz.x,
+			      new Label(nm), new SetButton(UI.scale(175), cmd))
+		   + UI.scale(2));
 	}
 
 	public BindingPanel(Panel back) {
 	    super();
-	    Widget cont = add(new Scrollport(new Coord(300, 300))).cont;
+	    Scrollport scroll = add(new Scrollport(UI.scale(new Coord(300, 300))), 0, 0);
+	    Widget cont = scroll.cont;
+	    Widget prev;
 	    int y = 0;
-	    cont.adda(new Label("Main menu"), cont.sz.x / 2, y, 0.5, 0); y += 20;
+	    y = cont.adda(new Label("Main menu"), cont.sz.x / 2, y, 0.5, 0.0).pos("bl").adds(0, 5).y;
 	    y = addbtn(cont, "Inventory", GameUI.kb_inv, y);
 	    y = addbtn(cont, "Equipment", GameUI.kb_equ, y);
 	    y = addbtn(cont, "Character sheet", GameUI.kb_chr, y);
@@ -330,33 +422,38 @@ public class OptWnd extends Window {
 	    y = addbtn(cont, "Search actions", GameUI.kb_srch, y);
 	    y = addbtn(cont, "Toggle chat", GameUI.kb_chat, y);
 	    y = addbtn(cont, "Quick chat", ChatUI.kb_quick, y);
+	    y = addbtn(cont, "Take screenshot", GameUI.kb_shoot, y);
+	    y = addbtn(cont, "Minimap icons", GameUI.kb_ico, y);
+	    y = addbtn(cont, "Toggle UI", GameUI.kb_hide, y);
+	    y = addbtn(cont, "Log out", GameUI.kb_logout, y);
+	    y = addbtn(cont, "Switch character", GameUI.kb_switchchr, y);
+	    y = cont.adda(new Label("Map options"), cont.sz.x / 2, y + UI.scale(10), 0.5, 0.0).pos("bl").adds(0, 5).y;
 	    y = addbtn(cont, "Display claims", GameUI.kb_claim, y);
 	    y = addbtn(cont, "Display villages", GameUI.kb_vil, y);
 	    y = addbtn(cont, "Display realms", GameUI.kb_rlm, y);
-	    y = addbtn(cont, "Take screenshot", GameUI.kb_shoot, y);
-	    y = addbtn(cont, "Toggle UI", GameUI.kb_hide, y);
-	    y += 10;
-	    cont.adda(new Label("Camera control"), cont.sz.x / 2, y, 0.5, 0); y += 20;
+	    y = addbtn(cont, "Display grid-lines", MapView.kb_grid, y);
+	    y = cont.adda(new Label("Camera control"), cont.sz.x / 2, y + UI.scale(10), 0.5, 0.0).pos("bl").adds(0, 5).y;
 	    y = addbtn(cont, "Rotate left", MapView.kb_camleft, y);
 	    y = addbtn(cont, "Rotate right", MapView.kb_camright, y);
 	    y = addbtn(cont, "Zoom in", MapView.kb_camin, y);
 	    y = addbtn(cont, "Zoom out", MapView.kb_camout, y);
 	    y = addbtn(cont, "Reset", MapView.kb_camreset, y);
-	    y += 10;
-	    cont.adda(new Label("Walking speed"), cont.sz.x / 2, y, 0.5, 0); y += 20;
+	    y = cont.adda(new Label("Map window"), cont.sz.x / 2, y + UI.scale(10), 0.5, 0.0).pos("bl").adds(0, 5).y;
+	    y = addbtn(cont, "Reset view", MapWnd.kb_home, y);
+	    y = addbtn(cont, "Place marker", MapWnd.kb_mark, y);
+	    y = addbtn(cont, "Toggle markers", MapWnd.kb_hmark, y);
+	    y = addbtn(cont, "Compact mode", MapWnd.kb_compact, y);
+	    y = cont.adda(new Label("Walking speed"), cont.sz.x / 2, y + UI.scale(10), 0.5, 0.0).pos("bl").adds(0, 5).y;
 	    y = addbtn(cont, "Increase speed", Speedget.kb_speedup, y);
 	    y = addbtn(cont, "Decrease speed", Speedget.kb_speeddn, y);
 	    for(int i = 0; i < 4; i++)
 		y = addbtn(cont, String.format("Set speed %d", i + 1), Speedget.kb_speeds[i], y);
-	    y += 10;
-	    cont.adda(new Label("Combat actions"), cont.sz.x / 2, y, 0.5, 0); y += 20;
+	    y = cont.adda(new Label("Combat actions"), cont.sz.x / 2, y + UI.scale(10), 0.5, 0.0).pos("bl").adds(0, 5).y;
 	    for(int i = 0; i < Fightsess.kb_acts.length; i++)
 		y = addbtn(cont, String.format("Combat action %d", i + 1), Fightsess.kb_acts[i], y);
 	    y = addbtn(cont, "Switch targets", Fightsess.kb_relcycle, y);
-	    y += 10;
-	    y = cont.sz.y + 10;
-	    adda(new PointBind(200), cont.sz.x / 2, y, 0.5, 0); y += 30;
-	    adda(new PButton(200, "Back", 27, back), cont.sz.x / 2, y, 0.5, 0); y += 30;
+	    prev = adda(new PointBind(UI.scale(200)), scroll.pos("bl").adds(0, 10).x(scroll.sz.x / 2), 0.5, 0.0);
+	    prev = adda(new PButton(UI.scale(200), "Back", 27, back), prev.pos("bl").adds(0, 10).x(scroll.sz.x / 2), 0.5, 0.0);
 	    pack();
 	}
 
@@ -371,6 +468,12 @@ public class OptWnd extends Window {
 	    public void set(KeyMatch key) {
 		super.set(key);
 		cmd.set(key);
+	    }
+
+	    public void draw(GOut g) {
+		if(cmd.key() != key)
+		    super.set(cmd.key());
+		super.draw(g);
 	    }
 
 	    protected KeyMatch mkmatch(KeyEvent ev) {
@@ -505,42 +608,44 @@ public class OptWnd extends Window {
 	video = add(new VideoPanel(main));
 	audio = add(new Panel());
 	keybind = add(new BindingPanel(main));
-	int y;
 
-	main.add(new PButton(200, "Video settings", 'v', video), new Coord(0, 0));
-	main.add(new PButton(200, "Audio settings", 'a', audio), new Coord(0, 30));
-	main.add(new PButton(200, "Keybindings", 'k', keybind), new Coord(0, 60));
+	int y = 0;
+	Widget prev;
+	y = main.add(new PButton(UI.scale(200), "Video settings", 'v', video), 0, y).pos("bl").adds(0, 5).y;
+	y = main.add(new PButton(UI.scale(200), "Audio settings", 'a', audio), 0, y).pos("bl").adds(0, 5).y;
+	y = main.add(new PButton(UI.scale(200), "Keybindings", 'k', keybind), 0, y).pos("bl").adds(0, 5).y;
+	y += UI.scale(60);
 	if(gopts) {
-	    main.add(new Button(200, "Switch character") {
-		    public void click() {
+	    y = main.add(new Button(UI.scale(200), "Switch character", false).action(() -> {
 			getparent(GameUI.class).act("lo", "cs");
-		    }
-		}, new Coord(0, 120));
-	    main.add(new Button(200, "Log out") {
-		    public void click() {
+	    }), 0, y).pos("bl").adds(0, 5).y;
+	    y = main.add(new Button(UI.scale(200), "Log out", false).action(() -> {
 			getparent(GameUI.class).act("lo");
-		    }
-		}, new Coord(0, 150));
+	    }), 0, y).pos("bl").adds(0, 5).y;
 	}
-	main.add(new Button(200, "Close") {
-		public void click() {
+	y = main.add(new Button(UI.scale(200), "Close", false).action(() -> {
 		    OptWnd.this.hide();
-		}
-	    }, new Coord(0, 180));
-	main.pack();
+	}), 0, y).pos("bl").adds(0, 5).y;
+	this.main.pack();
 
-	y = 0;
-	audio.add(new Label("Master audio volume"), new Coord(0, y));
-	y += 15;
-	audio.add(new HSlider(200, 0, 1000, (int)(Audio.volume * 1000)) {
+	prev = audio.add(new Label("Master audio volume"), 0, 0);
+	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, (int)(Audio.volume * 1000)) {
 		public void changed() {
 		    Audio.setvolume(val / 1000.0);
 		}
-	    }, new Coord(0, y));
-	y += 30;
-	audio.add(new Label("In-game event volume"), new Coord(0, y));
-	y += 15;
-	audio.add(new HSlider(200, 0, 1000, 0) {
+	    }, prev.pos("bl").adds(0, 2));
+	prev = audio.add(new Label("Interface sound volume"), prev.pos("bl").adds(0, 15));
+	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
+		protected void attach(UI ui) {
+		    super.attach(ui);
+		    val = (int)(ui.audio.aui.volume * 1000);
+		}
+		public void changed() {
+		    ui.audio.aui.setvolume(val / 1000.0);
+		}
+	    }, prev.pos("bl").adds(0, 2));
+	prev = audio.add(new Label("In-game event volume"), prev.pos("bl").adds(0, 5));
+	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
 		protected void attach(UI ui) {
 		    super.attach(ui);
 		    val = (int)(ui.audio.pos.volume * 1000);
@@ -548,11 +653,9 @@ public class OptWnd extends Window {
 		public void changed() {
 		    ui.audio.pos.setvolume(val / 1000.0);
 		}
-	    }, new Coord(0, y));
-	y += 20;
-	audio.add(new Label("Ambient volume"), new Coord(0, y));
-	y += 15;
-	audio.add(new HSlider(200, 0, 1000, 0) {
+	    }, prev.pos("bl").adds(0, 2));
+	prev = audio.add(new Label("Ambient volume"), prev.pos("bl").adds(0, 5));
+	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
 		protected void attach(UI ui) {
 		    super.attach(ui);
 		    val = (int)(ui.audio.amb.volume * 1000);
@@ -560,12 +663,11 @@ public class OptWnd extends Window {
 		public void changed() {
 		    ui.audio.amb.setvolume(val / 1000.0);
 		}
-	    }, new Coord(0, y));
-	y += 35;
-	audio.add(new PButton(200, "Back", 27, main), new Coord(0, 180));
+	    }, prev.pos("bl").adds(0, 2));
+	audio.add(new PButton(UI.scale(200), "Back", 27, this.main), prev.pos("bl").adds(0, 30));
 	audio.pack();
 
-	chpanel(main);
+	chpanel(this.main);
     }
 
     public OptWnd() {

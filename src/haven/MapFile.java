@@ -33,10 +33,12 @@ import java.io.*;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
+import haven.render.*;
 import haven.Defer.Future;
 import static haven.MCache.cmaps;
 
 public class MapFile {
+    public static final Config.Variable<java.net.URL> mapbase = Config.Variable.propu("haven.mapbase", "");
     public static boolean debug = false;
     public final ResCache store;
     public final String filename;
@@ -45,6 +47,7 @@ public class MapFile {
     public final Map<Long, SMarker> smarkers = new HashMap<>();
     public int markerseq = 0;
     public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Random rnd = new Random();
 
     public MapFile(ResCache store, String filename) {
 	this.store = store;
@@ -73,15 +76,24 @@ public class MapFile {
 	return(store.store(mangle(String.format(ctl, args))));
     }
 
-    public static MapFile load(ResCache store, String filename) {
+    public static void warn(Throwable cause, String msg) {
+	Debug.log.printf("mapfile warning: %s\n", msg);
+	new Warning(cause, msg).issue();
+    }
+    public static void warn(Throwable cause, String fmt, Object... args) {
+	warn(cause, String.format(fmt, args));
+    }
+    public static void warn(String fmt, Object... args) {
+	warn(null, fmt, args);
+    }
+
+    public static MapFile load(ResCache store, String filename) throws IOException {
 	MapFile file = new MapFile(store, filename);
 	InputStream fp;
 	try {
 	    fp = file.sfetch("index");
 	} catch(FileNotFoundException e) {
 	    return(file);
-	} catch(IOException e) {
-	    return(null);
 	}
 	try(StreamMessage data = new StreamMessage(fp)) {
 	    int ver = data.uint8();
@@ -95,12 +107,10 @@ public class MapFile {
 			file.smarkers.put(((SMarker)mark).oid, (SMarker)mark);
 		}
 	    } else {
-		Debug.log.printf("mapfile warning: unknown mapfile index version: %d\n", ver);
-		return(null);
+		throw(new IOException(String.format("unknown mapfile index version: %d", ver)));
 	    }
 	} catch(Message.BinError e) {
-	    Debug.log.printf("mapfile warning: error when loading index: %s\n", e);
-	    return(null);
+	    throw(new IOException(String.format("error when loading index: %s", e), e));
 	}
 	return(file);
     }
@@ -156,7 +166,7 @@ public class MapFile {
 		    throw(new Message.FormatError("Unknown gridinfo version: " + ver));
 		}
 	    } catch(Message.BinError e) {
-		Debug.log.printf("mapfile warning: error when loading gridinfo for %x: %s\n", id, e);
+		warn(e, "error when loading gridinfo for %x: %s", id, e);
 		return(null);
 	    }
 	}, (id, info) -> {
@@ -252,16 +262,6 @@ public class MapFile {
 		processor = np;
 	    }
 	    procmon.notifyAll();
-	}
-    }
-
-    public static Resource loadsaved(Resource.Pool pool, Resource.Spec spec) {
-	try {
-	    return(spec.get());
-	} catch(Loading l) {
-	    throw(l);
-	} catch(Exception e) {
-	    return(pool.load(spec.name).get());
 	}
     }
 
@@ -388,30 +388,51 @@ public class MapFile {
 	}
     }
 
+    public static class Overlay {
+	public final Resource.Spec olid;
+	public final boolean[] ol;
+
+	public Overlay(Resource.Spec olid, boolean[] ol) {
+	    this.olid = olid;
+	    this.ol = ol;
+	}
+
+	public boolean get(Coord c) {
+	    return(ol[c.x + (c.y * cmaps.x)]);
+	}
+    }
+
     public static class DataGrid {
 	public final TileInfo[] tilesets;
-	public final byte[] tiles;
+	public final int[] tiles;
+	public final float[] zmap;
+	public final Collection<Overlay> ols = new ArrayList<>();
 	public final long mtime;
 
-	public DataGrid(TileInfo[] tilesets, byte[] tiles, long mtime) {
+	public DataGrid(TileInfo[] tilesets, int[] tiles, float[] zmap, long mtime) {
 	    this.tilesets = tilesets;
 	    this.tiles = tiles;
+	    this.zmap = zmap;
 	    this.mtime = mtime;
 	}
 
 	public int gettile(Coord c) {
-	    return(tiles[c.x + (c.y * cmaps.x)] & 0xff);
+	    return(tiles[c.x + (c.y * cmaps.x)]);
+	}
+
+	public double getfz(Coord c) {
+	    return(zmap[c.x + (c.y * cmaps.x)]);
 	}
 
 	private BufferedImage tiletex(int t, BufferedImage[] texes, boolean[] cached) {
 	    if(!cached[t]) {
 		Resource r = null;
 		try {
-		    r = loadsaved(Resource.remote(), tilesets[t].res);
+		    r = tilesets[t].res.loadsaved(Resource.remote());
 		} catch(Loading l) {
 		    throw(l);
 		} catch(Exception e) {
-		    Debug.log.printf("mapfile warning: could not load tileset resource %s(v%d): %s\n", tilesets[t].res.name, tilesets[t].res.ver, e);
+		    warn(e, "could not load tileset resource %s(v%d): %s", tilesets[t].res.name, tilesets[t].res.ver, e);
 		}
 		if(r != null) {
 		    Resource.Image ir = r.layer(Resource.imgc);
@@ -425,8 +446,8 @@ public class MapFile {
 	}
 
 	public BufferedImage render(Coord off) {
-	    BufferedImage[] texes = new BufferedImage[256];
-	    boolean[] cached = new boolean[256];
+	    BufferedImage[] texes = new BufferedImage[tilesets.length];
+	    boolean[] cached = new boolean[tilesets.length];
 	    WritableRaster buf = PUtils.imgraster(cmaps);
 	    Coord c = new Coord();
 	    for(c.y = 0; c.y < cmaps.y; c.y++) {
@@ -461,10 +482,179 @@ public class MapFile {
 	    return(PUtils.rasterimg(buf));
 	}
 
+	private static Color olcol(MCache.OverlayInfo olid) {
+	    /* XXX? */
+	    Material mat = olid.mat();
+	    BufPipe st = new BufPipe();
+	    mat.states.apply(st);
+	    if(st.get(BaseColor.slot) != null) {
+		FColor bc = st.get(BaseColor.slot).color;
+		return(new Color(Math.round(bc.r * 255), Math.round(bc.g * 255),
+				 Math.round(bc.b * 255), 255));
+	    }
+	    return(null);
+	}
+
+	public BufferedImage olrender(Coord off, String tag) {
+	    WritableRaster buf = PUtils.imgraster(cmaps);
+	    for(Overlay ol : ols) {
+		MCache.ResOverlay olid = ol.olid.loadsaved().flayer(MCache.ResOverlay.class);
+		if(!olid.tags().contains(tag))
+		    continue;
+		Color col = olcol(olid);
+		if(col == null)
+		    continue;
+		Coord c = new Coord();
+		for(c.y = 0; c.y < cmaps.y; c.y++) {
+		    for(c.x = 0; c.x < cmaps.x; c.x++) {
+			if(ol.get(c)) {
+			    buf.setSample(c.x, c.y, 0, ((col.getRed()   * col.getAlpha()) + (buf.getSample(c.x, c.y, 1) * (255 - col.getAlpha()))) / 255);
+			    buf.setSample(c.x, c.y, 1, ((col.getGreen() * col.getAlpha()) + (buf.getSample(c.x, c.y, 1) * (255 - col.getAlpha()))) / 255);
+			    buf.setSample(c.x, c.y, 2, ((col.getBlue()  * col.getAlpha()) + (buf.getSample(c.x, c.y, 2) * (255 - col.getAlpha()))) / 255);
+			    buf.setSample(c.x, c.y, 3, Math.max(buf.getSample(c.x, c.y, 3), col.getAlpha()));
+			}
+		    }
+		}
+	    }
+	    return(PUtils.rasterimg(buf));
+	}
+
+	public static void savetiles(Message fp, TileInfo[] tilesets, int[] tiles) {
+	    fp.adduint16(tilesets.length);
+	    for(int i = 0; i < tilesets.length; i++) {
+		fp.addstring(tilesets[i].res.name);
+		fp.adduint16(tilesets[i].res.ver);
+		fp.adduint8(tilesets[i].prio);
+	    }
+	    if(tilesets.length <= 256) {
+		for(int tn : tiles)
+		    fp.adduint8(tn);
+	    } else {
+		for(int tn : tiles)
+		    fp.adduint16(tn);
+	    }
+	}
+
+	public static Pair<TileInfo[], int[]> loadtiles(Message fp, int ver) {
+	    TileInfo[] tilesets = new TileInfo[(ver >= 2) ? fp.uint16() : fp.uint8()];
+	    for(int i = 0; i < tilesets.length; i++)
+		tilesets[i] = new TileInfo(new Resource.Spec(Resource.remote(), fp.string(), fp.uint16()), fp.uint8());
+	    int[] tiles = new int[cmaps.x * cmaps.y];
+	    if(tilesets.length <= 256) {
+		for(int i = 0; i < cmaps.x * cmaps.y; i++)
+		    tiles[i] = fp.uint8();
+	    } else {
+		for(int i = 0; i < cmaps.x * cmaps.y; i++)
+		    tiles[i] = fp.uint16();
+	    }
+	    return(new Pair<>(tilesets, tiles));
+	}
+
+	public static void savez(Message fp, float[] zmap) {
+	    float min = zmap[0], max = zmap[0];
+	    for(float z : zmap) {
+		min = Math.min(z, min); max = Math.max(z, max);
+	    }
+	    if(min == max) {
+		fp.adduint8(0);
+		fp.addfloat32(min);
+		return;
+	    }
+	    quantize: {
+		float q = 0, E = 0.01f;
+		for(float z : zmap) {
+		    if(z > (min + E)) {
+			if(q == 0)
+			    q = z - min;
+			else
+			    q = Utils.gcd(q, z - min, E);
+		    }
+		}
+		float iq = 1.0f / q;
+		for(float z : zmap) {
+		    if(Math.abs((Math.round((z - min) * iq) * q) + min - z) > E)
+			break quantize;
+		}
+		if(Math.round((max - min) * iq) > 0xffff) {
+		    break quantize;
+		} else if(Math.round((max - min) * iq) > 0xff) {
+		    fp.adduint8(2).addfloat32(min).addfloat32(q);
+		    for(float z : zmap)
+			fp.adduint16(Math.round((z - min) * iq));
+		} else {
+		    fp.adduint8(1).addfloat32(min).addfloat32(q);
+		    for(float z : zmap)
+			fp.adduint8(Math.round((z - min) * iq));
+		}
+		return;
+	    }
+	    fp.adduint8(3);
+	    for(float z : zmap)
+		fp.addfloat32(z);
+	}
+
+	public static float[] loadz(Message fp, String nm) {
+	    float[] ret = new float[cmaps.x * cmaps.y];
+	    int fmt = fp.uint8();
+	    if(fmt == 0) {
+		float z = fp.float32();
+		for(int i = 0; i < ret.length; i++)
+		    ret[i] = z;
+	    } else if(fmt == 1) {
+		float min = fp.float32(), q = fp.float32();
+		for(int i = 0; i < ret.length; i++)
+		    ret[i] = min + (fp.uint8() * q);
+	    } else if(fmt == 2) {
+		float min = fp.float32(), q = fp.float32();
+		for(int i = 0; i < ret.length; i++)
+		    ret[i] = min + (fp.uint16() * q);
+	    } else if(fmt == 3) {
+		for(int i = 0; i < ret.length; i++)
+		    ret[i] = fp.float32();
+	    } else {
+		throw(new Message.FormatError(String.format("Unknown grid z-map format for %s: %d", nm, fmt)));
+	    }
+	    return(ret);
+	}
+
+	public static void saveols(Message fp, Collection<Overlay> ols) {
+	    for(Overlay ol : ols) {
+		fp.addstring(ol.olid.name);
+		fp.adduint16(ol.olid.ver);
+		for(int i = 0; i < ol.ol.length; i += 8) {
+		    int b = 0;
+		    for(int o = 0; o < Math.min(8, ol.ol.length - i); o++) {
+			if(ol.ol[i + o])
+			    b |= 1 << o;
+		    }
+		    fp.adduint8(b);
+		}
+	    }
+	    fp.addstring("");
+	}
+
+	public static void loadols(Collection<Overlay> buf, Message fp, String nm) {
+	    while(true) {
+		String resnm = fp.string();
+		if(resnm.equals(""))
+		    break;
+		int resver = fp.uint16();
+		boolean[] ol = new boolean[cmaps.x * cmaps.y];
+		for(int i = 0, p = 0; i < ol.length; i += 8) {
+		    p = fp.uint8();
+		    for(int o = 0; o < Math.min(8, ol.length - i); o++) {
+			if((p & (1 << o)) != 0)
+			    ol[i + o] = true;
+		    }
+		}
+		buf.add(new Overlay(new Resource.Spec(Resource.remote(), resnm, resver), ol));
+	    }
+	}
+
 	public static final Resource.Spec notile = new Resource.Spec(Resource.remote(), "gfx/tiles/notile", -1);
 	public static final DataGrid nogrid;
 	static {
-	    nogrid = new DataGrid(new TileInfo[] {new TileInfo(notile, 0)}, new byte[cmaps.x * cmaps.y], 0);
+	    nogrid = new DataGrid(new TileInfo[] {new TileInfo(notile, 0)}, new int[cmaps.x * cmaps.y], new float[cmaps.x * cmaps.y], 0);
 	}
     }
 
@@ -473,46 +663,55 @@ public class MapFile {
 	private boolean[] norepl;
 	private int useq = -1;
 
-	public Grid(long id, TileInfo[] tilesets, byte[] tiles, long mtime) {
-	    super(tilesets, tiles, mtime);
+	public Grid(long id, TileInfo[] tilesets, int[] tiles, float[] zmap, long mtime) {
+	    super(tilesets, tiles, zmap, mtime);
 	    this.id = id;
 	}
 
 	public static Grid from(MCache map, MCache.Grid cg) {
 	    int oseq = cg.seq;
 	    int nt = 0;
-	    Resource.Spec[] sets = new Resource.Spec[256];
-	    int[] tmap = new int[256];
-	    int[] rmap = new int[256];
-	    boolean[] norepl = new boolean[256];
+	    int[] tmap = new int[16];
+	    int[] rmap = new int[16];
 	    Arrays.fill(tmap, -1);
 	    for(int tn : cg.tiles) {
+		if(tn >= tmap.length) {
+		    int pl = tmap.length;
+		    tmap = Utils.extend(tmap, Integer.highestOneBit(tn) * 2);
+		    Arrays.fill(tmap, pl, tmap.length, -1);
+		}
 		if(tmap[tn] == -1) {
 		    tmap[tn] = nt;
-		    rmap[nt] = tn;
-		    sets[nt] = map.nsets[tn];
-		    try {
-			for(String tag : map.tileset(tn).tags) {
-			    if(tag.equals("norepl"))
-				norepl[nt] = true;
-			}
-		    } catch(Loading l) {
-		    }
-		    nt++;
+		    if(nt >= rmap.length)
+			rmap = Utils.extend(rmap, rmap.length * 2);
+		    rmap[nt++] = tn;
 		}
 	    }
+	    TileInfo[] infos = new TileInfo[nt];
+	    boolean[] norepl = new boolean[nt];
 	    int[] prios = new int[nt];
-	    for(int i = 0, tn = 0; i < 256; i++) {
+	    for(int i = 0; i < nt; i++) {
+		int tn = rmap[i];
+		infos[i] = new TileInfo(map.tilesetn(tn), prios[i]);
+		norepl[i] = (Utils.index(Loading.waitfor(() -> map.tileset(tn)).tags, "norepl") >= 0);
+	    }
+	    for(int i = 0, tn = 0; i < tmap.length; i++) {
 		if(tmap[i] != -1)
 		    prios[tmap[i]] = tn++;
 	    }
-	    TileInfo[] infos = new TileInfo[nt];
-	    for(int i = 0; i < nt; i++)
-		infos[i] = new TileInfo(sets[i], prios[i]);
-	    byte[] tiles = new byte[cmaps.x * cmaps.y];
-	    for(int i = 0; i < cg.tiles.length; i++)
-		tiles[i] = (byte)(tmap[cg.tiles[i]]);
-	    Grid g = new Grid(cg.id, infos, tiles, System.currentTimeMillis());
+	    int[] tiles = new int[cmaps.x * cmaps.y];
+	    float[] zmap = new float[cmaps.x * cmaps.y];
+	    for(int i = 0; i < cg.tiles.length; i++) {
+		tiles[i] = tmap[cg.tiles[i]];
+		zmap[i] = cg.z[i];
+	    }
+	    Grid g = new Grid(cg.id, infos, tiles, zmap, System.currentTimeMillis());
+	    for(int i = 0; i < cg.ols.length; i++) {
+		if(cg.ol[i].length != (cmaps.x * cmaps.y))
+		    throw(new AssertionError(String.valueOf(cg.ol[i].length)));
+		Resource olres = Loading.waitfor(cg.ols[i]);
+		g.ols.add(new Overlay(new Resource.Spec(olres.pool, olres.name, olres.ver), Arrays.copyOf(cg.ol[i], cg.ol[i].length)));
+	    }
 	    g.norepl = norepl;
 	    g.useq = oseq;
 	    return(g);
@@ -549,30 +748,27 @@ public class MapFile {
 		    }
 		}
 	    }
-	    byte[] ntiles = new byte[this.tiles.length];
+	    int[] ntiles = new int[this.tiles.length];
 	    for(int i = 0; i < this.tiles.length; i++) {
 		if(norepl[this.tiles[i]])
-		    ntiles[i] = (byte)tmap[prev.tiles[i]];
+		    ntiles[i] = tmap[prev.tiles[i]];
 		else
 		    ntiles[i] = this.tiles[i];
 	    }
-	    Grid g = new Grid(this.id, ntilesets, ntiles, this.mtime);
+	    Grid g = new Grid(this.id, ntilesets, ntiles, this.zmap, this.mtime);
+	    g.ols.addAll(this.ols);
 	    g.useq = this.useq;
 	    return(g);
 	}
 
 	public void save(Message fp) {
-	    fp.adduint8(2);
+	    fp.adduint8(5);
 	    ZMessage z = new ZMessage(fp);
 	    z.addint64(id);
 	    z.addint64(mtime);
-	    z.adduint8(tilesets.length);
-	    for(int i = 0; i < tilesets.length; i++) {
-		z.addstring(tilesets[i].res.name);
-		z.adduint16(tilesets[i].res.ver);
-		z.adduint8(tilesets[i].prio);
-	    }
-	    z.addbytes(tiles);
+	    savetiles(z, tilesets, tiles);
+	    savez(z, zmap);
+	    saveols(z, ols);
 	    z.finish();
 	}
 
@@ -593,27 +789,32 @@ public class MapFile {
 	    try {
 		fp = file.sfetch("grid-%x", id);
 	    } catch(IOException e) {
-		Debug.log.printf("mapfile warning: error when locating grid %x: %s\n", id, e);
+		warn(e, "error when locating grid %x: %s", id, e);
 		return(null);
 	    }
 	    try(StreamMessage data = new StreamMessage(fp)) {
 		int ver = data.uint8();
-		if((ver >= 1) && (ver <= 2)) {
+		if((ver >= 1) && (ver <= 5)) {
 		    ZMessage z = new ZMessage(data);
 		    long storedid = z.int64();
 		    if(storedid != id)
 			throw(new Message.FormatError(String.format("Grid ID mismatch: expected %s, got %s", id, storedid)));
 		    long mtime = (ver >= 2) ? z.int64() : System.currentTimeMillis();
-		    List<TileInfo> tilesets = new ArrayList<TileInfo>();
-		    for(int i = 0, no = z.uint8(); i < no; i++)
-			tilesets.add(new TileInfo(new Resource.Spec(Resource.remote(), z.string(), z.uint16()), z.uint8()));
-		    byte[] tiles = z.bytes(cmaps.x * cmaps.y);
-		    return(new Grid(id, tilesets.toArray(new TileInfo[0]), tiles, mtime));
+		    Pair<TileInfo[], int[]> tiles = loadtiles(z, (ver >= 5) ? 2 : 1);
+		    float[] zmap;
+		    if(ver >= 3)
+			zmap = loadz(z, String.format("%x", id));
+		    else
+			zmap = new float[cmaps.x * cmaps.y];
+		    Grid g = new Grid(id, tiles.a, tiles.b, zmap, mtime);
+		    if(ver >= 4)
+			loadols(g.ols, z, String.format("%x", id));
+		    return(g);
 		} else {
 		    throw(new Message.FormatError(String.format("Unknown grid data version for %x: %d", id, ver)));
 		}
 	    } catch(Message.BinError e) {
-		Debug.log.printf("mapfile warning: error when loading grid %x: %s\n", id, e);
+		warn(e, "error when loading grid %x: %s", id, e);
 		return(null);
 	    }
 	}
@@ -624,8 +825,8 @@ public class MapFile {
 	public final int lvl;
 	public final Coord sc;
 
-	public ZoomGrid(long seg, int lvl, Coord sc, TileInfo[] tilesets, byte[] tiles, long mtime) {
-	    super(tilesets, tiles, mtime);
+	public ZoomGrid(long seg, int lvl, Coord sc, TileInfo[] tilesets, int[] tiles, float[] zmap, long mtime) {
+	    super(tilesets, tiles, zmap, mtime);
 	    this.seg = seg;
 	    this.lvl = lvl;
 	    this.sc = sc;
@@ -676,7 +877,7 @@ public class MapFile {
 	    Map<String, Integer> rinfos;
 	    {
 		Resource.Pool pool = null;
-		String[] sets = new String[256];
+		String[] sets = new String[16];
 		Set<String> hassets = new HashSet<>();
 		Map<String, Integer> vers = new HashMap<>();
 		for(int i = 0; i < 4; i++) {
@@ -688,13 +889,13 @@ public class MapFile {
 			    pool = set.pool;
 			vers.put(set.name, Math.max(vers.getOrDefault(set.name, 0), set.ver));
 			if(!hassets.contains(set.name)) {
+			    while(nt >= sets.length)
+				sets = Utils.extend(sets, sets.length * 2);
 			    sets[nt++] = set.name;
 			    hassets.add(set.name);
 			}
 		    }
 		}
-		if(nt >= 256)
-		    throw(new IllegalArgumentException(Integer.toString(nt)));
 		infos = new TileInfo[nt];
 		rinfos = new HashMap<>();
 		for(int i = 0; i < nt; i++) {
@@ -703,25 +904,29 @@ public class MapFile {
 		}
 	    }
 
-	    byte[] tiles = new byte[cmaps.x * cmaps.y];
+	    int[] tiles = new int[cmaps.x * cmaps.y];
+	    float[] zmap = new float[cmaps.x * cmaps.y];
 	    for(int gn = 0; gn < 4; gn++) {
 		int gx = gn % 2, gy = gn / 2;
 		DataGrid cg = lower[gn];
 		if(cg == null)
 		    continue;
-		byte[] tmap = new byte[256];
+		int[] tmap = new int[cg.tilesets.length];
 		Arrays.fill(tmap, (byte)-1);
 		for(int i = 0; i < cg.tilesets.length; i++)
-		    tmap[i] = rinfos.get(cg.tilesets[i].res.name).byteValue();
+		    tmap[i] = rinfos.get(cg.tilesets[i].res.name);
 		Coord off = cmaps.div(2).mul(gx, gy);
-		byte[] tc = new byte[4];
+		int[] tc = new int[4];
 		byte[] tcn = new byte[4];
 		for(int y = 0; y < cmaps.y / 2; y++) {
 		    for(int x = 0; x < cmaps.x / 2; x++) {
 			int nd = 0;
+			float minz = Float.POSITIVE_INFINITY;
 			for(int sy = 0; sy < 2; sy++) {
 			    for(int sx = 0; sx < 2; sx++) {
-				byte st = tmap[cg.gettile(new Coord(x * 2, y * 2))];
+				Coord sgc = new Coord((x * 2) + sx, (y * 2) + sy);
+				int st = tmap[cg.gettile(sgc)];
+				minz = Math.min(minz, (float)cg.getfz(sgc));
 				st: {
 				    for(int i = 0; i < nd; i++) {
 					if(tc[i] == st) {
@@ -741,28 +946,62 @@ public class MapFile {
 				mi = i;
 			}
 			tiles[(x + off.x) + ((y + off.y) * cmaps.x)] = tc[mi];
+			zmap[(x + off.x) + ((y + off.y) * cmaps.x)] = minz;
 		    }
 		}
 	    }
-	    ZoomGrid ret = new ZoomGrid(seg.id, lvl, sc, infos, tiles, maxmtime);
+	    ZoomGrid ret = new ZoomGrid(seg.id, lvl, sc, infos, tiles, zmap, maxmtime);
+	    zoomols(ret.ols, lower);
 	    ret.save(file);
 	    return(ret);
 	}
 
+	private static void zoomols(Collection<Overlay> buf, DataGrid[] lower) {
+	    for(int gn = 0; gn < 4; gn++) {
+		int gx = gn % 2, gy = gn / 2;
+		DataGrid cg = lower[gn];
+		if(cg == null)
+		    continue;
+		Coord off = cmaps.div(2).mul(gx, gy);
+		for(Overlay ol : cg.ols) {
+		    Overlay zol = null;
+		    for(Overlay pol : buf) {
+			if(pol.olid.name.equals(ol.olid.name)) {
+			    zol = pol;
+			    break;
+			}
+		    }
+		    for(int y = 0; y < cmaps.y / 2; y++) {
+			for(int x = 0; x < cmaps.x / 2; x++) {
+			    int n = 0;
+			    for(int sy = 0; sy < 2; sy++) {
+				for(int sx = 0; sx < 2; sx++) {
+				    Coord sgc = new Coord((x * 2) + sx, (y * 2) + sy);
+				    if(ol.get(sgc))
+					n++;
+				}
+			    }
+			    if(n >= 2) {
+				if(zol == null)
+				    buf.add(zol = new Overlay(ol.olid, new boolean[cmaps.x * cmaps.y]));
+				zol.ol[(x + off.x) + ((y + off.y) * cmaps.x)] = true;
+			    }
+			}
+		    }
+		}
+	    }
+	}
+
 	public void save(Message fp) {
-	    fp.adduint8(1);
+	    fp.adduint8(4);
 	    ZMessage z = new ZMessage(fp);
 	    z.addint64(seg);
 	    z.addint32(lvl);
 	    z.addcoord(sc);
 	    z.addint64(mtime);
-	    z.adduint8(tilesets.length);
-	    for(int i = 0; i < tilesets.length; i++) {
-		z.addstring(tilesets[i].res.name);
-		z.adduint16(tilesets[i].res.ver);
-		z.adduint8(tilesets[i].prio);
-	    }
-	    z.addbytes(tiles);
+	    savetiles(z, tilesets, tiles);
+	    savez(z, zmap);
+	    saveols(z, ols);
 	    z.finish();
 	}
 
@@ -785,14 +1024,14 @@ public class MapFile {
 	    } catch(FileNotFoundException e) {
 		return(null);
 	    } catch(IOException e) {
-		Debug.log.printf("mapfile warning: error when locating zoomgrid (%d, %d) in %x@%d: %s\n", sc.x, sc.y, seg, lvl, e);
+		warn(e, "error when locating zoomgrid (%d, %d) in %x@%d: %s", sc.x, sc.y, seg, lvl, e);
 		return(null);
 	    }
 	    try(StreamMessage data = new StreamMessage(fp)) {
 		if(data.eom())
 		    return(null);
 		int ver = data.uint8();
-		if(ver == 1) {
+		if((ver >= 1) && (ver <= 4)) {
 		    ZMessage z = new ZMessage(data);
 		    long storedseg = z.int64();
 		    if(storedseg != seg)
@@ -805,16 +1044,21 @@ public class MapFile {
 			throw(new Message.FormatError(String.format("Zoomgrid coord mismatch: expected %s, got %s", sc, storedsc)));
 
 		    long mtime = z.int64();
-		    List<TileInfo> tilesets = new ArrayList<TileInfo>();
-		    for(int i = 0, no = z.uint8(); i < no; i++)
-			tilesets.add(new TileInfo(new Resource.Spec(Resource.remote(), z.string(), z.uint16()), z.uint8()));
-		    byte[] tiles = z.bytes(cmaps.x * cmaps.y);
-		    return(new ZoomGrid(seg, lvl, sc, tilesets.toArray(new TileInfo[0]), tiles, mtime));
+		    Pair<TileInfo[], int[]> tiles = loadtiles(z, (ver >= 4) ? 2 : 1);
+		    float[] zmap;
+		    if(ver >= 2)
+			zmap = loadz(z, String.format("(%d, %d) in %x@d", sc.x, sc.y, seg, lvl));
+		    else
+			zmap = new float[cmaps.x * cmaps.y];
+		    ZoomGrid g = new ZoomGrid(seg, lvl, sc, tiles.a, tiles.b, zmap, mtime);
+		    if(ver >= 3)
+			loadols(g.ols, z, String.format("(%d, %d) in %x@d", sc.x, sc.y, seg, lvl));
+		    return(g);
 		} else {
 		    throw(new Message.FormatError(String.format("Unknown zoomgrid data version for (%d, %d) in %x@%d: %d", sc.x, sc.y, seg, lvl, ver)));
 		}
 	    } catch(Message.BinError e) {
-		Debug.log.printf("Unknown zoomgrid data version for (%d, %d) in %x@%d: %s", sc.x, sc.y, seg, lvl, e);
+		warn(e, "could not load zoomgrid for (%d, %d) in %x@%d: %s", sc.x, sc.y, seg, lvl, e);
 		return(null);
 	    }
 	}
@@ -827,7 +1071,7 @@ public class MapFile {
 		} catch(FileNotFoundException e) {
 		    return(lvl - 1);
 		} catch(IOException e) {
-		    Debug.log.printf("mapfile warning: error when invalidating zoomgrid (%d, %d) in %x@%d: %s\n", sc.x, sc.y, seg, lvl, e);
+		    warn(e, "error when invalidating zoomgrid (%d, %d) in %x@%d: %s", sc.x, sc.y, seg, lvl, e);
 		    return(lvl - 1);
 		}
 		try {
@@ -858,6 +1102,10 @@ public class MapFile {
 	    ZoomCoord that = (ZoomCoord)o;
 	    return((this.lvl == that.lvl) && this.c.equals(that.c));
 	}
+
+	public String toString() {
+	    return(String.format("(%d, %d @ %d)", c.x, c.y, lvl));
+	}
     }
 
     public class Segment {
@@ -870,6 +1118,8 @@ public class MapFile {
 	public Segment(long id) {
 	    this.id = id;
 	}
+
+	public MapFile file() {return(MapFile.this);}
 
 	private class Cached implements Indir<Grid> {
 	    Grid loaded;
@@ -932,6 +1182,7 @@ public class MapFile {
 	private class ByZCoord implements Indir<ZoomGrid> {
 	    final ZoomCoord zc;
 	    ZoomGrid loaded;
+	    boolean got = false;
 	    Future<ZoomGrid> loading;
 
 	    ByZCoord(ZoomCoord zc, Future<ZoomGrid> loading) {
@@ -940,8 +1191,16 @@ public class MapFile {
 	    }
 
 	    public ZoomGrid get() {
-		if(loaded == null)
-		    loaded = loading.get(0);
+		if(loading != null) {
+		    try {
+			loaded = loading.get(0);
+			got = true;
+			loading = null;
+		    } catch(Loading l) {
+			if(!got)
+			    throw(l);
+		    }
+		}
 		return(loaded);
 	    }
 	}
@@ -958,7 +1217,7 @@ public class MapFile {
 	}
 
 	public Indir<? extends DataGrid> grid(int lvl, Coord gc) {
-	    if((lvl < 0) || ((gc.x & ((1 << lvl) - 1)) != 0) || ((gc.x & ((1 << lvl) - 1)) != 0))
+	    if((lvl < 0) || ((gc.x & ((1 << lvl) - 1)) != 0) || ((gc.y & ((1 << lvl) - 1)) != 0))
 		throw(new IllegalArgumentException(String.format("%s %s", gc, lvl)));
 	    if(lvl == 0)
 		return(grid(gc));
@@ -972,12 +1231,16 @@ public class MapFile {
 	    map.put(sc, id);
 	    int zl = ZoomGrid.inval(MapFile.this, this.id, sc);
 	    synchronized(zcache) {
-		for(int lvl = 1; lvl < zl; lvl++) {
-		    ZoomCoord zc = new ZoomCoord(lvl, new Coord(sc.x & ~((1 << lvl) - 1), sc.y & ~((1 << lvl) - 1)));
-		    ByZCoord zg = zcache.get(zc);
-		    if(zg != null) {
+		/* XXX? Not sure how nice it is to iterate through the
+		 * entire zcache to do invalidations, but I also don't
+		 * think it ought to tend to be enormously large.
+		 * Perhaps keep a hierarchical zcache per level, and
+		 * only iterate all the levels? */
+		for(Map.Entry<ZoomCoord, ByZCoord> ent : zcache.entrySet()) {
+		    ZoomCoord zc = ent.getKey();
+		    if((zc.c.x == (sc.x & ~((1 << zc.lvl) - 1))) && (zc.c.y == (sc.y & ~((1 << zc.lvl) - 1)))) {
+			ByZCoord zg = ent.getValue();
 			zg.loading = loadzgrid(zc);
-			zg.loaded = null;
 		    }
 		}
 	    }
@@ -1000,6 +1263,137 @@ public class MapFile {
 	}
     }
 
+    public static class View implements MapSource {
+	public final Segment seg;
+	private final Map<Coord, GridMap> grids = new HashMap<>();
+	private Resource.Spec[] nsets;
+	private Tileset[] tilesets;
+	private Tiler[] tiles;
+
+	public View(Segment seg) {
+	    this.seg = seg;
+	}
+
+	private class GridMap {
+	    final Grid grid;
+	    final Coord gc;
+	    int[] tilemap = null;
+
+	    GridMap(Grid grid, Coord gc) {this.grid = grid; this.gc = gc;}
+	}
+
+	public void addgrid(Coord gc) {
+	    if(!grids.containsKey(gc)) {
+		Grid grid = seg.grid(gc).get();
+		if(grid == null)
+		    grids.put(gc, null);
+		else
+		    grids.put(gc, new GridMap(grid, gc));
+	    }
+	}
+
+	private static class TileSort extends TopoSort<String> {
+	    TileSort() {super(Hash.eq);}
+
+	    protected List<String> pick(Collection<String> from) {
+		List<String> ret = new ArrayList<>(from);
+		Collections.sort(ret);
+		return(ret);
+	    }
+
+	    protected List<String> pickbad() {
+		Collection<Collection<String>> cycles = findcycles();
+		// System.err.println("inconsistent tile ordering found: " + cycles);
+		List<String> ret = new ArrayList<>(Utils.el(cycles));
+		Collections.sort(ret);
+		return(ret);
+	    }
+	}
+
+	public void fin() {
+	    Map<String, Resource.Spec> vermap = new HashMap<>();
+	    TopoSort<String> tilesort = new TileSort();
+	    for(GridMap gm : grids.values()) {
+		if(gm == null)
+		    continue;
+		Grid g = gm.grid;
+		Collection<String> order = new ArrayList<>();
+		List<TileInfo> gtiles = new ArrayList<>(Arrays.asList(g.tilesets));
+		Collections.sort(gtiles, (a, b) -> (a.prio - b.prio));
+		for(TileInfo tinf : gtiles) {
+		    if(!vermap.containsKey(tinf.res.name) || (vermap.get(tinf.res.name).ver < tinf.res.ver))
+			vermap.put(tinf.res.name, tinf.res);
+		    order.add(tinf.res.name);
+		}
+		tilesort.add(order);
+	    }
+	    String[] ordered = tilesort.sort().toArray(new String[0]);
+	    Resource.Spec[] nsets = new Resource.Spec[ordered.length];
+	    for(int i = 0; i < ordered.length; i++)
+		nsets[i] = vermap.get(ordered[i]);
+	    Map<String, Integer> idx = new HashMap<>();
+	    for(int i = 0; i < nsets.length; i++)
+		idx.put(nsets[i].name, i);
+	    for(GridMap gm : grids.values()) {
+		if(gm == null)
+		    continue;
+		int[] xl = new int[gm.grid.tilesets.length];
+		for(int i = 0; i < xl.length; i++)
+		    xl[i] = idx.get(gm.grid.tilesets[i].res.name);
+		gm.tilemap = xl;
+	    }
+	    this.nsets = nsets;
+	    this.tilesets = new Tileset[nsets.length];
+	    this.tiles = new Tiler[nsets.length];
+	}
+
+	private Coord cachedgc = null;
+	private GridMap cached = null;
+	private GridMap getgrid(Coord gc) {
+	    if((cachedgc == null) || !cachedgc.equals(gc)) {
+		cached = grids.get(gc);
+		cachedgc = gc;
+	    }
+	    return(cached);
+	}
+
+	public int gettile(Coord tc) {
+	    Coord gc = tc.div(cmaps);
+	    Coord ul = gc.mul(cmaps);
+	    GridMap gm = getgrid(gc);
+	    if(gm == null)
+		return(-1);
+	    if(gm.tilemap == null)
+		throw(new IllegalStateException("Not finalized"));
+	    return(gm.tilemap[gm.grid.gettile(tc.sub(ul))]);
+	}
+
+	public double getfz(Coord tc) {
+	    Coord gc = tc.div(cmaps);
+	    Coord ul = gc.mul(cmaps);
+	    GridMap gm = getgrid(gc);
+	    if(gm == null)
+		return(0);
+	    return(gm.grid.getfz(tc.sub(ul)));
+	}
+
+	public Tileset tileset(int n) {
+	    if(tilesets[n] == null) {
+		Resource res = nsets[n].loadsaved(Resource.remote());
+		tilesets[n] = res.flayer(Tileset.class);
+	    }
+	    return(tilesets[n]);
+	}
+
+	public Tiler tiler(int n) {
+	    if(tiles[n] == null) {
+		Tileset set = tileset(n);
+		tiles[n] = set.tfac().create(n, set);
+	    }
+	    return(tiles[n]);
+	}
+    }
+
     public final BackCache<Long, Segment> segments = new BackCache<>(5, id -> {
 	    checklock();
 	    InputStream fp;
@@ -1009,6 +1403,8 @@ public class MapFile {
 		return(null);
 	    }
 	    try(StreamMessage data = new StreamMessage(fp)) {
+		if(data.eom())
+		    return(null);
 		int ver = data.uint8();
 		if(ver == 1) {
 		    Segment seg = new Segment(id);
@@ -1023,28 +1419,37 @@ public class MapFile {
 		    throw(new Message.FormatError("Unknown segment data version: " + ver));
 		}
 	    } catch(Message.BinError e) {
-		Debug.log.printf("mapfile warning: error when loading segment %x: %s\n", id, e);
+		warn(e, "error when loading segment %x: %s", id, e);
 		return(null);
 	    }
 	}, (id, seg) -> {
 	    checklock();
-	    OutputStream fp;
-	    try {
-		fp = sstore("seg-%x", seg.id);
-	    } catch(IOException e) {
-		throw(new StreamMessage.IOError(e));
+	    if(seg == null) {
+		try(OutputStream fp = sstore("seg-%x", id)) {
+		} catch(IOException e) {
+		    throw(new StreamMessage.IOError(e));
+		}
+		if(knownsegs.remove(id))
+		    defersave();
+	    } else {
+		OutputStream fp;
+		try {
+		    fp = sstore("seg-%x", seg.id);
+		} catch(IOException e) {
+		    throw(new StreamMessage.IOError(e));
+		}
+		try(StreamMessage out = new StreamMessage(fp)) {
+		    out.adduint8(1);
+		    ZMessage z = new ZMessage(out);
+		    z.addint64(seg.id);
+		    z.addint32(seg.map.size());
+		    for(Map.Entry<Coord, Long> e : seg.map.entrySet())
+			z.addcoord(e.getKey()).addint64(e.getValue());
+		    z.finish();
+		}
+		if(knownsegs.add(id))
+		    defersave();
 	    }
-	    try(StreamMessage out = new StreamMessage(fp)) {
-		out.adduint8(1);
-		ZMessage z = new ZMessage(out);
-		z.addint64(seg.id);
-		z.addint32(seg.map.size());
-		for(Map.Entry<Coord, Long> e : seg.map.entrySet())
-		    z.addcoord(e.getKey()).addint64(e.getValue());
-		z.finish();
-	    }
-	    if(knownsegs.add(id))
-		defersave();
 	});
 
     private void merge(Segment dst, Segment src, Coord soff) {
@@ -1095,11 +1500,11 @@ public class MapFile {
 		if(moff == null) {
 		    Coord psc = seg.map.reverse().get(g.id);
 		    if(psc == null) {
-			Debug.log.printf("mapfile warning: grid %x is oddly gone from segment %x; was at %s\n", g.id, seg.id, info.sc);
+			warn("grid %x is oddly gone from segment %x; was at %s", g.id, seg.id, info.sc);
 			missing.add(g);
 			continue;
 		    } else if(!psc.equals(info.sc)) {
-			Debug.log.printf("mapfile warning: segment-offset mismatch for grid %x in segment %x: segment has %s, gridinfo has %s\n", g.id, seg.id, psc, info.sc);
+			warn("segment-offset mismatch for grid %x in segment %x: segment has %s, gridinfo has %s", g.id, seg.id, psc, info.sc);
 			missing.add(g);
 			continue;
 		    }
@@ -1115,6 +1520,7 @@ public class MapFile {
 		    if(prev != null)
 			sg = sg.mergeprev(prev);
 		    sg.save(MapFile.this);
+		    seg.include(sg, info.sc);
 		}
 		if(seg.id != mseg) {
 		    if(merge == null)
@@ -1126,7 +1532,7 @@ public class MapFile {
 	    if(!missing.isEmpty()) {
 		Segment seg;
 		if(mseg == -1) {
-		    seg = new Segment(Utils.el(missing).id);
+		    seg = new Segment(rnd.nextLong());
 		    moff = Coord.z;
 		    if(debug) Debug.log.printf("mapfile: creating new segment %x\n", seg.id);
 		} else {
@@ -1238,19 +1644,24 @@ public class MapFile {
 	    for(Pair<Coord, Long> gd : gridbuf) {
 		prog.grid(nseg, segbuf.size(), ngrid++, gridbuf.size());
 		Grid grid = Grid.load(this, gd.b);
+		if(grid == null) {
+		    /* This /should/ never happen, but for unknown
+		     * reasons (crashes? reboots?) some grids can be
+		     * included but missing. It's not like they'll be
+		     * coming back by any other means, however, so
+		     * just ignore them here. */
+		    continue;
+		}
 		MessageBuf buf = new MessageBuf();
-		buf.adduint8(1);
+		buf.adduint8(4);
 		buf.addint64(gd.b);
 		buf.addint64(seg.id);
 		buf.addint64(grid.mtime);
 		buf.addcoord(gd.a);
-		buf.adduint8(grid.tilesets.length);
-		for(TileInfo tinf : grid.tilesets) {
-		    buf.addstring(tinf.res.name);
-		    buf.adduint16(tinf.res.ver);
-		    buf.adduint8(tinf.prio);
-		}
-		buf.addbytes(grid.tiles);
+		buf.addint32(cmaps.x * cmaps.y);
+		DataGrid.savetiles(buf, grid.tilesets, grid.tiles);
+		DataGrid.savez(buf, grid.zmap);
+		DataGrid.saveols(buf, grid.ols);
 		byte[] od = buf.fin();
 		zout.addstring("grid");
 		zout.addint32(od.length);
@@ -1286,30 +1697,60 @@ public class MapFile {
 	public long gid, segid, mtime;
 	public Coord sc;
 	public TileInfo[] tilesets;
-	public byte[] tiles;
+	public int[] tiles;
+	public float[] zmap;
+	public Collection<Overlay> ols = new ArrayList<>();
 
 	ImportedGrid(Message data) {
 	    int ver = data.uint8();
-	    if(ver != 1)
+	    if((ver < 1) || (ver > 4))
 		throw(new Message.FormatError("Unknown grid data version: " + ver));
 	    gid = data.int64();
 	    segid = data.int64();
 	    mtime = data.int64();
 	    sc = data.coord();
-	    tilesets = new TileInfo[data.uint8()];
-	    for(int i = 0; i < tilesets.length; i++)
-		tilesets[i] = new TileInfo(new Resource.Spec(Resource.remote(), data.string(), data.uint16()), data.uint8());
-	    tiles = data.bytes();
-	    if(tiles.length != (cmaps.x * cmaps.y))
-		throw(new Message.FormatError("Bad grid data dimensions: " + tiles.length));
-	    for(byte td : tiles) {
-		if((td & 0xff) >= tiles.length)
+	    if(ver >= 4) {
+		int len = data.int32();
+		if(len != (cmaps.x * cmaps.y))
+		    throw(new Message.FormatError("Bad grid data dimensions: " + len));
+		Pair<TileInfo[], int[]> tileinfo = DataGrid.loadtiles(data, 2);
+		tilesets = tileinfo.a;
+		tiles = tileinfo.b;
+		zmap = DataGrid.loadz(data, String.format("%x", gid));
+	    } else {
+		tilesets = new TileInfo[data.uint8()];
+		for(int i = 0; i < tilesets.length; i++)
+		    tilesets[i] = new TileInfo(new Resource.Spec(Resource.remote(), data.string(), data.uint16()), data.uint8());
+		if(ver >= 2) {
+		    int len = data.int32();
+		    if(len != (cmaps.x * cmaps.y))
+			throw(new Message.FormatError("Bad grid data dimensions: " + len));
+		    tiles = new int[len];
+		    for(int i = 0; i < len; i++)
+			tiles[i] = data.uint8();
+		    zmap = DataGrid.loadz(data, String.format("%x", gid));
+		} else {
+		    byte[] raw = data.bytes();
+		    if(raw.length != (cmaps.x * cmaps.y))
+			throw(new Message.FormatError("Bad grid data dimensions: " + tiles.length));
+		    tiles = new int[raw.length];
+		    for(int i = 0; i < raw.length; i++)
+			tiles[i] = raw[i] & 0xff;
+		    zmap = new float[cmaps.x * cmaps.y];
+		}
+	    }
+	    if(ver >= 3)
+		DataGrid.loadols(ols, data, String.format("%x", gid));
+	    for(int td : tiles) {
+		if(td >= tiles.length)
 		    throw(new Message.FormatError(String.format("Bad grid data contents: Tileset ID %d does not exist among 0-%d", (td & 0xff), tiles.length - 1)));
 	    }
 	}
 
 	Grid togrid() {
-	    return(new Grid(gid, tilesets, tiles, mtime));
+	    Grid ret = new Grid(gid, tilesets, tiles, zmap, mtime);
+	    ret.ols.addAll(ols);
+	    return(ret);
 	}
     }
 
@@ -1513,11 +1954,7 @@ public class MapFile {
 	Collection<MCache.Grid> grids = new ArrayList<>();
 	for(Coord off : inout) {
 	    Coord gc = cgc.add(off);
-	    try {
-		grids.add(map.getgrid(gc));
-	    } catch(Loading l) {
-		continue;
-	    }
+	    grids.add(map.getgrid(gc));
 	}
 	if(!grids.isEmpty()) {
 	    synchronized(procmon) {

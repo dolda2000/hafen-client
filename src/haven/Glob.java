@@ -36,10 +36,9 @@ public class Glob {
     public final MCache map;
     public final Session sess;
     public final Loader loader = new Loader();
-    public double time, epoch = Utils.rtime();
+    public double gtime, sgtime, epoch = Utils.rtime();
     public Astronomy ast;
     public Party party;
-    public Map<String, CAttr> cattr = new HashMap<String, CAttr>();
     public Color lightamb = null, lightdif = null, lightspc = null;
     public Color olightamb = null, olightdif = null, olightspc = null;
     public Color tlightamb = null, tlightdif = null, tlightspc = null;
@@ -49,6 +48,7 @@ public class Glob {
     public double lchange = -1;
     public Indir<Resource> sky1 = null, sky2 = null;
     public double skyblend = 0.0;
+    private final Map<String, CAttr> cattr = new HashMap<String, CAttr>();
     private Map<Indir<Resource>, Object> wmap = new HashMap<Indir<Resource>, Object>();
     
     public Glob(Session sess) {
@@ -65,8 +65,8 @@ public class Glob {
     }
 
     public static class CAttr {
-	String nm;
-	int base, comp;
+	public final String nm;
+	public int base, comp;
 	
 	public CAttr(String nm, int base, int comp) {
 	    this.nm = nm.intern();
@@ -129,6 +129,7 @@ public class Glob {
 	    }
 	}
 
+	tickgtime(now, dt);
 	oc.ctick(dt);
 	map.ctick(dt);
 
@@ -140,21 +141,41 @@ public class Glob {
 	map.gtick(g);
     }
 
-    private final double timefac = 3.0;
-    private double lastrep = 0, rgtime = 0;
-    public double globtime() {
+    private static final double itimefac = 3.0;
+    private double stimefac = itimefac, ctimefac = itimefac;
+    private void tickgtime(double now, double dt) {
+	double sgtime = this.sgtime + ((now - epoch) * stimefac);
+	gtime += dt * ctimefac;
+	if((sgtime > gtime) && (ctimefac / stimefac < 1.1))
+	    ctimefac += Math.min((sgtime - gtime) * 0.001, 0.02) * dt;
+	else if((sgtime < gtime) && (stimefac / ctimefac < 1.1))
+	    ctimefac -= Math.min((gtime - sgtime) * 0.001, 0.02) * dt;
+	ctimefac += Math.signum(stimefac - ctimefac) *0.002 * dt;
+    }
+
+    private void updgtime(double sgtime, boolean inc) {
 	double now = Utils.rtime();
-	double raw = ((now - epoch) * timefac) + time;
-	if(lastrep == 0) {
-	    rgtime = raw;
-	} else {
-	    double gd = (now - lastrep) * timefac;
-	    rgtime += gd;
-	    if(Math.abs(rgtime + gd - raw) > 1.0)
-		rgtime = rgtime + ((raw - rgtime) * (1.0 - Math.pow(10.0, -(now - lastrep))));
+	double delta = now - epoch;
+	epoch = now;
+	if((this.sgtime == 0) || !inc || (Math.abs(sgtime - this.sgtime) > 500)) {
+	    this.gtime = this.sgtime = sgtime;
+	    return;
 	}
-	lastrep = now;
-	return(rgtime);
+	if((sgtime - this.sgtime) > 1) {
+	    double utimefac = (sgtime - this.sgtime) / delta;
+	    double f = Math.min(delta * 0.01, 0.5);
+	    stimefac = (stimefac * (1 - f)) + (utimefac * f);
+	}
+	this.sgtime = sgtime;
+    }
+
+    public String gtimestats() {
+	double sgtime = this.sgtime + ((Utils.rtime() - epoch) * stimefac);
+	return(String.format("%.2f %.2f %.2f %.2f %.2f %.2f %.2f", gtime, this.sgtime, epoch, sgtime, sgtime - gtime, ctimefac, stimefac));
+    }
+
+    public double globtime() {
+	return(gtime);
     }
 
     public void blob(Message msg) {
@@ -164,10 +185,7 @@ public class Glob {
 	    Object[] a = msg.list();
 	    int n = 0;
 	    if(t == "tm") {
-		time = ((Number)a[n++]).doubleValue();
-		epoch = Utils.rtime();
-		if(!inc)
-		    lastrep = 0;
+		updgtime(((Number)a[n++]).doubleValue(), inc);
 	    } else if(t == "astro") {
 		double dt = ((Number)a[n++]).doubleValue();
 		double mp = ((Number)a[n++]).doubleValue();
@@ -177,7 +195,10 @@ public class Glob {
 		int is = (n < a.length) ? ((Number)a[n++]).intValue() : 1;
 		double sp = (n < a.length) ? ((Number)a[n++]).doubleValue() : 0.5;
 		double sd = (n < a.length) ? ((Number)a[n++]).doubleValue() : 0.5;
-		ast = new Astronomy(dt, mp, yt, night, mc, is, sp, sd);
+		double years = (n < a.length) ? ((Number)a[n++]).doubleValue() : 0.5;
+		double ym = (n < a.length) ? ((Number)a[n++]).doubleValue() : 0.5;
+		double md = (n < a.length) ? ((Number)a[n++]).doubleValue() : 0.5;
+		ast = new Astronomy(dt, mp, yt, night, mc, is, sp, sd, years, ym, md);
 	    } else if(t == "light") {
 		synchronized(this) {
 		    tlightamb = (Color)a[n++];
@@ -252,7 +273,7 @@ public class Glob {
 		    ret.add((Weather)val);
 		} else {
 		    try {
-			Class<? extends Weather> cl = cur.getKey().get().layer(Resource.CodeEntry.class).getcl(Weather.class);
+			Class<? extends Weather> cl = cur.getKey().get().flayer(Resource.CodeEntry.class).getcl(Weather.class);
 			Weather w = Utils.construct(cl.getConstructor(Object[].class), new Object[] {val});
 			cur.setValue(w);
 			ret.add(w);
@@ -274,19 +295,25 @@ public class Glob {
 	return(((MapView)((PView.WidgetContext)st.get(RenderContext.slot)).widget()).amblight);
     }
 
-    public void cattr(Message msg) {
+    public CAttr getcattr(String nm) {
 	synchronized(cattr) {
-	    while(!msg.eom()) {
-		String nm = msg.string();
-		int base = msg.int32();
-		int comp = msg.int32();
-		CAttr a = cattr.get(nm);
-		if(a == null) {
-		    a = new CAttr(nm, base, comp);
-		    cattr.put(nm, a);
-		} else {
-		    a.update(base, comp);
-		}
+	    CAttr a = cattr.get(nm);
+	    if(a == null) {
+		a = new CAttr(nm, 0, 0);
+		cattr.put(nm, a);
+	    }
+	    return(a);
+	}
+    }
+
+    public void cattr(String nm, int base, int comp) {
+	synchronized(cattr) {
+	    CAttr a = cattr.get(nm);
+	    if(a == null) {
+		a = new CAttr(nm, base, comp);
+		cattr.put(nm, a);
+	    } else {
+		a.update(base, comp);
 	    }
 	}
     }

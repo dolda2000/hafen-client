@@ -90,7 +90,7 @@ public class GOut {
     public void image(Resource.Image img, Coord c) {
 	if(img == null)
 	    return;
-	image(img.tex(), c.add(img.o));
+	image(img.tex(), c.add(UI.scale(img.o)));
     }
 
     /* Draw texture at c, quite simply. */
@@ -107,6 +107,10 @@ public class GOut {
     public void aimage(Tex tex, Coord c, double ax, double ay) {
 	Coord sz = tex.sz();
 	image(tex, c.add((int)((double)sz.x * -ax), (int)((double)sz.y * -ay)));
+    }
+
+    public void aimage(Tex tex, Coord c, double ax, double ay, Coord sz) {
+	image(tex, c.add((int)((double)sz.x * -ax), (int)((double)sz.y * -ay)), sz);
     }
 
     /* Draw texture at c, scaling it to sz. */
@@ -133,6 +137,22 @@ public class GOut {
 	tex.crender(this, c.add(this.tx), ul, br);
     }
 
+    public void image(Tex tex, Coord c, Coord ul, Coord br, Coord sz) {
+	if(tex == null)
+	    return;
+	ul = ul.add(this.tx);
+	br = br.add(this.tx);
+	if(ul.x < this.ul.x)
+	    ul.x = this.ul.x;
+	if(ul.y < this.ul.y)
+	    ul.y = this.ul.y;
+	if(br.x > this.br.x)
+	    br.x = this.br.x;
+	if(br.y > this.br.y)
+	    br.y = this.br.y;
+	tex.crender(this, c.add(this.tx), sz, ul, br);
+    }
+
     public void rimagev(Tex tex, Coord c, int h) {
 	Coord cc = new Coord(c);
 	Coord br = c.add(tex.sz().x, h);
@@ -156,6 +176,31 @@ public class GOut {
 	}
     }
 
+    public void rotimage(Tex tex, Coord c, Coord rcc, double a) {
+	/* XXXRENDER: I do believe the rendering system should treat
+	 * the viewport and scissor areas as window coordinates,
+	 * rather than OpenGL coordinates, but it's not entirely
+	 * obvious to me right now how all of that should work
+	 * together. */
+	Area clip = Area.corn(Coord.of(ul.x, root.br.y - br.y), Coord.of(br.x, root.br.y - ul.y));
+	if(!clip.positive())
+	    return;
+	usestate(new States.Scissor(clip));
+	Coord sz = tex.sz();
+	float x = c.x + tx.x, y = c.y + tx.y;
+	float si = -(float)Math.sin(a), co = (float)Math.cos(a);
+	float l = -rcc.x, u = -rcc.y, r = sz.x - rcc.x, b = sz.y - rcc.y;
+	float[] gc = {
+	    x + (l * co) - (u * si), y + (l * si) + (u * co),
+	    x + (r * co) - (u * si), y + (r * si) + (u * co),
+	    x + (r * co) - (b * si), y + (r * si) + (b * co),
+	    x + (l * co) - (b * si), y + (l * si) + (b * co),
+	};
+	float[] tc = {0, 0, sz.x, 0, sz.x, sz.y, 0, sz.y};
+	tex.render(this, gc, tc);
+	usestate(States.scissor);
+    }
+
     /* Draw texture at c, with the extra state s applied. */
     public void image(Tex tex, Coord c, State s) {
 	Pipe bk = cur2d.copy();
@@ -176,7 +221,7 @@ public class GOut {
     }
 
     public void drawp(Model.Mode mode, float[] data, int n) {
-	out.draw(cur2d, new Model(mode, new VertexArray(vf_pos, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))), null, 0, n));
+	out.draw1(cur2d, new Model(mode, new VertexArray(vf_pos, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))), null, 0, n));
     }
 
     public void drawp(Model.Mode mode, float[] data) {
@@ -184,7 +229,7 @@ public class GOut {
     }
 
     public void drawt(Model.Mode mode, float[] data, int n) {
-	out.draw(cur2d, new Model(mode, new VertexArray(vf_tex, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))), null, 0, n));
+	out.draw1(cur2d, new Model(mode, new VertexArray(vf_tex, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))), null, 0, n));
     }
 
     public void drawt(Model.Mode mode, float[] data) {
@@ -199,8 +244,8 @@ public class GOut {
     }
 
     public void frect2(Coord ul, Coord br) {
-	ul = new Coord(Math.max(ul.x + tx.x, this.ul.x), Math.max(ul.y + tx.y, this.ul.y));
-	br = new Coord(Math.min(br.x + tx.x, this.br.x), Math.min(br.y + tx.y, this.br.y));
+	ul = Coord.of(Math.max(ul.x + tx.x, this.ul.x), Math.max(ul.y + tx.y, this.ul.y));
+	br = Coord.of(Math.min(br.x + tx.x, this.br.x), Math.min(br.y + tx.y, this.br.y));
 	if((ul.x >= br.x) || (ul.y >= br.y))
 	    return;
 	float[] data = {br.x, ul.y, br.x, br.y, ul.x, ul.y, ul.x, br.y};
@@ -379,13 +424,9 @@ public class GOut {
 
     public GOut reclip2(Coord ul, Coord br) {
 	GOut g = new GOut(this);
-	g.ul = this.tx.add(ul);
-	g.br = this.tx.add(br);
-	g.tx = new Coord(g.ul);
-	g.ul.x = Math.max(g.ul.x, this.ul.x);
-	g.ul.y = Math.max(g.ul.y, this.ul.y);
-	g.br.x = Math.min(g.br.x, this.br.x);
-	g.br.y = Math.min(g.br.y, this.br.y);
+	g.tx = this.tx.add(ul);
+	g.ul = Coord.of(Math.max(this.tx.x + ul.x, this.ul.x), Math.max(this.tx.y + ul.y, this.ul.y));
+	g.br = Coord.of(Math.min(this.tx.x + br.x, this.br.x), Math.min(this.tx.y + br.y, this.br.y));
 	return(g);
     }
 
@@ -397,7 +438,7 @@ public class GOut {
 	GOut g = new GOut(this);
 	g.ul = this.tx.add(ul);
 	g.br = this.tx.add(br);
-	g.tx = new Coord(g.ul);
+	g.tx = g.ul;
 	return(g);
     }
 
@@ -406,7 +447,7 @@ public class GOut {
     }
 
     public static void getpixel(Render g, Pipe state, FragData buf, Coord c, Consumer<Color> cb) {
-	g.pget(state, buf, Area.sized(c, new Coord(1, 1)), new VectorFormat(4, NumberFormat.UNORM8), data -> {
+	g.pget(state, buf, Area.sized(c, Coord.of(1, 1)), new VectorFormat(4, NumberFormat.UNORM8), data -> {
 		Color result = new Color(data.get(0) & 0xff, data.get(1) & 0xff, data.get(2) & 0xff, data.get(3) & 0xff);
 		cb.accept(result);
 	    });
@@ -416,73 +457,136 @@ public class GOut {
 	getpixel(out, cur2d, FragColor.fragcol, c.add(tx), cb);
     }
 
+    public static ByteBuffer flipimage(VectorFormat fmt, int w, ByteBuffer data) {
+	int el = fmt.size();
+	int h = data.capacity() / el / w;
+	for(int y = 0; y < h / 2; y++) {
+	    int to = y * w * el, bo = (h - y - 1) * w * el;
+	    for(int o = 0; o < w * el; o++, to++, bo++) {
+		byte t = data.get(to);
+		data.put(to, data.get(bo));
+		data.put(bo, t);
+	    }
+	}
+	return(data);
+    }
+
+    private static ByteBuffer filltorgb(ByteBuffer src, VectorFormat fmt) {
+	if(fmt.nc >= 3)
+	    return(src);
+	int np = src.remaining() / fmt.size();
+	VectorFormat nfmt = new VectorFormat(3, fmt.cf);
+	ByteBuffer ret = ByteBuffer.allocate(np * nfmt.size());
+	ret.order(src.order());
+	for(int i = 0; i < np; i++) {
+	    int b = 0;
+	    for(; b < fmt.nc; b++) {
+		for(int o = 0; o < fmt.cf.size; o++)
+		    ret.put(src.get());
+	    }
+	    for(; b < nfmt.nc; b++) {
+		for(int o = 0; o < fmt.cf.size; o++)
+		    ret.put((byte)0);
+	    }
+	}
+	ret.flip();
+	return(ret);
+    }
+
+    private static void debugimage(ByteBuffer data, Coord sz, VectorFormat fmt, boolean flip, Consumer<BufferedImage> cb) {
+	if(flip)
+	    flipimage(fmt, sz.x, data);
+	switch(fmt.cf) {
+	case UNORM8: case SNORM8: {
+	    int b = Math.max(fmt.nc, 3);
+	    data = filltorgb(data, fmt);
+	    boolean a = b == 4;
+	    int[] offs = new int[b];
+	    for(int i = 0; i < b; i++) offs[i] = i;
+	    byte[] pbuf = new byte[sz.x * sz.y * b];
+	    data.get(pbuf);
+	    ComponentColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), null, a, false, a ? ComponentColorModel.TRANSLUCENT : ComponentColorModel.OPAQUE, java.awt.image.DataBuffer.TYPE_BYTE);
+	    SampleModel sm = new PixelInterleavedSampleModel(java.awt.image.DataBuffer.TYPE_BYTE, sz.x, sz.y, b, sz.x * b, offs);
+	    WritableRaster raster = Raster.createWritableRaster(sm, new DataBufferByte(pbuf, pbuf.length), null);
+	    cb.accept(new BufferedImage(cm, raster, false, null));
+	    break;
+	}
+	case UNORM16: case SNORM16: {
+	    int b = Math.max(fmt.nc, 3);
+	    data = filltorgb(data, fmt);
+	    boolean a = b == 4;
+	    int[] offs = new int[b];
+	    for(int i = 0; i < b; i++) offs[i] = i;
+	    short[] pbuf = new short[sz.x * sz.y * b];
+	    data.asShortBuffer().get(pbuf);
+	    ComponentColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), null, a, false, a ? ComponentColorModel.TRANSLUCENT : ComponentColorModel.OPAQUE, java.awt.image.DataBuffer.TYPE_USHORT);
+	    SampleModel sm = new PixelInterleavedSampleModel(java.awt.image.DataBuffer.TYPE_USHORT, sz.x, sz.y, b, sz.x * b, offs);
+	    WritableRaster raster = Raster.createWritableRaster(sm, new DataBufferUShort(pbuf, pbuf.length), null);
+	    cb.accept(new BufferedImage(cm, raster, false, null));
+	    break;
+	}
+	case FLOAT32: {
+	    int b = Math.max(fmt.nc, 3);
+	    data = filltorgb(data, fmt);
+	    boolean a = b == 4;
+	    int[] offs = new int[b];
+	    for(int i = 0; i < b; i++) offs[i] = i;
+	    float[] pbuf = new float[sz.x * sz.y * b];
+	    data.asFloatBuffer().get(pbuf);
+	    ComponentColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB), null, a, false, a ? ComponentColorModel.TRANSLUCENT : ComponentColorModel.OPAQUE, java.awt.image.DataBuffer.TYPE_FLOAT);
+	    SampleModel sm = new PixelInterleavedSampleModel(java.awt.image.DataBuffer.TYPE_FLOAT, sz.x, sz.y, b, sz.x * b, offs);
+	    WritableRaster raster = Raster.createWritableRaster(sm, new DataBufferFloat(pbuf, pbuf.length), null);
+	    cb.accept(new BufferedImage(cm, raster, false, null));
+	    break;
+	}
+	case UINT32: case SINT32: {
+	    byte[] pbuf = new byte[sz.x * sz.y * 3];
+	    IntBuffer idat = data.asIntBuffer();
+	    for(int y = 0, soff = 0, doff = 0; y < sz.y; y++) {
+		for(int x = 0; x < sz.x; x++, soff++, doff += 3) {
+		    int raw = idat.get(soff);
+		    pbuf[doff + 0] = (byte)(((raw & 0x00000f) << 4) | ((raw & 0x00f000) >> 12));
+		    pbuf[doff + 1] = (byte)(((raw & 0x0000f0) << 0) | ((raw & 0x0f0000) >> 16));
+		    pbuf[doff + 2] = (byte)(((raw & 0x000f00) >> 4) | ((raw & 0xf00000) >> 20));
+		}
+	    }
+	    ComponentColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), null, false, false, ComponentColorModel.OPAQUE, java.awt.image.DataBuffer.TYPE_BYTE);
+	    SampleModel sm = new PixelInterleavedSampleModel(java.awt.image.DataBuffer.TYPE_BYTE, sz.x, sz.y, 3, sz.x * 3, new int[] {0, 1, 2});
+	    WritableRaster raster = Raster.createWritableRaster(sm, new DataBufferByte(pbuf, pbuf.length), null);
+	    cb.accept(new BufferedImage(cm, raster, false, null));
+	    break;
+	}
+	case DEPTH: {
+	    IntBuffer fdat = data.asIntBuffer();
+	    byte[] pbuf = new byte[sz.x * sz.y * 4];
+	    for(int y = 0, soff = 0, doff = 0; y < sz.y; y++) {
+		for(int x = 0; x < sz.x; x++, soff++, doff += 4) {
+		    int raw = fdat.get(soff);
+		    int rgb = (int)((double)raw * 0xffffff);
+		    pbuf[doff + 0] = (byte)((raw >> 24) & 0xff);
+		    pbuf[doff + 1] = (byte)((raw >> 16) & 0xff);
+		    pbuf[doff + 2] = (byte)((raw >>  8) & 0xff);
+		    pbuf[doff + 3] = (byte)255;
+		}
+	    }
+	    WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
+	    cb.accept(new BufferedImage(TexI.glcm, raster, false, null));
+	    break;
+	}
+	default:
+	    throw(new IllegalArgumentException(String.valueOf(fmt)));
+	}
+    }
+
     public static void debugimage(Render g, Pipe state, FragData buf, Area area, VectorFormat fmt, Consumer<BufferedImage> cb) {
-	g.pget(state, buf, area, fmt, data -> {
-		Coord sz = area.sz();
-		switch(fmt.cf) {
-		case UNORM8: case SNORM8: {
-		    int b = fmt.nc;
-		    boolean a = b == 4;
-		    int[] offs = new int[b];
-		    for(int i = 0; i < b; i++) offs[i] = i;
-		    byte[] pbuf = new byte[sz.x * sz.y * b];
-		    data.get(pbuf);
-		    ComponentColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), null, a, false, a ? ComponentColorModel.TRANSLUCENT : ComponentColorModel.OPAQUE, java.awt.image.DataBuffer.TYPE_BYTE);
-		    SampleModel sm = new PixelInterleavedSampleModel(java.awt.image.DataBuffer.TYPE_BYTE, sz.x, sz.y, b, sz.x * b, offs);
-		    WritableRaster raster = Raster.createWritableRaster(sm, new DataBufferByte(pbuf, pbuf.length), null);
-		    cb.accept(new BufferedImage(cm, raster, false, null));
-		    break;
-		}
-		case UNORM16: case SNORM16: {
-		    int b = fmt.nc;
-		    boolean a = b == 4;
-		    int[] offs = new int[b];
-		    for(int i = 0; i < b; i++) offs[i] = i;
-		    short[] pbuf = new short[sz.x * sz.y * b];
-		    data.asShortBuffer().get(pbuf);
-		    ComponentColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), null, a, false, a ? ComponentColorModel.TRANSLUCENT : ComponentColorModel.OPAQUE, java.awt.image.DataBuffer.TYPE_USHORT);
-		    SampleModel sm = new PixelInterleavedSampleModel(java.awt.image.DataBuffer.TYPE_USHORT, sz.x, sz.y, b, sz.x * b, offs);
-		    WritableRaster raster = Raster.createWritableRaster(sm, new DataBufferUShort(pbuf, pbuf.length), null);
-		    cb.accept(new BufferedImage(cm, raster, false, null));
-		    break;
-		}
-		case FLOAT32: {
-		    int b = fmt.nc;
-		    boolean a = b == 4;
-		    int[] offs = new int[b];
-		    for(int i = 0; i < b; i++) offs[i] = i;
-		    float[] pbuf = new float[sz.x * sz.y * b];
-		    data.asFloatBuffer().get(pbuf);
-		    ComponentColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB), null, a, false, a ? ComponentColorModel.TRANSLUCENT : ComponentColorModel.OPAQUE, java.awt.image.DataBuffer.TYPE_FLOAT);
-		    SampleModel sm = new PixelInterleavedSampleModel(java.awt.image.DataBuffer.TYPE_FLOAT, sz.x, sz.y, b, sz.x * b, offs);
-		    WritableRaster raster = Raster.createWritableRaster(sm, new DataBufferFloat(pbuf, pbuf.length), null);
-		    cb.accept(new BufferedImage(cm, raster, false, null));
-		    break;
-		}
-		case UINT32: case SINT32: {
-		    byte[] pbuf = new byte[sz.x * sz.y * 3];
-		    IntBuffer idat = data.asIntBuffer();
-		    for(int y = 0, soff = 0, doff = 0; y < sz.y; y++) {
-			for(int x = 0; x < sz.x; x++, soff++, doff += 3) {
-			    int raw = idat.get(soff);
-			    pbuf[doff + 0] = (byte)(((raw & 0x00000f) << 4) | ((raw & 0x00f000) >> 12));
-			    pbuf[doff + 1] = (byte)(((raw & 0x0000f0) << 0) | ((raw & 0x0f0000) >> 16));
-			    pbuf[doff + 2] = (byte)(((raw & 0x000f00) >> 4) | ((raw & 0xf00000) >> 20));
-			}
-		    }
-		    ComponentColorModel cm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), null, false, false, ComponentColorModel.OPAQUE, java.awt.image.DataBuffer.TYPE_BYTE);
-		    SampleModel sm = new PixelInterleavedSampleModel(java.awt.image.DataBuffer.TYPE_BYTE, sz.x, sz.y, 3, sz.x * 3, new int[] {0, 1, 2});
-		    WritableRaster raster = Raster.createWritableRaster(sm, new DataBufferByte(pbuf, pbuf.length), null);
-		    cb.accept(new BufferedImage(cm, raster, false, null));
-		    break;
-		}
-		}
-	    });
+	g.pget(state, buf, area, fmt, data -> debugimage(data, area.sz(), fmt, true, cb));
     }
 
     public static void getimage(Render g, Pipe state, FragData buf, Area area, Consumer<BufferedImage> cb) {
-	g.pget(state, buf, area, new VectorFormat(4, NumberFormat.UNORM8), data -> {
+	VectorFormat fmt = new VectorFormat(4, NumberFormat.UNORM8);
+	g.pget(state, buf, area, fmt, data -> {
 		Coord sz = area.sz();
+		flipimage(fmt, sz.x, data);
 		byte[] pbuf = new byte[sz.x * sz.y * 4];
 		data.get(pbuf);
 		WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
@@ -498,37 +602,34 @@ public class GOut {
 	getimage(Coord.z, sz(), cb);
     }
 
-    public static void getimage(Render g, Texture.Image<?> img, Consumer<BufferedImage> cb) {
-	if(img.tex.ifmt.cf == NumberFormat.DEPTH) {
-	    g.pget(img, new VectorFormat(1, NumberFormat.FLOAT32), data -> {
-		    FloatBuffer fdat = data.asFloatBuffer();
-		    Coord sz = new Coord(img.w, img.h);
-		    byte[] pbuf = new byte[sz.x * sz.y * 4];
-		    for(int y = 0, soff = 0, doff = 0; y < sz.y; y++) {
-			for(int x = 0; x < sz.x; x++, soff++, doff += 4) {
-			    float raw = fdat.get(soff);
-			    int rgb = (int)((double)raw * 0xffffff);
-			    pbuf[doff + 0] = (byte)((rgb >> 16) & 0xff);
-			    pbuf[doff + 1] = (byte)((rgb >>  8) & 0xff);
-			    pbuf[doff + 2] = (byte)((rgb >>  0) & 0xff);
-			    pbuf[doff + 3] = (byte)255;
-			}
-		    }
-		    WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
-		    cb.accept(new BufferedImage(TexI.glcm, raster, false, null));
-		});
+    public static void debugimage(Render g, Texture.Image<?> img, VectorFormat fmt, boolean flip, Consumer<BufferedImage> cb) {
+	if(fmt.cf == NumberFormat.DEPTH) {
+	    if(fmt.nc != 1)
+		throw(new IllegalArgumentException(String.valueOf(fmt)));
+	    g.pget(img, new VectorFormat(1, NumberFormat.UNORM32), data -> debugimage(data, Coord.of(img.w, img.h), fmt, flip, cb));
 	} else {
-	    g.pget(img, new VectorFormat(4, NumberFormat.UNORM8), data -> {
-		    Coord sz = new Coord(img.w, img.h);
-		    byte[] pbuf = new byte[sz.x * sz.y * 4];
-		    data.get(pbuf);
-		    WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
-		    cb.accept(new BufferedImage(TexI.glcm, raster, false, null));
-		});
+	    g.pget(img, fmt, data -> debugimage(data, Coord.of(img.w, img.h), fmt, flip, cb));
 	}
     }
 
-    public void getimage(Texture.Image<?> img, Consumer<BufferedImage> cb) {
-	getimage(out, img, cb);
+    public static void debugimage(Render g, Texture.Image<?> img, boolean flip, Consumer<BufferedImage> cb) {
+	debugimage(g, img, img.tex.efmt, flip, cb);
+    }
+
+    public static void getimage(Render g, Texture.Image<?> img, boolean flip, Consumer<BufferedImage> cb) {
+	VectorFormat fmt = new VectorFormat(4, NumberFormat.UNORM8);
+	g.pget(img, fmt, data -> {
+		Coord sz = Coord.of(img.w, img.h);
+		if(flip)
+		    flipimage(fmt, sz.x, data);
+		byte[] pbuf = new byte[sz.x * sz.y * 4];
+		data.get(pbuf);
+		WritableRaster raster = Raster.createInterleavedRaster(new DataBufferByte(pbuf, pbuf.length), sz.x, sz.y, 4 * sz.x, 4, new int[] {0, 1, 2, 3}, null);
+		cb.accept(new BufferedImage(TexI.glcm, raster, false, null));
+	    });
+    }
+
+    public void getimage(Texture.Image<?> img, boolean flip, Consumer<BufferedImage> cb) {
+	getimage(out, img, flip, cb);
     }
 }

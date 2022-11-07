@@ -81,6 +81,8 @@ public abstract class State implements Pipe.Op {
 	public static int numslots() {
 	    return(slots.idlist.length);
 	}
+
+	public final Pipe.Op nil = p -> p.put(this, null);
     }
 
     public interface Instancer<T extends State> {

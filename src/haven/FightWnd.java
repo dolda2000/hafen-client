@@ -55,13 +55,12 @@ public class FightWnd extends Widget {
     private static final OwnerContext.ClassResolver<FightWnd> actxr = new OwnerContext.ClassResolver<FightWnd>()
 	.add(Glob.class, wdg -> wdg.ui.sess.glob)
 	.add(Session.class, wdg -> wdg.ui.sess);
-    public static final Text.Foundry namef = new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD, 16f)).aa(true);
+    public static final Text.Foundry namef = new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD), 16).aa(true);
     public class Action implements ItemInfo.ResOwner {
 	public final Indir<Resource> res;
 	private final int id;
 	public int a, u;
-	private Text rnm, ru;
-	private Tex ri;
+	private String name;
 
 	public Action(Indir<Resource> res, int id, int a, int u) {this.res = res; this.id = id; this.a = a; this.u = u;}
 
@@ -69,7 +68,7 @@ public class FightWnd extends Widget {
 	    StringBuilder buf = new StringBuilder();
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
-	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n");
+	    buf.append("$b{$font[serif,16]{" + res.flayer(Resource.tooltip).t + "}}\n\n");
 	    Resource.Pagina pag = res.layer(Resource.pagina);
 	    if(pag != null)
 		buf.append(pag.text);
@@ -77,16 +76,12 @@ public class FightWnd extends Widget {
 	}
 
 	private void a(int a) {
-	    if(this.a != a) {
-		this.a = a;
-		this.ru = null;
-	    }
+	    this.a = a;
 	}
 
 	private void u(int u) {
 	    if(this.u != u) {
 		this.u = u;
-		this.ru = null;
 		recount();
 	    }
 	}
@@ -100,14 +95,14 @@ public class FightWnd extends Widget {
 		if(rawinfo != null)
 		    info = ItemInfo.buildinfo(this, rawinfo);
 		else
-		    info = Arrays.asList(new ItemInfo.Name(this, res.get().layer(Resource.tooltip).t));
+		    info = Arrays.asList(new ItemInfo.Name(this, res.get().flayer(Resource.tooltip).t));
 	    }
 	    return(info);
 	}
 	public <T> T context(Class<T> cl) {return(actxr.context(cl, FightWnd.this));}
 
 	public BufferedImage rendericon() {
-	    BufferedImage ret = res.get().layer(Resource.imgc).img;
+	    BufferedImage ret = res.get().flayer(Resource.imgc).scaled();
 	    Graphics g = null;
 	    for(ItemInfo inf : info()) {
 		if(inf instanceof IconInfo) {
@@ -137,8 +132,8 @@ public class FightWnd extends Widget {
 	    List<ItemInfo> info = info();
 	    l.cmp.add(rendericon(), Coord.z);
 	    ItemInfo.Name nm = ItemInfo.find(ItemInfo.Name.class, info);
-	    l.cmp.add(namef.render(nm.str.text).img, new Coord(0, l.cmp.sz.y + 10));
-	    l.cmp.sz = l.cmp.sz.add(0, 10);
+	    l.cmp.add(namef.render(nm.str.text).img, new Coord(0, l.cmp.sz.y + UI.scale(10)));
+	    l.cmp.sz = l.cmp.sz.add(0, UI.scale(10));
 	    for(ItemInfo inf : info) {
 		if((inf != nm) && (inf instanceof ItemInfo.Tip)) {
 		    l.add((ItemInfo.Tip)inf);
@@ -221,207 +216,168 @@ public class FightWnd extends Widget {
 	}
     }
 
-    private static final Tex[] add = {Resource.loadtex("gfx/hud/buttons/addu"),
-			      Resource.loadtex("gfx/hud/buttons/addd")};
-    private static final Tex[] sub = {Resource.loadtex("gfx/hud/buttons/subu"),
-			      Resource.loadtex("gfx/hud/buttons/subd")};
-    public class Actions extends Listbox<Action> implements DTarget {
+    public class Actions extends SListBox<Action, Widget> {
 	private boolean loading = false;
-	private int da = -1, ds = -1;
-	UI.Grab d = null;
-	Action drag = null;
-	Coord dp;
+	private Action drag = null;
+	private UI.Grab grab;
 
-	public Actions(int w, int h) {
-	    super(w, h, attrf.height() + 2);
+	public Actions(Coord sz) {
+	    super(sz, attrf.height() + UI.scale(2));
 	}
 
-	protected Action listitem(int n) {return(acts.get(n));}
-	protected int listitems() {return(acts.size());}
+	protected List<Action> items() {return(acts);}
 
-	protected void drawbg(GOut g) {}
+	protected Widget makeitem(Action act, int idx, Coord sz) {
+	    return(new Item(sz, act));
+	}
 
-	protected void drawitem(GOut g, Action act, int idx) {
-	    g.chcolor((idx % 2 == 0)?CharWnd.every:CharWnd.other);
-	    g.frect(Coord.z, g.sz());
-	    g.chcolor();
-	    if(act.ru == null) act.ru = attrf.render(String.format("%d/%d", act.u, act.a));
-	    try {
-		if(act.ri == null)
-		    act.ri = new TexI(PUtils.convolvedown(act.rendericon(), new Coord(itemh, itemh), CharWnd.iconfilter));
-		g.image(act.ri, Coord.z);
-	    } catch(Loading l) {
-		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
+	public class Item extends Widget implements DTarget {
+	    public final Action item;
+	    private final Label use;
+	    private int u = -1, a = -1;
+	    private UI.Grab grab;
+	    private Coord dp;
+
+	    public Item(Coord sz, Action act) {
+		super(sz);
+		this.item = act;
+		Widget prev;
+		prev = adda(new IButton("gfx/hud/buttons/add", "u", "d", "h").action(() -> setu(item.u + 1)), sz.x - UI.scale(2), sz.y / 2, 1.0, 0.5);
+		prev = adda(new IButton("gfx/hud/buttons/sub", "u", "d", "h").action(() -> setu(item.u - 1)), prev.c.x - UI.scale(2), sz.y / 2, 1.0, 0.5);
+		prev = use = adda(new Label("0/0", attrf), prev.c.x - UI.scale(5), sz.y / 2, 1.0, 0.5);
+		add(IconText.of(Coord.of(prev.c.x - UI.scale(2), sz.y), act::rendericon, () -> act.res.get().flayer(Resource.tooltip).t), Coord.z);
 	    }
-	    int ty = (itemh - act.rnm.sz().y) / 2;
-	    g.image(act.rnm.tex(), new Coord(itemh + 2, ty));
-	    g.aimage(act.ru.tex(), new Coord(sz.x - 45, ty), 1.0, 0.0);
-	    g.aimage(add[da == idx?1:0], new Coord(sz.x - 10, itemh / 2), 1.0, 0.5);
-	    g.aimage(sub[ds == idx?1:0], new Coord(sz.x - 25, itemh / 2), 1.0, 0.5);
+
+	    public void tick(double dt) {
+		if((item.u != this.u) || (item.a != this.a))
+		    use.settext(String.format("%d/%d", this.u = item.u, this.a = item.a));
+		super.tick(dt);
+	    }
+
+	    public boolean mousewheel(Coord c, int am) {
+		if(ui.modshift) {
+		    setu(item.u - am);
+		    return(true);
+		}
+		return(super.mousewheel(c, am));
+	    }
+
+	    public boolean mousedown(Coord c, int button) {
+		if(super.mousedown(c, button))
+		    return(true);
+		if(button == 1) {
+		    change(item);
+		    grab = ui.grabmouse(this);
+		    dp = c;
+		}
+		return(true);
+	    }
+
+	    public void mousemove(Coord c) {
+		super.mousemove(c);
+		if((grab != null) && (c.dist(dp) > 5)) {
+		    grab.remove();
+		    grab = null;
+		    drag(item);
+		}
+	    }
+
+	    public boolean mouseup(Coord c, int button) {
+		if((grab != null) && (button == 1)) {
+		    grab.remove();
+		    grab = null;
+		    return(true);
+		}
+		return(super.mouseup(c, button));
+	    }
+
+	    public boolean setu(int u) {
+		u = Utils.clip(u, 0, item.a);
+		int s;
+		for(s = 0; s < order.length; s++) {
+		    if(order[s] == item)
+			break;
+		}
+		if(u > 0) {
+		    if(s == order.length) {
+			for(s = 0; s < order.length; s++) {
+			    if(order[s] == null)
+				break;
+			}
+			if(s == order.length)
+			    return(false);
+			order[s] = item;
+		    }
+		} else {
+		    if(s < order.length)
+			order[s] = null;
+		}
+		item.u(u);
+		return(true);
+	    }
+
+	    public boolean drop(Coord cc, Coord ul) {
+		return(false);
+	    }
+
+	    public boolean iteminteract(Coord cc, Coord ul) {
+		FightWnd.this.wdgmsg("itemact", item.id, ui.modflags());
+		return(true);
+	    }
 	}
 
-	public void change(final Action act) {
+	public void change(Action act) {
 	    if(act != null)
-		info.set(() -> new TexI(act.renderinfo(info.sz.x - 20)));
+		info.set(() -> new TexI(act.renderinfo(info.sz.x - UI.scale(20))));
 	    else if(sel != null)
 		info.set((Tex)null);
 	    super.change(act);
 	}
 
-	public boolean mousewheel(Coord c, int am) {
-	    if(ui.modshift) {
-		Action act = itemat(c);
-		if(act != null)
-		    setu(act, act.u - am);
-		return(true);
-	    }
-	    return(super.mousewheel(c, am));
-	}
-
-	public void draw(GOut g) {
+	public void tick(double dt) {
 	    if(loading) {
 		loading = false;
 		for(Action act : acts) {
 		    try {
-			act.rnm = attrf.render(act.res.get().layer(Resource.tooltip).t);
+			act.name = act.res.get().flayer(Resource.tooltip).t;
 		    } catch(Loading l) {
-			act.rnm = attrf.render("...");
+			act.name = "...";
 			loading = true;
 		    }
 		}
-		Collections.sort(acts, new Comparator<Action>() {
-			public int compare(Action a, Action b) {
-			    int ret = a.rnm.text.compareTo(b.rnm.text);
-			    return(ret);
-			}
-		    });
+		Collections.sort(acts, Comparator.comparing(act -> act.name));
 	    }
-	    if((drag != null) && (dp == null)) {
+	    super.tick(dt);
+	}
+
+	public void draw(GOut g) {
+	    if(drag != null) {
 		try {
-		    final Tex dt = drag.res.get().layer(Resource.imgc).tex();
-		    ui.drawafter(new UI.AfterDraw() {
-			    public void draw(GOut g) {
-				g.image(dt, ui.mc.add(dt.sz().div(2).inv()));
-			    }
-			});
-		} catch(Loading l) {}
+		    Tex dt = drag.res.get().flayer(Resource.imgc).tex();
+		    ui.drawafter(ag -> ag.image(dt, ui.mc.sub(dt.sz().div(2))));
+		} catch(Loading l) {
+		}
 	    }
 	    super.draw(g);
 	}
 
-	private boolean onadd(Coord c, int idx) {
-	    Coord ic = c.sub(0, (idx - sb.val) * itemh);
-	    int by = (itemh - add[0].sz().y) / 2;
-	    return(ic.isect(new Coord(sz.x - 10 - add[0].sz().x, by), add[0].sz()));
-	}
-
-	private boolean onsub(Coord c, int idx) {
-	    Coord ic = c.sub(0, (idx - sb.val) * itemh);
-	    int by = (itemh - sub[0].sz().y) / 2;
-	    return(ic.isect(new Coord(sz.x - 25 - add[0].sz().x, by), add[0].sz()));
-	}
-
 	public void drag(Action act) {
-	    if(d == null)
-		d = ui.grabmouse(this);
+	    if(grab == null)
+		grab = ui.grabmouse(this);
 	    drag = act;
-	    dp = null;
-	}
-
-	public boolean mousedown(Coord c, int button) {
-	    if(button == 1) {
-		int idx = (c.y / itemh) + sb.val;
-		if(idx < listitems()) {
-		    if(onadd(c, idx)) {
-			da = idx;
-			d = ui.grabmouse(this);
-			return(true);
-		    } else if(onsub(c, idx)) {
-			ds = idx;
-			d = ui.grabmouse(this);
-			return(true);
-		    }
-		}
-		super.mousedown(c, button);
-		if((sel != null) && (c.x < sb.c.x)) {
-		    d = ui.grabmouse(this);
-		    drag = sel;
-		    dp = c;
-		}
-		return(true);
-	    }
-	    return(super.mousedown(c, button));
-	}
-
-	public void mousemove(Coord c) {
-	    super.mousemove(c);
-	    if((drag != null) && (dp != null)) {
-		if(c.dist(dp) > 5)
-		    dp = null;
-	    }
-	}
-
-	private boolean setu(Action act, int u) {
-	    u = Utils.clip(u, 0, act.a);
-	    int s;
-	    for(s = 0; s < order.length; s++) {
-		if(order[s] == act)
-		    break;
-	    }
-	    if(u > 0) {
-		if(s == order.length) {
-		    for(s = 0; s < order.length; s++) {
-			if(order[s] == null)
-			    break;
-		    }
-		    if(s == order.length)
-			return(false);
-		    order[s] = act;
-		}
-	    } else {
-		if(s < order.length)
-		    order[s] = null;
-	    }
-	    act.u(u);
-	    return(true);
 	}
 
 	public boolean mouseup(Coord c, int button) {
-	    if((d != null) && (button == 1)) {
-		d.remove();
-		d = null;
+	    if((grab != null) && (button == 1)) {
+		grab.remove();
+		grab = null;
 		if(drag != null) {
-		    if(dp == null)
-			ui.dropthing(ui.root, c.add(rootpos()), drag);
+		    ui.dropthing(ui.root, c.add(rootpos()), drag);
 		    drag = null;
-		}
-		if(da >= 0) {
-		    if(onadd(c, da)) {
-			Action act = listitem(da);
-			setu(act, act.u + 1);
-		    }
-		    da = -1;
-		} else if(ds >= 0) {
-		    if(onsub(c, ds)) {
-			Action act = listitem(ds);
-			setu(act, act.u - 1);
-		    }
-		    ds = -1;
 		}
 		return(true);
 	    }
 	    return(super.mouseup(c, button));
-	}
-
-	public boolean drop(Coord cc, Coord ul) {
-	    return(false);
-	}
-
-	public boolean iteminteract(Coord cc, Coord ul) {
-	    Action act = itemat(cc);
-	    if(act != null)
-		FightWnd.this.wdgmsg("itemact", act.id, ui.modflags());
-	    return(true);
 	}
     }
 
@@ -443,11 +399,11 @@ public class FightWnd extends Widget {
 	private boolean anim = false;
 
 	private BView() {
-	    super(new Coord(((invsq.sz().x + 2) * (order.length - 1)) + (10 * ((order.length - 1) / 5)), 0).add(invsq.sz()));
+	    super(new Coord(((invsq.sz().x + UI.scale(2)) * (order.length - 1)) + (UI.scale(10) * ((order.length - 1) / 5)), 0).add(invsq.sz()));
 	}
 
 	private Coord itemc(int i) {
-	    return(new Coord(((invsq.sz().x + 2) * i) + (10 * (i / 5)), 0));
+	    return(new Coord(((invsq.sz().x + UI.scale(2)) * i) + (UI.scale(10) * (i / 5)), 0));
 	}
 
 	private int citem(Coord c) {
@@ -481,15 +437,16 @@ public class FightWnd extends Widget {
 		Action act = order[i];
 		try {
 		    if(act != null) {
-			Coord ic = c.add(1, 1);
+			Coord ic = c.add(UI.scale(1), UI.scale(1));
 			if(animoff[i] != null) {
 			    ic = ic.add(animoff[i].mul(Math.pow(1.0 - animpr[i], 3)));
 			}
-			g.image(act.res.get().layer(Resource.imgc).tex(), ic);
+			Tex tex = act.res.get().flayer(Resource.imgc).tex();
+			g.image(tex, ic);
 		    }
 		} catch(Loading l) {}
 		g.chcolor(156, 180, 158, 255);
-		g.aimage(keys[i], c.add(invsq.sz().sub(2, 0)), 1, 1);
+		g.aimage(keys[i], c.add(invsq.sz().sub(UI.scale(2), 0)), 1, 1);
 		g.chcolor();
 	    }
 	}
@@ -591,10 +548,10 @@ public class FightWnd extends Widget {
 	}
     }
 
-    public class Savelist extends Listbox<Integer> {
+    public class Savelist extends Listbox<Integer> implements ReadLine.Owner {
 	private int edit = -1;
 	private Text.Line redit = null;
-	private LineEdit nmed;
+	private ReadLine nmed;
 	private double focusstart;
 
 	public Savelist(int w, int h) {
@@ -614,17 +571,17 @@ public class FightWnd extends Widget {
 	    g.chcolor();
 	    if(n == edit) {
 		if(redit == null)
-		    redit = attrf.render(nmed.line);
-		g.aimage(redit.tex(), new Coord(20, itemh / 2), 0.0, 0.5);
+		    redit = attrf.render(nmed.line());
+		g.aimage(redit.tex(), new Coord(UI.scale(20), itemh / 2), 0.0, 0.5);
 		if(hasfocus && (((Utils.rtime() - focusstart) % 1.0) < 0.5)) {
-		    int cx = redit.advance(nmed.point);
+		    int cx = redit.advance(nmed.point());
 		    g.chcolor(255, 255, 255, 255);
-		    Coord co = new Coord(20 + cx + 1, (g.sz().y - redit.sz().y) / 2);
+		    Coord co = new Coord(UI.scale(20) + cx + UI.scale(1), (g.sz().y - redit.sz().y) / 2);
 		    g.line(co, co.add(0, redit.sz().y), 1);
 		    g.chcolor();
 		}
 	    } else {
-		g.aimage(saves[n].tex(), new Coord(20, itemh / 2), 0.0, 0.5);
+		g.aimage(saves[n].tex(), new Coord(UI.scale(20), itemh / 2), 0.0, 0.5);
 	    }
 	    if(n == usesave)
 		g.aimage(CheckBox.smark, new Coord(itemh / 2, itemh / 2), 0.5, 0.5);
@@ -639,17 +596,7 @@ public class FightWnd extends Widget {
 		if(((now - lt) < 0.5) && (c.dist(lc) < 10) && (sel != null) && (saves[sel] != unused)) {
 		    if(sel == usesave) {
 			edit = sel;
-			nmed = new LineEdit(saves[sel].text) {
-				protected void done(String line) {
-				    saves[edit] = attrf.render(line);
-				    edit = -1;
-				    nmed = null;
-				}
-
-				protected void changed() {
-				    redit = null;
-				}
-			    };
+			nmed = ReadLine.make(this, saves[sel].text);
 			redit = null;
 			parent.setfocus(this);
 			focusstart = now;
@@ -665,6 +612,16 @@ public class FightWnd extends Widget {
 	    return(ret);
 	}
 
+	public void done(ReadLine buf) {
+	    saves[edit] = attrf.render(buf.line());
+	    edit = -1;
+	    nmed = null;
+	}
+
+	public void changed(ReadLine buf) {
+	    redit = null;
+	}
+
 	public void change(Integer sel) {
 	    super.change(sel);
 	    if((edit != -1) && (edit != sel)) {
@@ -676,7 +633,7 @@ public class FightWnd extends Widget {
 
 	public boolean keydown(KeyEvent ev) {
 	    if(edit != -1) {
-		if(ev.getKeyChar() == 27) {
+		if(key_esc.match(ev)) {
 		    edit = -1;
 		    redit = null;
 		    nmed = null;
@@ -731,34 +688,30 @@ public class FightWnd extends Widget {
 	    saves[i] = unused;
 
 	Widget p;
-	info = add(new ImageInfoBox(new Coord(223, 152)), new Coord(5, 35).add(wbox.btloff()));
+	info = add(new ImageInfoBox(UI.scale(new Coord(223, 160))), UI.scale(new Coord(5, 35)).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(info));
 
-	add(new Img(CharWnd.catf.render("Martial Arts & Combat Schools").tex()), 0, 0);
-	actlist = add(new Actions(250, 8), new Coord(245, 35).add(wbox.btloff()));
+	add(CharWnd.settip(new Img(CharWnd.catf.render("Martial Arts & Combat Schools").tex()), "gfx/hud/chr/tips/combat"), 0, 0);
+	actlist = add(new Actions(UI.scale(250, 160)), UI.scale(new Coord(245, 35)).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(actlist));
 
-	p = add(new BView(), 5, 200);
-	count = add(new Label(""), p.c.add(p.sz.x + 10, 0));
+	p = add(new BView(), UI.scale(5, 208));
+	count = add(new Label(""), p.pos("ur").adds(10, 0));
 
-	savelist = add(new Savelist(370, 3), new Coord(5, 238).add(wbox.btloff()));
-	Frame.around(this, Collections.singletonList(savelist));
-	add(new Button(110, "Load", false) {
-		public void click() {
+	savelist = add(new Savelist(UI.scale(370), 3), p.pos("bl").adds(0, 2).add(wbox.btloff()));
+	p = Frame.around(this, Collections.singletonList(savelist));
+	p = add(new Button(UI.scale(110), "Load", false).action(() -> {
 		    load(savelist.sel);
 		    use(savelist.sel);
-		}
-	    }, 395, 238);
-	add(new Button(110, "Save", false) {
-		public void click() {
+	}), p.pos("ur").adds(10, 0));
+	p = add(new Button(UI.scale(110), "Save", false).action(() -> {
 		    if(savelist.sel < 0) {
 			getparent(GameUI.class).error("No save entry selected.");
 		    } else {
 			save(savelist.sel);
 			use(savelist.sel);
 		    }
-		}
-	    }, 395, 265);
+	}), p.pos("bl").adds(0, 2));
 	pack();
     }
 

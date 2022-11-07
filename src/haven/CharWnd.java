@@ -29,25 +29,29 @@ package haven;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.awt.font.TextAttribute;
 import java.util.*;
-import static haven.Window.wbox;
-import static haven.PUtils.*;
+import java.util.function.*;
 import haven.resutil.FoodInfo;
 import haven.resutil.Curiosity;
+import static haven.PUtils.*;
 
 /* XXX: There starts to seem to be reason to split the while character
  * sheet into some more modular structure, as it is growing quite
  * large. */
 public class CharWnd extends Window {
-    public static final RichText.Foundry ifnd = new RichText.Foundry(Resource.remote(), java.awt.font.TextAttribute.FAMILY, "SansSerif", java.awt.font.TextAttribute.SIZE, 9).aa(true);
-    public static final Text.Furnace catf = new BlurFurn(new TexFurn(new Text.Foundry(Text.fraktur, 25).aa(true), Window.ctex), 3, 2, new Color(96, 48, 0));
-    public static final Text.Furnace failf = new BlurFurn(new TexFurn(new Text.Foundry(Text.fraktur, 25).aa(true), Resource.loadimg("gfx/hud/fontred")), 3, 2, new Color(96, 48, 0));
+    public static final RichText.Foundry ifnd = new RichText.Foundry(Resource.remote(), java.awt.font.TextAttribute.FAMILY, "SansSerif", java.awt.font.TextAttribute.SIZE, UI.scale(9)).aa(true);
+    public static final Text.Furnace catf = new BlurFurn(new TexFurn(new Text.Foundry(Text.fraktur, 25).aa(true), Window.ctex), UI.scale(3), UI.scale(2), new Color(96, 48, 0));
+    public static final Text.Furnace failf = new BlurFurn(new TexFurn(new Text.Foundry(Text.fraktur, 25).aa(true), Resource.loadimg("gfx/hud/fontred")), UI.scale(3), UI.scale(2), new Color(96, 48, 0));
     public static final Text.Foundry attrf = new Text.Foundry(Text.fraktur, 18).aa(true);
     public static final Color debuff = new Color(255, 128, 128);
     public static final Color buff = new Color(128, 255, 128);
     public static final Color tbuff = new Color(128, 128, 255);
     public static final Color every = new Color(255, 255, 255, 16), other = new Color(255, 255, 255, 32);
+    public static final int width = UI.scale(255);
+    public static final int height = UI.scale(260);
+    public static final int margin1 = UI.scale(5);
+    public static final int margin2 = 2 * margin1;
+    public static final int margin3 = 2 * margin2;
     public final Collection<Attr> base;
     public final Collection<SAttr> skill;
     public final FoodMeter feps;
@@ -58,17 +62,18 @@ public class CharWnd extends Window {
     public final ExpGrid exps;
     public final Widget woundbox;
     public final WoundList wounds;
-    public Wound.Info wound;
-    private final Tabs.Tab questtab;
     public final Widget questbox;
     public final QuestList cqst, dqst;
+    public Wound.Info wound;
     public Quest.Info quest;
     public int exp, enc;
-    private int scost;
+    private final Tabs.Tab questtab;
     private final Tabs.Tab sattr, fgt;
+    private final Coord studyc;
+    private int scost;
 
     public static class FoodMeter extends Widget {
-	public static final Tex frame = Resource.loadtex("gfx/hud/chr/foodm");
+	public static final Tex frame =  Resource.loadtex("gfx/hud/chr/foodm");
 	public static final Coord marg = new Coord(5, 5), trmg = new Coord(10, 10);
 	public double cap;
 	public List<El> els = new LinkedList<El>();
@@ -163,15 +168,15 @@ public class CharWnd extends Window {
 		    Collections.sort(enew, dcmp);
 		    els = enew;
 		    rtip = null;
+		    enew = null;
 		} catch(Loading l) {}
-		enew = null;
 	    }
 	    if(trev != null) {
 		try {
 		    Collections.sort(etr, dcmp);
 		    GameUI gui = getparent(GameUI.class);
 		    if(gui != null)
-			gui.msg(String.format("You gained " + Loading.waitfor(trev).layer(Event.class).nm), Color.WHITE);
+			gui.msg(String.format("You gained " + Loading.waitfor(trev).flayer(Event.class).nm), Color.WHITE);
 		    trol = new TexI(mktrol(etr, trev));
 		    trtm = Utils.rtime();
 		    trev = null;
@@ -221,12 +226,12 @@ public class CharWnd extends Window {
 		BufferedImage cur = null;
 		double sum = 0.0;
 		for(El el : els) {
-		    Event ev = el.res.get().layer(Event.class);
+		    Event ev = el.res.get().flayer(Event.class);
 		    Color col = Utils.blendcol(ev.col, Color.WHITE, 0.5);
 		    BufferedImage ln = Text.render(String.format("%s: %s", ev.nm, Utils.odformat2(el.a, 2)), col).img;
 		    Resource.Image icon = el.res.get().layer(Resource.imgc);
 		    if(icon != null)
-			ln = ItemInfo.catimgsh(5, icon.img, ln);
+			ln = ItemInfo.catimgsh(5, convolve(icon.img, new Coord(ln.getHeight(), ln.getHeight()), iconfilter), ln);
 		    cur = ItemInfo.catimgs(0, cur, ln);
 		    sum += el.a;
 		}
@@ -240,7 +245,7 @@ public class CharWnd extends Window {
     public static class GlutMeter extends Widget {
 	public static final Tex frame = Resource.loadtex("gfx/hud/chr/glutm");
 	public static final Coord marg = new Coord(5, 5);
-	public Color fg, bg;
+	public Color fg = Color.BLACK, bg = Color.BLACK;
 	public double glut, lglut, gmod;
 	public String lbl;
 
@@ -272,7 +277,7 @@ public class CharWnd extends Window {
 	private Tex rtip = null;
 	public Object tooltip(Coord c, Widget prev) {
 	    if(rtip == null) {
-		rtip = RichText.render(String.format("%s: %d%%\nFood efficacy: %d%%", lbl, Math.round((lglut) * 100), Math.round(gmod * 100)), -1).tex();
+		rtip = RichText.render(String.format("%s: %.1f\u2030\nFood efficacy: %d%%", lbl, glut * 1000, Math.round(gmod * 100)), -1).tex();
 	    }
 	    return(rtip);
 	}
@@ -281,7 +286,9 @@ public class CharWnd extends Window {
     public static class Constipations extends Listbox<Constipations.El> {
 	public static final Color hilit = new Color(255, 255, 0, 48);
 	public static final Text.Foundry elf = attrf;
-	public static final int elh = elf.height() + 2;
+	public static final int elh = elf.height() + UI.scale(2);
+	public static final int ellw = elf.strsize("...").x;
+	public static final int etmaxw = elf.strsize("100%").x;
 	public static final Convolution tflt = new Hanning(1);
 	public static final Color buffed = new Color(160, 255, 160), full = new Color(250, 230, 64), none = new Color(250, 19, 43);
 	public final List<El> els = new ArrayList<El>();
@@ -301,7 +308,12 @@ public class CharWnd extends Window {
 		    ItemSpec spec = new ItemSpec(OwnerContext.uictx.curry(ui), t, null);
 		    BufferedImage img = spec.image();
 		    String nm = spec.name();
-		    Text rnm = elf.render(nm);
+		    int maxw = sz.x - etmaxw - sb.sz.x - UI.scale(5) - elh;
+		    Text.Line rnm = elf.render(nm);
+		    if(rnm.sz().x > maxw) {
+			int len = rnm.charat(maxw - ellw);
+			rnm = elf.render(nm.substring(0, len) + "...");
+		    }
 		    BufferedImage buf = TexI.mkbuf(new Coord(elh + 5 + rnm.sz().x, elh));
 		    Graphics g = buf.getGraphics();
 		    g.drawImage(convolvedown(img, new Coord(elh, elh), tflt), 0, 0, null);
@@ -315,23 +327,23 @@ public class CharWnd extends Window {
 	    public Tex at() {
 		if(at == null) {
 		    Color c= (a > 1.0)?buffed:Utils.blendcol(none, full, a);
-		    at = elf.render(String.format("%d%%", (int)Math.ceil((1.0 - a) * 100)), c).tex();
+		    at = elf.render(String.format("%d%%", Math.max((int)Math.round((1.0 - a) * 100), 1)), c).tex();
 		}
 		return(at);
 	    }
 	}
 
-	private WItem.ItemTip lasttip = null;
+	private ItemInfo.InfoTip lasttip = null;
 	public void draw(GOut g) {
-	    WItem.ItemTip tip = null;
-	    if(ui.lasttip instanceof WItem.ItemTip)
-		tip = (WItem.ItemTip)ui.lasttip;
+	    ItemInfo.InfoTip tip = null;
+	    if(ui.lasttip instanceof ItemInfo.InfoTip)
+		tip = (ItemInfo.InfoTip)ui.lasttip;
 	    if(tip != lasttip) {
 		for(El el : els)
 		    el.hl = false;
 		FoodInfo finf;
 		try {
-		    finf = (tip == null)?null:ItemInfo.find(FoodInfo.class, tip.item().info());
+		    finf = (tip == null)?null:ItemInfo.find(FoodInfo.class, tip.info());
 		} catch(Loading l) {
 		    finf = null;
 		}
@@ -422,15 +434,15 @@ public class CharWnd extends Window {
 	public final Color bg;
 	private double lvlt = 0.0;
 	private Text ct;
-	private int cbv, ccv;
+	private int cbv = -1, ccv = -1;
 
 	private Attr(Glob glob, String attr, Color bg) {
-	    super(new Coord(attrw, attrf.height() + 2));
+	    super(new Coord(attrw, attrf.height() + UI.scale(2)));
 	    Resource res = Resource.local().loadwait("gfx/hud/chr/" + attr);
 	    this.nm = attr;
-	    this.img = res.layer(Resource.imgc).tex();
-	    this.rnm = attrf.render(res.layer(Resource.tooltip).t);
-	    this.attr = glob.cattr.get(attr);
+	    this.rnm = attrf.render(res.flayer(Resource.tooltip).t);
+	    this.img = new TexI(convolve(res.flayer(Resource.imgc).img, new Coord(this.sz.y, this.sz.y), iconfilter));
+	    this.attr = glob.getcattr(attr);
 	    this.bg = bg;
 	}
 
@@ -462,8 +474,9 @@ public class CharWnd extends Window {
 	    g.chcolor();
 	    Coord cn = new Coord(0, sz.y / 2);
 	    g.aimage(img, cn.add(5, 0), 0, 0.5);
-	    g.aimage(rnm.tex(), cn.add(img.sz().x + 10, 1), 0, 0.5);
-	    g.aimage(ct.tex(), cn.add(sz.x - 7, 1), 1, 0.5);
+	    g.aimage(rnm.tex(), cn.add(img.sz().x + margin2, 1), 0, 0.5);
+	    if(ct != null)
+		g.aimage(ct.tex(), cn.add(sz.x - UI.scale(7), 1), 1, 0.5);
 	}
 
 	public void lvlup() {
@@ -482,19 +495,19 @@ public class CharWnd extends Window {
 	private int cbv, ccv;
 
 	private SAttr(Glob glob, String attr, Color bg) {
-	    super(new Coord(attrw, attrf.height() + 2));
+	    super(new Coord(attrw, attrf.height() + UI.scale(2)));
 	    Resource res = Resource.local().loadwait("gfx/hud/chr/" + attr);
 	    this.nm = attr;
-	    this.img = res.layer(Resource.imgc).tex();
-	    this.rnm = attrf.render(res.layer(Resource.tooltip).t);
-	    this.attr = glob.cattr.get(attr);
+	    this.img = new TexI(convolve(res.flayer(Resource.imgc).img, new Coord(this.sz.y, this.sz.y), iconfilter));
+	    this.rnm = attrf.render(res.flayer(Resource.tooltip).t);
+	    this.attr = glob.getcattr(attr);
 	    this.bg = bg;
-	    adda(new IButton("gfx/hud/buttons/add", "u", "d", null) {
+	    adda(new IButton("gfx/hud/buttons/add", "u", "d", "h") {
 		    public void click() {adj(1);}
-		}, sz.x - 5, sz.y / 2, 1, 0.5);
-	    adda(new IButton("gfx/hud/buttons/sub", "u", "d", null) {
+		}, sz.x - margin1, sz.y / 2, 1, 0.5);
+	    adda(new IButton("gfx/hud/buttons/sub", "u", "d", "h") {
 		    public void click() {adj(-1);}
-		}, sz.x - 20, sz.y / 2, 1, 0.5);
+		}, sz.x - margin3, sz.y / 2, 1, 0.5);
 	}
 
 	public void tick(double dt) {
@@ -529,8 +542,8 @@ public class CharWnd extends Window {
 	    super.draw(g);
 	    Coord cn = new Coord(0, sz.y / 2);
 	    g.aimage(img, cn.add(5, 0), 0, 0.5);
-	    g.aimage(rnm.tex(), cn.add(img.sz().x + 10, 1), 0, 0.5);
-	    g.aimage(ct.tex(), cn.add(sz.x - 40, 1), 1, 0.5);
+	    g.aimage(rnm.tex(), cn.add(img.sz().x + margin2, 1), 0, 0.5);
+	    g.aimage(ct.tex(), cn.add(sz.x - UI.scale(40), 1), 1, 0.5);
 	}
 
 	private void updcost() {
@@ -559,75 +572,89 @@ public class CharWnd extends Window {
 	}
     }
 
-    public static class RLabel extends Label {
+    public static class RLabel<V> extends Label {
+	private final Supplier<V> val;
+	private final Function<V, String> fmt;
+	private final Function<V, Color> col;
 	private Coord oc;
+	private Color lc;
+	private V lv;
 
-	public RLabel(Coord oc, String text) {
-	    super(text);
-	    this.oc = oc;
+        private RLabel(Supplier<V> val, Function<V, String> fmt, Function<V, Color> col, V ival) {
+            super(fmt.apply(ival));
+	    this.val = val;
+	    this.fmt = fmt;
+	    this.col = col;
+	    this.lv = ival;
+            this.oc = oc;
+	    if(col != null)
+		setcolor(lc = col.apply(ival));
+        }
+
+        public RLabel(Supplier<V> val, Function<V, String> fmt, Function<V, Color> col) {
+	    this(val, fmt, col, val.get());
+	}
+
+        public RLabel(Supplier<V> val, Function<V, String> fmt, Color col) {
+	    this(val, fmt, (Function<V, Color>)null);
+	    setcolor(col);
 	}
 
 	protected void added() {
-	    this.c = oc.add(-sz.x, 0);
+	    if(oc == null) {
+		oc = new Coord(c.x + sz.x, c.y);
+	    }
+	    move(oc.add(-sz.x, 0));
 	}
 
 	public void settext(String text) {
 	    super.settext(text);
-	    this.c = oc.add(-sz.x, 0);
+	    move(oc.add(-sz.x, 0));
+	}
+
+	public void tick(double dt) {
+	    V v = val.get();
+	    if(!Utils.eq(v, lv)) {
+		settext(fmt.apply(v));
+		lv = v;
+		if(col != null) {
+		    Color c = col.apply(v);
+		    if(!Utils.eq(c, lc)) {
+			setcolor(c);
+			lc = c;
+		    }
+		}
+	    }
 	}
     }
 
-    public class ExpLabel extends RLabel {
-	private int cexp;
-
-	public ExpLabel(Coord oc) {
-	    super(oc, "0");
-	    setcolor(new Color(192, 192, 255));
-	}
-
-	public void draw(GOut g) {
-	    super.draw(g);
-	    if(exp != cexp)
-		settext(Utils.thformat(cexp = exp));
-	}
+    public RLabel<?> explabel() {
+	return(new RLabel<Integer>(() -> exp, Utils::thformat, new Color(192, 192, 255)));
     }
 
-    public class EncLabel extends RLabel {
-	private int cenc;
-
-	public EncLabel(Coord oc) {
-	    super(oc, "0");
-	    setcolor(new Color(255, 255, 192));
-	}
-
-	public void draw(GOut g) {
-	    super.draw(g);
-	    if(enc != cenc)
-		settext(Utils.thformat(cenc = enc));
-	}
+    public RLabel<?> enclabel() {
+	return(new RLabel<Integer>(() -> enc, Utils::thformat, new Color(255, 255, 192)));
     }
 
-    public class StudyInfo extends Widget {
-	public Widget study;
+    public static class StudyInfo extends Widget {
+	public final Widget study;
 	public int texp, tw, tenc;
-	private final Text.UText<?> texpt = new Text.UText<Integer>(Text.std) {
-	    public Integer value() {return(texp);}
-	    public String text(Integer v) {return(Utils.thformat(v));}
-	};
-	private final Text.UText<?> twt = new Text.UText<String>(Text.std) {
-	    public String value() {return(tw + "/" + ui.sess.glob.cattr.get("int").comp);}
-	};
-	private final Text.UText<?> tenct = new Text.UText<Integer>(Text.std) {
-	    public Integer value() {return(tenc);}
-	    public String text(Integer v) {return(Integer.toString(tenc));}
-	};
 
 	private StudyInfo(Coord sz, Widget study) {
 	    super(sz);
 	    this.study = study;
-	    add(new Label("Attention:"), 2, 2);
-	    add(new Label("Experience cost:"), 2, 32);
-	    add(new Label("Learning points:"), 2, sz.y - 32);
+	    Widget plbl, pval;
+	    plbl = add(new Label("Attention:"), UI.scale(2, 2));
+	    pval = adda(new RLabel<Pair<Integer, Integer>>(() -> new Pair<>(tw, (ui == null) ? 0 : ui.sess.glob.getcattr("int").comp),
+							   n -> String.format("%,d/%,d", n.a, n.b),
+							   new Color(255, 192, 255, 255)),
+			plbl.pos("br").adds(0, 2).x(sz.x - UI.scale(2)), 1.0, 0.0);
+	    plbl = add(new Label("Experience cost:"), pval.pos("bl").adds(0, 2).xs(2));
+	    pval = adda(new RLabel<Integer>(() -> tenc, Utils::thformat, new Color(255, 255, 192, 255)),
+			plbl.pos("br").adds(0, 2).x(sz.x - UI.scale(2)), 1.0, 0.0);
+	    pval = adda(new RLabel<Integer>(() -> texp, Utils::thformat, new Color(192, 192, 255, 255)),
+			pos("cbr").subs(2, 2), 1.0, 1.0);
+	    plbl = adda(new Label("Learning points:"), pval.pos("ul").subs(0, 2).xs(2), 0.0, 1.0);
 	}
 
 	private void upd() {
@@ -646,15 +673,9 @@ public class CharWnd extends Window {
 	    this.texp = texp; this.tw = tw; this.tenc = tenc;
 	}
 
-	public void draw(GOut g) {
+	public void tick(double dt) {
 	    upd();
-	    super.draw(g);
-	    g.chcolor(255, 192, 255, 255);
-	    g.aimage(twt.get().tex(), new Coord(sz.x - 4, 17), 1.0, 0.0);
-	    g.chcolor(255, 255, 192, 255);
-	    g.aimage(tenct.get().tex(), new Coord(sz.x - 4, 47), 1.0, 0.0);
-	    g.chcolor(192, 192, 255, 255);
-	    g.aimage(texpt.get().tex(), sz.add(-4, -15), 1.0, 0.0);
+	    super.tick(dt);
 	}
     }
 
@@ -691,7 +712,7 @@ public class CharWnd extends Window {
 	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
 	    public String value() {
 		try {
-		    return(res.get().layer(Resource.tooltip).t);
+		    return(res.get().flayer(Resource.tooltip).t);
 		} catch(Loading l) {
 		    return("...");
 		}
@@ -710,17 +731,17 @@ public class CharWnd extends Window {
 	    StringBuilder buf = new StringBuilder();
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
-	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+	    buf.append("$b{$font[serif,16]{" + res.flayer(Resource.tooltip).t + "}}\n\n\n");
 	    if(cost > 0)
 		buf.append("Cost: " + cost + "\n\n");
-	    buf.append(res.layer(Resource.pagina).text);
+	    buf.append(res.flayer(Resource.pagina).text);
 	    return(buf.toString());
 	}
 
 	private Text tooltip = null;
 	public Text tooltip() {
 	    if(tooltip == null)
-		tooltip = Text.render(res.get().layer(Resource.tooltip).t);
+		tooltip = Text.render(res.get().flayer(Resource.tooltip).t);
 	    return(tooltip);
 	}
     }
@@ -743,15 +764,15 @@ public class CharWnd extends Window {
 	    StringBuilder buf = new StringBuilder();
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
-	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
-	    buf.append(res.layer(Resource.pagina).text);
+	    buf.append("$b{$font[serif,16]{" + res.flayer(Resource.tooltip).t + "}}\n\n\n");
+	    buf.append(res.flayer(Resource.pagina).text);
 	    return(buf.toString());
 	}
 
 	private Text tooltip = null;
 	public Text tooltip() {
 	    if(tooltip == null)
-		tooltip = Text.render(res.get().layer(Resource.tooltip).t);
+		tooltip = Text.render(res.get().flayer(Resource.tooltip).t);
 	    return(tooltip);
 	}
     }
@@ -764,7 +785,7 @@ public class CharWnd extends Window {
 	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
 	    public String value() {
 		try {
-		    return(res.get().layer(Resource.tooltip).t);
+		    return(res.get().flayer(Resource.tooltip).t);
 		} catch(Loading l) {
 		    return("...");
 		}
@@ -781,17 +802,17 @@ public class CharWnd extends Window {
 	    StringBuilder buf = new StringBuilder();
 	    Resource res = this.res.get();
 	    buf.append("$img[" + res.name + "]\n\n");
-	    buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
+	    buf.append("$b{$font[serif,16]{" + res.flayer(Resource.tooltip).t + "}}\n\n\n");
 	    if(score > 0)
 		buf.append("Experience points: " + Utils.thformat(score) + "\n\n");
-	    buf.append(res.layer(Resource.pagina).text);
+	    buf.append(res.flayer(Resource.pagina).text);
 	    return(buf.toString());
 	}
 
 	private Text tooltip = null;
 	public Text tooltip() {
 	    if(tooltip == null)
-		tooltip = Text.render(res.get().layer(Resource.tooltip).t);
+		tooltip = Text.render(res.get().flayer(Resource.tooltip).t);
 	    return(tooltip);
 	}
     }
@@ -807,7 +828,7 @@ public class CharWnd extends Window {
 	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
 	    public String value() {
 		try {
-		    return(res.get().layer(Resource.tooltip).t);
+		    return(res.get().flayer(Resource.tooltip).t);
 		} catch(Loading l) {
 		    return("...");
 		}
@@ -871,8 +892,8 @@ public class CharWnd extends Window {
 		StringBuilder buf = new StringBuilder();
 		Resource res = this.res.get();
 		buf.append("$img[" + res.name + "]\n\n");
-		buf.append("$b{$font[serif,16]{" + res.layer(Resource.tooltip).t + "}}\n\n\n");
-		buf.append(res.layer(Resource.pagina).text);
+		buf.append("$b{$font[serif,16]{" + res.flayer(Resource.tooltip).t + "}}\n\n\n");
+		buf.append(res.flayer(Resource.pagina).text);
 		return(buf.toString());
 	    }
 
@@ -925,7 +946,7 @@ public class CharWnd extends Window {
 	public String title() {
 	    if(title != null)
 		return(title);
-	    return(res.get().layer(Resource.tooltip).t);
+	    return(res.get().flayer(Resource.tooltip).t);
 	}
 
 	public static class Condition {
@@ -970,7 +991,7 @@ public class CharWnd extends Window {
 			if(img == null) {
 			    try {
 				title = (done == QST_DONE?catf:failf).render(title()).tex();
-				img = res.get().layer(Resource.imgc).tex();
+				img = res.get().flayer(Resource.imgc).tex();
 				msg = (done == QST_DONE)?qcmp:qfail;
 				/*
 				resize(new Coord(Math.max(img.sz().x + 25 + title.sz().x, msg.sz().x),
@@ -1055,7 +1076,7 @@ public class CharWnd extends Window {
 	    public String title() {
 		if(title != null)
 		    return(title);
-		return(res.get().layer(Resource.tooltip).t);
+		return(res.get().flayer(Resource.tooltip).t);
 	    }
 
 	    public Condition[] conds() {
@@ -1149,7 +1170,7 @@ public class CharWnd extends Window {
 	}
 
 	public static class QView extends Widget {
-	    public static final Text.Furnace qtfnd = new BlurFurn(new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD, 16)).aa(true), 2, 1, Color.BLACK);
+	    public static final Text.Furnace qtfnd = new BlurFurn(new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD), 16).aa(true), 2, 1, Color.BLACK);
 	    public static final Text.Foundry qcfnd = new Text.Foundry(Text.sans, 12).aa(true);
 	    public final QVInfo info;
 	    private Condition[] ccond;
@@ -1171,14 +1192,14 @@ public class CharWnd extends Window {
 	    private void resize() {
 		Coord sz = new Coord(0, 0);
 		if(rtitle != null) {
-		    sz.y += rtitle.sz().y + 5;
+		    sz.y += rtitle.sz().y + margin1;
 		    sz.x = Math.max(sz.x, rtitle.sz().x);
 		}
 		for(Tex c : rcond) {
 		    sz.y += c.sz().y;
 		    sz.x = Math.max(sz.x, c.sz().x);
 		}
-		sz.x += 3;
+		sz.x += UI.scale(3);
 		resize(sz);
 	    }
 
@@ -1286,12 +1307,12 @@ public class CharWnd extends Window {
 	    }
 
 	    protected void layouth(Widget cont) {
-		RichText text = ifnd.render(rendertext(), cont.sz.x - 20);
-		cont.add(new Img(text.tex()), new Coord(10, 10));
+		RichText text = ifnd.render(rendertext(), cont.sz.x - margin3);
+		cont.add(new Img(text.tex()), UI.scale(new Coord(10, 10)));
 	    }
 
 	    protected void layoutc(Widget cont) {
-		int y = cont.contentsz().y + 10;
+		int y = cont.contentsz().y + margin2;
 		CondWidget[] nw = new CondWidget[cond.length];
 		CondWidget[] pw = condw;
 		cond: for(int i = 0; i < cond.length; i++) {
@@ -1318,13 +1339,13 @@ public class CharWnd extends Window {
 	    }
 
 	    protected void layouto(Widget cont) {
-		int y = cont.contentsz().y + 10;
+		int y = cont.contentsz().y + margin2;
 		for(Pair<String, String> opt : options) {
-		    y += cont.add(new Button(cont.sz.x - 20, opt.b, false) {
+		    y += cont.add(new Button(cont.sz.x - margin3, opt.b, false) {
 			    public void click() {
 				DefaultBox.this.wdgmsg("opt", opt.a);
 			    }
-			}, new Coord(10, y)).sz.y + 5;
+			}, new Coord(margin2, y)).sz.y + margin1;
 		}
 	    }
 
@@ -1388,14 +1409,14 @@ public class CharWnd extends Window {
 
 	public SkillGrid(Coord sz) {
 	    super(sz);
-	    nsk = new Group(new Coord(40, 40), new Coord(-1, 5), "Available Skills", Collections.emptyList());
-	    csk = new Group(new Coord(40, 40), new Coord(-1, 5), "Known Skills", Collections.emptyList());
+	    nsk = new Group(UI.scale(new Coord(40, 40)), new Coord(-1, 5), "Available Skills", Collections.emptyList());
+	    csk = new Group(UI.scale(new Coord(40, 40)), new Coord(-1, 5), "Known Skills", Collections.emptyList());
 	    itemtooltip = Skill::tooltip;
 	}
 
 	protected void drawitem(GOut g, Skill sk) {
 	    if(sk.small == null)
-		sk.small = new TexI(convolvedown(sk.res.get().layer(Resource.imgc).img, new Coord(40, 40), iconfilter));
+		sk.small = new TexI(convolvedown(sk.res.get().flayer(Resource.imgc).img, UI.scale(new Coord(40, 40)), iconfilter));
 	    g.image(sk.small, Coord.z);
 	}
 
@@ -1407,7 +1428,7 @@ public class CharWnd extends Window {
 	private void sksort(List<Skill> skills) {
 	    for(Skill sk : skills) {
 		try {
-		    sk.sortkey = sk.res.get().layer(Resource.tooltip).t;
+		    sk.sortkey = sk.res.get().flayer(Resource.tooltip).t;
 		} catch(Loading l) {
 		    sk.sortkey = sk.nm;
 		    loading = true;
@@ -1427,7 +1448,8 @@ public class CharWnd extends Window {
     }
 
     public class CredoGrid extends Scrollport {
-	public final Coord crsz = new Coord(70, 88);
+	public final Coord crsz = UI.scale(new Coord(70, 88));
+	public final int btnw = UI.scale(100);
 	public final Tex credoufr = new TexI(convolvedown(Resource.loadimg("gfx/hud/chr/yrkirframe"), crsz, iconfilter));
 	public final Tex credosfr = new TexI(convolvedown(Resource.loadimg("gfx/hud/chr/yrkirsframe"), crsz, iconfilter));
 	public final Text.Foundry prsf = new Text.Foundry(Text.fraktur, 15).aa(true);
@@ -1444,13 +1466,13 @@ public class CharWnd extends Window {
 	    pcrc = new Img(GridList.dcatf.render("Pursuing").tex());
 	    ncrc = new Img(GridList.dcatf.render("Credos Available").tex());
 	    ccrc = new Img(GridList.dcatf.render("Credos Acquired").tex());
-	    pbtn = new Button(100, "Pursue", false) {
+	    pbtn = new Button(btnw, "Pursue", false) {
 		    public void click() {
 			if(sel != null)
 			    CharWnd.this.wdgmsg("crpursue", sel.nm);
 		    }
 		};
-	    qbtn = new Button(100, "Show quest", false) {
+	    qbtn = new Button(btnw, "Show quest", false) {
 		    public void click() {
 			CharWnd.this.wdgmsg("qsel", pqid);
 			questtab.showtab();
@@ -1460,7 +1482,7 @@ public class CharWnd extends Window {
 
 	private Tex crtex(Credo cr) {
 	    if(cr.small == null)
-		cr.small = new TexI(convolvedown(cr.res.get().layer(Resource.imgc).img, crsz, iconfilter));
+		cr.small = new TexI(convolvedown(cr.res.get().flayer(Resource.imgc).img, crsz, iconfilter));
 	    return(cr.small);
 	}
 
@@ -1470,7 +1492,7 @@ public class CharWnd extends Window {
 	    CredoImg(Credo cr) {
 		super(crtex(cr));
 		this.cr = cr;
-		this.tooltip = Text.render(cr.res.get().layer(Resource.tooltip).t);
+		this.tooltip = Text.render(cr.res.get().flayer(Resource.tooltip).t);
 	    }
 
 	    public void draw(GOut g) {
@@ -1491,16 +1513,16 @@ public class CharWnd extends Window {
 	    for(Credo cr : crs) {
 		if(col >= 3) {
 		    col = 0;
-		    y += crsz.y + 5;
+		    y += crsz.y + margin1;
 		}
-		cont.add(new CredoImg(cr), col * (crsz.x + 5) + 5, y);
+		cont.add(new CredoImg(cr), col * (crsz.x + margin1) + margin1, y);
 		col++;
 	    }
-	    return(y + crsz.y + 5);
+	    return(y + crsz.y + margin1);
 	}
 
 	private void sort(List<Credo> buf) {
-	    Collections.sort(buf, Comparator.comparing(cr -> cr.res.get().layer(Resource.tooltip).t));
+	    Collections.sort(buf, Comparator.comparing(cr -> cr.res.get().flayer(Resource.tooltip).t));
 	}
 
 	private void update() {
@@ -1509,34 +1531,33 @@ public class CharWnd extends Window {
 		ch.destroy();
 	    int y = 0;
 	    if(pcr != null) {
-		cont.add(pcrc, 5, y);
-		y += pcrc.sz.y + 5;
-		Widget pcrim = cont.add(new CredoImg(pcr), 5, y);
-		cont.add(new Label(String.format("Level: %d/%d", pcl, pclt), prsf), pcrim.c.x + pcrim.sz.x + 5, y);
-		cont.add(new Label(String.format("Quest: %d/%d", pcql, pcqlt), prsf), pcrim.c.x + pcrim.sz.x + 5, y + 20);
-		cont.adda(qbtn, pcrim.c.x + pcrim.sz.x + 5, y + pcrim.sz.y, 0, 1);
+		cont.add(pcrc, margin1, y);
+		y += pcrc.sz.y + margin1;
+		Widget pcrim = cont.add(new CredoImg(pcr), margin1, y);
+		cont.add(new Label(String.format("Level: %d/%d", pcl, pclt), prsf), pcrim.c.x + pcrim.sz.x + margin1, y);
+		cont.add(new Label(String.format("Quest: %d/%d", pcql, pcqlt), prsf), pcrim.c.x + pcrim.sz.x + margin1, y + margin3);
+		cont.adda(qbtn, pcrim.c.x + pcrim.sz.x + margin1, y + pcrim.sz.y, 0, 1);
 		y += pcrim.sz.y;
-		y += 10;
+		y += margin2;
 	    }
 
 	    if(ncr.size() > 0) {
-		cont.add(ncrc, 5, y);
+		cont.add(ncrc, margin1, y);
 		y += ncrc.sz.y + 5;
 		y = crgrid(y, ncr);
 		if(pcr == null) {
-		    cont.add(pbtn, 5, y);
+		    cont.add(pbtn, margin1, y);
 		    if(cost > 0)
-			cont.adda(new Label(String.format("Cost: %,d LP", cost)), pbtn.c.x + pbtn.sz.x + 10, pbtn.c.y + (pbtn.sz.y / 2), 0, 0.5);
+			cont.adda(new Label(String.format("Cost: %,d LP", cost)), pbtn.c.x + pbtn.sz.x + margin2, pbtn.c.y + (pbtn.sz.y / 2), 0, 0.5);
 		    y += pbtn.sz.y;
 		}
-		y += 10;
+		y += margin2;
 	    }
 
 	    if(ccr.size() > 0) {
-		cont.add(ccrc, 5, y);
-		y += ccrc.sz.y + 5;
+		cont.add(ccrc, margin1, y);
+		y += ccrc.sz.y + margin1;
 		y = crgrid(y, ccr);
-		y += 10;
 	    }
 	    cont.update();
 	}
@@ -1590,13 +1611,13 @@ public class CharWnd extends Window {
 
 	public ExpGrid(Coord sz) {
 	    super(sz);
-	    seen = new Group(new Coord(40, 40), new Coord(-1, 5), null, Collections.emptyList());
+	    seen = new Group(UI.scale(new Coord(40, 40)), new Coord(-1, 5), null, Collections.emptyList());
 	    itemtooltip = Experience::tooltip;
 	}
 
 	protected void drawitem(GOut g, Experience exp) {
 	    if(exp.small == null)
-		exp.small = new TexI(convolvedown(exp.res.get().layer(Resource.imgc).img, new Coord(40, 40), iconfilter));
+		exp.small = new TexI(convolvedown(exp.res.get().flayer(Resource.imgc).img, UI.scale(new Coord(40, 40)), iconfilter));
 	    g.image(exp.small, Coord.z);
 	}
 
@@ -1611,7 +1632,7 @@ public class CharWnd extends Window {
 		loading = false;
 		for(Experience exp : seen.items) {
 		    try {
-			exp.sortkey = exp.res.get().layer(Resource.tooltip).t;
+			exp.sortkey = exp.res.get().flayer(Resource.tooltip).t;
 		    } catch(Loading l) {
 			exp.sortkey = "\uffff";
 			loading = true;
@@ -1632,7 +1653,7 @@ public class CharWnd extends Window {
 	};
 
 	private WoundList(int w, int h) {
-	    super(w, h, attrf.height() + 2);
+	    super(w, h, attrf.height() + UI.scale(2));
 	}
 
 	private List<Wound> treesort(List<Wound> from, int pid, int level) {
@@ -1657,7 +1678,7 @@ public class CharWnd extends Window {
 		loading = false;
 		for(Wound w : wounds) {
 		    try {
-			w.sortkey = w.res.get().layer(Resource.tooltip).t;
+			w.sortkey = w.res.get().flayer(Resource.tooltip).t;
 		    } catch(Loading l) {
 			w.sortkey = "\uffff";
 			loading = true;
@@ -1681,12 +1702,12 @@ public class CharWnd extends Window {
 	    int x = w.level * itemh;
 	    try {
 		if(w.small == null)
-		    w.small = new TexI(PUtils.convolvedown(w.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
+		    w.small = new TexI(PUtils.convolvedown(w.res.get().flayer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
 		g.image(w.small, new Coord(x, 0));
-		x += itemh + 5;
+		x += itemh + margin1;
 	    } catch(Loading e) {
 		g.image(WItem.missing.layer(Resource.imgc).tex(), new Coord(x, 0), new Coord(itemh, itemh));
-		x += itemh + 5;
+		x += itemh + margin1;
 	    }
 	    w.namew = sz.x - x;
 	    Text qd = w.rqd.get();
@@ -1781,14 +1802,14 @@ public class CharWnd extends Window {
 	    g.chcolor();
 	    try {
 		if(q.small == null)
-		    q.small = new TexI(PUtils.convolvedown(q.res.get().layer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
+		    q.small = new TexI(PUtils.convolvedown(q.res.get().flayer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
 		g.image(q.small, Coord.z);
 	    } catch(Loading e) {
 		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
 	    }
 	    if(q.done == Quest.QST_DISABLED)
 		g.chcolor(255, 128, 0, 255);
-	    g.aimage(q.rnm.get().tex(), new Coord(itemh + 5, itemh / 2), 0, 0.5);
+	    g.aimage(q.rnm.get().tex(), new Coord(itemh + margin1, itemh / 2), 0, 0.5);
 	    g.chcolor();
 	}
 
@@ -1834,215 +1855,177 @@ public class CharWnd extends Window {
 	}
     }
 
+    public static <T extends Widget> T settip(T wdg, String resnm) {
+	wdg.tooltip = new Widget.PaginaTip(new Resource.Spec(Resource.local(), resnm));
+	return(wdg);
+    }
+
     public CharWnd(Glob glob) {
-	super(new Coord(300, 290), "Character Sheet");
+	super(UI.scale(new Coord(300, 290)), "Character Sheet");
 
 	final Tabs tabs = new Tabs(new Coord(15, 10), Coord.z, this);
-	Tabs.Tab battr;
-	{ 
-	    int x = 5, y = 0;
-
-	    battr = tabs.add();
-	    battr.add(new Img(catf.render("Base Attributes").tex()), new Coord(x - 5, y)); y += 35;
-	    base = new ArrayList<Attr>();
+        Tabs.Tab battr = tabs.add();
+        {
+	    Widget prev;
+	    prev = battr.add(settip(new Img(catf.render("Base Attributes").tex()), "gfx/hud/chr/tips/base"), Coord.z);
+	    base = new ArrayList<>();
 	    Attr aw;
-	    base.add(aw = battr.add(new Attr(glob, "str", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    base.add(aw = battr.add(new Attr(glob, "agi", other), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    base.add(aw = battr.add(new Attr(glob, "int", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    base.add(aw = battr.add(new Attr(glob, "con", other), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    base.add(aw = battr.add(new Attr(glob, "prc", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    base.add(aw = battr.add(new Attr(glob, "csm", other), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    base.add(aw = battr.add(new Attr(glob, "dex", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    base.add(aw = battr.add(new Attr(glob, "wil", other), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    base.add(aw = battr.add(new Attr(glob, "psy", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    Frame.around(battr, base);
-	    y += 16;
-	    battr.add(new Img(catf.render("Food Event Points").tex()), new Coord(x - 5, y)); y += 35;
-	    feps = battr.add(new FoodMeter(), new Coord(x, y));
+	    base.add(aw = battr.add(new Attr(glob, "str", every), prev.pos("bl").adds(5, 0).add(wbox.btloff())));
+	    base.add(aw = battr.add(new Attr(glob, "agi", other), aw.pos("bl")));
+	    base.add(aw = battr.add(new Attr(glob, "int", every), aw.pos("bl")));
+	    base.add(aw = battr.add(new Attr(glob, "con", other), aw.pos("bl")));
+	    base.add(aw = battr.add(new Attr(glob, "prc", every), aw.pos("bl")));
+	    base.add(aw = battr.add(new Attr(glob, "csm", other), aw.pos("bl")));
+	    base.add(aw = battr.add(new Attr(glob, "dex", every), aw.pos("bl")));
+	    base.add(aw = battr.add(new Attr(glob, "wil", other), aw.pos("bl")));
+	    base.add(aw = battr.add(new Attr(glob, "psy", every), aw.pos("bl")));
+	    prev = Frame.around(battr, base);
+	    prev = battr.add(settip(new Img(catf.render("Food Event Points").tex()), "gfx/hud/chr/tips/fep"), prev.pos("bl").x(0).adds(0, 10));
+	    feps = battr.add(new FoodMeter(), prev.pos("bl").adds(5, 2));
 
-	    x = 260; y = 0;
-	    battr.add(new Img(catf.render("Food Satiations").tex()), new Coord(x - 5, y)); y += 35;
-	    cons = battr.add(new Constipations(attrw, base.size()), wbox.btloff().add(x, y)); y += cons.sz.y;
-	    Frame.around(battr, Collections.singletonList(cons));
-	    y += 16;
-	    battr.add(new Img(catf.render("Hunger Level").tex()), new Coord(x - 5, y)); y += 35;
-	    glut = battr.add(new GlutMeter(), new Coord(x, y));
-	}
+	    prev = battr.add(settip(new Img(catf.render("Food Satiations").tex()), "gfx/hud/chr/tips/constip"), width, 0);
+	    cons = battr.add(new Constipations(attrw, base.size()), prev.pos("bl").adds(5, 0).add(wbox.btloff()));
+	    prev = Frame.around(battr, Collections.singletonList(cons));
+	    prev = battr.add(settip(new Img(catf.render("Hunger Level").tex()), "gfx/hud/chr/tips/hunger"), prev.pos("bl").x(width).adds(0, 10));
+	    glut = battr.add(new GlutMeter(), prev.pos("bl").adds(5, 2));
+        }
 
+        sattr = tabs.add();
 	{
-	    int x = 5, y = 0;
-
-	    sattr = tabs.add();
-	    sattr.add(new Img(catf.render("Abilities").tex()), new Coord(x - 5, y)); y += 35;
-	    skill = new ArrayList<SAttr>();
+	    Widget prev;
+	    prev = sattr.add(settip(new Img(catf.render("Abilities").tex()), "gfx/hud/chr/tips/sattr"), Coord.z);
+	    skill = new ArrayList<>();
 	    SAttr aw;
-	    skill.add(aw = sattr.add(new SAttr(glob, "unarmed", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "melee", other), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "ranged", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "explore", other), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "stealth", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "sewing", other), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "smithing", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "masonry", other), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "carpentry", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "cooking", other), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "farming", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "survive", other), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    skill.add(aw = sattr.add(new SAttr(glob, "lore", every), wbox.btloff().add(x, y))); y += aw.sz.y;
-	    Frame.around(sattr, skill);
+	    skill.add(aw = sattr.add(new SAttr(glob, "unarmed", every), prev.pos("bl").adds(5, 0).add(wbox.btloff())));
+	    skill.add(aw = sattr.add(new SAttr(glob, "melee", other), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "ranged", every), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "explore", other), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "stealth", every), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "sewing", other), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "smithing", every), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "masonry", other), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "carpentry", every), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "cooking", other), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "farming", every), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "survive", other), aw.pos("bl")));
+	    skill.add(aw = sattr.add(new SAttr(glob, "lore", every), aw.pos("bl")));
+	    Widget lframe = Frame.around(sattr, skill);
 
-	    x = 260; y = 0;
-	    sattr.add(new Img(catf.render("Study Report").tex()), new Coord(x - 5, y)); y += 35;
-	    y += 151;
-	    int rx = x + attrw - 10;
-	    Frame.around(sattr, Area.sized(new Coord(x, y).add(wbox.btloff()), new Coord(attrw, 96)));
-	    sattr.add(new Label("Experience points:"), new Coord(x + 15, y + 10));
-	    sattr.add(new EncLabel(new Coord(rx, y + 10)));
-	    sattr.add(new Label("Learning points:"), new Coord(x + 15, y + 25));
-	    sattr.add(new ExpLabel(new Coord(rx, y + 25)));
-	    sattr.add(new Label("Learning cost:"), new Coord(x + 15, y + 40));
-	    sattr.add(new RLabel(new Coord(rx, y + 40), "0") {
-		    int cc;
-
-		    public void draw(GOut g) {
-			if(cc > exp)
-			    g.chcolor(debuff);
-			super.draw(g);
-			if(cc != scost)
-			    settext(Utils.thformat(cc = scost));
-		    }
-		});
-	    sattr.add(new Button(75, "Buy") {
-		    public void click() {
-			ArrayList<Object> args = new ArrayList<Object>();
-			for(SAttr attr : skill) {
-			    if(attr.tbv > 0) {
+	    prev = sattr.add(settip(new Img(catf.render("Study Report").tex()), "gfx/hud/chr/tips/study"), width, 0);
+	    studyc = prev.pos("bl").adds(5, 0);
+	    Widget bframe = sattr.adda(new Frame(new Coord(attrw, UI.scale(105)), true), prev.pos("bl").adds(5, 0).x, lframe.pos("br").y, 0.0, 1.0);
+	    int rx = bframe.pos("iur").subs(10, 0).x;
+	    prev = sattr.add(new Label("Experience points:"), bframe.pos("iul").adds(10, 5));
+	    sattr.adda(enclabel(), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
+	    prev = sattr.add(new Label("Learning points:"), prev.pos("bl").adds(0, 2));
+	    sattr.adda(explabel(), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
+	    prev = sattr.add(new Label("Learning cost:"), prev.pos("bl").adds(0, 2));
+	    sattr.adda(new RLabel<Integer>(() -> scost, Utils::thformat, n -> (n > exp) ? debuff : Color.WHITE), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
+	    prev = sattr.adda(new Button(UI.scale(75), "Buy").action(() -> {
+			ArrayList<Object> args = new ArrayList<>();
+			for (SAttr attr : skill) {
+			    if (attr.tbv > 0) {
 				args.add(attr.attr.nm);
 				args.add(attr.attr.base + attr.tbv);
 			    }
 			}
 			CharWnd.this.wdgmsg("sattr", args.toArray(new Object[0]));
-		    }
-		}, new Coord(rx - 75, y + 70));
-	    sattr.add(new Button(75, "Reset") {
-		    public void click() {
-			for(SAttr attr : skill)
+	    }), bframe.pos("ibr").subs(5, 5), 1.0, 1.0);
+	    sattr.adda(new Button(UI.scale(75), "Reset").action(() -> {
+			for (SAttr attr : skill)
 			    attr.reset();
-		    }
-		}, new Coord(rx - 160, y + 70));
+	    }), prev.pos("bl").subs(5, 0), 1.0, 1.0);
 	}
 
-	Tabs.Tab skills;
-	{
-	    int x = 5, y = 0;
+	Tabs.Tab skills = tabs.add();
+        {
+	    Widget prev;
 
-	    skills = tabs.add();
-	    skills.add(new Img(catf.render("Lore & Skills").tex()), new Coord(x - 5, y)); y += 35;
-	    final LoadingTextBox info = skills.add(new LoadingTextBox(new Coord(attrw, 260), "", ifnd), new Coord(x, y).add(wbox.btloff()));
+	    prev = skills.add(settip(new Img(catf.render("Lore & Skills").tex()), "gfx/hud/chr/tips/skills"), Coord.z);
+	    LoadingTextBox info = skills.add(new LoadingTextBox(new Coord(attrw, height), "", ifnd), prev.pos("bl").adds(5, 0).add(wbox.btloff()));
 	    info.bg = new Color(0, 0, 0, 128);
 	    Frame.around(skills, Collections.singletonList(info));
 
-	    x = 260; y = 0;
-	    skills.add(new Img(catf.render("Entries").tex()), new Coord(x - 5, y)); y += 35;
-	    Tabs lists = new Tabs(new Coord(x, y), new Coord(attrw + wbox.bisz().x, 0), skills);
+	    prev = skills.add(new Img(catf.render("Entries").tex()), width, 0);
+	    Tabs lists = new Tabs(prev.pos("bl").adds(5, 0), new Coord(attrw + wbox.bisz().x, 0), skills);
+	    int gh = UI.scale(241);
 	    Tabs.Tab sktab = lists.add();
 	    {
-		Frame f = sktab.add(new Frame(new Coord(lists.sz.x, 192), false), 0, 0);
-		y = f.sz.y + 5;
+		Frame f = sktab.add(new Frame(new Coord(lists.sz.x, UI.scale(192)), false), 0, 0);
+		int y = f.sz.y + margin1;
 		skg = f.addin(new SkillGrid(Coord.z) {
-			public void change(Skill sk) {
-			    Skill p = sel;
-			    super.change(sk);
-			    CharWnd.this.exps.sel = null;
-			    CharWnd.this.credos.sel = null;
-			    if(sk != null)
-				info.settext(sk::rendertext);
-			    else if(p != null)
-				info.settext("");
-			}
-		    });
-		int rx = attrw + wbox.btloff().x - 10;
-		Frame.around(sktab, Area.sized(new Coord(0, y).add(wbox.btloff()), new Coord(attrw, 34)));
-		/*
-		sktab.add(new Label("Learning points:"), new Coord(15, y + 10));
-		sktab.add(new ExpLabel(new Coord(rx, y + 10)));
-		*/
-		Button bbtn = sktab.add(new Button(50, "Buy") {
-			public void click() {
-			    if(skg.sel != null)
-				CharWnd.this.wdgmsg("buy", skg.sel.nm);
-			}
-		    }, new Coord(rx - 50, y + 10));
-		Label clbl = sktab.adda(new Label("Cost:"), new Coord(15, bbtn.c.y + (bbtn.sz.y / 2)), 0, 0.5);
-		sktab.add(new RLabel(new Coord(bbtn.c.x - 10, clbl.c.y), "N/A") {
-			Integer cc = null;
-			int cexp;
-
-			public void draw(GOut g) {
-			    if((cc != null) && (cc > exp))
-				g.chcolor(debuff);
-			    super.draw(g);
-			    Integer cost = ((skg.sel == null) || skg.sel.has) ? null : skg.sel.cost;
-			    if(!Utils.eq(cost, cc) || (cexp != exp)) {
-				if(cost == null) {
-				    settext("N/A");
-				} else {
-				    settext(String.format("%,d / %,d LP", cost, exp));
-				}
-				cc = cost;
-				cexp = exp;
-			    }
-			}
-		    });
+                        public void change(Skill sk) {
+                            Skill p = sel;
+                            super.change(sk);
+                            CharWnd.this.exps.sel = null;
+                            CharWnd.this.credos.sel = null;
+                            if (sk != null)
+                                info.settext(sk::rendertext);
+                            else if (p != null)
+                                info.settext("");
+                        }
+                    });
+		Widget bf = sktab.adda(new Frame(new Coord(f.sz.x, UI.scale(44)), false), f.c.x, gh, 0.0, 1.0);
+		int rx = attrw + wbox.btloff().x - margin2;
+		Button bbtn = sktab.adda(new Button(UI.scale(50), "Buy").action(() -> {
+                            if (skg.sel != null)
+                                CharWnd.this.wdgmsg("buy", skg.sel.nm);
+		}), bf.pos("ibr").subs(10, 0).y(bf.pos("mid").y), 1.0, 0.5);
+		Label clbl = sktab.adda(new Label("Cost:"), bf.pos("iul").adds(10, 0).y(bf.pos("mid").y), 0, 0.5);
+		sktab.adda(new RLabel<Pair<Integer, Integer>>(() -> new Pair<>(((skg.sel == null) || skg.sel.has) ? null : skg.sel.cost, exp),
+							      n -> (n.a == null) ? "N/A" : String.format("%,d / %,d LP", n.a, n.b),
+							      n -> ((n.a != null) && (n.a > n.b)) ? debuff : Color.WHITE),
+			   bbtn.pos("ul").subs(10, 0).y(bf.pos("mid").y), 1.0, 0.5);
 	    }
+
 	    Tabs.Tab credos = lists.add();
 	    {
-		Frame f = credos.add(new Frame(new Coord(lists.sz.x, 241), false), 0, 0);
-		y = f.sz.y + 5;
+		Frame f = credos.add(new Frame(new Coord(lists.sz.x, gh), false), 0, 0);
 		this.credos = f.addin(new CredoGrid(Coord.z) {
-			public void change(Credo cr) {
-			    Credo p = sel;
-			    super.change(cr);
-			    CharWnd.this.skg.sel = null;
-			    CharWnd.this.exps.sel = null;
-			    if(cr != null)
-				info.settext(cr::rendertext);
-			    else if(p != null)
-				info.settext("");
-			}
-		    });
-		int rx = attrw + wbox.btloff().x - 10;
+                        public void change(Credo cr) {
+                            Credo p = sel;
+                            super.change(cr);
+                            CharWnd.this.skg.sel = null;
+                            CharWnd.this.exps.sel = null;
+                            if (cr != null)
+                                info.settext(cr::rendertext);
+                            else if (p != null)
+                                info.settext("");
+                        }
+                    });
 	    }
+
 	    Tabs.Tab exps = lists.add();
 	    {
-		Frame f = exps.add(new Frame(new Coord(lists.sz.x, 241), false), 0, 0);
+		Frame f = exps.add(new Frame(new Coord(lists.sz.x, gh), false), 0, 0);
 		this.exps = f.addin(new ExpGrid(Coord.z) {
-			public void change(Experience exp) {
-			    Experience p = sel;
-			    super.change(exp);
-			    CharWnd.this.skg.sel = null;
-			    CharWnd.this.credos.sel = null;
-			    if(exp != null)
-				info.settext(exp::rendertext);
-			    else if(p != null)
-				info.settext("");
-			}
-		    });
+                        public void change(Experience exp) {
+                            Experience p = sel;
+                            super.change(exp);
+                            CharWnd.this.skg.sel = null;
+                            CharWnd.this.credos.sel = null;
+                            if (exp != null)
+                                info.settext(exp::rendertext);
+                            else if (p != null)
+                                info.settext("");
+                        }
+                    });
 	    }
 	    lists.pack();
-	    int bw = (lists.sz.x + 5) / 3;
-	    x = lists.c.x;
-	    y = lists.c.y + lists.sz.y + 5;
-	    skills.add(lists.new TabButton(bw - 5, "Skills", sktab), new Coord(x, y));
-	    skills.add(lists.new TabButton(bw - 5, "Credos", credos), new Coord(x + bw * 1, y));
-	    skills.add(lists.new TabButton(bw - 5, "Lore", exps), new Coord(x + bw * 2, y));
-	}
+	    int bw = ((lists.sz.x + margin1) / 3) - margin1;
+	    skills.addhl(lists.c.add(0, lists.sz.y + margin1), lists.sz.x,
+			 lists.new TabButton(bw, "Skills", sktab),
+			 lists.new TabButton(bw, "Credos", credos),
+			 lists.new TabButton(bw, "Lore",   exps));
+        }
 
 	Tabs.Tab wounds;
 	{
+	    Widget prev;
+
 	    wounds = tabs.add();
-	    wounds.add(new Img(catf.render("Health & Wounds").tex()), new Coord(0, 0));
-	    this.wounds = wounds.add(new WoundList(attrw, 12), new Coord(260, 35).add(wbox.btloff()));
+	    prev = wounds.add(settip(new Img(catf.render("Health & Wounds").tex()), "gfx/hud/chr/tips/wounds"), 0, 0);
+	    this.wounds = wounds.add(new WoundList(attrw, 12), prev.pos("bl").x(width + margin1).add(wbox.btloff()));
 	    Frame.around(wounds, Collections.singletonList(this.wounds));
 	    woundbox = wounds.add(new Widget(new Coord(attrw, this.wounds.sz.y)) {
 		    public void draw(GOut g) {
@@ -2056,15 +2039,17 @@ public class CharWnd extends Window {
 			if(w == wound)
 			    wound = null;
 		    }
-		}, new Coord(5, 35).add(wbox.btloff()));
+		}, prev.pos("bl").adds(5, 0).add(wbox.btloff()));
 	    Frame.around(wounds, Collections.singletonList(woundbox));
 	}
 
 	Tabs.Tab quests;
 	{
+	    Widget prev;
+
 	    quests = tabs.add();
-	    quests.add(new Img(catf.render("Quest Log").tex()), new Coord(0, 0));
-	    questbox = quests.add(new Widget(new Coord(attrw, 260)) {
+	    prev = quests.add(settip(new Img(catf.render("Quest Log").tex()), "gfx/hud/chr/tips/quests"), new Coord(0, 0));
+	    questbox = quests.add(new Widget(new Coord(attrw, height)) {
 		    public void draw(GOut g) {
 			g.chcolor(0, 0, 0, 128);
 			g.frect(Coord.z, sz);
@@ -2076,25 +2061,24 @@ public class CharWnd extends Window {
 			if(w == quest)
 			    quest = null;
 		    }
-		}, new Coord(5, 35).add(wbox.btloff()));
+		}, prev.pos("bl").adds(5, 0).add(wbox.btloff()));
 	    Frame.around(quests, Collections.singletonList(questbox));
-	    Tabs lists = new Tabs(new Coord(260, 35), new Coord(attrw + wbox.bisz().x, 0), quests);
+	    Tabs lists = new Tabs(prev.pos("bl").x(width + margin1), Coord.z, quests);
 	    Tabs.Tab cqst = lists.add();
 	    {
-		this.cqst = cqst.add(new QuestList(attrw, 11), new Coord(0, 0).add(wbox.btloff()));
+		this.cqst = cqst.add(new QuestList(attrw, 11), wbox.btloff());
 		Frame.around(cqst, Collections.singletonList(this.cqst));
 	    }
 	    Tabs.Tab dqst = lists.add();
 	    {
-		this.dqst = dqst.add(new QuestList(attrw, 11), new Coord(0, 0).add(wbox.btloff()));
+		this.dqst = dqst.add(new QuestList(attrw, 11), wbox.btloff());
 		Frame.around(dqst, Collections.singletonList(this.dqst));
 	    }
 	    lists.pack();
-	    int bw = (lists.sz.x + 5) / 2;
-	    int x = lists.c.x;
-	    int y = lists.c.y + lists.sz.y + 5;
-	    quests.add(lists.new TabButton(bw - 5, "Current", cqst), new Coord(x, y));
-	    quests.add(lists.new TabButton(bw - 5, "Completed", dqst), new Coord(x + bw, y));
+	    int bw = ((lists.sz.x + margin1) / 2) - margin1;
+	    quests.addhl(lists.c.add(0, lists.sz.y + margin1), lists.sz.x,
+			 lists.new TabButton(bw, "Current",   cqst),
+			 lists.new TabButton(bw, "Completed", dqst));
 	    questtab = quests;
 	}
 
@@ -2103,9 +2087,10 @@ public class CharWnd extends Window {
 
 	    class TB extends IButton {
 		final Tabs.Tab tab;
-		TB(String nm, Tabs.Tab tab) {
-		    super(Resource.loadimg("gfx/hud/chr/" + nm + "u"), Resource.loadimg("gfx/hud/chr/" + nm + "d"));
+		TB(String nm, Tabs.Tab tab, String tip) {
+		    super("gfx/hud/chr/" + nm, "u", "d", null);
 		    this.tab = tab;
+		    settip(tip);
 		}
 
 		public void click() {
@@ -2113,11 +2098,11 @@ public class CharWnd extends Window {
 		}
 
 		protected void depress() {
-		    Audio.play(Button.lbtdown.stream());
+		    ui.sfx(Button.clbtdown.stream());
 		}
 
 		protected void unpress() {
-		    Audio.play(Button.lbtup.stream());
+		    ui.sfx(Button.clbtup.stream());
 		}
 	    }
 
@@ -2125,29 +2110,25 @@ public class CharWnd extends Window {
 
 	    fgt = tabs.add();
 
-	    prev = add(new TB("battr", battr), new Coord(tabs.c.x + 5, tabs.c.y + tabs.sz.y + 10));
-	    prev.settip("Base Attributes");
-	    prev = add(new TB("sattr", sattr), new Coord(prev.c.x + prev.sz.x + 5, prev.c.y));
-	    prev.settip("Abilities");
-	    prev = add(new TB("skill", skills), new Coord(prev.c.x + prev.sz.x + 5, prev.c.y));
-	    prev.settip("Lore & Skills");
-	    prev = add(new TB("fgt", fgt), new Coord(prev.c.x + prev.sz.x + 5, prev.c.y));
-	    prev.settip("Martial Arts & Combat Schools");
-	    prev = add(new TB("wound", wounds), new Coord(prev.c.x + prev.sz.x + 5, prev.c.y));
-	    prev.settip("Health & Wounds");
-	    prev = add(new TB("quest", quests), new Coord(prev.c.x + prev.sz.x + 5, prev.c.y));
-	    prev.settip("Quest Log");
+	    this.addhl(new Coord(tabs.c.x, tabs.c.y + tabs.sz.y + margin2), tabs.sz.x,
+		new TB("battr", battr, "Base Attributes"),
+		new TB("sattr", sattr, "Abilities"),
+		new TB("skill", skills, "Lore & Skills"),
+		new TB("fgt", fgt, "Martial Arts & Combat Schools"),
+		new TB("wound", wounds, "Health & Wounds"),
+		new TB("quest", quests, "Quest Log")
+	    );
 	}
 
-	resize(contentsz().add(15, 10));
+	resize(contentsz().add(UI.scale(15, 10)));
     }
 
     public void addchild(Widget child, Object... args) {
 	String place = (args[0] instanceof String)?(((String)args[0]).intern()):null;
 	if(place == "study") {
-	    sattr.add(child, new Coord(260, 35).add(wbox.btloff()));
-	    Frame.around(sattr, Collections.singletonList(child));
-	    Widget inf = sattr.add(new StudyInfo(new Coord(attrw - 150, child.sz.y), child), new Coord(260 + 150, child.c.y).add(wbox.btloff().x, 0));
+	    sattr.add(child, studyc.add(wbox.btloff()));
+	    Widget f = Frame.around(sattr, Collections.singletonList(child));
+	    Widget inf = sattr.add(new StudyInfo(new Coord(attrw - child.sz.x - wbox.bisz().x - margin1, child.sz.y), child), child.pos("ur").add(wbox.bisz().x + margin1, 0));
 	    Frame.around(sattr, Collections.singletonList(inf));
 	} else if(place == "fmg") {
 	    fgt.add(child, 0, 0);
@@ -2215,7 +2196,15 @@ public class CharWnd extends Window {
     }
 
     public void uimsg(String nm, Object... args) {
-	if(nm == "exp") {
+	if(nm == "attr") {
+	    int a = 0;
+	    while(a < args.length) {
+		String attr = (String)args[a++];
+		int base = (Integer)args[a++];
+		int comp = (Integer)args[a++];
+		ui.sess.glob.cattr(attr, base, comp);
+	    }
+	} else if(nm == "exp") {
 	    exp = ((Number)args[0]).intValue();
 	}else if(nm == "enc") {
 	    enc = ((Number)args[0]).intValue();

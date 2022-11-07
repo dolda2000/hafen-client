@@ -37,7 +37,7 @@ import haven.Composited.MD;
 
 public class AvaRender {
     public static Composited compose(Resource base, List<MD> mod, List<ED> equ) {
-	Composited comp = new Composited(base.layer(Skeleton.Res.class).s);
+	Composited comp = new Composited(base.flayer(Skeleton.Res.class).s);
 	comp.chmod(mod);
 	comp.chequ(equ);
 	return(comp);
@@ -54,11 +54,11 @@ public class AvaRender {
 	Camera tcam;
 	while(true) {
 	    try {
-		Skeleton.BoneOffset camoff = base.get().layer(Skeleton.BoneOffset.class, camnm);
+		Skeleton.BoneOffset camoff = base.get().flayer(Skeleton.BoneOffset.class, camnm);
 		tcomp = compose(base.get(), mod, equ);
 		Pipe buf = new BufPipe();
 		buf.prep(camoff.from(tcomp).get());
-		tcam = new LocationCam(buf.get(Homo3D.loc));
+		tcam = Camera.placed(buf.get(Homo3D.loc));
 		break;
 	    } catch(Loading ev) {
 		ev.waitfor();
@@ -82,7 +82,7 @@ public class AvaRender {
 
     public static final Server.Command call = new Server.Command() {
 	    public Object[] run(Server.Client cl, Object... args) throws InterruptedException {
-		Coord sz = (Coord)args[0];
+		Coord sz = UI.scale((Coord)args[0]);
 		Indir<Resource> base = Resource.local().load((String)args[1]);
 		String camnm = (String)args[2];
 		Object[] amod = (Object[])args[3];

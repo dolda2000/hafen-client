@@ -33,7 +33,7 @@ import java.io.*;
 import java.lang.ref.*;
 
 public class Session implements Resource.Resolver {
-    public static final int PVER = 25;
+    public static final int PVER = 26;
 
     public static final int MSG_SESS = 0;
     public static final int MSG_REL = 1;
@@ -49,6 +49,7 @@ public class Session implements Resource.Resolver {
     public static final int SESSERR_CONN = 3;
     public static final int SESSERR_PVER = 4;
     public static final int SESSERR_EXPR = 5;
+    public static final int SESSERR_MESG = 6;
 
     static final int ackthresh = 30;
 
@@ -57,6 +58,7 @@ public class Session implements Resource.Resolver {
     Thread rworker, sworker;
     Object[] args;
     public int connfailed = 0;
+    public String connerror = null;
     public String state = "conn";
     int tseq = 0, rseq = 0;
     int ackseq;
@@ -101,6 +103,11 @@ public class Session implements Resource.Resolver {
 		}
 	    }
 	}
+
+	public boolean boostprio(int prio) {
+	    res.boostprio(prio);
+	    return(true);
+	}
     }
 
     private static class CachedRes {
@@ -109,6 +116,7 @@ public class Session implements Resource.Resolver {
 	private String resnm = null;
 	private int resver;
 	private Reference<Ref> ind;
+	private int prio = -6;
 	
 	private CachedRes(int id) {
 	    resid = id;
@@ -118,10 +126,15 @@ public class Session implements Resource.Resolver {
 	    private Resource res;
 		    
 	    public Resource get() {
-		if(resnm == null)
-		    throw(new LoadingIndir(CachedRes.this));
-		if(res == null)
-		    res = Resource.remote().load(resnm, resver, 0).get();
+		if(res == null) {
+		    synchronized(CachedRes.this) {
+			if(res == null) {
+			    if(resnm == null)
+				throw(new LoadingIndir(CachedRes.this));
+			    res = Resource.remote().load(resnm, resver, prio).get();
+			}
+		    }
+		}
 		return(res);
 	    }
 	
@@ -139,14 +152,19 @@ public class Session implements Resource.Resolver {
 	}
 
 	private Ref get() {
-	    Ref ind = (this.ind == null)?null:(this.ind.get());
+	    Ref ind = (this.ind == null) ? null : (this.ind.get());
 	    if(ind == null)
 		this.ind = new WeakReference<Ref>(ind = new Ref());
 	    return(ind);
 	}
 	
+	public void boostprio(int prio) {
+	    if(this.prio < prio)
+		this.prio = prio;
+	}
+
 	public void set(String nm, int ver) {
-	    Resource.remote().load(nm, ver, -5);
+	    Resource.remote().load(nm, ver, -10);
 	    synchronized(this) {
 		this.resnm = nm;
 		this.resver = ver;
@@ -167,8 +185,14 @@ public class Session implements Resource.Resolver {
 	}
     }
 
+    public Indir<Resource> getres(int id, int prio) {
+	CachedRes res = cachedres(id);
+	res.boostprio(prio);
+	return(res.get());
+    }
+
     public Indir<Resource> getres(int id) {
-	return(cachedres(id).get());
+	return(getres(id, 0));
     }
 
     private class ObjAck {
@@ -211,7 +235,32 @@ public class Session implements Resource.Resolver {
 		int fl = msg.uint8();
 		long id = msg.uint32();
 		int frame = msg.int32();
-		oc.receive(fl, id, frame, msg);
+		OCache.ObjDelta delta = new OCache.ObjDelta(fl, id, frame);
+		while(true) {
+		    int afl = 0, len, type = msg.uint8();
+		    if(type == OCache.OD_END)
+			break;
+		    if((type & 0x80) == 0) {
+			len = (type & 0x78) >> 3;
+			if(len > 0)
+			    len++;
+			type = OCache.compodmap[type & 0x7];
+		    } else {
+			type = type & 0x7f;
+			if(((afl = msg.uint8()) & 0x80) == 0) {
+			    len = afl & 0x7f;
+			    afl = 0;
+			} else {
+			    len = msg.uint16();
+			}
+		    }
+		    PMessage attr = new PMessage(type, msg, len);
+		    if(type == OCache.OD_REM)
+			delta.rem = true;
+		    else
+			delta.attrs.add(attr);
+		}
+		oc.receive(delta);
 		synchronized(objacks) {
 		    if(objacks.containsKey(id)) {
 			ObjAck a = objacks.get(id);
@@ -254,7 +303,8 @@ public class Session implements Resource.Resolver {
 		    }
 		}
 	    } else if((msg.type == RMessage.RMSG_NEWWDG) || (msg.type == RMessage.RMSG_WDGMSG) ||
-		      (msg.type == RMessage.RMSG_DSTWDG) || (msg.type == RMessage.RMSG_ADDWDG)) {
+		      (msg.type == RMessage.RMSG_DSTWDG) || (msg.type == RMessage.RMSG_ADDWDG) ||
+		      (msg.type == RMessage.RMSG_WDGBAR)) {
 		synchronized(uimsgs) {
 		    uimsgs.add(msg);
 		}
@@ -270,12 +320,17 @@ public class Session implements Resource.Resolver {
 	    } else if(msg.type == RMessage.RMSG_PARTY) {
 		glob.party.msg(msg);
 	    } else if(msg.type == RMessage.RMSG_SFX) {
-		Indir<Resource> res = getres(msg.uint16());
+		Indir<Resource> resid = getres(msg.uint16());
 		double vol = ((double)msg.uint16()) / 256.0;
 		double spd = ((double)msg.uint16()) / 256.0;
-		Audio.play(res);
-	    } else if(msg.type == RMessage.RMSG_CATTR) {
-		glob.cattr(msg);
+		glob.loader.defer(() -> {
+			Audio.CS clip = Audio.fromres(resid.get());
+			if(spd != 1.0)
+			    clip = new Audio.Resampler(clip).sp(spd);
+			if(vol != 1.0)
+			    clip = new Audio.VolAdjust(clip, vol);
+			Audio.play(clip);
+		    }, null);
 	    } else if(msg.type == RMessage.RMSG_MUSIC) {
 		String resnm = msg.string();
 		int resver = msg.uint16();
@@ -346,6 +401,28 @@ public class Session implements Resource.Resolver {
 				    state = "";
 				} else {
 				    connfailed = error;
+				    switch(connfailed) {
+				    case SESSERR_AUTH:
+					connerror = "Invalid authentication token";
+					break;
+				    case SESSERR_BUSY:
+					connerror = "Already logged in";
+					break;
+				    case SESSERR_CONN:
+					connerror = "Could not connect to server";
+					break;
+				    case SESSERR_PVER:
+					connerror = "This client is too old";
+					break;
+				    case SESSERR_EXPR:
+					connerror = "Authentication token expired";
+					break;
+				    case SESSERR_MESG:
+					connerror = msg.string();
+					break;
+				    default:
+					connerror = "Connection failed";
+				    }
 				    Session.this.close();
 				}
 				Session.this.notifyAll();
@@ -416,6 +493,7 @@ public class Session implements Resource.Resolver {
 			    if(++retries > 5) {
 				synchronized(Session.this) {
 				    connfailed = SESSERR_CONN;
+				    connerror = "Could not connect to server";
 				    Session.this.notifyAll();
 				    return;
 				}
@@ -545,7 +623,7 @@ public class Session implements Resource.Resolver {
 				break;
 			    state = "close";
 			    long now = System.currentTimeMillis();
-			    if(now - f > 500)
+			    if(now - f >= 500)
 				break;
 			    try {
 				Session.this.wait(500 - (now - f));

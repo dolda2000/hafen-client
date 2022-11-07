@@ -59,12 +59,12 @@ public abstract class Searchbox<T> extends Listbox<T> {
 		    search(searching.substring(0, searching.length() - 1));
 		    return(true);
 		}
-	    } else if(c == 10) {
+	    } else if(key_act.match(ev)) {
 		if(searching != null) {
 		    stopsearch();
 		    return(true);
 		}
-	    } else if(c == 27) {
+	    } else if(key_esc.match(ev)) {
 		if(searching != null) {
 		    stopsearch();
 		    return(true);

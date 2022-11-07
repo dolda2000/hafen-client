@@ -35,7 +35,7 @@ public class HSlider extends Widget {
     private UI.Grab drag = null;
 
     static {
-	BufferedImage vc = Resource.loadimg("gfx/hud/schain");
+	BufferedImage vc = Resource.loadsimg("gfx/hud/schain");
 	BufferedImage hc = TexI.mkbuf(new Coord(vc.getHeight(), vc.getWidth()));
 	for(int y = 0; y < vc.getHeight(); y++) {
 	    for(int x = 0; x < vc.getWidth(); x++)
@@ -74,8 +74,11 @@ public class HSlider extends Widget {
 		a = 0;
 	    if(a > 1)
 		a = 1;
-	    val = (int)Math.round(a * (max - min)) + min;
-	    changed();
+	    int nval = (int)Math.round(a * (max - min)) + min;
+	    if(val != nval) {
+		val = nval;
+		changed();
+	    }
 	}
     }
     
@@ -86,10 +89,12 @@ public class HSlider extends Widget {
 	    return(false);
 	drag.remove();
 	drag = null;
+	fchanged();
 	return(true);
     }
 
     public void changed() {}
+    public void fchanged() {}
     
     public void resize(int w) {
 	super.resize(new Coord(w, sflarp.sz().y));

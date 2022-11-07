@@ -31,14 +31,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.annotation.*;
 import java.util.*;
 import java.util.function.*;
+import java.util.regex.*;
 import java.net.*;
 import java.io.*;
+import java.nio.file.*;
 import java.security.*;
 import javax.imageio.*;
-import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 public class Resource implements Serializable {
+    public static final Config.Variable<URL> resurl = Config.Variable.propu("haven.resurl", "");
+    public static final Config.Variable<Path> resdir = Config.Variable.propp("haven.resdir", System.getenv("HAFEN_RESDIR"));
     private static ResCache prscache;
     public static ThreadGroup loadergroup = null;
     private static Map<String, LayerFactory<?>> ltypes = new TreeMap<String, LayerFactory<?>>();
@@ -57,7 +60,7 @@ public class Resource implements Serializable {
     public final transient Pool pool;
     private boolean used = false;
 
-    public abstract static class Named implements Indir<Resource> {
+    public abstract static class Named implements Indir<Resource>, Serializable {
 	public final String name;
 	public final int ver;
 
@@ -102,6 +105,26 @@ public class Resource implements Serializable {
 	
 	public Resource get() {
 	    return(get(0));
+	}
+
+	public static Resource loadsaved(Resource.Pool pool, Resource.Spec spec) {
+	    try {
+		if(spec.pool == null)
+		    return(pool.load(spec.name, spec.ver).get());
+		return(spec.get());
+	    } catch(Loading l) {
+		throw(l);
+	    } catch(Exception e) {
+		return(pool.load(spec.name).get());
+	    }
+	}
+
+	public Resource loadsaved(Resource.Pool pool) {
+	    return(loadsaved(pool, this));
+	}
+
+	public Resource loadsaved() {
+	    return(loadsaved(this.pool));
 	}
     }
 
@@ -197,10 +220,12 @@ public class Resource implements Serializable {
     }
     
     public static class CacheSource implements ResSource, Serializable {
-	public transient ResCache cache;
+	public final transient ResCache cache;
+	public final String cachedesc;
 	
 	public CacheSource(ResCache cache) {
 	    this.cache = cache;
+	    this.cachedesc = String.valueOf(cache);
 	}
 	
 	public InputStream get(String name) throws IOException {
@@ -208,47 +233,96 @@ public class Resource implements Serializable {
 	}
 	
 	public String toString() {
-	    return("cache source backed by " + cache);
+	    return("cache source backed by " + cachedesc);
 	}
     }
 
     public static class FileSource implements ResSource, Serializable {
-	File base;
-	
-	public FileSource(File base) {
+	public static final Collection<String> wintraps =
+	    new HashSet<>(Arrays.asList("con", "prn", "aux", "nul",
+					"com0", "com1", "com2", "com3", "com4",
+					"com5", "com6", "com7", "com8", "com9",
+					"lpt0", "lpt1", "lpt2", "lpt3", "lpt4",
+					"lpt5", "lpt6", "lpt7", "lpt8", "lpt9"));
+	public static final boolean windows = System.getProperty("os.name", "").startsWith("Windows");
+	private static final boolean[] winsafe;
+	public final Path base;
+
+	static {
+	    boolean[] buf = new boolean[128];
+	    String safe = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_@";
+	    for(int i = 0; i < safe.length(); i++)
+		buf[safe.charAt(i)] = true;
+	    winsafe = buf;
+	}
+
+	public static boolean winsafechar(char c) {
+	    return((c >= winsafe.length) || winsafe[c]);
+	}
+
+	public FileSource(Path base) {
 	    this.base = base;
 	}
-	
-	public InputStream get(String name) throws FileNotFoundException {
-	    File cur = base;
+
+	private static String checkpart(String part, String whole) throws FileNotFoundException {
+	    if(windows && wintraps.contains(part))
+		throw(new FileNotFoundException(whole));
+	    return(part);
+	}
+
+	public InputStream get(String name) throws IOException {
+	    Path cur = base;
 	    String[] parts = name.split("/");
 	    for(int i = 0; i < parts.length - 1; i++)
-		cur = new File(cur, parts[i]);
-	    cur = new File(cur, parts[parts.length - 1] + ".res");
-	    return(new FileInputStream(cur));
+		cur = cur.resolve(checkpart(parts[i], name));
+	    cur = cur.resolve(checkpart(parts[parts.length - 1], name) + ".res");
+	    try {
+		return(Files.newInputStream(cur));
+	    } catch(NoSuchFileException e) {
+		throw((FileNotFoundException)new FileNotFoundException(name).initCause(e));
+	    }
 	}
-	
+
 	public String toString() {
 	    return("filesystem res source (" + base + ")");
 	}
     }
 
     public static class JarSource implements ResSource, Serializable {
+	public final String base;
+
+	public JarSource(String base) {
+	    this.base = base;
+	}
+
 	public InputStream get(String name) throws FileNotFoundException {
-	    InputStream s = Resource.class.getResourceAsStream("/res/" + name + ".res");
+	    String full = "/" + base + "/" + name + ".res";
+	    InputStream s = Resource.class.getResourceAsStream(full);
 	    if(s == null)
-		throw(new FileNotFoundException("Could not find resource locally: " + name));
+		throw(new FileNotFoundException("Could not find resource locally: " + full));
 	    return(s);
 	}
-	
+
 	public String toString() {
-	    return("local res source");
+	    return("local res source (" + base + ")");
 	}
     }
-    
+
     public static class HttpSource implements ResSource, Serializable {
+	public static final String USER_AGENT;
 	private final transient SslHelper ssl;
 	public URL baseurl;
+
+	static {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append("Haven/1.0");
+	    if(!Config.confid.equals(""))
+		buf.append(" (" + Config.confid + ")");
+	    String jv = Utils.getprop("java.version", null);
+	    if((jv != null) && !jv.equals(""))
+		buf.append(" Java/" + jv);
+	    USER_AGENT = buf.toString();
+	}
 	
 	{
 	    ssl = new SslHelper();
@@ -278,7 +352,7 @@ public class Resource implements Serializable {
 
 	public InputStream get(String name) throws IOException {
 	    URL resurl = encodeurl(new URL(baseurl, name + ".res"));
-	    return(new RetryingInputStream() {
+	    RetryingInputStream ret = new RetryingInputStream() {
 		    protected InputStream create() throws IOException {
 			URLConnection c;
 			if(resurl.getProtocol().equals("https"))
@@ -289,10 +363,12 @@ public class Resource implements Serializable {
 			 * a bug in its internal cache where it refuses to
 			 * reload a URL even when it has changed. */
 			c.setUseCaches(false);
-			c.addRequestProperty("User-Agent", "Haven/1.0");
+			c.addRequestProperty("User-Agent", USER_AGENT);
 			return(c.getInputStream());
 		    }
-		});
+		};
+	    ret.check();
+	    return(ret);
 	}
 
 	public String toString() {
@@ -323,8 +399,66 @@ public class Resource implements Serializable {
 	    }
 	}
 
-	public void boostprio(int prio) {
+	public boolean boostprio(int prio) {
 	    res.boostprio(prio);
+	    return(true);
+	}
+    }
+
+    public static class BadResourceException extends RuntimeException {
+	public final String name;
+	public final int ver;
+
+	public BadResourceException(String name, int ver, String message, Throwable cause) {
+	    super(message, cause);
+	    this.name = name;
+	    this.ver = ver;
+	}
+
+	public BadResourceException(String name, int ver, String message) {
+	    this(name, ver, message, null);
+	}
+
+	public BadResourceException(String name, int ver, Throwable cause) {
+	    this(name, ver, null, cause);
+	}
+
+	public BadResourceException(String name, int ver) {
+	    this(name, ver, null, null);
+	}
+    }
+
+    public static class LoadFailedException extends BadResourceException {
+	public LoadFailedException(String name, int ver, LoadException cause) {
+	    super(name, ver, cause);
+	}
+
+	public String getMessage() {
+	    return(String.format("Failed to load resource %s (v%d)", name, ver));
+	}
+    }
+
+    public static class NoSuchResourceException extends LoadFailedException {
+	public NoSuchResourceException(String name, int ver, LoadException cause) {
+	    super(name, ver, cause);
+	}
+    }
+
+    public static class BadVersionException extends BadResourceException {
+	public final int curver;
+	public final String cursrc;
+
+	public BadVersionException(String name, int ver, int curver, ResSource cursrc) {
+	    super(name, ver);
+	    this.curver = curver;
+	    this.cursrc = (cursrc == null) ? null : String.valueOf(cursrc);
+	}
+
+	public String getMessage() {
+	    if(cursrc == null)
+		return(String.format("Obsolete version %d of %s requested, loaded version is %d", ver, name, curver));
+	    else
+		return(String.format("Obsolete version %d of %s requested, loaded version is %d, from %s", ver, name, curver, cursrc));
 	}
     }
 
@@ -359,6 +493,7 @@ public class Resource implements Serializable {
 	    volatile boolean done = false;
 	    Resource res;
 	    LoadException error;
+	    boolean found = false;
 
 	    Queued(String name, int ver, int prio) {
 		super(name, ver);
@@ -378,12 +513,13 @@ public class Resource implements Serializable {
 	    }
 
 	    public Resource get() {
-		if(!done) {
-		    boostprio(1);
+		if(!done)
 		    throw(new Loading(this));
+		if(error != null) {
+		    if(!found)
+			throw(new NoSuchResourceException(name, ver, error));
+		    throw(new LoadFailedException(name, ver, error));
 		}
-		if(error != null)
-		    throw(new RuntimeException("Delayed error in resource " + name + " (v" + ver + "), from " + error.src, error));
 		return(res);
 	    }
 
@@ -427,19 +563,17 @@ public class Resource implements Serializable {
 
 	private void handle(Queued res) {
 	    for(ResSource src : sources) {
-		try {
-		    InputStream in = src.get(res.name);
-		    try {
-			Resource ret = new Resource(this, res.name, res.ver);
-			ret.source = src;
-			ret.load(in);
-			res.res = ret;
-			res.error = null;
-			break;
-		    } finally {
-			in.close();
-		    }
+		try(InputStream in = src.get(res.name)) {
+		    res.found = true;
+		    Resource ret = new Resource(this, res.name, res.ver);
+		    ret.source = src;
+		    ret.load(in);
+		    res.res = ret;
+		    res.error = null;
+		    break;
 		} catch(Throwable t) {
+		    if(!(t instanceof FileNotFoundException))
+			res.found = true;
 		    LoadException error;
 		    if(t instanceof LoadException)
 			error = (LoadException)t;
@@ -464,13 +598,7 @@ public class Resource implements Serializable {
 		    if((ver == -1) || (cur.ver == ver)) {
 			return(cur.indir());
 		    } else if(ver < cur.ver) {
-			/* Throw LoadException rather than
-			 * RuntimeException here, to make sure
-			 * obsolete resources doing nested loading get
-			 * properly handled. This could be the wrong
-			 * way of going about it, however; I'm not
-			 * sure. */
-			throw(new LoadException(String.format("Weird version number on %s (%d > %d), loaded from %s", cur.name, cur.ver, ver, cur.source), cur));
+			throw(new BadVersionException(name, ver, cur.ver, cur.source));
 		    }
 		}
 		synchronized(queue) {
@@ -478,7 +606,7 @@ public class Resource implements Serializable {
 		    if(cq != null) {
 			if(ver != -1) {
 			    if(ver < cq.ver) {
-				throw(new LoadException(String.format("Weird version number on %s (%d > %d)", cq.name, cq.ver, ver), null));
+				throw(new BadVersionException(name, ver, cq.ver, null));
 			    } else if(ver == cq.ver) {
 				cq.boostprio(prio);
 				return(cq);
@@ -524,7 +652,7 @@ public class Resource implements Serializable {
 	    return(ret);
 	}
 
-	public Named load(String name, int ver) {return(load(name, ver, -5));}
+	public Named load(String name, int ver) {return(load(name, ver, 0));}
 	public Named load(String name) {return(load(name, -1));}
 
 	public Indir<Resource> dynres(long id) {
@@ -671,10 +799,10 @@ public class Resource implements Serializable {
 	if(_local == null) {
 	    synchronized(Resource.class) {
 		if(_local == null) {
-		    Pool local = new Pool(new JarSource());
+		    Pool local = new Pool(new JarSource("res"));
 		    try {
-			if(Config.resdir != null)
-			    local.add(new FileSource(new File(Config.resdir)));
+			if(resdir.get() != null)
+			    local.add(new FileSource(resdir.get()));
 		    } catch(Exception e) {
 			/* Ignore these. We don't want to be crashing the client
 			 * for users just because of errors in development
@@ -692,7 +820,7 @@ public class Resource implements Serializable {
 	if(_remote == null) {
 	    synchronized(Resource.class) {
 		if(_remote == null) {
-		    Pool remote = new Pool(local());
+		    Pool remote = new Pool(local(), new JarSource("res-preload"));
 		    if(prscache != null)
 			remote.add(new CacheSource(prscache));
 		    _remote = remote;;
@@ -771,6 +899,13 @@ public class Resource implements Serializable {
 	
 	public Resource getres() {
 	    return(Resource.this);
+	}
+
+	public String toString() {
+	    if(this instanceof IDLayer)
+		return(String.format("#<%s (%s) in %s>", getClass().getSimpleName(), ((IDLayer)this).layerid(), Resource.this.name));
+	    else
+		return(String.format("#<%s in %s>", getClass().getSimpleName(), Resource.this.name));
 	}
     }
 
@@ -874,13 +1009,16 @@ public class Resource implements Serializable {
     @LayerName("image")
     public class Image extends Layer implements Comparable<Image>, IDLayer<Integer> {
 	public transient BufferedImage img;
-	transient private Tex tex;
+	private transient BufferedImage scaled;
+	private transient Tex tex, rawtex;
 	public final int z, subz;
 	public final boolean nooff;
 	public final int id;
+	public final Map<String, byte[]> kvdata;
+	public float scale = 1;
+	public Coord sz, o, so, tsz, ssz;
 	private int gay = -1;
-	public Coord sz, o, tsz;
-		
+
 	public Image(Message buf) {
 	    z = buf.int16();
 	    subz = buf.int16();
@@ -889,6 +1027,8 @@ public class Resource implements Serializable {
 	    nooff = (fl & 2) != 0;
 	    id = buf.int16();
 	    o = cdec(buf);
+	    so = UI.scale(o);
+	    Map<String, byte[]> kvdata = new HashMap<>();
 	    if((fl & 4) != 0) {
 		while(true) {
 		    String key = buf.string();
@@ -897,12 +1037,18 @@ public class Resource implements Serializable {
 		    int len = buf.uint8();
 		    if((len & 0x80) != 0)
 			len = buf.int32();
-		    Message val = new MessageBuf(buf.bytes(len));
+		    byte[] data = buf.bytes(len);
+		    Message val = new MessageBuf(data);
 		    if(key.equals("tsz")) {
 			tsz = val.coord();
+		    } else if(key.equals("scale")) {
+			scale = val.float32();
+		    } else {
+			kvdata.put(key, data);
 		    }
 		}
 	    }
+	    this.kvdata = kvdata.isEmpty() ? Collections.emptyMap() : kvdata;
 	    try {
 		img = readimage(new MessageInputStream(buf));
 	    } catch(IOException e) {
@@ -911,19 +1057,51 @@ public class Resource implements Serializable {
 	    sz = Utils.imgsz(img);
 	    if(tsz == null)
 		tsz = sz;
+	    ssz = new Coord(Math.round(UI.scale(sz.x / scale)), Math.round(UI.scale(sz.y / scale)));
+	    if(tsz != null) {
+		/* This seems kind of ugly, but I'm not sure how to
+		 * otherwise handle upwards rounding of both offset
+		 * and size getting the image out of the intended
+		 * area. */
+		so = new Coord(Math.min(so.x, tsz.x - ssz.x), Math.min(so.y, sz.y - ssz.y));
+	    }
+	    scaled = PUtils.uiscale(img, ssz);
 	}
-		
-	public synchronized Tex tex() {
-	    if(tex != null)
-		return(tex);
-	    tex = new TexI(img) {
-		    public String toString() {
-			return("TexI(" + Resource.this.name + ", " + id + ")");
+
+	public BufferedImage scaled() {
+	    return(scaled);
+	}
+
+	public Tex rawtex() {
+	    if(rawtex == null) {
+		synchronized(this) {
+		    if(rawtex == null) {
+			rawtex = new TexI(img) {
+				public String toString() {
+				    return("TexI(" + Resource.this.name + ", " + id + ")");
+				}
+			    };
 		    }
-		};
+		}
+	    }
+	    return(rawtex);
+	}
+
+	public Tex tex() {
+	    if(tex == null) {
+		synchronized(this) {
+		    if(tex == null) {
+			tex = new TexI(scaled()) {
+				public String toString() {
+				    return("TexI(" + Resource.this.name + ", " + id + ")");
+				}
+			    };
+		    }
+		}
+	    }
 	    return(tex);
 	}
-		
+
 	private boolean detectgay() {
 	    for(int y = 0; y < sz.y; y++) {
 		for(int x = 0; x < sz.x; x++) {
@@ -1058,9 +1236,135 @@ public class Resource implements Serializable {
     public @interface PublishedCode {
 	String name();
 	Class<? extends Instancer> instancer() default Instancer.class;
-	public interface Instancer {
-	    public Object make(Class<?> cl);
+	public interface Instancer<I> {
+	    public I make(Class<?> cl, Resource res, Object... args);
+
+	    public static <T, U extends T> T stdmake(Class<T> type, Class<U> cl, Resource ires, Object[] args) {
+		try {
+		    Function<Object[], T> make = Utils.smthfun(cl, "instantiate", type, Resource.class, Object[].class);
+		    return(make.apply(new Object[] {ires, args}));
+		} catch(NoSuchMethodException e) {}
+		try {
+		    Function<Object[], T> make = Utils.smthfun(cl, "instantiate", type, Object[].class);
+		    return(make.apply(new Object[] {args}));
+		} catch(NoSuchMethodException e) {}
+		try {
+		    Function<Object[], T> make = Utils.smthfun(cl, "instantiate", type, Resource.class);
+		    return(make.apply(new Object[] {ires}));
+		} catch(NoSuchMethodException e) {}
+		try {
+		    Constructor<U> cons = cl.getConstructor(Resource.class, Object[].class);
+		    return(Utils.construct(cons, new Object[] {ires, args}));
+		} catch(NoSuchMethodException e) {}
+		try {
+		    Constructor<U> cons = cl.getConstructor(Object[].class);
+		    return(Utils.construct(cons, new Object[] {args}));
+		} catch(NoSuchMethodException e) {}
+		try {
+		    Constructor<U> cons = cl.getConstructor(Resource.class);
+		    return(Utils.construct(cons, new Object[] {ires}));
+		} catch(NoSuchMethodException e) {}
+		return(Utils.construct(cl));
+	    }
+
+	    public static class Direct<I> implements Instancer<I> {
+		public final Class<I> type;
+
+		public Direct(Class<I> type) {
+		    this.type = type;
+		}
+
+		public I make(Class<?> cl, Resource res, Object... args) {
+		    if(!type.isAssignableFrom(cl))
+			return(null);
+		    return(stdmake(type, cl.asSubclass(type), res, args));
+		}
+	    }
+
+	    public static class StaticCall<I, R> implements Instancer<I> {
+		public final Class<I> type;
+		public final String name;
+		public final Class<R> rtype;
+		public final Class<?>[] args;
+		public final Function<Function<Object[], R>, I> maker;
+
+		public StaticCall(Class<I> type, String name, Class<R> rtype, Class<?>[] args, Function<Function<Object[], R>, I> maker) {
+		    this.type = type;
+		    this.name = name;
+		    this.rtype = rtype;
+		    this.args = args;
+		    this.maker = maker;
+		}
+
+		public I make(Class <?> cl, Resource res, Object... args) {
+		    Function<Object[], R> make;
+		    try {
+			make = Utils.smthfun(cl, name, rtype, this.args);
+		    } catch(NoSuchMethodException e) {
+			return(null);
+		    }
+		    return(maker.apply(make));
+		}
+	    }
+
+	    public static class Construct<I, R> implements Instancer<I> {
+		public final Class<I> type;
+		public final Class<R> rtype;
+		public final Class<?>[] args;
+		public final Function<Function<Object[], ? extends R>, I> maker;
+
+		public Construct(Class<I> type, Class<R> rtype, Class<?>[] args, Function<Function<Object[], ? extends R>, I> maker) {
+		    this.type = type;
+		    this.rtype = rtype;
+		    this.args = args;
+		    this.maker = maker;
+		}
+
+		public I make(Class <?> cl, Resource res, Object... args) {
+		    if(!rtype.isAssignableFrom(cl))
+			return(null);
+		    Class<? extends R> scl = cl.asSubclass(rtype);
+		    Function<Object[], ? extends R> cons;
+		    try {
+			cons = Utils.consfun(scl, this.args);
+		    } catch(NoSuchMethodException e) {
+			return(null);
+		    }
+		    return(maker.apply(cons));
+		}
+	    }
+
+	    public static class Chain<I> implements Instancer<I> {
+		public final Class<I> type;
+		private final Collection<Instancer<? extends I>> sub = new ArrayList<>();
+
+		public Chain(Class<I> type) {
+		    this.type = type;
+		}
+
+		public void add(Instancer<? extends I> el) {
+		    sub.add(el);
+		}
+
+		public I make(Class<?> cl, Resource res, Object... args) {
+		    for(Instancer<? extends I> el : sub) {
+			I inst = type.cast(el.make(cl, res, args));
+			if(inst != null)
+			    return(inst);
+		    }
+		    throw(new RuntimeException(String.format("Could not find any suitable constructor for %s in %s", type, cl)));
+		}
+	    }
+
+	    public static final Instancer<Object> simple = (cl, res, args) -> {
+		try {
+		    Constructor<?> cons = cl.getConstructor(Object[].class);
+		    return(Utils.construct(cons, args));
+		} catch(NoSuchMethodException e) {}
+		return(Utils.construct(cl));
+	    };
 	}
+	public static final Map<PublishedCode, Instancer> instancers = new WeakHashMap<>();
     }
 
     @LayerName("code")
@@ -1076,19 +1380,264 @@ public class Resource implements Serializable {
 	public void init() {}
     }
 
-    public class ResClassLoader extends ClassLoader {
-	public ResClassLoader(ClassLoader parent) {
+    public static class ResClassLoader extends ClassLoader {
+	/* Please make sure you have read and understood
+	 * doc/resource-code if you feel tempted to change
+	 * OVERRIDE_ALL to true. */
+	public static final boolean OVERRIDE_ALL = false;
+	public final CodeEntry entry;
+
+	public ResClassLoader(ClassLoader parent, CodeEntry entry) {
 	    super(parent);
+	    this.entry = entry;
 	}
-	
+
+	public Code findcode(String name) {
+	    return(entry.clmap.get(name));
+	}
+
+	public Class<?> findClass(String name) throws ClassNotFoundException {
+	    Code c = findcode(name);
+	    if(c == null)
+		throw(new ResourceClassNotFoundException(name, entry.getres()));
+	    return(defineClass(name, c.data, 0, c.data.length));
+	}
+
+	public static FromResource getsource(Class<?> cl) {
+	    for(; cl != null; cl = cl.getEnclosingClass()) {
+		FromResource src = cl.getAnnotation(FromResource.class);
+		if(src != null)
+		    return(src);
+	    }
+	    return(null);
+	}
+
+	public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+	    synchronized(getClassLoadingLock(name)) {
+		Class<?> ret = findLoadedClass(name);
+		if(ret == null) {
+		    try {
+			ret = getParent().loadClass(name);
+			if(findcode(name) != null) {
+			    boolean override = false;
+			    FromResource src = getsource(ret);
+			    if((src != null) && ((src.name().equals(getres().name) && (src.version() == getres().ver)) || src.override()))
+				override = true;
+			    if(!override) {
+				String fmt;
+				if(OVERRIDE_ALL) {
+				    fmt = "local copy of %s (%s) would be overridden by code from %s";
+				} else {
+				    fmt = "local copy of %s (%s) is overridden by code from %s; please refer to doc/resource-code";
+				    ret = null;
+				}
+				Warning.warn(fmt, name,
+					     (src == null) ? "unannotated" : String.format("fetched from %s v%d", src.name(), src.version()),
+					     String.format("%s v%d", getres().name, getres().ver));
+			    }
+			}
+		    } catch(ClassNotFoundException e) {
+		    }
+		}
+		if(ret == null)
+		    ret = findClass(name);
+		if(resolve)
+		    resolveClass(ret);
+		return(ret);
+	    }
+	}
+
 	public Resource getres() {
-	    return(Resource.this);
+	    return(entry.getres());
 	}
 	
 	public String toString() {
-	    return("cl:" + Resource.this.toString());
+	    return("cl:" + entry.getres());
 	}
     };
+
+    public static class LibClassLoader extends ClassLoader {
+	private final ClassLoader[] classpath;
+	
+	public LibClassLoader(ClassLoader parent, Collection<ClassLoader> classpath) {
+	    super(parent);
+	    this.classpath = classpath.toArray(new ClassLoader[0]);
+	}
+	
+	public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+	    /* XXX? This scheme seems a bit strange and weird, but I'm
+	     * not sure what the better alternative would be to still
+	     * allow selectively overriding resource classes. */
+	    Class<?> ret = null;
+	    try {
+		ret = getParent().loadClass(name);
+	    } catch(ClassNotFoundException e) {}
+	    for(ClassLoader lib : classpath) {
+		try {
+		    Class<?> found = lib.loadClass(name);
+		    if(found.getClassLoader() instanceof ResClassLoader)
+			ret = found;
+		    break;
+		} catch(ClassNotFoundException e) {}
+	    }
+	    if(ret == null)
+		throw(new ClassNotFoundException("Could not find " + name + " in any of " + Arrays.asList(classpath).toString()));
+	    return(ret);
+	}
+    }
+
+    public static class ResourceClassNotFoundException extends ClassNotFoundException {
+	public final String clname;
+	public final Resource res;
+
+	public ResourceClassNotFoundException(String clname, Resource res) {
+	    super(String.format("Could not find class %s in resource %s", clname, res));
+	    this.clname = clname;
+	    this.res = res;
+	}
+    }
+
+    @LayerName("codeentry")
+    public class CodeEntry extends Layer {
+	private final Map<String, Code> clmap = new HashMap<>();
+	private final Map<String, String> pe = new HashMap<>();
+	private final Map<String, Object[]> pa = new HashMap<>();
+	private final Collection<Indir<Resource>> classpath = new ArrayList<>();
+	transient private ClassLoader loader;
+	transient private final Map<String, Class<?>> lpe = new HashMap<>();
+	transient private final Map<String, Object> ipe = new HashMap<>();
+
+	public CodeEntry(Message buf) {
+	    while(!buf.eom()) {
+		int t = buf.uint8();
+		if((t == 1) || (t == 3)) {
+		    while(true) {
+			String en = buf.string();
+			String cn = buf.string();
+			if(en.length() == 0)
+			    break;
+			pe.put(en, cn);
+			if(t == 3)
+			    pa.put(en, buf.list());
+		    }
+		} else if(t == 2) {
+		    while(true) {
+			String ln = buf.string();
+			if(ln.length() == 0)
+			    break;
+			int ver = buf.uint16();
+			classpath.add(pool.load(ln, ver));
+		    }
+		} else {
+		    throw(new LoadException("Unknown codeentry data type: " + t, Resource.this));
+		}
+	    }
+	}
+
+	public void init() {
+	    for(Code c : layers(Code.class))
+		clmap.put(c.name, c);
+	}
+
+	public ClassLoader loader() {
+	    synchronized(CodeEntry.this) {
+		if(this.loader == null) {
+		    this.loader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+			    public ClassLoader run() {
+				ClassLoader ret = Resource.class.getClassLoader();
+				if(classpath.size() > 0) {
+				    Collection<ClassLoader> loaders = new LinkedList<ClassLoader>();
+				    for(Indir<Resource> res : classpath) {
+					loaders.add(res.get().layer(CodeEntry.class).loader());
+				    }
+				    ret = new LibClassLoader(ret, loaders);
+				}
+				if(clmap.size() > 0)
+				    ret = new ResClassLoader(ret, CodeEntry.this);
+				return(ret);
+			    }
+			});
+		}
+	    }
+	    return(this.loader);
+	}
+
+	private Class<?> getentry(Class<?> cl, boolean fail) {
+	    PublishedCode entry = cl.getAnnotation(PublishedCode.class);
+	    if(entry == null)
+		throw(new RuntimeException("Tried to fetch non-published res-loaded class " + cl.getName() + " from " + Resource.this.name));
+	    synchronized(CodeEntry.this) {
+		Class<?> ret = lpe.get(entry.name());
+		if(ret == null) {
+		    String clnm = pe.get(entry.name());
+		    if(clnm == null) {
+			if(fail)
+			    throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
+			return(null);
+		    }
+		    try {
+			ret = loader().loadClass(clnm);
+		    } catch(ClassNotFoundException e) {
+			throw(new LoadException(e, Resource.this));
+		    }
+		    lpe.put(entry.name(), ret);
+		}
+		return(ret);
+	    }
+	}
+
+	public <T> Class<? extends T> getcl(Class<T> cl, boolean fail) {
+	    Class<?> acl = getentry(cl, fail);
+	    if(acl == null)
+		return(null);
+	    try {
+		return(acl.asSubclass(cl));
+	    } catch(ClassCastException e) {
+		throw(new RuntimeException(String.format("Illegal entry-point class specified for %s in %s", cl.getName(), Resource.this.name), e));
+	    }
+	}
+
+	public <T> Class<? extends T> getcl(Class<T> cl) {
+	    return(getcl(cl, true));
+	}
+
+	public <T> T get(Class<T> cl, boolean fail) {
+	    PublishedCode entry = cl.getAnnotation(PublishedCode.class);
+	    if(entry == null)
+		throw(new RuntimeException("Tried to fetch non-published res-loaded class " + cl.getName() + " from " + Resource.this.name));
+	    synchronized(CodeEntry.this) {
+		Object inst;
+		if((inst = ipe.get(entry.name())) == null) {
+		    Class<?> acl = getentry(cl, fail);
+		    if(acl == null)
+			return(null);
+		    Object[] args = pa.getOrDefault(entry.name(), new Object[0]);
+		    inst = AccessController.doPrivileged((PrivilegedAction<Object>)() -> {
+			    PublishedCode.Instancer<?> mk;
+			    synchronized(PublishedCode.instancers) {
+				mk = PublishedCode.instancers.computeIfAbsent(entry, k -> {
+					if(k.instancer() == PublishedCode.Instancer.class)
+					    return(PublishedCode.Instancer.simple);
+					else
+					    return(Utils.construct(k.instancer()));
+				    });
+			    }
+			    return(mk.make(acl, Resource.this, args));
+			});
+		    ipe.put(entry.name(), inst);
+		}
+		try {
+		    return(cl.cast(inst));
+		} catch(ClassCastException e) {
+		    throw(new RuntimeException(String.format("Illegal entry-point class specified for %s in %s", entry.name(), Resource.this.name), e));
+		}
+	    }
+	}
+
+	public <T> T get(Class<T> cl) {
+	    return(get(cl, true));
+	}
+    }
 
     public static Resource classres(final Class<?> cl) {
 	return(AccessController.doPrivileged(new PrivilegedAction<Resource>() {
@@ -1111,232 +1660,36 @@ public class Resource implements Serializable {
 	return(e.get(cl, fail));
     }
 
-    public static class LibClassLoader extends ClassLoader {
-	private final ClassLoader[] classpath;
-	
-	public LibClassLoader(ClassLoader parent, Collection<ClassLoader> classpath) {
-	    super(parent);
-	    this.classpath = classpath.toArray(new ClassLoader[0]);
-	}
-	
-	public Class<?> findClass(String name) throws ClassNotFoundException {
-	    for(ClassLoader lib : classpath) {
-		try {
-		    return(lib.loadClass(name));
-		} catch(ClassNotFoundException e) {}
-	    }
-	    throw(new ClassNotFoundException("Could not find " + name + " in any of " + Arrays.asList(classpath).toString()));
-	}
-    }
-
-    public static class ResourceClassNotFoundException extends ClassNotFoundException {
-	public final String clname;
-	public final Resource res;
-
-	public ResourceClassNotFoundException(String clname, Resource res) {
-	    super(String.format("Could not find class %s in resource %s", clname, res));
-	    this.clname = clname;
-	    this.res = res;
-	}
-    }
-
-    @LayerName("codeentry")
-    public class CodeEntry extends Layer {
-	private String clnm;
-	private Map<String, Code> clmap = new TreeMap<String, Code>();
-	private Map<String, String> pe = new TreeMap<String, String>();
-	private Collection<Indir<Resource>> classpath = new LinkedList<Indir<Resource>>();
-	transient private ClassLoader loader;
-	transient private Map<String, Class<?>> lpe = null;
-	transient private Map<Class<?>, Object> ipe = new HashMap<Class<?>, Object>();
-
-	public CodeEntry(Message buf) {
-	    while(!buf.eom()) {
-		int t = buf.uint8();
-		if(t == 1) {
-		    while(true) {
-			String en = buf.string();
-			String cn = buf.string();
-			if(en.length() == 0)
-			    break;
-			pe.put(en, cn);
-		    }
-		} else if(t == 2) {
-		    while(true) {
-			String ln = buf.string();
-			if(ln.length() == 0)
-			    break;
-			int ver = buf.uint16();
-			classpath.add(pool.load(ln, ver));
-		    }
-		} else {
-		    throw(new LoadException("Unknown codeentry data type: " + t, Resource.this));
-		}
-	    }
-	}
-
-	public void init() {
-	    for(Code c : layers(Code.class))
-		clmap.put(c.name, c);
-	}
-
-	public ClassLoader loader(final boolean wait) {
-	    synchronized(CodeEntry.this) {
-		if(this.loader == null) {
-		    this.loader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-			    public ClassLoader run() {
-				ClassLoader ret = Resource.class.getClassLoader();
-				if(classpath.size() > 0) {
-				    Collection<ClassLoader> loaders = new LinkedList<ClassLoader>();
-				    for(Indir<Resource> res : classpath) {
-					loaders.add((wait?Loading.waitfor(res):res.get()).layer(CodeEntry.class).loader(wait));
-				    }
-				    ret = new LibClassLoader(ret, loaders);
-				}
-				if(clmap.size() > 0) {
-				    ret = new ResClassLoader(ret) {
-					    public Class<?> findClass(String name) throws ClassNotFoundException {
-						Code c = clmap.get(name);
-						if(c == null)
-						    throw(new ResourceClassNotFoundException(name, Resource.this));
-						return(defineClass(name, c.data, 0, c.data.length));
-					    }
-					};
-				}
-				return(ret);
-			    }
-			});
-		}
-	    }
-	    return(this.loader);
-	}
-
-	private void load() {
-	    synchronized(CodeEntry.class) {
-		if(lpe != null)
-		    return;
-		ClassLoader loader = loader(false);
-		lpe = new TreeMap<String, Class<?>>();
-		try {
-		    for(Map.Entry<String, String> e : pe.entrySet()) {
-			String name = e.getKey();
-			String clnm = e.getValue();
-			Class<?> cl = loader.loadClass(clnm);
-			lpe.put(name, cl);
-		    }
-		} catch(ClassNotFoundException e) {
-		    throw(new LoadException(e, Resource.this));
-		}
-	    }
-	}
-
-	public <T> Class<? extends T> getcl(Class<T> cl, boolean fail) {
-	    load();
-	    PublishedCode entry = cl.getAnnotation(PublishedCode.class);
-	    if(entry == null)
-		throw(new RuntimeException("Tried to fetch non-published res-loaded class " + cl.getName() + " from " + Resource.this.name));
-	    Class<?> acl;
-	    synchronized(lpe) {
-		if((acl = lpe.get(entry.name())) == null) {
-		    if(fail)
-			throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
-		    return(null);
-		}
-	    }
-	    return(acl.asSubclass(cl));
-	}
-
-	public <T> Class<? extends T> getcl(Class<T> cl) {
-	    return(getcl(cl, true));
-	}
-
-	public <T> T get(Class<T> cl, boolean fail) {
-	    load();
-	    PublishedCode entry = cl.getAnnotation(PublishedCode.class);
-	    if(entry == null)
-		throw(new RuntimeException("Tried to fetch non-published res-loaded class " + cl.getName() + " from " + Resource.this.name));
-	    Class<?> acl;
-	    synchronized(lpe) {
-		if((acl = lpe.get(entry.name())) == null) {
-		    if(fail)
-			throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
-		    return(null);
-		}
-	    }
-	    synchronized(ipe) {
-		Object pinst;
-		if((pinst = ipe.get(acl)) != null) {
-		    return(cl.cast(pinst));
-		} else {
-		    T inst;
-		    Object rinst = AccessController.doPrivileged((PrivilegedAction<Object>)() -> {
-			    if(entry.instancer() != PublishedCode.Instancer.class)
-				return(Utils.construct(entry.instancer()).make(acl));
-			    else
-				return(Utils.construct(acl));
-			});
-		    try {
-			inst = cl.cast(rinst);
-		    } catch(ClassCastException e) {
-			throw(new ClassCastException("Published class in " + Resource.this.name + " is not of type " + cl));
-		    }
-		    ipe.put(acl, inst);
-		    return(inst);
-		}
-	    }
-	}
-
-	public <T> T get(Class<T> cl) {
-	    return(get(cl, true));
-	}
-    }
-
-    @LayerName("audio")
-    public class Audio extends Layer implements IDLayer<String> {
+    @LayerName("audio2")
+    public class Audio extends Layer implements haven.Audio.Clip {
 	transient public byte[] coded;
 	public final String id;
 	public double bvol = 1.0;
 
-	public Audio(byte[] coded, String id) {
-	    this.coded = coded;
-	    this.id = id.intern();
-	}
-
 	public Audio(Message buf) {
-	    this(buf.bytes(), "cl");
+	    int ver = buf.uint8();
+	    if((ver >= 1) && (ver <= 2)) {
+		this.id = buf.string();
+		if(ver >= 2)
+		    bvol = buf.uint16() * 0.001;
+		this.coded = buf.bytes();
+	    } else {
+		throw(new LoadException("Unknown audio layer version: " + ver, getres()));
+	    }
 	}
 
 	public void init() {}
 
 	public haven.Audio.CS stream() {
 	    try {
-		return(new haven.Audio.VorbisClip(new dolda.xiphutil.VorbisStream(new ByteArrayInputStream(coded))));
+		return(new haven.Audio.VorbisClip(new ByteArrayInputStream(coded)));
 	    } catch(IOException e) {
 		throw(new RuntimeException(e));
 	    }
 	}
 
-	public String layerid() {
-	    return(id);
-	}
-    }
-
-    @LayerName("audio2")
-    public static class Audio2 implements LayerFactory<Audio> {
-	public Audio cons(Resource res, Message buf) {
-	    int ver = buf.uint8();
-	    if((ver == 1) || (ver == 2)) {
-		String id = buf.string();
-		double bvol = 1.0;
-		if(ver == 2)
-		    bvol = buf.uint16() / 1000.0;
-		Audio ret = res.new Audio(buf.bytes(), id);
-		ret.bvol = bvol;
-		return(ret);
-	    } else {
-		throw(new LoadException("Unknown audio layer version: " + ver, res));
-	    }
-	}
+	public String layerid() {return(id);}
+	public double bvol() {return(bvol);}
     }
 
     @LayerName("midi")
@@ -1400,11 +1753,46 @@ public class Resource implements Serializable {
 	    });
     }
 
+    public static class NoSuchLayerException extends NoSuchElementException {
+	public NoSuchLayerException(String message) {
+	    super(message);
+	}
+    }
+
     public <L extends Layer> L layer(Class<L> cl) {
 	used = true;
 	for(Layer l : layers) {
 	    if(cl.isInstance(l))
 		return(cl.cast(l));
+	}
+	return(null);
+    }
+    public <L extends Layer> L flayer(Class<L> cl) {
+	L l = layer(cl);
+	if(l == null) throw(new NoSuchLayerException("no " + cl + " in " + name));
+	return(l);
+    }
+
+    public <L> Collection<L> layers(Class<L> cl, Predicate<? super L> sel) {
+	used = true;
+	if(sel == null)
+	    sel = l -> true;
+	Predicate<? super L> dsel = sel;
+	return(new DefaultCollection<L>() {
+		public Iterator<L> iterator() {
+		    return(Utils.filter(Utils.filter(layers.iterator(), cl), dsel));
+		}
+	    });
+    }
+
+    public <L> L layer(Class<L> cl, Predicate<? super L> sel) {
+	used = true;
+	for(Layer l : layers) {
+	    if(cl.isInstance(l)) {
+		L lc = cl.cast(l);
+		if((sel == null) || sel.test(lc))
+		    return(lc);
+	    }
 	}
 	return(null);
     }
@@ -1420,6 +1808,11 @@ public class Resource implements Serializable {
 	}
 	return(null);
     }
+    public <I, L extends IDLayer<I>> L flayer(Class<L> cl, I id) {
+	L l = layer(cl, id);
+	if(l == null) throw(new NoSuchLayerException("no " + cl + " in " + name + " with id " + id));
+	return(l);
+    }
 
     public boolean equals(Object other) {
 	if(!(other instanceof Resource))
@@ -1428,10 +1821,10 @@ public class Resource implements Serializable {
 	return(o.name.equals(this.name) && (o.ver == this.ver));
     }
 
+    private static final byte[] RESOURCE_SIG = "Haven Resource 1".getBytes(Utils.ascii);
     private void load(InputStream st) throws IOException {
 	Message in = new StreamMessage(st);
-	byte[] sig = "Haven Resource 1".getBytes(Utils.ascii);
-	if(!Arrays.equals(sig, in.bytes(sig.length)))
+	if(!Arrays.equals(RESOURCE_SIG, in.bytes(RESOURCE_SIG.length)))
 	    throw(new LoadException("Invalid res signature", this));
 	int ver = in.uint16();
 	List<Layer> layers = new LinkedList<Layer>();
@@ -1447,7 +1840,9 @@ public class Resource implements Serializable {
 		continue;
 	    }
 	    Message buf = new LimitMessage(in, len);
-	    layers.add(lc.cons(this, buf));
+	    Layer l = lc.cons(this, buf);
+	    if(l != null)
+		layers.add(l);
 	    buf.skip();
 	}
 	this.layers = layers;
@@ -1475,12 +1870,20 @@ public class Resource implements Serializable {
 	return(indir);
     }
 
+    public static Image loadrimg(String name) {
+	return(local().loadwait(name).layer(imgc));
+    }
+
     public static BufferedImage loadimg(String name) {
-	return(local().loadwait(name).layer(imgc).img);
+	return(loadrimg(name).img);
+    }
+
+    public static BufferedImage loadsimg(String name) {
+	return(loadrimg(name).scaled());
     }
 
     public static Tex loadtex(String name) {
-	return(local().loadwait(name).layer(imgc).tex());
+	return(loadrimg(name).tex());
     }
 
     public String toString() {
@@ -1521,21 +1924,22 @@ public class Resource implements Serializable {
 	    out.println(res.name + ":" + res.ver);
     }
 
-    public static void updateloadlist(File file, File resdir) throws Exception {
-	BufferedReader r = new BufferedReader(new FileReader(file));
-	Map<String, Integer> orig = new HashMap<String, Integer>();
-	String ln;
-	while((ln = r.readLine()) != null) {
-	    int pos = ln.indexOf(':');
-	    if(pos < 0) {
-		System.err.println("Weird line: " + ln);
-		continue;
+    public static void updateloadlist(Path file, Path resdir) throws Exception {
+	Map<String, Integer> orig;
+	try(BufferedReader r = Files.newBufferedReader(file)) {
+	    orig = new HashMap<>();
+	    String ln;
+	    while((ln = r.readLine()) != null) {
+		int pos = ln.indexOf(':');
+		if(pos < 0) {
+		    System.err.println("Weird line: " + ln);
+		    continue;
+		}
+		String nm = ln.substring(0, pos);
+		int ver = Integer.parseInt(ln.substring(pos + 1));
+		orig.put(nm, ver);
 	    }
-	    String nm = ln.substring(0, pos);
-	    int ver = Integer.parseInt(ln.substring(pos + 1));
-	    orig.put(nm, ver);
 	}
-	r.close();
 	Pool pool = new Pool(new FileSource(resdir));
 	for(String nm : orig.keySet())
 	    pool.load(nm);
@@ -1556,18 +1960,222 @@ public class Resource implements Serializable {
 		System.out.println(nm + ": " + ver + " -> " + res.ver);
 	    cur.add(res);
 	}
-	Writer w = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
-	try {
+	try(Writer w = Files.newBufferedWriter(file)) {
 	    dumplist(cur, w);
-	} finally {
-	    w.close();
+	}
+    }
+
+    private static void usage_getcode(PrintStream out) {
+	out.println("usage: haven.Resource get-code [-h] [-U RESOURCE-URL] [-o DEST-DIR] RESOURCE-NAME...");
+    }
+
+    public static void cmd_getcode(String[] args) {
+	URL url = null;
+	PosixArgs opt = PosixArgs.getopt(args, "hqo:U:");
+	if(opt == null) {
+	    usage_getcode(System.err);
+	    System.exit(1);
+	}
+	boolean quiet = false;
+	Path dst = Utils.path("src");
+	for(char c : opt.parsed()) {
+	    switch(c) {
+	    case 'h':
+		usage_getcode(System.out);
+		System.exit(0);
+		break;
+	    case 'q':
+		quiet = true;
+		break;
+	    case 'o':
+		dst = Utils.path(opt.arg);
+		break;
+	    case 'U':
+		try {
+		    url = new URL(opt.arg);
+		} catch(MalformedURLException e) {
+		    System.err.println("get-code: malformed url: " + opt.arg);
+		    System.exit(1);
+		}
+		break;
+	    }
+	}
+	if(opt.rest.length < 1) {
+	    usage_getcode(System.err);
+	    System.exit(1);
+	}
+	if(!Files.isDirectory(dst)) {
+	    System.err.println("get-code: destination directory does not exist: " + dst);
+	    System.exit(1);
+	}
+	if(url == null) {
+	    if((url = resurl.get()) == null) {
+		System.err.println("get-code: no resource URL configured");
+		System.exit(1);
+	    }
+	}
+	ResSource source = new HttpSource(url);
+	for(String resnm : opt.rest) {
+	    Map<String, byte[]> code = new HashMap<>();
+	    int resver;
+	    try(InputStream inp = source.get(resnm)) {
+		Message fp = new StreamMessage(inp);
+		if(!Arrays.equals(RESOURCE_SIG, fp.bytes(RESOURCE_SIG.length))) {
+		    System.err.println("get-code: invalid resource: " + resnm);
+		    System.exit(1);
+		}
+		resver = fp.uint16();
+		while(!fp.eom()) {
+		    String laynm = fp.string();
+		    Message lay = new LimitMessage(fp, fp.int32());
+		    if(laynm.equals("src")) {
+			int fver = lay.uint8();
+			if(fver == 1) {
+			    String nm = lay.string();
+			    code.put(nm, lay.bytes());
+			} else {
+			    System.err.println("get-code: warning: unknown source code layer version: " + fver);
+			}
+		    }
+		    lay.skip();
+		}
+	    } catch(FileNotFoundException e) {
+		System.err.println("get-code: no such resource: " + resnm);
+		System.exit(1);
+		return;
+	    } catch(IOException e) {
+		System.err.println("get-code: error when fetching " + resnm + ": " + e);
+		System.exit(1);
+		return;
+	    }
+	    if(code.isEmpty()) {
+		System.err.println("get-code: no source code found in resource: " + resnm);
+		System.exit(1);
+	    }
+	    Pattern classpat = Pattern.compile("^(public\\s+)?(abstract\\s+)?(class|interface)\\s+(\\S+)");
+	    Pattern pkgpat   = Pattern.compile("^package\\s+(\\S+)\\s*;");
+	    for(String nm : code.keySet()) {
+		Path dir = dst;
+		List<String> lines = new LinkedList<>(Arrays.asList(new String(code.get(nm), Utils.utf8).split("\n")));
+		for(ListIterator<String> i = lines.listIterator(); i.hasNext();) {
+		    String ln = i.next();
+		    Matcher m = classpat.matcher(ln);
+		    if(m.find()) {
+			i.previous();
+			i.add("@haven.FromResource(name = \"" + resnm + "\", version = " + resver + ")");
+			break;
+		    }
+		    m = pkgpat.matcher(ln);
+		    if(m.find())
+			dir = Utils.pj(dir, m.group(1).split("\\."));
+		}
+		Path out = Utils.pj(dir, nm);
+		try {
+		    if(!Files.isDirectory(out.getParent()))
+			Files.createDirectories(out.getParent());
+		    Files.write(out, lines, Utils.utf8);
+		    if(!quiet)
+			System.err.println("wrote " + out);
+		} catch(IOException e) {
+		    System.err.println("get-code: could not write " + nm + ": " + e);
+		    System.exit(1);
+		}
+	    }
+	}
+    }
+
+    private static void usage_findupdates(PrintStream out) {
+	out.println("usage: haven.Resource find-updates [-h] [-U RESOURCE-URL] [SOURCE-DIR]");
+    }
+
+    public static void cmd_findupdates(String[] args) {
+	URL url = null;
+	PosixArgs opt = PosixArgs.getopt(args, "hU:");
+	if(opt == null) {
+	    usage_findupdates(System.err);
+	    System.exit(1);
+	}
+	for(char c : opt.parsed()) {
+	    switch(c) {
+	    case 'h':
+		usage_findupdates(System.out);
+		System.exit(0);
+		break;
+	    case 'U':
+		try {
+		    url = new URL(opt.arg);
+		} catch(MalformedURLException e) {
+		    System.err.println("get-code: malformed url: " + opt.arg);
+		    System.exit(1);
+		}
+		break;
+	    }
+	}
+	Path src = (opt.rest.length > 1) ? Utils.path(opt.rest[1]) : Utils.path("src");
+	if(!Files.isDirectory(src)) {
+	    System.err.println("get-code: destination directory does not exist: " + src);
+	    System.exit(1);
+	}
+	if(url == null) {
+	    if((url = resurl.get()) == null) {
+		System.err.println("get-code: no resource URL configured");
+		System.exit(1);
+	    }
+	}
+	ResSource source = new HttpSource(url);
+	Pattern srcpat = Pattern.compile("@.*FromResource\\s*\\([^)]*name\\s*=\\s*\"([^\"]*)\"[^)]*version\\s*=\\s*(\\d+)[^)]*\\)");
+	Map<String, Integer> found = new HashMap<>();
+	try {
+	    for(Path sp : (Iterable<Path>)Files.walk(src)::iterator) {
+		if(Files.isRegularFile(sp) && sp.getFileName().toString().endsWith(".java")) {
+		    Matcher m = srcpat.matcher(new String(Files.readAllBytes(sp), Utils.utf8));
+		    if(m.find()) {
+			String nm = m.group(1);
+			int ver = Integer.parseInt(m.group(2));
+			Integer pver = found.get(nm);
+			if((pver != null) && (pver != ver)) {
+			    System.err.println("find-updates: warning: found conflicting versions of " + nm + ": " + ver + " and " + pver);
+			    found.put(nm, Math.min(ver, pver));
+			} else {
+			    found.put(nm, ver);
+			}
+		    }
+		}
+	    }
+	} catch(IOException e) {
+	    throw(new RuntimeException(e));
+	}
+	for(Map.Entry<String, Integer> ent : found.entrySet()) {
+	    String nm = ent.getKey();
+	    int fver = ent.getValue();
+	    try(InputStream in = source.get(nm)) {
+		Message fp = new StreamMessage(in);
+		if(!Arrays.equals(RESOURCE_SIG, fp.bytes(RESOURCE_SIG.length))) {
+		    System.err.println("find-updates: warning: remote resource in invalid: " + nm);
+		    continue;
+		}
+		int resver = fp.uint16();
+		if(resver > fver) {
+		    System.out.println(nm);
+		} else if(resver < fver) {
+		    System.err.println("find-updates: warning: " + nm + " is, strangely, newer locally (" + fver + " locally, " + resver + " remotely)");
+		}
+	    } catch(FileNotFoundException e) {
+		System.err.println("find-updates: warning: resource no longer found: " + nm);
+	    } catch(IOException e) {
+		System.err.println("find-updates: warning: error when checking " + nm + ": " + e);
+	    }
 	}
     }
 
     public static void main(String[] args) throws Exception {
 	String cmd = args[0].intern();
-	if(cmd == "update") {
-	    updateloadlist(new File(args[1]), new File(args[2]));
+	if(cmd == "update-list") {
+	    updateloadlist(Utils.path(args[1]), Utils.path(args[2]));
+	} else if(cmd == "get-code") {
+	    cmd_getcode(Utils.splice(args, 1));
+	} else if(cmd == "find-updates") {
+	    cmd_findupdates(Utils.splice(args, 1));
 	}
     }
 }

@@ -39,6 +39,7 @@ public abstract class Texture implements Disposable {
     public Swizzle eperm;
     public boolean shared = false;
     public Disposable ro;
+    public Object desc;
 
     public Texture(DataBuffer.Usage usage, VectorFormat ifmt, VectorFormat efmt, DataBuffer.Filler<? super Image> init) {
 	this.usage = usage;
@@ -81,6 +82,7 @@ public abstract class Texture implements Disposable {
     }
 
     public abstract Collection<? extends Image<? extends Texture>> images();
+    public abstract Sampler<? extends Texture> sampler();
 
     public Texture srgb() {
 	this.srgb = true;
@@ -150,11 +152,38 @@ public abstract class Texture implements Disposable {
 	public Sampler<T> anisotropy(float v) {anisotropy = v; return(this);}
 	public Sampler<T> border(FColor v) {border = v; return(this);}
 
-	private boolean equals(Sampler<?> that) {
-	    return((this.tex == that.tex) &&
-		   (this.magfilter == that.magfilter) && (this.minfilter == that.minfilter) && (this.mipfilter == that.mipfilter) &&
+	public Sampler<T> copy(Sampler<?> that) {
+	    this.magfilter = that.magfilter;
+	    this.minfilter = that.minfilter;
+	    this.mipfilter = that.mipfilter;
+	    this.swrap = that.swrap;
+	    this.twrap = that.twrap;
+	    this.rwrap = that.rwrap;
+	    this.anisotropy = that.anisotropy;
+	    this.border = that.border;
+	    return(this);
+	}
+
+	public int parhash() {
+	    int ret = Objects.hash(magfilter, minfilter, mipfilter,
+				   swrap, twrap, rwrap,
+				   border);
+	    ret = (ret * 31) + Float.floatToIntBits(anisotropy);
+	    return(ret);
+	}
+
+	public int hashCode() {
+	    return((parhash() * 31) + System.identityHashCode(tex));
+	}
+
+	public boolean parequals(Sampler<?> that) {
+	    return((this.magfilter == that.magfilter) && (this.minfilter == that.minfilter) && (this.mipfilter == that.mipfilter) &&
 		   (this.swrap == that.swrap) && (this.twrap == that.twrap) && (this.rwrap == that.rwrap) &&
 		   (this.anisotropy == that.anisotropy) && this.border.equals(that.border));
+	}
+
+	private boolean equals(Sampler<?> that) {
+	    return((this.tex == that.tex) && parequals(that));
 	}
 
 	public boolean equals(Object o) {
@@ -163,6 +192,15 @@ public abstract class Texture implements Disposable {
     }
 
     public String toString() {
-	return(String.format("#<tex %s>", getClass().getName()));
+	return(String.format("#<tex %s%s>", getClass().getName(), descfmt()));
+    }
+
+    String descfmt() {
+	return((desc == null) ? "" : " (" + desc + ")");
+    }
+
+    public Texture desc(Object desc) {
+	this.desc = desc;
+	return(this);
     }
 }

@@ -29,6 +29,7 @@ package haven.error;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import dolda.coe.*;
 
 public class ErrorHandler extends ThreadGroup {
     private final URL errordest;
@@ -97,12 +98,12 @@ public class ErrorHandler extends ThreadGroup {
 	    URLConnection c = errordest.openConnection();
 	    status.connecting();
 	    c.setDoOutput(true);
-	    c.addRequestProperty("Content-Type", "application/x-java-error");
+	    c.addRequestProperty("Content-Type", "application/x-haven-report");
 	    c.connect();
-	    ObjectOutputStream o = new ObjectOutputStream(c.getOutputStream());
-	    status.sending();
-	    o.writeObject(r);
-	    o.close();
+	    try(OutputStream out = c.getOutputStream()) {
+		status.sending();
+		new BinEncoder().backrefs(true).write(out, r);
+	    }
 	    String ctype = c.getContentType();
 	    StringWriter buf = new StringWriter();
 	    Reader i = new InputStreamReader(c.getInputStream(), "utf-8");

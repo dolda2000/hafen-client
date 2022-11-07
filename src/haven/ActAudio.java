@@ -54,6 +54,7 @@ public class ActAudio extends State {
 	public void add(CS clip);
 	public void remove(CS clip);
 	public void clear();
+	public int size();
     }
 
     public static class Adapter implements Channel {
@@ -90,6 +91,12 @@ public class ActAudio extends State {
 		    parent.remove(i.next());
 		    i.remove();
 		}
+	    }
+	}
+
+	public int size() {
+	    synchronized(this) {
+		return(clips.size());
 	    }
 	}
     }
@@ -152,15 +159,24 @@ public class ActAudio extends State {
 		    mixer.stop(clip);
 	    }
 	}
+
+	public int size() {
+	    return((mixer == null) ? 0 : mixer.size());
+	}
     }
 
     public static class Root {
+	public final RootChannel aui = new RootChannel("aui");
 	public final RootChannel pos = new RootChannel("pos");
 	public final RootChannel amb = new RootChannel("amb");
 
 	public void clear() {
 	    pos.clear();
 	    amb.clear();
+	}
+
+	public String stats() {
+	    return(String.format("%d %d %d", aui.size(), pos.size(), amb.size()));
 	}
     }
 
@@ -224,14 +240,15 @@ public class ActAudio extends State {
 	public final double bvol;
 
 	public Ambience(Resource res, double bvol) {
-	    if(res.layer(Resource.audio, "amb") == null)
-		throw(new RuntimeException("No ambient clip found in " + res));
+	    Audio.Clip clip = res.flayer(Audio.clip, "amb");
+	    if(bvol < 0)
+		bvol = clip.bvol();
 	    this.res = res;
 	    this.bvol = bvol;
 	}
 
 	public Ambience(Resource res) {
-	    this(res, res.layer(Resource.audio, "amb").bvol);
+	    this(res, -1);
 	}
 
 	public static class Glob implements Global {
@@ -239,18 +256,19 @@ public class ActAudio extends State {
 	    private final VolAdjust clip;
 	    private final Collection<RenderList.Slot<Ambience>> active = new ArrayList<>();
 	    private double lastupd = Utils.rtime();
-	    private boolean added = false;
+	    private boolean added = false, hasvol = false;
 	    
 	    public Glob(Resource res) {
 		this.res = res;
-		final Resource.Audio clip = res.layer(Resource.audio, "amb");
-		if(clip == null)
+		List<Audio.Clip> clips = new ArrayList<>(res.layers(Audio.clip, clip -> clip.layerid().equals("amb")));
+		if(clips.isEmpty())
 		    throw(new RuntimeException("No ambient clip found in " + res));
 		this.clip = new VolAdjust(new Audio.Repeater() {
+			Random rnd = new Random();
 			public CS cons() {
-			    return(clip.stream());
+			    return(clips.get(rnd.nextInt(clips.size())).stream());
 			}
-		    });
+		    }, 0);
 	    }
 
 	    public int hashCode() {
@@ -277,10 +295,15 @@ public class ActAudio extends State {
 		double td = Math.max(now - lastupd, 0.0);
 		synchronized(active) {
 		    double vacc = curvol();
-		    if(vacc < clip.vol)
-			clip.vol = Math.max(clip.vol - (td * 0.5), 0.0);
-		    else if(vacc > clip.vol)
-			clip.vol = Math.min(clip.vol + (td * 0.5), 1.0);
+		    if(hasvol) {
+			if(vacc < clip.vol)
+			    clip.vol = Math.max(clip.vol - (td * 0.5), 0.0);
+			else if(vacc > clip.vol)
+			    clip.vol = Math.min(clip.vol + (td * 0.5), 1.0);
+		    } else {
+			clip.vol = vacc;
+			hasvol = true;
+		    }
 		    if(active.isEmpty() && (clip.vol < 0.005)) {
 			list.amb.remove(clip);
 			return(true);

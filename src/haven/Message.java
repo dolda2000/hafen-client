@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import dolda.coe.*;
 import java.awt.Color;
 
 public abstract class Message {
@@ -37,6 +38,7 @@ public abstract class Message {
     public static final int T_UINT8 = 4;
     public static final int T_UINT16 = 5;
     public static final int T_COLOR = 6;
+    public static final int T_FCOLOR = 7;
     public static final int T_TTOL = 8;
     public static final int T_INT8 = 9;
     public static final int T_INT16 = 10;
@@ -47,6 +49,17 @@ public abstract class Message {
     public static final int T_FLOAT64 = 16;
     public static final int T_FCOORD32 = 18;
     public static final int T_FCOORD64 = 19;
+    public static final int T_FLOAT8 = 21;
+    public static final int T_FLOAT16 = 22;
+    public static final int T_SNORM8 = 23;
+    public static final int T_UNORM8 = 24;
+    public static final int T_MNORM8 = 25;
+    public static final int T_SNORM16 = 26;
+    public static final int T_UNORM16 = 27;
+    public static final int T_MNORM16 = 28;
+    public static final int T_SNORM32 = 29;
+    public static final int T_UNORM32 = 30;
+    public static final int T_MNORM32 = 31;
 
     private final static byte[] empty = new byte[0];
     public int rh = 0, rt = 0, wh = 0, wt = 0;
@@ -59,6 +72,8 @@ public abstract class Message {
 	};
 
     public static class BinError extends RuntimeException {
+	public Message msg;
+
 	public BinError(String message) {
 	    super(message);
 	}
@@ -67,6 +82,12 @@ public abstract class Message {
 	}
 	public BinError(Throwable cause) {
 	    super(cause);
+	}
+
+	public BinError msg(Message msg) {
+	    if(msg instanceof java.io.Serializable)
+		this.msg = msg;
+	    return(this);
 	}
     }
     public static class EOF extends BinError {
@@ -88,7 +109,7 @@ public abstract class Message {
     private void rensure(int len) {
 	while(len > rt - rh) {
 	    if(!underflow(rh + len - rt))
-		throw(new EOF("Required " + len + " bytes, got only " + (rt - rh)));
+		throw(new EOF("Required " + len + " bytes, got only " + (rt - rh)).msg(this));
 	}
     }
     private int rget(int len) {
@@ -134,7 +155,7 @@ public abstract class Message {
 	while(true) {
 	    if(l >= rt - rh) {
 		if(!underflow(256))
-		    throw(new EOF("Found no NUL (at length " + l + ")"));
+		    throw(new EOF("Found no NUL (at length " + l + ")").msg(this));
 	    }
 	    if(rbuf[l + rh] == 0) {
 		String ret = new String(rbuf, rh, l, Utils.utf8);
@@ -148,7 +169,7 @@ public abstract class Message {
 	while(n > 0) {
 	    if(rh >= rt) {
 		if(!underflow(Math.min(n, 1024)))
-		    throw(new EOF("Out of bytes to skip"));
+		    throw(new EOF("Out of bytes to skip").msg(this));
 	    }
 	    int s = Math.min(n, rt - rh);
 	    rh += s;
@@ -174,7 +195,7 @@ public abstract class Message {
 	while(len > 0) {
 	    if(rh >= rt) {
 		if(!underflow(Math.min(len, 1024)))
-		    throw(new EOF("Required " + olen + " bytes, got only " + (olen - len)));
+		    throw(new EOF("Required " + olen + " bytes, got only " + (olen - len)).msg(this));
 	    }
 	    int r = Math.min(len, rt - rh);
 	    System.arraycopy(rbuf, rh, b, off, r);
@@ -189,6 +210,9 @@ public abstract class Message {
     }
     public Color color() {
 	return(new Color(uint8(), uint8(), uint8(), uint8()));
+    }
+    public FColor fcolor() {
+	return(new FColor(float32(), float32(), float32(), float32()));
     }
     public float float8() {
 	return(Utils.mfdec((byte)int8()));
@@ -215,17 +239,26 @@ public abstract class Message {
     public float unorm8() {
 	return(uint8() / 0xffp0f);
     }
+    public float mnorm8() {
+	return(uint8() / 0x100p0f);
+    }
     public float snorm16() {
 	return(Utils.clip(int16(), -0x7fff, 0x7fff) / 0x7fffp0f);
     }
     public float unorm16() {
 	return(uint16() / 0xffffp0f);
     }
+    public float mnorm16() {
+	return(uint16() / 0x10000p0f);
+    }
     public double snorm32() {
 	return(Utils.clip(int32(), -0x7fffffff, 0x7fffffff) / 0x7fffffffp0);
     }
     public double unorm32() {
 	return(uint32() / 0xffffffffp0);
+    }
+    public double mnorm32() {
+	return(uint32() / 0x100000000p0);
     }
 
     public Object[] list() {
@@ -261,6 +294,9 @@ public abstract class Message {
 	    case T_COLOR:
 		ret.add(color());
 		break;
+	    case T_FCOLOR:
+		ret.add(fcolor());
+		break;
 	    case T_TTOL:
 		ret.add(list());
 		break;
@@ -276,6 +312,12 @@ public abstract class Message {
 		    len = int32();
 		ret.add(bytes(len));
 		break;
+	    case T_FLOAT8:
+		ret.add(float8());
+		break;
+	    case T_FLOAT16:
+		ret.add(float16());
+		break;
 	    case T_FLOAT32:
 		ret.add(float32());
 		break;
@@ -288,8 +330,17 @@ public abstract class Message {
 	    case T_FCOORD64:
 		ret.add(new Coord2d(float64(), float64()));
 		break;
+	    case T_SNORM8:  ret.add( snorm8()); break;
+	    case T_SNORM16: ret.add(snorm16()); break;
+	    case T_SNORM32: ret.add(snorm32()); break;
+	    case T_UNORM8:  ret.add( unorm8()); break;
+	    case T_UNORM16: ret.add(unorm16()); break;
+	    case T_UNORM32: ret.add(unorm32()); break;
+	    case T_MNORM8:  ret.add( mnorm8()); break;
+	    case T_MNORM16: ret.add(mnorm16()); break;
+	    case T_MNORM32: ret.add(mnorm32()); break;
 	    default:
-		throw(new FormatError("Encountered unknown type " + t + " in TTO list."));
+		throw(new FormatError("Encountered unknown type " + t + " in TTO list.").msg(this));
 	    }
 	}
 	return(ret.toArray());
@@ -386,6 +437,11 @@ public abstract class Message {
 	Utils.float64e(num, wbuf, off);
 	return(this);
     }
+    public Message addfcolor(FColor color) {
+	addfloat32(color.r); addfloat32(color.g);
+	addfloat32(color.b); addfloat32(color.a);
+	return(this);
+    }
 
     public Message addlist(Object... args) {
 	for(Object o : args) {
@@ -413,6 +469,9 @@ public abstract class Message {
 	    } else if(o instanceof Color) {
 		adduint8(T_COLOR);
 		addcolor((Color)o);
+	    } else if(o instanceof FColor) {
+		adduint8(T_FCOLOR);
+		addfcolor((FColor)o);
 	    } else if(o instanceof Float) {
 		adduint8(T_FLOAT32);
 		addfloat32(((Float)o).floatValue());
@@ -423,10 +482,29 @@ public abstract class Message {
 		adduint8(T_FCOORD64);
 		addfloat64(((Coord2d)o).x);
 		addfloat64(((Coord2d)o).y);
+	    } else if(o instanceof Object[]) {
+		adduint8(T_TTOL);
+		addlist((Object[])o);
+		adduint8(T_END);
 	    } else {
 		throw(new RuntimeException("Cannot encode a " + o.getClass() + " as TTO"));
 	    }
 	}
 	return(this);
+    }
+
+    static {
+	ObjectData.register(Message.class, (msg, buf) -> {
+		if((msg.rbuf.length > 0) || (msg.rh != 0) || (msg.rt != 0)) {
+		    buf.put(Symbol.get("read-buf"), msg.rbuf);
+		    buf.put(Symbol.get("read-head"), msg.rh);
+		    buf.put(Symbol.get("read-tail"), msg.rt);
+		}
+		if((msg.wbuf.length > 0) || (msg.wh != 0) || (msg.wt != 0)) {
+		    buf.put(Symbol.get("write-buf"), msg.wbuf);
+		    buf.put(Symbol.get("write-head"), msg.wh);
+		    buf.put(Symbol.get("write-tail"), msg.wt);
+		}
+	    });
     }
 }

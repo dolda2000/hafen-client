@@ -43,10 +43,10 @@ public class DrawOffset extends GAttrib {
 	    } else {
 		DrawOffset dro = g.getattr(DrawOffset.class);
 		if(dro == null) {
-		    dro = new DrawOffset(g, new Coord3f(0, 0, off));
+		    dro = new DrawOffset(g, Coord3f.of(0, 0, off));
 		    g.setattr(dro);
 		} else {
-		    dro.off = new Coord3f(0, 0, off);
+		    dro.off = Coord3f.of(0, 0, off);
 		}
 	    }
 	}

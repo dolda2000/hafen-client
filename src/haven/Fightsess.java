@@ -33,16 +33,17 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 public class Fightsess extends Widget {
+    private static final Coord off = new Coord(UI.scale(32), UI.scale(32));
     public static final Tex cdframe = Resource.loadtex("gfx/hud/combat/cool");
     public static final Tex actframe = Buff.frame;
     public static final Coord actframeo = Buff.imgoff;
     public static final Tex indframe = Resource.loadtex("gfx/hud/combat/indframe");
-    public static final Coord indframeo = (indframe.sz().sub(32, 32)).div(2);
+    public static final Coord indframeo = (indframe.sz().sub(off)).div(2);
     public static final Tex indbframe = Resource.loadtex("gfx/hud/combat/indbframe");
-    public static final Coord indbframeo = (indframe.sz().sub(32, 32)).div(2);
+    public static final Coord indbframeo = (indframe.sz().sub(off)).div(2);
     public static final Tex useframe = Resource.loadtex("gfx/hud/combat/lastframe");
-    public static final Coord useframeo = (useframe.sz().sub(32, 32)).div(2);
-    public static final int actpitch = 50;
+    public static final Coord useframeo = (useframe.sz().sub(off)).div(2);
+    public static final int actpitch = UI.scale(50);
     public final Action[] actions;
     public int use = -1, useb = -1;
     public Coord pcc;
@@ -68,7 +69,7 @@ public class Fightsess extends Widget {
 
     @SuppressWarnings("unchecked")
     public Fightsess(int nact) {
-	pho = -40;
+	pho = -UI.scale(40);
 	this.actions = new Action[nact];
     }
 
@@ -91,30 +92,73 @@ public class Fightsess extends Widget {
 	if(raw == null)
 	    return;
 	pcc = map.screenxf(raw).round2();
-	pho = (int)(map.screenxf(raw.add(0, 0, 20)).round2().sub(pcc).y) - 20;
+	pho = (int)(map.screenxf(raw.add(0, 0, UI.scale(20))).round2().sub(pcc).y) - UI.scale(20);
+    }
+
+    private static class Effect implements RenderTree.Node {
+	Sprite spr;
+	RenderTree.Slot slot;
+	boolean used = true;
+
+	Effect(Sprite spr) {this.spr = spr;}
+
+	public void added(RenderTree.Slot slot) {
+	    slot.add(spr);
+	}
     }
 
     private static final Resource tgtfx = Resource.local().loadwait("gfx/hud/combat/trgtarw");
-    private final Map<Pair<Long, Resource>, Sprite> cfx = new CacheMap<Pair<Long, Resource>, Sprite>();
-    private final Collection<Sprite> curfx = new ArrayList<Sprite>();
+    private final Collection<Effect> curfx = new ArrayList<>();
 
-    private void fxon(long gobid, Resource fx) {
+    private Effect fxon(long gobid, Resource fx, Effect cur) {
 	MapView map = getparent(GameUI.class).map;
 	Gob gob = ui.sess.glob.oc.getgob(gobid);
 	if((map == null) || (gob == null))
-	    return;
-	Pair<Long, Resource> id = new Pair<Long, Resource>(gobid, fx);
-	Sprite spr = cfx.get(id);
-	if(spr == null)
-	    cfx.put(id, spr = Sprite.create(null, fx, Message.nil));
-	// map.drawadd(gob.loc.apply(spr)); XXXRENDER
-	curfx.add(spr);
+	    return(null);
+	Pipe.Op place;
+	try {
+	    place = gob.placed.curplace();
+	} catch(Loading l) {
+	    return(null);
+	}
+	if((cur == null) || (cur.slot == null)) {
+	    try {
+		cur = new Effect(Sprite.create(null, fx, Message.nil));
+		cur.slot = map.basic.add(cur.spr, place);
+	    } catch(Loading l) {
+		return(null);
+	    }
+	    curfx.add(cur);
+	} else {
+	    cur.slot.cstate(place);
+	}
+	cur.used = true;
+	return(cur);
     }
 
     public void tick(double dt) {
-	for(Sprite spr : curfx)
-	    spr.tick((int)(dt * 1000));
+	for(Iterator<Effect> i = curfx.iterator(); i.hasNext();) {
+	    Effect fx = i.next();
+	    if(!fx.used) {
+		if(fx.slot != null) {
+		    fx.slot.remove();
+		    fx.slot = null;
+		}
+		i.remove();
+	    } else {
+		fx.used = false;
+		fx.spr.tick(dt);
+	    }
+	}
+    }
+
+    public void destroy() {
+	for(Effect fx : curfx) {
+	    if(fx.slot != null)
+		fx.slot.remove();
+	}
 	curfx.clear();
+	super.destroy();
     }
 
     private static final Text.Furnace ipf = new PUtils.BlurFurn(new Text.Foundry(Text.serif, 18, new Color(128, 128, 255)).aa(true), 1, 1, new Color(48, 48, 96));
@@ -129,29 +173,30 @@ public class Fightsess extends Widget {
 
     private static Coord actc(int i) {
 	int rl = 5;
-	return(new Coord((actpitch * (i % rl)) - (((rl - 1) * actpitch) / 2), 125 + ((i / rl) * actpitch)));
+	return(new Coord((actpitch * (i % rl)) - (((rl - 1) * actpitch) / 2), UI.scale(125) + ((i / rl) * actpitch)));
     }
 
-    private static final Coord cmc = new Coord(0, 67);
-    private static final Coord usec1 = new Coord(-65, 67);
-    private static final Coord usec2 = new Coord(65, 67);
+    private static final Coord cmc = UI.scale(new Coord(0, 67));
+    private static final Coord usec1 = UI.scale(new Coord(-65, 67));
+    private static final Coord usec2 = UI.scale(new Coord(65, 67));
     private Indir<Resource> lastact1 = null, lastact2 = null;
     private Text lastacttip1 = null, lastacttip2 = null;
+    private Effect curtgtfx;
     public void draw(GOut g) {
 	updatepos();
 	double now = Utils.rtime();
 
 	for(Buff buff : fv.buffs.children(Buff.class))
-	    buff.draw(g.reclip(pcc.add(-buff.c.x - Buff.cframe.sz().x - 20, buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
+	    buff.draw(g.reclip(pcc.add(-buff.c.x - Buff.cframe.sz().x - UI.scale(20), buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
 	if(fv.current != null) {
 	    for(Buff buff : fv.current.buffs.children(Buff.class))
-		buff.draw(g.reclip(pcc.add(buff.c.x + 20, buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
+		buff.draw(g.reclip(pcc.add(buff.c.x + UI.scale(20), buff.c.y + pho - Buff.cframe.sz().y), buff.sz));
 
-	    g.aimage(ip.get().tex(), pcc.add(-75, 0), 1, 0.5);
-	    g.aimage(oip.get().tex(), pcc.add(75, 0), 0, 0.5);
+	    g.aimage(ip.get().tex(), pcc.add(-UI.scale(75), 0), 1, 0.5);
+	    g.aimage(oip.get().tex(), pcc.add(UI.scale(75), 0), 0, 0.5);
 
 	    if(fv.lsrel.size() > 1)
-		fxon(fv.current.gobid, tgtfx);
+		curtgtfx = fxon(fv.current.gobid, tgtfx, curtgtfx);
 	}
 
 	{
@@ -159,7 +204,7 @@ public class Fightsess extends Widget {
 	    if(now < fv.atkct) {
 		double a = (now - fv.atkcs) / (fv.atkct - fv.atkcs);
 		g.chcolor(255, 0, 128, 224);
-		g.fellipse(cdc, new Coord(24, 24), Math.PI / 2 - (Math.PI * 2 * Math.min(1.0 - a, 1.0)), Math.PI / 2);
+		g.fellipse(cdc, UI.scale(new Coord(24, 24)), Math.PI / 2 - (Math.PI * 2 * Math.min(1.0 - a, 1.0)), Math.PI / 2);
 		g.chcolor();
 	    }
 	    g.image(cdframe, cdc.sub(cdframe.sz().div(2)));
@@ -172,7 +217,7 @@ public class Fightsess extends Widget {
 	    }
 	    double lastuse = fv.lastuse;
 	    if(lastact != null) {
-		Tex ut = lastact.get().layer(Resource.imgc).tex();
+		Tex ut = lastact.get().flayer(Resource.imgc).tex();
 		Coord useul = pcc.add(usec1).sub(ut.sz().div(2));
 		g.image(ut, useul);
 		g.image(useframe, useul.sub(useframeo));
@@ -195,7 +240,7 @@ public class Fightsess extends Widget {
 		}
 		double lastuse = fv.current.lastuse;
 		if(lastact != null) {
-		    Tex ut = lastact.get().layer(Resource.imgc).tex();
+		    Tex ut = lastact.get().flayer(Resource.imgc).tex();
 		    Coord useul = pcc.add(usec2).sub(ut.sz().div(2));
 		    g.image(ut, useul);
 		    g.image(useframe, useul.sub(useframeo));
@@ -216,7 +261,7 @@ public class Fightsess extends Widget {
 	    try {
 		if(act != null) {
 		    Resource res = act.res.get();
-		    Tex img = res.layer(Resource.imgc).tex();
+		    Tex img = res.flayer(Resource.imgc).tex();
 		    Coord ic = ca.sub(img.sz().div(2));
 		    g.image(img, ic);
 		    if(now < act.ct) {
@@ -242,7 +287,7 @@ public class Fightsess extends Widget {
     public static final String[] keytips = {"1", "2", "3", "4", "5", "Shift+1", "Shift+2", "Shift+3", "Shift+4", "Shift+5"};
     public Object tooltip(Coord c, Widget prev) {
 	for(Buff buff : fv.buffs.children(Buff.class)) {
-	    Coord dc = pcc.add(-buff.c.x - Buff.cframe.sz().x - 20, buff.c.y + pho - Buff.cframe.sz().y);
+	    Coord dc = pcc.add(-buff.c.x - Buff.cframe.sz().x - UI.scale(20), buff.c.y + pho - Buff.cframe.sz().y);
 	    if(c.isect(dc, buff.sz)) {
 		Object ret = buff.tooltip(c.sub(dc), prevtt);
 		if(ret != null) {
@@ -253,7 +298,7 @@ public class Fightsess extends Widget {
 	}
 	if(fv.current != null) {
 	    for(Buff buff : fv.current.buffs.children(Buff.class)) {
-		Coord dc = pcc.add(buff.c.x + 20, buff.c.y + pho - Buff.cframe.sz().y);
+		Coord dc = pcc.add(buff.c.x + UI.scale(20), buff.c.y + pho - Buff.cframe.sz().y);
 		if(c.isect(dc, buff.sz)) {
 		    Object ret = buff.tooltip(c.sub(dc), prevtt);
 		    if(ret != null) {
@@ -269,10 +314,10 @@ public class Fightsess extends Widget {
 	    Indir<Resource> act = (actions[i] == null) ? null : actions[i].res;
 	    try {
 		if(act != null) {
-		    Tex img = act.get().layer(Resource.imgc).tex();
+		    Tex img = act.get().flayer(Resource.imgc).tex();
 		    ca = ca.sub(img.sz().div(2));
 		    if(c.isect(ca, img.sz())) {
-			String tip = act.get().layer(Resource.tooltip).t;
+			String tip = act.get().flayer(Resource.tooltip).t;
 			if(kb_acts[i].key() != KeyMatch.nil)
 			    tip += " ($b{$col[255,128,0]{" + kb_acts[i].key().name() + "}})";
 			if((acttip == null) || !acttip.text.equals(tip))
@@ -285,11 +330,11 @@ public class Fightsess extends Widget {
 	try {
 	    Indir<Resource> lastact = this.lastact1;
 	    if(lastact != null) {
-		Coord usesz = lastact.get().layer(Resource.imgc).sz;
+		Coord usesz = lastact.get().flayer(Resource.imgc).sz;
 		Coord lac = pcc.add(usec1);
 		if(c.isect(lac.sub(usesz.div(2)), usesz)) {
 		    if(lastacttip1 == null)
-			lastacttip1 = Text.render(lastact.get().layer(Resource.tooltip).t);
+			lastacttip1 = Text.render(lastact.get().flayer(Resource.tooltip).t);
 		    return(lastacttip1);
 		}
 	    }
@@ -297,11 +342,11 @@ public class Fightsess extends Widget {
 	try {
 	    Indir<Resource> lastact = this.lastact2;
 	    if(lastact != null) {
-		Coord usesz = lastact.get().layer(Resource.imgc).sz;
+		Coord usesz = lastact.get().flayer(Resource.imgc).sz;
 		Coord lac = pcc.add(usec2);
 		if(c.isect(lac.sub(usesz.div(2)), usesz)) {
 		    if(lastacttip2 == null)
-			lastacttip2 = Text.render(lastact.get().layer(Resource.tooltip).t);
+			lastacttip2 = Text.render(lastact.get().flayer(Resource.tooltip).t);
 		    return(lastacttip2);
 		}
 	    }

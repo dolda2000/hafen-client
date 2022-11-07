@@ -37,12 +37,12 @@ public abstract class PView extends Widget {
     public final RenderTree.Slot basic;
     public Texture2D fragcol = null;
     public Texture2D depth = null;
+    protected final Light.LightList lights = new Light.LightList();
     protected Environment env = null;
     protected InstanceList instancer;
     protected DrawList back = null;
     protected Coord rsz;
     private final Map<Object, Pipe.Op> basicstates = new IdentityHashMap<>();
-    private final Light.LightList lights = new Light.LightList();
     private ActAudio audio;
     private final ScreenList list2d = new ScreenList();
     private final TickList ticklist = new TickList();
@@ -213,7 +213,7 @@ public abstract class PView extends Widget {
     private PostProcessor pp_resamp = null;
     protected void resolve(GOut g) {
 	List<PostProcessor> copy = new ArrayList<PostProcessor>(ctx.postproc());
-	if(!rsz.equals(g.sz())) {
+	if(!rsz.equals(this.sz)) {
 	    if(pp_resamp == null)
 		pp_resamp = new Resampler();
 	    copy.add(pp_resamp);
@@ -231,13 +231,14 @@ public abstract class PView extends Widget {
 	    next = post.hasNext() ? post.next() : null;
 	    cur.run(resolveout(g, next), cur.buf);
 	}
+	g.defstate();
     }
 
     public void add(PostProcessor post) {ctx.add(post);}
     public void remove(PostProcessor post) {ctx.remove(post);}
 
     protected void envsetup() {
-	back = env.drawlist();
+	back = env.drawlist().desc("pview: " + this);
 	instancer = new InstanceList(tree);
 	instancer.add(back, Rendered.class);
 	instancer.asyncadd(tree, Rendered.class);
@@ -258,7 +259,7 @@ public abstract class PView extends Widget {
     }
 
     public void draw(GOut g) {
-	if((back == null) || !back.compatible(g.out.env())) {
+	if((back == null) || !g.out.env().compatible(back)) {
 	    if(env != null) {
 		envdispose();
 		env = null;
@@ -271,10 +272,12 @@ public abstract class PView extends Widget {
 	if(cc != null)
 	    g.out.clear(basic.state(), FragColor.fragcol, cc);
 	g.out.clear(basic.state(), 1.0);
+	ctx.prerender(g.out);
 	try(Locked lk = tree.lock()) {
 	    instancer.commit(g.out);
 	    maindraw(g.out);
 	}
+	ctx.postrender(g.out);
 	resolve(g);
 	list2d.draw(g);
     }
@@ -287,6 +290,7 @@ public abstract class PView extends Widget {
 	    envdispose();
 	    env = null;
 	}
+	tree.dispose();
 	super.dispose();
     }
 

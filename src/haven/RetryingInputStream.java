@@ -46,11 +46,20 @@ public abstract class RetryingInputStream extends InputStream {
 	return(ret);
     }
 
+    private static final double[] sleep = {0.0, 0.01, 0.1, 0.5, 1.0, 2.0, 5.0};
     protected void retry(int retries, IOException lasterr) throws IOException {
 	if(lasterr instanceof FileNotFoundException)
 	    throw(lasterr);
-	if(retries > 5)
-	    throw(new IOException("already retried 5 times", lasterr));
+	if(retries >= sleep.length) {
+	    throw(new IOException("already retried " + retries + " times", lasterr));
+	} else {
+	    try {
+		Thread.sleep((int)(sleep[retries] * 1000));
+	    } catch(InterruptedException e) {
+		Thread.currentThread().interrupt();
+		throw(new InterruptedIOException("interrupted at " + retries + " retries"));
+	    }
+	}
     }
 
     private InputStream get() throws IOException {
@@ -78,6 +87,17 @@ public abstract class RetryingInputStream extends InputStream {
 		cur.close();
 	    } catch(IOException e) {}
 	    cur = null;
+	}
+    }
+
+    public void check() throws IOException {
+	while(true) {
+	    try {
+		get();
+		break;
+	    } catch(IOException e) {
+		failed(e);
+	    }
 	}
     }
 

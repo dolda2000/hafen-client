@@ -26,10 +26,13 @@
 
 package haven;
 
+import java.awt.image.BufferedImage;
+
 public class Img extends Widget {
     private Indir<Resource> res;
     private Tex img;
-    public boolean hit = false;
+    private BufferedImage rimg;
+    public boolean hit = false, opaque = false;
 	
     @RName("img")
     public static class $_ implements Factory {
@@ -44,28 +47,39 @@ public class Img extends Widget {
 		res = ui.sess.getres((Integer)args[a++]);
 	    }
 	    Img ret = new Img(res);
-	    if(args.length > a)
-		ret.hit = (Integer)args[a++] != 0;
+	    if(args.length > a) {
+		int fl = (Integer)args[a++];
+		ret.hit = (fl & 1) != 0;
+		ret.opaque = (fl & 2) != 0;
+	    }
 	    return(ret);
 	}
+    }
+
+    public void setimg(Tex img) {
+	this.img = img;
+	resize(img.sz());
+	if(img instanceof TexI)
+	    rimg = ((TexI)img).back;
+	else
+	    rimg = null;
     }
 
     public void draw(GOut g) {
 	if(res != null) {
 	    try {
-		img = res.get().layer(Resource.imgc).tex();
-		resize(img.sz());
+		setimg(res.get().flayer(Resource.imgc).tex());
 		res = null;
 	    } catch(Loading e) {}
 	}
 	if(img != null)
 	    g.image(img, Coord.z);
     }
-	
+
     public Img(Tex img) {
 	super(img.sz());
 	this.res = null;
-	this.img = img;
+	setimg(img);
     }
 
     public Img(Indir<Resource> res) {
@@ -90,8 +104,16 @@ public class Img extends Widget {
 	}
     }
     
+    public boolean checkhit(Coord c) {
+	if(!c.isect(Coord.z, sz))
+	    return(false);
+	if(opaque || (rimg == null) || (rimg.getRaster().getNumBands() < 4))
+	    return(true);
+	return(rimg.getRaster().getSample(c.x, c.y, 3) >= 128);
+    }
+
     public boolean mousedown(Coord c, int button) {
-	if(hit) {
+	if(hit && checkhit(c)) {
 	    wdgmsg("click", c, button, ui.modflags());
 	    return(true);
 	}

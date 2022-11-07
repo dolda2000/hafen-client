@@ -60,6 +60,14 @@ public class IBox {
 	return(ctl.sz());
     }
 
+    public Coord bbroff() {
+	return(new Coord(br.sz().x, bb.sz().y));
+    }
+
+    public Coord cbroff() {
+	return(cbr.sz());
+    }
+
     public Coord bisz() {
 	return(new Coord(bl.sz().x + br.sz().x, bt.sz().y + bb.sz().y));
     }

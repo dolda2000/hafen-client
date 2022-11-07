@@ -32,13 +32,13 @@ import java.util.Iterator;
 public class Coord implements Comparable<Coord>, java.io.Serializable {
     public int x, y;
     public static Coord z = new Coord(0, 0);
-    public static Coord[] uecw = {new Coord(0, -1), new Coord(1, 0), new Coord(0, 1), new Coord(-1, 0)};
-    public static Coord[] uccw = {new Coord(0, 0), new Coord(1, 0), new Coord(1, 1), new Coord(0, 1)};
-    public static Coord[] upcw = {new Coord( 0, -1), new Coord( 1, -1), new Coord( 1,  0), new Coord( 1,  1),
-				  new Coord( 0,  1), new Coord(-1,  1), new Coord(-1,  0), new Coord(-1, -1)};
-    public static Coord[] usqc = {new Coord(-1, -1), new Coord( 0, -1), new Coord( 1, -1),
-				  new Coord(-1,  0), new Coord( 0,  0), new Coord( 1,  0),
-				  new Coord(-1,  1), new Coord( 0,  1), new Coord( 1,  1)};
+    public static Coord[] uecw = {of(0, -1), of(1, 0), of(0, 1), of(-1, 0)};
+    public static Coord[] uccw = {of(0, 0), of(1, 0), of(1, 1), of(0, 1)};
+    public static Coord[] upcw = {of( 0, -1), of( 1, -1), of( 1,  0), of( 1,  1),
+				  of( 0,  1), of(-1,  1), of(-1,  0), of(-1, -1)};
+    public static Coord[] usqc = {of(-1, -1), of( 0, -1), of( 1, -1),
+				  of(-1,  0), of( 0,  0), of( 1,  0),
+				  of(-1,  1), of( 0,  1), of( 1,  1)};
 
     public Coord(int x, int y) {
 	this.x = x;
@@ -61,8 +61,12 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	this(d.width, d.height);
     }
 
+    public static Coord of(int x, int y) {return(new Coord(x, y));}
+    public static Coord of(int x) {return(of(x, x));}
+    public static Coord of(Coord c) {return(of(c.x, c.y));}
+
     public static Coord sc(double a, double r) {
-	return(new Coord((int)Math.round(Math.cos(a) * r), -(int)Math.round(Math.sin(a) * r)));
+	return(of((int)Math.round(Math.cos(a) * r), -(int)Math.round(Math.sin(a) * r)));
     }
 
     public boolean equals(Object o) {
@@ -89,7 +93,7 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     }
 
     public Coord add(int ax, int ay) {
-	return(new Coord(x + ax, y + ay));
+	return(of(x + ax, y + ay));
     }
 
     public Coord add(Coord b) {
@@ -97,7 +101,7 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     }
 
     public Coord sub(int ax, int ay) {
-	return(new Coord(x - ax, y - ay));
+	return(of(x - ax, y - ay));
     }
 
     public Coord sub(Coord b) {
@@ -105,39 +109,47 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     }
 
     public Coord mul(int f) {
-	return(new Coord(x * f, y * f));
+	return(of(x * f, y * f));
     }
 
     public Coord mul(int fx, int fy) {
-	return(new Coord(x * fx, y * fy));
+	return(of(x * fx, y * fy));
     }
 
     public Coord mul(double f) {
-	return(new Coord((int)Math.round(x * f), (int)Math.round(y * f)));
+	return(of((int)Math.round(x * f), (int)Math.round(y * f)));
+    }
+
+    public Coord mul(double fx, double fy) {
+	return(of((int)Math.round(x * fx), (int)Math.round(y * fy)));
     }
 
     public Coord inv() {
-	return(new Coord(-x, -y));
+	return(of(-x, -y));
     }
 
     public Coord mul(Coord f) {
-	return(new Coord(x * f.x, y * f.y));
+	return(of(x * f.x, y * f.y));
     }
 
     public Coord2d mul(Coord2d f) {
-	return(new Coord2d(x * f.x, y * f.y));
+	return(Coord2d.of(x * f.x, y * f.y));
     }
 
     public Coord div(Coord d) {
-	return(new Coord(Utils.floordiv(x, d.x), Utils.floordiv(y, d.y)));
+	return(of(Utils.floordiv(x, d.x), Utils.floordiv(y, d.y)));
     }
 
     public Coord div(int d) {
-	return(div(new Coord(d, d)));
+	return(div(of(d)));
+    }
+
+    public Coord div(double d) {
+        return(of((int)Math.round(x / d), (int)Math.round(y / d)));
     }
 
     public Coord mod(Coord d) {
-	return(new Coord(Utils.floormod(x, d.x), Utils.floormod(y, d.y)));
+	return(of(Utils.floormod(x, d.x), Utils.floormod(y, d.y)));
     }
 
     public boolean isect(Coord c, Coord s) {
@@ -185,14 +197,32 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
     public Coord clip(Coord ul, Coord sz) {
 	Coord ret = this;
 	if(ret.x < ul.x)
-	    ret = new Coord(ul.x, ret.y);
+	    ret = of(ul.x, ret.y);
 	if(ret.y < ul.y)
-	    ret = new Coord(ret.x, ul.y);
+	    ret = of(ret.x, ul.y);
 	if(ret.x > ul.x + sz.x)
-	    ret = new Coord(ul.x + sz.x, ret.y);
+	    ret = of(ul.x + sz.x, ret.y);
 	if(ret.y > ul.y + sz.y)
-	    ret = new Coord(ret.x, ul.y + sz.y);
+	    ret = of(ret.x, ul.y + sz.y);
 	return(ret);
+    }
+
+    public Coord clip(Area area) {
+	int x = this.x, y = this.y;
+	if(x < area.ul.x) x = area.ul.x;
+	if(y < area.ul.y) y = area.ul.y;
+	if(x > area.br.x) x = area.br.x;
+	if(y > area.br.y) y = area.br.y;
+	return(((x == this.x) && (y == this.y)) ? this : of(x, y));
+    }
+
+    public Coord clipi(Area area) {
+	int x = this.x, y = this.y;
+	if(x < area.ul.x) x = area.ul.x;
+	if(y < area.ul.y) y = area.ul.y;
+	if(x >= area.br.x) x = area.br.x - 1;
+	if(y >= area.br.y) y = area.br.y - 1;
+	return(((x == this.x) && (y == this.y)) ? this : of(x, y));
     }
 
     public Iterable<Coord> offsets(Coord... list) {
@@ -211,5 +241,17 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 			});
 		}
 	    });
+    }
+
+    public Coord wy(int y) {
+        return(of(x, y));
+    }
+
+    public Coord addy(int dy) {
+        return(of(x, y + dy));
+    }
+
+    public Coord min(int x, int y) {
+	return(of(Math.min(this.x, x), Math.min(this.y, y)));
     }
 }

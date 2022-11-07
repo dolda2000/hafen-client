@@ -31,12 +31,12 @@ import haven.Disposable;
 import haven.render.*;
 
 public class HeapBuffer implements Disposable {
-    public byte[] buf;
+    public ByteBuffer buf;
 
     public <T extends DataBuffer> HeapBuffer(GLEnvironment env, T obj, DataBuffer.Filler<? super T> init) {
 	if(init != null) {
 	    FillBuffers.Array buf = (FillBuffers.Array)init.fill(obj, env);
-	    this.buf = buf.data;
+	    this.buf = buf.data();
 	}
     }
 

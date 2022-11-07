@@ -29,14 +29,18 @@ package haven;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 import java.lang.reflect.*;
 
-public class MainFrame extends java.awt.Frame implements Runnable, Console.Directory {
-    UIPanel p;
+public class MainFrame extends java.awt.Frame implements Console.Directory {
+    public static final Config.Variable<Boolean> initfullscreen = Config.Variable.propb("haven.fullscreen", false);
+    final UIPanel p;
     private final ThreadGroup g;
-    public final Thread mt;
+    private Thread mt;
+    boolean fullscreen;
     DisplayMode fsmode = null, prefs = null;
+    Coord prefssz = null;
 	
     static {
 	try {
@@ -61,16 +65,20 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	
     public void setfs() {
 	GraphicsDevice dev = getGraphicsConfiguration().getDevice();
-	if(prefs != null)
+	if(fullscreen)
 	    return;
-	prefs = dev.getDisplayMode();
+	fullscreen = true;
+	prefssz = new Coord(getSize());
 	try {
 	    setVisible(false);
 	    dispose();
 	    setUndecorated(true);
 	    setVisible(true);
 	    dev.setFullScreenWindow(this);
-	    dev.setDisplayMode(fsmode);
+	    if(fsmode != null) {
+		prefs = dev.getDisplayMode();
+		dev.setDisplayMode(fsmode);
+	    }
 	    pack();
 	} catch(Exception e) {
 	    throw(new RuntimeException(e));
@@ -79,23 +87,22 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	
     public void setwnd() {
 	GraphicsDevice dev = getGraphicsConfiguration().getDevice();
-	if(prefs == null)
+	if(!fullscreen)
 	    return;
 	try {
-	    dev.setDisplayMode(prefs);
+	    if(prefs != null)
+		dev.setDisplayMode(prefs);
 	    dev.setFullScreenWindow(null);
 	    setVisible(false);
 	    dispose();
 	    setUndecorated(false);
+	    if(prefssz != null)
+		setSize(prefssz.x, prefssz.y);
 	    setVisible(true);
 	} catch(Exception e) {
 	    throw(new RuntimeException(e));
 	}
-	prefs = null;
-    }
-
-    public boolean hasfs() {
-	return(prefs != null);
+	fullscreen = false;
     }
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
@@ -121,7 +128,10 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    });
 	cmdmap.put("fsmode", new Console.Command() {
 		public void run(Console cons, String[] args) throws Exception {
-		    if(args.length == 3) {
+		    if((args.length < 2) || args[1].equals("none")) {
+			fsmode = null;
+			Utils.setprefc("fsmode", Coord.z);
+		    } else if(args.length == 3) {
 			DisplayMode mode = findmode(Integer.parseInt(args[1]), Integer.parseInt(args[2]));
 			if(mode == null)
 			    throw(new Exception("No such mode is available"));
@@ -133,21 +143,10 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	cmdmap.put("fs", new Console.Command() {
 		public void run(Console cons, String[] args) {
 		    if(args.length >= 2) {
-			Runnable r;
-			if(Utils.atoi(args[1]) != 0) {
-			    r = new Runnable() {
-				    public void run() {
-					setfs();
-				    }
-				};
-			} else {
-			    r = new Runnable() {
-				    public void run() {
-					setwnd();
-				    }
-				};
-			}
-			getToolkit().getSystemEventQueue().invokeLater(r);
+			if(Utils.atoi(args[1]) != 0)
+			    getToolkit().getSystemEventQueue().invokeLater(MainFrame.this::setfs);
+			else
+			    getToolkit().getSystemEventQueue().invokeLater(MainFrame.this::setwnd);
 		    }
 		}
 	    });
@@ -169,7 +168,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
     }
 
     public MainFrame(Coord isz) {
-	super("Haven and Hearth");
+	super("Haven & Hearth");
 	Coord sz;
 	if(isz == null) {
 	    sz = Utils.getprefc("wndsz", new Coord(800, 600));
@@ -179,24 +178,16 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    sz = isz;
 	}
 	this.g = new ThreadGroup(HackThread.tg(), "Haven client");
-	this.mt = new HackThread(this.g, this, "Haven main thread");
-	JOGLPanel p = new JOGLPanel(sz);
-	this.p = p;
+	Component pp = (Component)(this.p = new JOGLPanel(sz));
 	if(fsmode == null) {
 	    Coord pfm = Utils.getprefc("fsmode", null);
-	    if(pfm != null)
+	    if((pfm != null) && !pfm.equals(Coord.z))
 		fsmode = findmode(pfm.x, pfm.y);
 	}
-	if(fsmode == null) {
-	    DisplayMode cm = getGraphicsConfiguration().getDevice().getDisplayMode();
-	    fsmode = findmode(cm.getWidth(), cm.getHeight());
-	}
-	if(fsmode == null)
-	    fsmode = findmode(800, 600);
-	add(p);
+	add(pp);
 	pack();
 	setResizable(!Utils.getprefb("wndlock", false));
-	p.requestFocus();
+	pp.requestFocus();
 	seticon();
 	setVisible(true);
 	addWindowListener(new WindowAdapter() {
@@ -217,7 +208,7 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
     }
 	
     private void savewndstate() {
-	if(prefs == null) {
+	if(!fullscreen) {
 	    if(getExtendedState() == NORMAL)
 		/* Apparent, getSize attempts to return the "outer
 		 * size" of the window, including WM decorations, even
@@ -232,59 +223,136 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	}
     }
 
-    public void run() {
-	if(Thread.currentThread() != this.mt)
-	    throw(new RuntimeException("MainFrame is being run from an invalid context"));
-	Thread ui = new HackThread(p, "Haven UI thread");
-	ui.start();
-	try {
-	    Session sess = null;
-	    try {
-		while(true) {
-		    UI.Runner fun;
-		    if(sess == null) {
-			Bootstrap bill = new Bootstrap(Config.defserv, Config.mainport);
-			if((Config.authuser != null) && (Config.authck != null)) {
-			    bill.setinitcookie(Config.authuser, Config.authck);
-			    Config.authck = null;
-			}
-			fun = bill;
-			setTitle("Haven and Hearth");
-		    } else {
-			fun = new RemoteUI(sess);
-			setTitle("Haven and Hearth \u2013 " + sess.username);
-		    }
-		    sess = fun.run(p.newui(sess));
-		}
-	    } catch(InterruptedException e) {
-	    } finally {
-		p.newui(null);
-		if(sess != null)
-		    sess.close();
+    public static class ConnectionError extends RuntimeException {
+	public ConnectionError(String mesg) {
+	    super(mesg);
+	}
+    }
+
+    public static Session connect(Object[] args) {
+	String username;
+	byte[] cookie;
+	if((Bootstrap.authuser.get() != null) && (Bootstrap.authck.get() != null)) {
+	    username = Bootstrap.authuser.get();
+	    cookie = Bootstrap.authck.get();
+	} else {
+	    if(Bootstrap.authuser.get() != null) {
+		username = Bootstrap.authuser.get();
+	    } else {
+		if((username = Utils.getpref("tokenname@" + Bootstrap.defserv.get(), null)) == null)
+		    throw(new ConnectionError("no explicit or saved username for host: " + Bootstrap.defserv.get()));
 	    }
-	    savewndstate();
-	} finally {
-	    ui.interrupt();
+	    String token = Utils.getpref("savedtoken-" + username + "@" + Bootstrap.defserv.get(), null);
+	    if(token == null)
+		throw(new ConnectionError("no saved token for user: " + username));
 	    try {
-		ui.join(5000);
-	    } catch(InterruptedException e) {}
-	    if(ui.isAlive())
-		Warning.warn("ui thread failed to terminate");
-	    dispose();
+		AuthClient cl = new AuthClient((Bootstrap.authserv.get() == null) ? Bootstrap.defserv.get() : Bootstrap.authserv.get(), Bootstrap.authport.get());
+		try {
+		    if((username = cl.trytoken(username, Utils.hex2byte(token))) == null)
+			throw(new ConnectionError("authentication with saved token failed"));
+		    cookie = cl.getcookie();
+		} finally {
+		    cl.close();
+		}
+	    } catch(IOException e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+	Session sess;
+	try {
+	    sess = new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(Bootstrap.defserv.get()), Bootstrap.mainport.get()), username, cookie, args);
+	} catch(IOException e) {
+	    throw(new RuntimeException(e));
+	}
+	boolean irq = false;
+	try {
+	    synchronized(sess) {
+		while(sess.state != "") {
+		    if(sess.connfailed != 0) {
+			if(sess.connerror != null)
+			    throw(new ConnectionError(sess.connerror));
+			throw(new ConnectionError(String.format("connection failure: %d", sess.connfailed)));
+		    }
+		    try {
+			sess.wait();
+		    } catch(InterruptedException e) {
+			irq = true;
+		    }
+		}
+	    }
+	} finally {
+	    if(irq)
+		Thread.currentThread().interrupt();
+	}
+	return(sess);
+    }
+
+    private void uiloop() throws InterruptedException {
+	UI.Runner fun = null;
+	while(true) {
+	    if(fun == null)
+		fun = new Bootstrap();
+	    String t = fun.title();
+	    if(t == null)
+		setTitle("Haven & Hearth");
+	    else
+		setTitle("Haven & Hearth \u2013 " + t);
+	    fun = fun.run(p.newui(fun));
+	}
+    }
+
+    private void run(UI.Runner task) {
+	synchronized(this) {
+	    if(this.mt != null)
+		throw(new RuntimeException("MainFrame is already running"));
+	    this.mt = Thread.currentThread();
+	}
+	try {
+	    Thread ui = new HackThread(p, "Haven UI thread");
+	    ui.start();
+	    try {
+		try {
+		    if(task == null) {
+			uiloop();
+		    } else {
+			while(task != null)
+			    task = task.run(p.newui(task));
+		    }
+		} catch(InterruptedException e) {
+		} finally {
+		    p.newui(null);
+		}
+		savewndstate();
+	    } finally {
+		ui.interrupt();
+		try {
+		    ui.join(5000);
+		} catch(InterruptedException e) {}
+		if(ui.isAlive())
+		    Warning.warn("ui thread failed to terminate");
+		dispose();
+	    }
+	} finally {
+	    synchronized(this) {
+		this.mt = null;
+	    }
 	}
     }
     
+    public static final Config.Variable<Boolean> nopreload = Config.Variable.propb("haven.nopreload", false);
     public static void setupres() {
 	if(ResCache.global != null)
 	    Resource.setcache(ResCache.global);
-	if(Config.resurl != null)
-	    Resource.addurl(Config.resurl);
+	if(Resource.resurl.get() != null)
+	    Resource.addurl(Resource.resurl.get());
 	if(ResCache.global != null) {
+	    /*
 	    try {
 		Resource.loadlist(Resource.remote(), ResCache.global.fetch("tmp/allused"), -10);
 	    } catch(IOException e) {}
+	    */
 	}
-	if(!Config.nopreload) {
+	if(!nopreload.get()) {
 	    try {
 		InputStream pls;
 		pls = Resource.class.getResourceAsStream("res-preload");
@@ -298,64 +366,26 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    }
 	}
     }
-    
-    static {
-	if((WebBrowser.self = JnlpBrowser.create()) == null)
-	    WebBrowser.self = DesktopBrowser.create();
+
+    public static final Config.Variable<Path> loadwaited = Config.Variable.propp("haven.loadwaited", "");
+    public static final Config.Variable<Path> allused = Config.Variable.propp("haven.allused", "");
+    public static void resdump() {
+	dumplist(Resource.remote().loadwaited(), loadwaited.get());
+	dumplist(Resource.remote().cached(), allused.get());
+	if(ResCache.global != null) {
+	    try {
+		Writer w = new OutputStreamWriter(ResCache.global.store("tmp/allused"), "UTF-8");
+		try {
+		    Resource.dumplist(Resource.remote().used(), w);
+		} finally {
+		    w.close();
+		}
+	    } catch(IOException e) {}
+	}
     }
 
-    private static void netxsurgery() throws Exception {
-	/* Force off NetX codebase classloading. */
-	Class<?> nxc;
-	try {
-	    nxc = Class.forName("net.sourceforge.jnlp.runtime.JNLPClassLoader");
-	} catch(ClassNotFoundException e1) {
-	    try {
-		nxc = Class.forName("netx.jnlp.runtime.JNLPClassLoader");
-	    } catch(ClassNotFoundException e2) {
-		throw(new Exception("No known NetX on classpath"));
-	    }
-	}
-	ClassLoader cl = MainFrame.class.getClassLoader();
-	if(!nxc.isInstance(cl)) {
-	    throw(new Exception("Not running from a NetX classloader"));
-	}
-	Field cblf, lf;
-	try {
-	    cblf = nxc.getDeclaredField("codeBaseLoader");
-	    lf = nxc.getDeclaredField("loaders");
-	} catch(NoSuchFieldException e) {
-	    throw(new Exception("JNLPClassLoader does not conform to its known structure"));
-	}
-	cblf.setAccessible(true);
-	lf.setAccessible(true);
-	Set<Object> loaders = new HashSet<Object>();
-	Stack<Object> open = new Stack<Object>();
-	open.push(cl);
-	while(!open.empty()) {
-	    Object cur = open.pop();
-	    if(loaders.contains(cur))
-		continue;
-	    loaders.add(cur);
-	    Object curl;
-	    try {
-		curl = lf.get(cur);
-	    } catch(IllegalAccessException e) {
-		throw(new Exception("Reflection accessibility not available even though set"));
-	    }
-	    for(int i = 0; i < Array.getLength(curl); i++) {
-		Object other = Array.get(curl, i);
-		if(nxc.isInstance(other))
-		    open.push(other);
-	    }
-	}
-	for(Object cur : loaders) {
-	    try {
-		cblf.set(cur, null);
-	    } catch(IllegalAccessException e) {
-		throw(new Exception("Reflection accessibility not available even though set"));
-	    }
-	}
+    static {
+	WebBrowser.self = DesktopBrowser.create();
     }
 
     private static void javabughack() throws InterruptedException {
@@ -374,10 +404,6 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	}
 	/* Work around another deadl bug in Sun's JNLP client. */
 	javax.imageio.spi.IIORegistry.getDefaultInstance();
-	try {
-	    netxsurgery();
-	} catch(Exception e) {
-	}
     }
 
     private static void main2(String[] args) {
@@ -388,28 +414,20 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    return;
 	}
 	setupres();
-	MainFrame f = new MainFrame(null);
-	if(Utils.getprefb("fullscreen", false))
-	    f.setfs();
-	f.mt.start();
-	try {
-	    f.mt.join();
-	} catch(InterruptedException e) {
-	    f.mt.interrupt();
-	    return;
-	}
-	dumplist(Resource.remote().loadwaited(), Config.loadwaited);
-	dumplist(Resource.remote().cached(), Config.allused);
-	if(ResCache.global != null) {
+	UI.Runner fun = null;
+	if(Bootstrap.servargs.get() != null) {
 	    try {
-		Writer w = new OutputStreamWriter(ResCache.global.store("tmp/allused"), "UTF-8");
-		try {
-		    Resource.dumplist(Resource.remote().used(), w);
-		} finally {
-		    w.close();
-		}
-	    } catch(IOException e) {}
+		fun = new RemoteUI(connect(Bootstrap.servargs.get()));
+	    } catch(ConnectionError e) {
+		System.err.println("hafen: " + e.getMessage());
+		System.exit(1);
+	    }
 	}
+	MainFrame f = new MainFrame(null);
+	if(initfullscreen.get())
+	    f.setfs();
+	f.run(fun);
+	resdump();
 	System.exit(0);
     }
     
@@ -430,22 +448,15 @@ public class MainFrame extends java.awt.Frame implements Runnable, Console.Direc
 	    } catch(java.net.MalformedURLException e) {
 	    }
 	}
-	Thread main = new HackThread(g, new Runnable() {
-		public void run() {
-		    main2(args);
-		}
-	    }, "Haven main thread");
+	Thread main = new HackThread(g, () -> main2(args), "Haven main thread");
 	main.start();
     }
 	
-    private static void dumplist(Collection<Resource> list, String fn) {
+    private static void dumplist(Collection<Resource> list, Path fn) {
 	try {
 	    if(fn != null) {
-		Writer w = new OutputStreamWriter(new FileOutputStream(fn), "UTF-8");
-		try {
+		try(Writer w = Files.newBufferedWriter(fn, Utils.utf8)) {
 		    Resource.dumplist(list, w);
-		} finally {
-		    w.close();
 		}
 	    }
 	} catch(IOException e) {

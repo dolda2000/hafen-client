@@ -703,7 +703,7 @@ public class Ridges extends MapMesh.Hooks {
 	return(true);
     }
 
-    public static boolean brokenp(MCache map, Coord tc) {
+    public static boolean brokenp(MapSource map, Coord tc) {
 	Tiler t = map.tiler(map.gettile(tc));
 	if(!(t instanceof RidgeTile))
 	    return(false);

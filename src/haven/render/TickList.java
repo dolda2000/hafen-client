@@ -136,7 +136,7 @@ public class TickList implements RenderList<TickList.TickNode> {
 		}
 	    }
 	};
-	if(!Config.par)
+	if(!Config.par.get())
 	    copy.forEach(task);
 	else
 	    copy.parallelStream().forEach(task);
@@ -156,7 +156,7 @@ public class TickList implements RenderList<TickList.TickNode> {
 		}
 	    }
 	};
-	if(!Config.par) {
+	if(!Config.par.get()) {
 	    copy.forEach(ent -> task.accept(ent, g));
 	} else {
 	    Collection<Render> subs = new ArrayList<>();

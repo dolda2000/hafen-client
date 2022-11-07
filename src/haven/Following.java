@@ -81,10 +81,7 @@ public class Following extends Moving {
 	    if(tgt != null) {
 		Skeleton.Pose cpose = getpose(tgt);
 		if(!hlpose || (cpose != lpose)) {
-		    Skeleton.BoneOffset bo = xfres.get().layer(Skeleton.BoneOffset.class, xfname);
-		    if(bo == null)
-			throw(new RuntimeException("No such boneoffset in " + xfres.get() + ": " + xfname));
-		    bxf = bo.from(lpose = cpose);
+		    bxf = xfres.get().flayer(Skeleton.BoneOffset.class, xfname).from(lpose = cpose);
 		    hlpose = true;
 		}
 	    } else {

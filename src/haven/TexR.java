@@ -51,12 +51,29 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 	Texture.Filter minfilter = null, magfilter = null, mipfilter = null;
 	while(!buf.eom()) {
 	    int t = buf.uint8();
+	    int fl = (t & 0xc0) >> 6;
+	    t = t & 0x3f;
+	    Message part;
+	    boolean fu;
+	    if(fl == 0) {
+		part = buf;
+		fu = true;
+	    } else if(fl == 1) {
+		part = new MessageBuf(buf.bytes(buf.uint8()));
+		fu = false;
+	    } else if(fl == 2) {
+		int sfl = buf.uint8();
+		part = new MessageBuf(buf.bytes(buf.int32()));
+		fu = false;
+	    } else {
+		throw(new Resource.LoadException("Unknown part flags " + fl + "  in " + res.name, getres()));
+	    }
 	    switch(t) {
 	    case 0:
-		this.img = buf.bytes(buf.int32());
+		this.img = part.bytes(part.int32());
 		break;
 	    case 1:
-		int ma = buf.uint8();
+		int ma = part.uint8();
 		tex.mipmap(new Mipmapper[] {
 			Mipmapper.avg, // Default
 			Mipmapper.avg, // Specific
@@ -66,11 +83,11 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 		    }[ma]);
 		break;
 	    case 2:
-		int magf = buf.uint8();
+		int magf = part.uint8();
 		magfilter = new Texture.Filter[]{NEAREST, LINEAR}[magf];
 		break;
 	    case 3:
-		int minf = buf.uint8();
+		int minf = part.uint8();
 		minfilter = new Texture.Filter[] {NEAREST, LINEAR,
 						  NEAREST, NEAREST,
 						  LINEAR, LINEAR,
@@ -81,10 +98,14 @@ public class TexR extends Resource.Layer implements Resource.IDLayer<Integer> {
 		}[minf];
 		break;
 	    case 4:
-		this.mask = buf.bytes(buf.int32());
+		this.mask = part.bytes(part.int32());
+		break;
+	    case 5:
+		/* Linear color values, not relevant right now */
 		break;
 	    default:
-		throw(new Resource.LoadException("Unknown texture data part " + t + " in " + res.name, getres()));
+		if(fu)
+		    throw(new Resource.LoadException("Unknown texture data part " + t + " in " + res.name, getres()));
 	    }
 	}
 	if(magfilter == null)

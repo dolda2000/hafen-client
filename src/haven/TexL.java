@@ -63,6 +63,7 @@ public abstract class TexL extends TexRender {
     public TexL(Coord sz) {
 	super(mkimg(sz));
 	((Filler)img.tex.init).tex = this;
+	img.tex.desc(this);
     }
 
     public void mipmap(Mipmapper mipmap) {
@@ -160,6 +161,7 @@ public abstract class TexL extends TexRender {
 		if(ret.env == env)
 		    return(ret);
 		ret.dispose();
+		this.decode = null;
 	    }
 	}
     }

@@ -54,6 +54,6 @@ public class DirLight extends Light {
 
     public Object[] params(GroupPipe state) {
 	float[] dir = Homo3D.camxf(state).mul(Homo3D.locxf(state)).mul4(this.dir);
-	return(new Object[] {amb, dif, spc, dir, 0f, 0f, 0f});
+	return(new Object[] {amb, dif, spc, dir, 0f, 0f, 0f, 0f});
     }
 }

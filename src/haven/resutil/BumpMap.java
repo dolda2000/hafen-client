@@ -37,7 +37,7 @@ import static haven.render.sl.Type.*;
 
 public class BumpMap extends State {
     public static final Slot<BumpMap> slot = new Slot<BumpMap>(Slot.Type.DRAW, BumpMap.class);
-    public static final Attribute tan = new Attribute(VEC3, "tab");
+    public static final Attribute tan = new Attribute(VEC3, "tan");
     public static final Attribute bit = new Attribute(VEC3, "bit");
     private static final Uniform ctex = new Uniform(SAMPLER2D, p -> p.get(slot).tex, slot);
     public final Sampler2D tex;

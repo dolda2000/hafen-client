@@ -134,7 +134,9 @@ public class TextureCube extends Texture {
 	}
     }
 
+    public SamplerCube sampler() {return(new SamplerCube(this));}
+
     public String toString() {
-	return(String.format("#<texcube %sx%d %dx%d>", ifmt.cf, ifmt.nc, w, h));
+	return(String.format("#<texcube %sx%d %dx%d%s>", ifmt.cf, ifmt.nc, w, h, descfmt()));
     }
 }

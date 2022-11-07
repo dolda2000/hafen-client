@@ -33,19 +33,20 @@ import haven.render.*;
 
 /* XXX: This whole file is a bit of a mess and could use a bit of a
  * rewrite some rainy day. Synchronization especially is quite hairy. */
-public class MCache {
-    public static final Coord2d tilesz = new Coord2d(11, 11);
+public class MCache implements MapSource {
+    public static final Coord2d tilesz = Coord2d.of(11, 11);
     public static final Coord tilesz2 = tilesz.round(); /* XXX: Remove me in due time. */
-    public static final Coord cmaps = new Coord(100, 100);
-    public static final Coord cutsz = new Coord(25, 25);
+    public static final Coord cmaps = Coord.of(100, 100);
+    public static final Coord cutsz = Coord.of(25, 25);
     public static final Coord cutn = cmaps.div(cutsz);
-    public final Resource.Spec[] nsets = new Resource.Spec[256];
+    private final Object setmon = new Object();
+    private Resource.Spec[] nsets = new Resource.Spec[16];
     @SuppressWarnings("unchecked")
-    private final Reference<Resource>[] sets = new Reference[256];
+    private Reference<Resource>[] sets = new Reference[16];
     @SuppressWarnings("unchecked")
-    private final Reference<Tileset>[] csets = new Reference[256];
+    private Reference<Tileset>[] csets = new Reference[16];
     @SuppressWarnings("unchecked")
-    private final Reference<Tiler>[] tiles = new Reference[256];
+    private Reference<Tiler>[] tiles = new Reference[16];
     private final Waitable.Queue gridwait = new Waitable.Queue();
     Map<Coord, Request> req = new HashMap<Coord, Request>();
     Map<Coord, Grid> grids = new HashMap<Coord, Grid>();
@@ -92,14 +93,81 @@ public class MCache {
 	private int reqs = 0;
     }
 
-    public class Overlay {
-	private Coord c1, c2;
-	private int mask;
+    public static interface OverlayInfo {
+	public Collection<String> tags();
+	public Material mat();
+	public default Material omat() {return(null);}
+    }
 
-	public Overlay(Coord c1, Coord c2, int mask) {
-	    this.c1 = c1;
-	    this.c2 = c2;
-	    this.mask = mask;
+    @Resource.LayerName("overlay")
+    public static class ResOverlay extends Resource.Layer implements OverlayInfo {
+	public final Collection<String> tags;
+	private final int matid, omatid;
+
+	public ResOverlay(Resource res, Message buf) {
+	    res.super();
+	    int ver = buf.uint8();
+	    if(ver == 1) {
+		int matid = 0, omatid = -1;
+		Collection<String> tags = Collections.emptyList();
+		Object[] data = buf.list();
+		for(Object argp : data) {
+		    Object[] arg = (Object[])argp;
+		    switch((String)arg[0]) {
+		    case "tags": {
+			ArrayList<String> tbuf = new ArrayList<>();
+			for(int i = 1; i < arg.length; i++)
+			    tbuf.add(((String)arg[i]).intern());
+			tbuf.trimToSize();
+			tags = tbuf;
+			break;
+		    }
+		    case "mat": {
+			matid = (Integer)arg[1];
+			break;
+		    }
+		    case "omat": {
+			omatid = (Integer)arg[1];
+			break;
+		    }
+		    }
+		}
+		this.matid = matid;
+		this.omatid = omatid;
+		this.tags = tags;
+	    } else {
+		throw(new Resource.LoadException("unknown overlay version: " + ver, res));
+	    }
+	}
+
+	public void init() {
+	}
+
+	public Collection<String> tags() {
+	    return(tags);
+	}
+
+	public Material mat() {
+	    return(getres().flayer(Material.Res.class, matid).get());
+	}
+	public Material omat() {
+	    if(omatid < 0)
+		return(null);
+	    return(getres().flayer(Material.Res.class, omatid).get());
+	}
+
+	public String toString() {
+	    return(String.format("#<res-overlay %s %d>", getres().name, matid));
+	}
+    }
+
+    public class Overlay {
+	private Area a;
+	private OverlayInfo id;
+
+	public Overlay(Area a, OverlayInfo id) {
+	    this.a = a;
+	    this.id = id;
 	    ols.add(this);
 	    olseq++;
 	}
@@ -109,23 +177,39 @@ public class MCache {
 	    olseq++;
 	}
 
-	public void update(Coord c1, Coord c2) {
-	    if(!c1.equals(this.c1) || !c2.equals(this.c2)) {
+	public void update(Area a) {
+	    if(!a.equals(this.a)) {
 		olseq++;
-		this.c1 = c1;
-		this.c2 = c2;
+		this.a = a;
+	    }
+	}
+
+	@Deprecated public void update(Coord c1, Coord c2) {
+	    update(new Area(c1, c2.add(1, 1)));
+	}
+    }
+
+    private void cktileid(int id) {
+	if(id >= nsets.length) {
+	    synchronized(setmon) {
+		if(id >= nsets.length) {
+		    nsets = Utils.extend(nsets, Integer.highestOneBit(id) * 2);
+		    sets  = Utils.extend(sets,  Integer.highestOneBit(id) * 2);
+		    csets = Utils.extend(csets, Integer.highestOneBit(id) * 2);
+		    tiles = Utils.extend(tiles, Integer.highestOneBit(id) * 2);
+		}
 	    }
 	}
     }
 
     public class Grid {
+	public final Coord gc, ul;
 	public final int tiles[] = new int[cmaps.x * cmaps.y];
 	public final float z[] = new float[cmaps.x * cmaps.y];
-	public final int ol[] = new int[cmaps.x * cmaps.y];
-	public final Coord gc, ul;
+	public Indir<Resource> ols[];
+	public boolean ol[][];
 	public long id;
 	public int seq = -1;
-	public String mnm;
 	private int olseq = -1;
 	private final Cut cuts[];
 	private Flavobjs[] fo = new Flavobjs[cutn.x * cutn.y];
@@ -133,7 +217,8 @@ public class MCache {
 	private class Cut {
 	    MapMesh mesh;
 	    Defer.Future<MapMesh> dmesh;
-	    RenderTree.Node[] ols;
+	    Map<OverlayInfo, RenderTree.Node> ols = new HashMap<>();
+	    Map<OverlayInfo, RenderTree.Node> olols = new HashMap<>();
 	}
 
 	private class Flavobj extends Gob {
@@ -166,8 +251,17 @@ public class MCache {
 	    return(z[tc.x + (tc.y * cmaps.x)]);
 	}
 
-	public int getol(Coord tc) {
-	    return(ol[tc.x + (tc.y * cmaps.x)]);
+	public void getol(OverlayInfo id, Area a, boolean[] buf) {
+	    for(int i = 0; i < ols.length; i++) {
+		if(ols[i].get().layer(ResOverlay.class) == id) {
+		    int o = 0;
+		    for(Coord c : a)
+			buf[o++] = ol[i][c.x + (c.y * cmaps.x)];
+		    return;
+		}
+	    }
+	    for(int o = 0; o < buf.length; o++)
+		buf[o] = false;
 	}
 
 	private class Flavobjs implements RenderTree.Node {
@@ -260,7 +354,8 @@ public class MCache {
 		    MapMesh old = cut.mesh;
 		    cut.mesh = cut.dmesh.get();
 		    cut.dmesh = null;
-		    cut.ols = null;
+		    cut.ols.clear();
+		    cut.olols.clear();
 		    if(old != null)
 			old.dispose();
 		}
@@ -268,26 +363,36 @@ public class MCache {
 	    return(cut.mesh);
 	}
 	
-	public RenderTree.Node getolcut(int ol, Coord cc) {
+	public RenderTree.Node getolcut(OverlayInfo id, Coord cc) {
 	    int nseq = MCache.this.olseq;
 	    if(this.olseq != nseq) {
 		for(int i = 0; i < cutn.x * cutn.y; i++) {
-		    if(cuts[i].ols != null) {
-			for(RenderTree.Node r : cuts[i].ols) {
-			    if(r instanceof Disposable)
-				((Disposable)r).dispose();
-			}
+		    for(RenderTree.Node r : cuts[i].ols.values()) {
+			if(r instanceof Disposable)
+			    ((Disposable)r).dispose();
 		    }
-		    cuts[i].ols = null;
+		    for(RenderTree.Node r : cuts[i].olols.values()) {
+			if(r instanceof Disposable)
+			    ((Disposable)r).dispose();
+		    }
+		    cuts[i].ols.clear();
+		    cuts[i].olols.clear();
 		}
 		this.olseq = nseq;
 	    }
 	    Cut cut = geticut(cc);
-	    if(cut.ols == null)
-		cut.ols = getcut(cc).makeols();
-	    return(cut.ols[ol]);
+	    if(!cut.ols.containsKey(id)) {
+		cut.ols.put(id, getcut(cc).makeol(id));
+		cut.olols.put(id, getcut(cc).makeolol(id));
+	    }
+	    return(cut.ols.get(id));
 	}
 	
+	public RenderTree.Node getololcut(OverlayInfo id, Coord cc) {
+	    getolcut(id, cc);
+	    return(geticut(cc).olols.get(id));
+	}
+
 	private void buildcut(final Coord cc) {
 	    final Cut cut = geticut(cc);
 	    Defer.Future<?> prev = cut.dmesh;
@@ -313,7 +418,7 @@ public class MCache {
 		for(cc.x = 0; cc.x < cutn.x; cc.x++) {
 		    if((((nc.x < 0) && (cc.x == 0)) || ((nc.x > 0) && (cc.x == cutn.x - 1)) || (nc.x == 0)) &&
 		       (((nc.y < 0) && (cc.y == 0)) || ((nc.y > 0) && (cc.y == cutn.y - 1)) || (nc.y == 0))) {
-			buildcut(new Coord(cc));
+			buildcut(Coord.of(cc));
 		    }
 		}
 	    }
@@ -336,13 +441,13 @@ public class MCache {
 	private void invalidate() {
 	    for(int y = 0; y < cutn.y; y++) {
 		for(int x = 0; x < cutn.x; x++)
-		    buildcut(new Coord(x, y));
+		    buildcut(Coord.of(x, y));
 	    }
 	    fo = new Flavobjs[cutn.x * cutn.y];
 	    for(Coord ic : new Coord[] {
-		    new Coord(-1, -1), new Coord( 0, -1), new Coord( 1, -1),
-		    new Coord(-1,  0),                    new Coord( 1,  0),
-		    new Coord(-1,  1), new Coord( 0,  1), new Coord( 1,  1)}) {
+		    Coord.of(-1, -1), Coord.of( 0, -1), Coord.of( 1, -1),
+		    Coord.of(-1,  0),                   Coord.of( 1,  0),
+		    Coord.of(-1,  1), Coord.of( 0,  1), Coord.of( 1,  1)}) {
 		Grid ng = grids.get(gc.add(ic));
 		if(ng != null)
 		    ng.ivneigh(ic.inv());
@@ -355,78 +460,187 @@ public class MCache {
 		    cut.dmesh.cancel();
 		if(cut.mesh != null)
 		    cut.mesh.dispose();
-		if(cut.ols != null) {
-		    for(RenderTree.Node r : cut.ols) {
-			if(r instanceof Disposable)
-			    ((Disposable)r).dispose();
-		    }
+		for(RenderTree.Node r : cut.ols.values()) {
+		    if(r instanceof Disposable)
+			((Disposable)r).dispose();
+		}
+		for(RenderTree.Node r : cut.olols.values()) {
+		    if(r instanceof Disposable)
+			((Disposable)r).dispose();
 		}
 	    }
 	}
 
-	public void fill(Message msg) {
-	    String mmname = msg.string().intern();
-	    if(mmname.equals(""))
-		mnm = null;
-	    else
-		mnm = mmname;
-	    int[] pfl = new int[256];
+	private void filltiles(Message buf) {
 	    while(true) {
-		int pidx = msg.uint8();
-		if(pidx == 255)
-		    break;
-		pfl[pidx] = msg.uint8();
-	    }
-	    Message blob = new ZMessage(msg);
-	    id = blob.int64();
-	    while(true) {
-		int tileid = blob.uint8();
+		int tileid = buf.uint8();
 		if(tileid == 255)
 		    break;
-		String resnm = blob.string();
-		int resver = blob.uint16();
+		String resnm = buf.string();
+		int resver = buf.uint16();
+		cktileid(tileid);
 		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
 	    }
-	    for(int i = 0; i < tiles.length; i++)
-		tiles[i] = blob.uint8();
-	    for(int i = 0; i < z.length; i++)
-		z[i] = blob.int16();
-	    for(int i = 0; i < ol.length; i++)
-		ol[i] = 0;
+	    for(int i = 0; i < tiles.length; i++) {
+		tiles[i] = buf.uint8();
+		if(nsets[tiles[i]] == null)
+		    throw(new Message.FormatError(String.format("Got undefined tile: " + tiles[i])));
+	    }
+	}
+
+	private void filltiles2(Message buf) {
+	    int[] tileids = new int[1];
+	    int maxid = 0;
 	    while(true) {
-		int pidx = blob.uint8();
+		int encid = buf.uint16();
+		if(encid == 65535)
+		    break;
+		maxid = Math.max(maxid, encid);
+		int tileid = buf.uint16();
+		if(encid >= tileids.length)
+		    tileids = Utils.extend(tileids, Integer.highestOneBit(encid) * 2);
+		tileids[encid] = tileid;
+		String resnm = buf.string();
+		int resver = buf.uint16();
+		cktileid(tileid);
+		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
+	    }
+	    boolean lg = maxid >= 256;
+	    for(int i = 0; i < tiles.length; i++) {
+		tiles[i] = tileids[lg ? buf.uint16() : buf.uint8()];
+		if(nsets[tiles[i]] == null)
+		    throw(new Message.FormatError(String.format("Got undefined tile: " + tiles[i])));
+	    }
+	}
+
+	private void fillz(Message buf) {
+	    int fmt = buf.uint8();
+	    if(fmt == 0) {
+		float z = buf.float32() * 11;
+		for(int i = 0; i < this.z.length; i++)
+		    this.z[i] = z;
+	    } else if(fmt == 1) {
+		float min = buf.float32() * 11, q = buf.float32() * 11;
+		for(int i = 0; i < z.length; i++)
+		    z[i] = min + (buf.uint8() * q);
+	    } else if(fmt == 2) {
+		float min = buf.float32() * 11, q = buf.float32() * 11;
+		for(int i = 0; i < z.length; i++)
+		    z[i] = min + (buf.uint16() * q);
+	    } else if(fmt == 3) {
+		for(int i = 0; i < z.length; i++)
+		    z[i] = buf.float32() * 11;
+	    } else {
+		throw(new Message.FormatError(String.format("Unknown z-map format: %d", fmt)));
+	    }
+	}
+
+	private Indir<Resource>[] fill_plots;
+	private void decplots(Message buf) {
+	    @SuppressWarnings("unchecked") Indir<Resource>[] pt = new Indir[256];
+	    while(!buf.eom()) {
+		int pidx = buf.uint8();
 		if(pidx == 255)
 		    break;
-		int fl = pfl[pidx];
-		int type = blob.uint8();
-		Coord c1 = new Coord(blob.uint8(), blob.uint8());
-		Coord c2 = new Coord(blob.uint8(), blob.uint8());
-		int ol;
-		if(type == 0) {
-		    if((fl & 1) == 1)
-			ol = 2;
-		    else
-			ol = 1;
-		} else if(type == 1) {
-		    if((fl & 1) == 1)
-			ol = 8;
-		    else
-			ol = 4;
-		} else if(type == 2) {
-		    if((fl & 1) == 1)
-			ol = 32;
-		    else
-			ol = 16;
-		} else if(type == 3) {
-		    ol = 64;
+		pt[pidx] = sess.getres(buf.uint16());
+	    }
+	    fill_plots = pt;
+	}
+
+	private void fillplots(Message buf) {
+	    if(fill_plots == null)
+		return;
+	    @SuppressWarnings("unchecked") Indir<Resource>[] olids = new Indir[0];
+	    boolean[][] ols = {};
+	    while(!buf.eom()) {
+		int pidx = buf.uint8();
+		if(pidx == 255)
+		    break;
+		int fl = buf.uint8();
+		Coord c1 = Coord.of(buf.uint8(), buf.uint8());
+		Coord c2 = Coord.of(buf.uint8(), buf.uint8());
+		boolean[] mask = new boolean[(c2.x - c1.x) * (c2.y - c1.y)];
+		if((fl & 1) != 0) {
+		    for(int i = 0, l = 0, m = buf.uint8(); i < mask.length; i++) {
+			if(l >= 8) {
+			    m = buf.uint8();
+			    l = 0;
+			}
+			mask[i] = (m & 1) != 0;
+			m >>= 1;
+			l++;
+		    }
 		} else {
-		    throw(new RuntimeException("Unknown plot type " + type));
+		    for(int i = 0; i < mask.length; i++)
+			mask[i] = true;
 		}
-		for(int y = c1.y; y <= c2.y; y++) {
-		    for(int x = c1.x; x <= c2.x; x++) {
-			this.ol[x + (y * cmaps.x)] |= ol;
+		Indir<Resource> olid = fill_plots[pidx];
+		if(olid == null)
+		    continue;
+		int oi;
+		find: {
+		    for(oi = 0; oi < olids.length; oi++) {
+			if(olids[oi] == olid)
+			    break find;
+		    }
+		    olids = Arrays.copyOf(olids, oi + 1);
+		    ols = Arrays.copyOf(ols, oi + 1);
+		    olids[oi] = olid;
+		}
+		boolean[] ol = ols[oi];
+		if(ol == null)
+		    ols[oi] = ol = new boolean[cmaps.x * cmaps.y];
+		for(int y = c1.y, mi = 0; y < c2.y; y++) {
+		    for(int x = c1.x; x < c2.x; x++) {
+			ol[x + (y * cmaps.x)] |= mask[mi++];
 		    }
 		}
+	    }
+	    this.ols = olids;
+	    this.ol = ols;
+	    fill_plots = null;
+	}
+
+	private void subfill(Message msg) {
+	    while(!msg.eom()) {
+		String lnm = msg.string();
+		int len = msg.uint8();
+		if((len & 0x80) != 0)
+		    len = msg.int32();
+		Message buf = new LimitMessage(msg, len);
+		switch(lnm) {
+		case "z":
+		    subfill(new ZMessage(buf));
+		    break;
+		case "m":
+		    id = buf.int64();
+		    break;
+		case "t":
+		    filltiles(buf);
+		    break;
+		case "t2":
+		    filltiles2(buf);
+		    break;
+		case "h":
+		    fillz(buf);
+		    break;
+		case "pi":
+		    decplots(buf);
+		    break;
+		case "p":
+		    fillplots(buf);
+		    break;
+		}
+		buf.skip();
+	    }
+	}
+
+	public void fill(Message msg) {
+	    int ver = msg.uint8();
+	    if(ver == 1) {
+		subfill(msg);
+	    } else {
+		throw(new RuntimeException("Unknown map data version " + ver));
 	    }
 	    invalidate();
 	    seq++;
@@ -514,7 +728,7 @@ public class MCache {
 
     public double getcz(double px, double py) {
 	double tw = tilesz.x, th = tilesz.y;
-	Coord ul = new Coord(Utils.floordiv(px, tw), Utils.floordiv(py, th));
+	Coord ul = Coord.of(Utils.floordiv(px, tw), Utils.floordiv(py, th));
 	double sx = Utils.floormod(px, tw) / tw;
 	double sy = Utils.floormod(py, th) / th;
 	return(((1.0f - sy) * (((1.0f - sx) * getfz(ul)) + (sx * getfz(ul.add(1, 0))))) +
@@ -534,17 +748,52 @@ public class MCache {
     }
 
     public Coord3f getzp(Coord2d pc) {
-	return(new Coord3f((float)pc.x, (float)pc.y, (float)getcz(pc)));
+	return(Coord3f.of((float)pc.x, (float)pc.y, (float)getcz(pc)));
     }
 
-    public int getol(Coord tc) {
-	Grid g = getgridt(tc);
-	int ol = g.getol(tc.sub(g.ul));
-	for(Overlay lol : ols) {
-	    if(tc.isect(lol.c1, lol.c2.add(lol.c1.inv()).add(new Coord(1, 1))))
-		ol |= lol.mask;
+    public Collection<OverlayInfo> getols(Area a) {
+	Collection<OverlayInfo> ret = new ArrayList<>();
+	for(Coord gc : a.div(cmaps)) {
+	    Grid g = getgrid(gc);
+	    if(g.ols == null)
+		continue;
+	    for(Indir<Resource> res : g.ols) {
+		OverlayInfo id = res.get().flayer(ResOverlay.class);
+		if(!ret.contains(id))
+		    ret.add(id);
+	    }
 	}
-	return(ol);
+	for(Overlay lol : ols) {
+	    if((lol.a.overlap(a) != null) && !ret.contains(lol.id))
+		ret.add(lol.id);
+	}
+	return(ret);
+    }
+
+    public void getol(OverlayInfo id, Area a, boolean[] buf) {
+	Area ga = a.div(cmaps);
+	if(ga.area() == 1) {
+	    Grid g = getgrid(ga.ul);
+	    g.getol(id, a.xl(g.ul.inv()), buf);
+	} else {
+	    boolean[] gbuf = new boolean[cmaps.x * cmaps.y];
+	    for(Coord gc : ga) {
+		Grid g = getgrid(gc);
+		Area gt = Area.sized(g.ul, cmaps);
+		g.getol(id, Area.sized(Coord.z, cmaps), gbuf);
+		for(Coord tc : a.overlap(gt))
+		    buf[a.ri(tc)] = gbuf[(tc.x - gt.ul.x) + ((tc.y - gt.ul.y) * cmaps.x)];
+	    }
+	}
+	for(Overlay lol : ols) {
+	    if(lol.id != id)
+		continue;
+	    Area la = lol.a.overlap(a);
+	    if(la != null) {
+		for(Coord lc : la)
+		    buf[a.ri(lc)] = true;
+	    }
+	}
     }
     
     public MapMesh getcut(Coord cc) {
@@ -559,9 +808,15 @@ public class MCache {
 	}
     }
 
-    public RenderTree.Node getolcut(int ol, Coord cc) {
+    public RenderTree.Node getolcut(OverlayInfo id, Coord cc) {
 	synchronized(grids) {
-	    return(getgrid(cc.div(cutn)).getolcut(ol, cc.mod(cutn)));
+	    return(getgrid(cc.div(cutn)).getolcut(id, cc.mod(cutn)));
+	}
+    }
+
+    public RenderTree.Node getololcut(OverlayInfo id, Coord cc) {
+	synchronized(grids) {
+	    return(getgrid(cc.div(cutn)).getololcut(id, cc.mod(cutn)));
 	}
     }
 
@@ -612,44 +867,53 @@ public class MCache {
 	}
     }
 
+    public Resource.Spec tilesetn(int i) {
+	Resource.Spec[] nsets = this.nsets;
+	if(i >= nsets.length)
+	    return(null);
+	return(nsets[i]);
+    }
+
     public Resource tilesetr(int i) {
-	synchronized(sets) {
-	    Resource res = (sets[i] == null)?null:(sets[i].get());
-	    if(res == null) {
-		if(nsets[i] == null)
-		    return(null);
-		res = nsets[i].get();
-		sets[i] = new SoftReference<Resource>(res);
-	    }
-	    return(res);
+	Reference<Resource>[] sets = this.sets;
+	if(i >= sets.length)
+	    return(null);
+	Resource res = (sets[i] == null) ? null : sets[i].get();
+	if(res == null) {
+	    Resource.Spec[] nsets = this.nsets;
+	    if(nsets[i] == null)
+		return(null);
+	    sets[i] = new SoftReference<>(res = nsets[i].get());
 	}
+	return(res);
     }
 
     public Tileset tileset(int i) {
-	synchronized(csets) {
-	    Tileset cset = (csets[i] == null)?null:(csets[i].get());
-	    if(cset == null) {
-		Resource res = tilesetr(i);
-		if(res == null)
-		    return(null);
-		csets[i] = new SoftReference<Tileset>(cset = res.layer(Tileset.class));
-	    }
-	    return(cset);
+	Reference<Tileset>[] csets = this.csets;
+	if(i >= csets.length)
+	    return(null);
+	Tileset cset = (csets[i] == null) ? null : csets[i].get();
+	if(cset == null) {
+	    Resource res = tilesetr(i);
+	    if(res == null)
+		return(null);
+	    csets[i] = new SoftReference<>(cset = res.flayer(Tileset.class));
 	}
+	return(cset);
     }
 
     public Tiler tiler(int i) {
-	synchronized(tiles) {
-	    Tiler tile = (tiles[i] == null)?null:(tiles[i].get());
-	    if(tile == null) {
-		Tileset set = tileset(i);
-		if(set == null)
-		    return(null);
-		tile = set.tfac().create(i, set);
-		tiles[i] = new SoftReference<Tiler>(tile);
-	    }
-	    return(tile);
+	Reference<Tiler>[] tiles = this.tiles;
+	if(i >= tiles.length)
+	    return(null);
+	Tiler tile = (tiles[i] == null) ? null : tiles[i].get();
+	if(tile == null) {
+	    Tileset set = tileset(i);
+	    if(set == null)
+		return(null);
+	    tiles[i] = new SoftReference<>(tile = set.tfac().create(i, set));
 	}
+	return(tile);
     }
 
     public void trimall() {
@@ -691,7 +955,7 @@ public class MCache {
     public void request(Coord gc) {
 	synchronized(req) {
 	    if(!req.containsKey(gc))
-		req.put(new Coord(gc), new Request());
+		req.put(Coord.of(gc), new Request());
 	}
     }
 
@@ -701,7 +965,7 @@ public class MCache {
 	for(rc.y = ul.y; rc.y <= br.y; rc.y++) {
 	    for(rc.x = ul.x; rc.x <= br.x; rc.x++) {
 		try {
-		    getcut(new Coord(rc));
+		    getcut(Coord.of(rc));
 		} catch(Loading e) {}
 	    }
 	}

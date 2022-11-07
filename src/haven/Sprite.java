@@ -52,6 +52,15 @@ public abstract class Sprite implements RenderTree.Node {
 	public default Glob glob() {return(context(Glob.class));}
     }
 
+    public class RecOwner implements Owner, Skeleton.HasPose {
+	public Random mkrandoom() {return(owner.mkrandoom());}
+	public <T> T context(Class<T> cl) {return(owner.context(cl));}
+
+	public Resource getres() {return(res);}
+
+	public Skeleton.Pose getpose() {return(Skeleton.getpose(Sprite.this));}
+    }
+
     public static interface CDel {
 	public void delete();
     }
@@ -60,46 +69,31 @@ public abstract class Sprite implements RenderTree.Node {
 	public void update(Message sdt);
     }
 
-    public static class FactMaker implements Resource.PublishedCode.Instancer {
-	public Factory make(Class<?> cl) {
-	    if(Factory.class.isAssignableFrom(cl))
-		return(Utils.construct(cl.asSubclass(Factory.class)));
-	    try {
-		Function<Object[], Sprite> make = Utils.smthfun(cl, "mksprite", Sprite.class, Owner.class, Resource.class, Message.class);
-		return(new Factory() {
-			public Sprite create(Owner owner, Resource res, Message sdt) {
-			    return(make.apply(new Object[] {owner, res, sdt}));
-			}
-		    });
-	    } catch(NoSuchMethodException e) {}
-	    if(Sprite.class.isAssignableFrom(cl)) {
-		Class<? extends Sprite> scl = cl.asSubclass(Sprite.class);
-		try {
-		    Function<Object[], ? extends Sprite> make = Utils.consfun(scl, Owner.class, Resource.class);
-		    return((owner, res, sdt) -> make.apply(new Object[]{owner, res}));
-		} catch(NoSuchMethodException e) {}
-		try {
-		    Function<Object[], ? extends Sprite> make = Utils.consfun(scl, Owner.class, Resource.class, Message.class);
-		    return((owner, res, sdt) -> make.apply(new Object[]{owner, res, sdt}));
-		} catch(NoSuchMethodException e) {}
-	    }
-	    throw(new RuntimeException("Could not find any suitable constructor for dynamic sprite"));
-	}
-    }
+    public static class FactMaker extends Resource.PublishedCode.Instancer.Chain<Factory> {
+	public FactMaker() {super(Factory.class);}
+	{
+	    add(new Direct<>(Factory.class));
+	    add(new StaticCall<>(Factory.class, "mksprite", Sprite.class, new Class<?>[] {Owner.class, Resource.class, Message.class},
+				 (make) -> (owner, res, sdt) -> make.apply(new Object[] {owner, res, sdt})));
+	    add(new Construct<>(Factory.class, Sprite.class, new Class<?>[] {Owner.class, Resource.class},
+				(cons) -> (owner, res, sdt) -> cons.apply(new Object[] {owner, res})));
+	    add(new Construct<>(Factory.class, Sprite.class, new Class<?>[] {Owner.class, Resource.class, Message.class},
+				(cons) -> (owner, res, sdt) -> cons.apply(new Object[] {owner, res, sdt})));
+	}}
 
     @Resource.PublishedCode(name = "spr", instancer = FactMaker.class)
     public interface Factory {
 	public Sprite create(Owner owner, Resource res, Message sdt);
     }
-    
+
     public static class ResourceException extends RuntimeException {
 	public Resource res;
-		
+
 	public ResourceException(String msg, Resource res) {
 	    super(msg + " (" + res + ", from " + res.source + ")");
 	    this.res = res;
 	}
-		
+
 	public ResourceException(String msg, Throwable cause, Resource res) {
 	    super(msg + " (" + res + ", from " + res.source + ")", cause);
 	    this.res = res;
@@ -147,7 +141,7 @@ public abstract class Sprite implements RenderTree.Node {
 
     public void gtick(Render g) {
     }
-    
+
     public void dispose() {
     }
 }
