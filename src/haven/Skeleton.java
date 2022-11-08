@@ -301,35 +301,31 @@ public class Skeleton {
 		});
 	}
 
-	/* XXXRENDER
-	public class BoneAlign extends Location {
+	public class BoneAlign implements Supplier<Pipe.Op> {
 	    private final Coord3f ref;
 	    private final int orig, tgt;
+	    private Location cur;
 	    private int cseq = -1;
 	    
 	    public BoneAlign(Coord3f ref, Bone orig, Bone tgt) {
-		super(Matrix4f.identity());
 		this.ref = ref;
 		this.orig = orig.idx;
 		this.tgt = tgt.idx;
 	    }
 		
-	    public Matrix4f fin(Matrix4f p) {
+	    public Location get() {
 		if(cseq != seq) {
 		    Coord3f cur = new Coord3f(gpos[tgt][0] - gpos[orig][0], gpos[tgt][1] - gpos[orig][1], gpos[tgt][2] - gpos[orig][2]).norm();
 		    Coord3f axis = cur.cmul(ref).norm();
 		    float ang = (float)Math.acos(cur.dmul(ref));
-		    /-
-		    System.err.println(cur + ", " + ref + ", " + axis + ", " + ang);
-		    -/
-		    update(Transform.makexlate(new Matrix4f(), new Coord3f(gpos[orig][0], gpos[orig][1], gpos[orig][2]))
-			   .mul1(Transform.makerot(new Matrix4f(), axis, -ang)));
+		    // Debug.dump(cur, ref, axis, ang);
+		    this.cur = new Location(Transform.makexlate(new Matrix4f(), new Coord3f(gpos[orig][0], gpos[orig][1], gpos[orig][2]))
+				       .mul1(Transform.makerot(new Matrix4f(), axis, -ang)));
 		    cseq = seq;
 		}
-		return(super.fin(p));
+		return(cur);
 	    }
 	}
-	*/
 
 	public void boneoff(int bone, float[] offtrans) {
 	    /* It would be nice if these "new float"s get
@@ -1088,26 +1084,16 @@ public class Skeleton {
 			return(pose.bonetrans(bone.idx));
 		    });
 	    };
-	    /* XXXRENDER
-	    opcodes[3] = new HatingJava() {
-		    public Command make(Message buf) {
-			float rx1 = (float)buf.cpfloat();
-			float ry1 = (float)buf.cpfloat();
-			float rz1 = (float)buf.cpfloat();
-			float l = (float)Math.sqrt((rx1 * rx1) + (ry1 * ry1) + (rz1 * rz1));
-			final Coord3f ref = new Coord3f(rx1 / l, ry1 / l, rz1 / l);
-			final String orignm = buf.string();
-			final String tgtnm = buf.string();
-			return(new Command() {
-				public GLState make(Pose pose) {
-				    Bone orig = pose.skel().bones.get(orignm);
-				    Bone tgt = pose.skel().bones.get(tgtnm);
-				    return(pose.new BoneAlign(ref, orig, tgt));
-				}
-			    });
-		    }
-		};
-	    */
+	    opcodes[3] = buf -> {
+		Coord3f ref = Coord3f.of((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat()).norm();
+		final String orignm = buf.string();
+		final String tgtnm = buf.string();
+		return(pose -> {
+			Bone orig = pose.skel().bones.get(orignm);
+			Bone tgt = pose.skel().bones.get(tgtnm);
+			return(pose.new BoneAlign(ref, orig, tgt));
+		    });
+	    };
 	    opcodes[4] = buf -> {
 		return(pose -> () -> Location.nullrot);
 	    };
