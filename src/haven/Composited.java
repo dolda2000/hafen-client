@@ -538,6 +538,7 @@ public class Composited implements RenderTree.Node {
 	    slot.add(mod);
 	for(Equ equ : this.equ)
 	    slot.add(equ);
+	// slot.add(pose.new Debug());
     }
 
     public void added(RenderTree.Slot slot) {

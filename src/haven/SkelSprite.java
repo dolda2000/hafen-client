@@ -88,7 +88,8 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose,
     private void parts(RenderTree.Slot slot) {
 	for(RenderTree.Node p : parts)
 	    slot.add(p);
-	// slot.add(pose.debug); XXXRENDER
+	// if(pose != null)
+	//     slot.add(pose.new Debug());
     }
 
     public <T> T context(Class<T> cl) {
