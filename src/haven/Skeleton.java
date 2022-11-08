@@ -354,7 +354,7 @@ public class Skeleton {
 	
 	public class Debug implements RenderTree.Node, Rendered, TickList.Ticking, TickList.TickNode {
 	    private final VertexArray.Layout fmt = new VertexArray.Layout(new VertexArray.Layout.Input(Homo3D.vertex,     new VectorFormat(3, NumberFormat.FLOAT32), 0,  0, 16),
-										new VertexArray.Layout.Input(VertexColor.color, new VectorFormat(4, NumberFormat.UNORM8),  0, 12, 16));
+									  new VertexArray.Layout.Input(VertexColor.color, new VectorFormat(4, NumberFormat.UNORM8),  0, 12, 16));
 	    private final VertexArray.Buffer data;
 	    private final Model model;
 	    private final int[] bperm;
