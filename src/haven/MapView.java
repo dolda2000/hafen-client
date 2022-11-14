@@ -1073,6 +1073,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	}
 
+	public boolean valid(GSettings prefs) {
+	    return((prefs == gprefs) ||
+		   (((prefs == null) == (gprefs == null)) &&
+		    (prefs.lightmode.val == gprefs.lightmode.val) &&
+		    (prefs.maxlights.val == gprefs.maxlights.val)));
+	}
+
 	public Pipe.Op compile(Object[][] params, Projection proj) {
 	    if(zgrid == null) {
 		Lighting.SimpleLights ret = new Lighting.SimpleLights(params);
@@ -1088,7 +1095,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private LightCompiler lighting;
     protected void lights() {
 	GSettings gprefs = basic.state().get(GSettings.slot);
-	if((lighting == null) || (lighting.gprefs != gprefs)) {
+	if((lighting == null) || !lighting.valid(gprefs)) {
 	    basic(Light.class, null);
 	    lighting = new LightCompiler(gprefs);
 	}
