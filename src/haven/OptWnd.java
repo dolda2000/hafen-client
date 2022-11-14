@@ -396,6 +396,49 @@ public class OptWnd extends Window {
 	}
     }
 
+    public class AudioPanel extends Panel {
+	public AudioPanel(Panel back) {
+	    prev = add(new Label("Master audio volume"), 0, 0);
+	    prev = add(new HSlider(UI.scale(200), 0, 1000, (int)(Audio.volume * 1000)) {
+		    public void changed() {
+			Audio.setvolume(val / 1000.0);
+		    }
+		}, prev.pos("bl").adds(0, 2));
+	    prev = add(new Label("Interface sound volume"), prev.pos("bl").adds(0, 15));
+	    prev = add(new HSlider(UI.scale(200), 0, 1000, 0) {
+		    protected void attach(UI ui) {
+			super.attach(ui);
+			val = (int)(ui.audio.aui.volume * 1000);
+		    }
+		    public void changed() {
+			ui.audio.aui.setvolume(val / 1000.0);
+		    }
+		}, prev.pos("bl").adds(0, 2));
+	    prev = add(new Label("In-game event volume"), prev.pos("bl").adds(0, 5));
+	    prev = add(new HSlider(UI.scale(200), 0, 1000, 0) {
+		    protected void attach(UI ui) {
+			super.attach(ui);
+			val = (int)(ui.audio.pos.volume * 1000);
+		    }
+		    public void changed() {
+			ui.audio.pos.setvolume(val / 1000.0);
+		    }
+		}, prev.pos("bl").adds(0, 2));
+	    prev = add(new Label("Ambient volume"), prev.pos("bl").adds(0, 5));
+	    prev = add(new HSlider(UI.scale(200), 0, 1000, 0) {
+		    protected void attach(UI ui) {
+			super.attach(ui);
+			val = (int)(ui.audio.amb.volume * 1000);
+		    }
+		    public void changed() {
+			ui.audio.amb.setvolume(val / 1000.0);
+		    }
+		}, prev.pos("bl").adds(0, 2));
+	    add(new PButton(UI.scale(200), "Back", 27, back), prev.pos("bl").adds(0, 30));
+	    pack();
+	}
+    }
+
     private static final Text kbtt = RichText.render("$col[255,255,0]{Escape}: Cancel input\n" +
 						     "$col[255,255,0]{Backspace}: Revert to default\n" +
 						     "$col[255,255,0]{Delete}: Disable keybinding", 0);
@@ -606,7 +649,7 @@ public class OptWnd extends Window {
 	super(Coord.z, "Options", true);
 	main = add(new Panel());
 	video = add(new VideoPanel(main));
-	audio = add(new Panel());
+	audio = add(new AudioPanel(main));
 	keybind = add(new BindingPanel(main));
 
 	int y = 0;
@@ -627,45 +670,6 @@ public class OptWnd extends Window {
 		    OptWnd.this.hide();
 	}), 0, y).pos("bl").adds(0, 5).y;
 	this.main.pack();
-
-	prev = audio.add(new Label("Master audio volume"), 0, 0);
-	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, (int)(Audio.volume * 1000)) {
-		public void changed() {
-		    Audio.setvolume(val / 1000.0);
-		}
-	    }, prev.pos("bl").adds(0, 2));
-	prev = audio.add(new Label("Interface sound volume"), prev.pos("bl").adds(0, 15));
-	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
-		protected void attach(UI ui) {
-		    super.attach(ui);
-		    val = (int)(ui.audio.aui.volume * 1000);
-		}
-		public void changed() {
-		    ui.audio.aui.setvolume(val / 1000.0);
-		}
-	    }, prev.pos("bl").adds(0, 2));
-	prev = audio.add(new Label("In-game event volume"), prev.pos("bl").adds(0, 5));
-	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
-		protected void attach(UI ui) {
-		    super.attach(ui);
-		    val = (int)(ui.audio.pos.volume * 1000);
-		}
-		public void changed() {
-		    ui.audio.pos.setvolume(val / 1000.0);
-		}
-	    }, prev.pos("bl").adds(0, 2));
-	prev = audio.add(new Label("Ambient volume"), prev.pos("bl").adds(0, 5));
-	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
-		protected void attach(UI ui) {
-		    super.attach(ui);
-		    val = (int)(ui.audio.amb.volume * 1000);
-		}
-		public void changed() {
-		    ui.audio.amb.setvolume(val / 1000.0);
-		}
-	    }, prev.pos("bl").adds(0, 2));
-	audio.add(new PButton(UI.scale(200), "Back", 27, this.main), prev.pos("bl").adds(0, 30));
-	audio.pack();
 
 	chpanel(this.main);
     }
