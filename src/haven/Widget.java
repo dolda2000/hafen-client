@@ -987,9 +987,9 @@ public class Widget {
 	resize(a.sz());
     }
 
-    public void resize(int x, int y) {
-	resize(Coord.of(x, y));
-    }
+    public void resize(int x, int y) {resize(Coord.of(x, y));}
+    public void resizew(int w) {resize(w, sz.y);}
+    public void resizeh(int h) {resize(sz.x, h);}
 
     public void cresize(Widget ch) {
     }
