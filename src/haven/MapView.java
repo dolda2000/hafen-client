@@ -1722,14 +1722,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     public static class StdPlace implements PlobAdjust {
 	boolean freerot = false;
-	Coord2d gran = (plobpgran == 0) ? null : new Coord2d(1.0 / plobpgran, 1.0 / plobpgran).mul(tilesz);
 
 	public void adjust(Plob plob, Coord pc, Coord2d mc, int modflags) {
 	    Coord2d nc;
 	    if((modflags & UI.MOD_SHIFT) == 0)
 		nc = mc.floor(tilesz).mul(tilesz).add(tilesz.div(2));
-	    else if(gran != null)
-		nc = mc.add(gran.div(2)).floor(gran).mul(gran);
+	    else if(plobpgran > 0)
+		nc = mc.div(tilesz).mul(plobpgran).roundf().div(plobpgran).mul(tilesz);
 	    else
 		nc = mc;
 	    Gob pl = plob.mv().player();
