@@ -223,13 +223,21 @@ public abstract class PView extends Widget {
 		pp_resamp = null;
 	    }
 	}
+	if(Debug.ff)
+	    Debug.dump(copy);
 	Iterator<PostProcessor> post = copy.iterator();
 	PostProcessor next = post.hasNext() ? post.next() : null;
-	resolveout(g, next).image(new TexRaw(fragsamp, true), Coord.z);
-	while(next != null) {
+	if(next == null) {
+	    resolveout(g, next).image(new TexRaw(fragsamp, true), Coord.z);
+	} else {
 	    PostProcessor cur = next;
 	    next = post.hasNext() ? post.next() : null;
-	    cur.run(resolveout(g, next), cur.buf);
+	    cur.run(resolveout(g, next), fragsamp);
+	    while(next != null) {
+		cur = next;
+		next = post.hasNext() ? post.next() : null;
+		cur.run(resolveout(g, next), cur.buf);
+	    }
 	}
 	g.defstate();
     }
