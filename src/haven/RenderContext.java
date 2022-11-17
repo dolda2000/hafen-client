@@ -95,6 +95,7 @@ public abstract class RenderContext extends State implements OwnerContext {
 	    run(g, (Sampler2D)in);
 	}
 	public int order() {return(0);}
+	public FrameFormat outformat(FrameFormat in) {return(in);}
 
 	public void dispose() {
 	    if(buf != null)
