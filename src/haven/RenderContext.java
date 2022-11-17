@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import haven.render.*;
 import haven.render.sl.ShaderMacro;
+import haven.render.Texture.Sampler;
 import haven.render.Texture2D.Sampler2D;
 
 public abstract class RenderContext extends State implements OwnerContext {
@@ -37,9 +38,15 @@ public abstract class RenderContext extends State implements OwnerContext {
     private final Map<Global, Integer> global = new IdentityHashMap<>();
 
     public static abstract class PostProcessor implements Disposable {
-	public Sampler2D buf = null;
+	public static final int ORDER_RESOLVE = -200, ORDER_TONEMAP = -100, ORDER_RESAMPLE = 100;
+	public Sampler buf = null;
 
-	public abstract void run(GOut g, Sampler2D in);
+	public void run(GOut g, Sampler2D in) {
+	    throw(new RuntimeException("no PostProcessor.run variant implemented: " + this.getClass()));
+	}
+	public void run(GOut g, Sampler in) {
+	    run(g, (Sampler2D)in);
+	}
 	public int order() {return(0);}
 
 	public void dispose() {
