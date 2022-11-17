@@ -223,8 +223,6 @@ public abstract class PView extends Widget {
 		pp_resamp = null;
 	    }
 	}
-	if(Debug.ff)
-	    Debug.dump(copy);
 	Iterator<PostProcessor> post = copy.iterator();
 	PostProcessor next = post.hasNext() ? post.next() : null;
 	if(next == null) {
