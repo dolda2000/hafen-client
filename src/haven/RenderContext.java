@@ -70,8 +70,11 @@ public abstract class RenderContext extends State implements OwnerContext {
 	}
 
 	public Texture maketex() {
+	    VectorFormat efmt = cfmt;
+	    if(efmt.cf == NumberFormat.DEPTH)
+		efmt = new VectorFormat(1, NumberFormat.FLOAT32);
 	    if(samples == 1)
-		return(new Texture2D(sz, DataBuffer.Usage.STATIC, cfmt, null));
+		return(new Texture2D(sz, DataBuffer.Usage.STATIC, cfmt, efmt, null));
 	    else
 		return(new Texture2DMS(sz, samples, cfmt));
 	}
