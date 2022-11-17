@@ -57,8 +57,9 @@ public abstract class RenderContext extends State implements OwnerContext {
 		this.cfmt = t.ifmt;
 		this.samples = t.s;
 		this.sz = t.sz();
+	    } else {
+		throw(new ClassCastException(String.valueOf(tex)));
 	    }
-	    throw(new ClassCastException(String.valueOf(tex)));
 	}
 
 	public boolean equals(FrameFormat that) {
