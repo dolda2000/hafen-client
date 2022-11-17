@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import haven.render.*;
+import haven.RenderContext.FrameFormat;
 import haven.RenderContext.PostProcessor;
 import haven.render.Texture.Sampler;
 
@@ -79,49 +80,6 @@ public abstract class PView extends Widget {
 	public void basic(Object id, Pipe.Op state) {wdg.basic(id, state);}
 
 	public String toString() {return(String.format("#<widgetctx %s>", wdg.getClass()));}
-    }
-
-    public static class FrameFormat {
-	public VectorFormat cfmt;
-	public int samples;
-	public Coord sz;
-
-	public FrameFormat(VectorFormat cfmt, int samples, Coord sz) {
-	    this.cfmt = cfmt; this.samples = samples; this.sz = sz;
-	}
-
-	public FrameFormat(Texture tex) {
-	    if(tex instanceof Texture2D) {
-		Texture2D t = (Texture2D)tex;
-		this.cfmt = t.ifmt;
-		this.samples = 1;
-		this.sz = t.sz();
-	    } else if(tex instanceof Texture2DMS) {
-		Texture2DMS t = (Texture2DMS)tex;
-		this.cfmt = t.ifmt;
-		this.samples = t.s;
-		this.sz = t.sz();
-	    }
-	    throw(new ClassCastException(String.valueOf(tex)));
-	}
-
-	public boolean equals(FrameFormat that) {
-	    return(Utils.eq(this.cfmt, that.cfmt) && (this.samples == that.samples) && Utils.eq(this.sz, that.sz));
-	}
-	public boolean equals(Object x) {
-	    return((x instanceof FrameFormat) && equals((FrameFormat)x));
-	}
-
-	public Texture maketex() {
-	    if(samples == 1)
-		return(new Texture2D(sz, DataBuffer.Usage.STATIC, cfmt, null));
-	    else
-		return(new Texture2DMS(sz, samples, cfmt));
-	}
-
-	public boolean matching(Texture tex) {
-	    return((tex != null) && equals(new FrameFormat(tex)));
-	}
     }
 
     protected Coord rendersz() {

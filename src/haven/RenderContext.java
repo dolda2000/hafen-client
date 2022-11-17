@@ -37,6 +37,49 @@ public abstract class RenderContext extends State implements OwnerContext {
     private final List<PostProcessor> post = new ArrayList<>();
     private final Map<Global, Integer> global = new IdentityHashMap<>();
 
+    public static class FrameFormat {
+	public VectorFormat cfmt;
+	public int samples;
+	public Coord sz;
+
+	public FrameFormat(VectorFormat cfmt, int samples, Coord sz) {
+	    this.cfmt = cfmt; this.samples = samples; this.sz = sz;
+	}
+
+	public FrameFormat(Texture tex) {
+	    if(tex instanceof Texture2D) {
+		Texture2D t = (Texture2D)tex;
+		this.cfmt = t.ifmt;
+		this.samples = 1;
+		this.sz = t.sz();
+	    } else if(tex instanceof Texture2DMS) {
+		Texture2DMS t = (Texture2DMS)tex;
+		this.cfmt = t.ifmt;
+		this.samples = t.s;
+		this.sz = t.sz();
+	    }
+	    throw(new ClassCastException(String.valueOf(tex)));
+	}
+
+	public boolean equals(FrameFormat that) {
+	    return(Utils.eq(this.cfmt, that.cfmt) && (this.samples == that.samples) && Utils.eq(this.sz, that.sz));
+	}
+	public boolean equals(Object x) {
+	    return((x instanceof FrameFormat) && equals((FrameFormat)x));
+	}
+
+	public Texture maketex() {
+	    if(samples == 1)
+		return(new Texture2D(sz, DataBuffer.Usage.STATIC, cfmt, null));
+	    else
+		return(new Texture2DMS(sz, samples, cfmt));
+	}
+
+	public boolean matching(Texture tex) {
+	    return((tex != null) && equals(new FrameFormat(tex)));
+	}
+    }
+
     public static abstract class PostProcessor implements Disposable {
 	public static final int ORDER_RESOLVE = -200, ORDER_TONEMAP = -100, ORDER_RESAMPLE = 100;
 	public Sampler buf = null;
