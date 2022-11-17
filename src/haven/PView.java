@@ -191,11 +191,10 @@ public abstract class PView extends Widget {
 	}
     }
 
-    private GOut resolveout(GOut def, PostProcessor next) {
+    private GOut resolveout(GOut def, FrameFormat fmt, PostProcessor next) {
 	if(next == null)
 	    return(def);
-	FrameFormat fmt = new FrameFormat(fragcol);
-	if(!fmt.matching(next.buf.tex)) {
+	if((next.buf == null) || !fmt.matching(next.buf.tex)) {
 	    if(next.buf != null)
 		next.buf.dispose();
 	    Texture tex = fmt.maketex();
@@ -227,17 +226,20 @@ public abstract class PView extends Widget {
 	PostProcessor next = post.hasNext() ? post.next() : null;
 	if(next == null) {
 	    if(fragsamp instanceof Texture2DMS.Sampler2DMS)
-		resolveout(g, next).image(new TexMS((Texture2DMS.Sampler2DMS)fragsamp), Coord.z);
+		resolveout(g, null, next).image(new TexMS((Texture2DMS.Sampler2DMS)fragsamp), Coord.z);
 	    else
-		resolveout(g, next).image(new TexRaw((Texture2D.Sampler2D)fragsamp, true), Coord.z);
+		resolveout(g, null, next).image(new TexRaw((Texture2D.Sampler2D)fragsamp, true), Coord.z);
 	} else {
+	    FrameFormat fmt = new FrameFormat(fragcol);
 	    PostProcessor cur = next;
 	    next = post.hasNext() ? post.next() : null;
-	    cur.run(resolveout(g, next), fragsamp);
+	    fmt = cur.outformat(fmt);
+	    cur.run(resolveout(g, fmt, next), fragsamp);
 	    while(next != null) {
 		cur = next;
 		next = post.hasNext() ? post.next() : null;
-		cur.run(resolveout(g, next), cur.buf);
+		fmt = cur.outformat(fmt);
+		cur.run(resolveout(g, fmt, next), cur.buf);
 	    }
 	}
 	g.defstate();
