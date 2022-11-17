@@ -68,7 +68,7 @@ public class Texture2DMS extends Texture {
 		    return(new Iterator<Image<Texture2DMS>>() {
 			    boolean f = true;
 			    public boolean hasNext() {return(f);}
-			    public Image<Texture2DMS> next() {return(image());}
+			    public Image<Texture2DMS> next() {f = false; return(image());}
 			});
 		}
 	    });

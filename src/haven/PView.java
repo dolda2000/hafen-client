@@ -265,16 +265,24 @@ public abstract class PView extends Widget {
 		pp_resamp = null;
 	    }
 	}
+	if(Debug.ff)
+	    Debug.dump(copy);
 	Iterator<PostProcessor> post = copy.iterator();
 	PostProcessor next = post.hasNext() ? post.next() : null;
-	if(fragsamp instanceof Texture2DMS.Sampler2DMS)
-	    resolveout(g, next).image(new TexMS((Texture2DMS.Sampler2DMS)fragsamp), Coord.z);
-	else
-	    resolveout(g, next).image(new TexRaw((Texture2D.Sampler2D)fragsamp, true), Coord.z);
-	while(next != null) {
+	if(next == null) {
+	    if(fragsamp instanceof Texture2DMS.Sampler2DMS)
+		resolveout(g, next).image(new TexMS((Texture2DMS.Sampler2DMS)fragsamp), Coord.z);
+	    else
+		resolveout(g, next).image(new TexRaw((Texture2D.Sampler2D)fragsamp, true), Coord.z);
+	} else {
 	    PostProcessor cur = next;
 	    next = post.hasNext() ? post.next() : null;
-	    cur.run(resolveout(g, next), cur.buf);
+	    cur.run(resolveout(g, next), fragsamp);
+	    while(next != null) {
+		cur = next;
+		next = post.hasNext() ? post.next() : null;
+		cur.run(resolveout(g, next), cur.buf);
+	    }
 	}
 	g.defstate();
     }
