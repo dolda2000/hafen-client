@@ -62,6 +62,12 @@ public abstract class RenderContext extends State implements OwnerContext {
 	    }
 	}
 
+	public FrameFormat(FrameFormat from) {
+	    this.cfmt = from.cfmt;
+	    this.samples = from.samples;
+	    this.sz = from.sz;
+	}
+
 	public boolean equals(FrameFormat that) {
 	    return(Utils.eq(this.cfmt, that.cfmt) && (this.samples == that.samples) && Utils.eq(this.sz, that.sz));
 	}
@@ -85,7 +91,7 @@ public abstract class RenderContext extends State implements OwnerContext {
     }
 
     public static abstract class PostProcessor implements Disposable {
-	public static final int ORDER_RESOLVE = -200, ORDER_TONEMAP = -100, ORDER_RESAMPLE = 100;
+	public static final int ORDER_RESOLVE = -200, ORDER_TONEMAP = -100, ORDER_DEFAULT = 0, ORDER_RESAMPLE = 100;
 	public Sampler buf = null;
 
 	public void run(GOut g, Sampler2D in) {
@@ -94,7 +100,7 @@ public abstract class RenderContext extends State implements OwnerContext {
 	public void run(GOut g, Sampler in) {
 	    run(g, (Sampler2D)in);
 	}
-	public int order() {return(0);}
+	public int order() {return(ORDER_DEFAULT);}
 	public FrameFormat outformat(FrameFormat in) {return(in);}
 
 	public void dispose() {
