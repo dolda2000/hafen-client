@@ -1117,14 +1117,15 @@ public class Skeleton {
 		Coord3f ref = Coord3f.of((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat()).norm();
 		final String orignm = buf.string();
 		final String tgtnm = buf.string();
-		return(pose -> {
+		return(equ -> {
+			Pose pose = (Pose)equ;
 			Bone orig = pose.skel().bones.get(orignm);
 			Bone tgt = pose.skel().bones.get(tgtnm);
 			return(pose.new BoneAlign(ref, orig, tgt));
 		    });
 	    };
 	    opcodes[4] = buf -> {
-		return(pose -> () -> Location.nullrot);
+		return(equ -> () -> Location.nullrot);
 	    };
 	    opcodes[5] = buf -> {
 		final float scale = buf.float32();
