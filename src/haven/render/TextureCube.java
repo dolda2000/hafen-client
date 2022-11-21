@@ -97,7 +97,7 @@ public class TextureCube extends Texture {
 	return(new AbstractCollection<CubeImage>() {
 		private int msize() {
 		    if((w == 0) || (h == 0)) {
-			return(0);
+			return(1);
 		    } else if(pot) {
 			return(Math.max(Integer.numberOfTrailingZeros(w),
 					Integer.numberOfTrailingZeros(h)) +

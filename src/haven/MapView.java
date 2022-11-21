@@ -55,7 +55,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private Coord3f camoff = new Coord3f(Coord3f.o);
     public double shake = 0.0;
     public static double plobpgran = Utils.getprefd("plobpgran", 8);
-    public static double plobagran = Utils.getprefd("plobagran", 16);
+    public static double plobagran = Utils.getprefd("plobagran", 12);
     private static final Map<String, Class<? extends Camera>> camtypes = new HashMap<String, Class<? extends Camera>>();
     
     public interface Delayed {
@@ -1073,6 +1073,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    }
 	}
 
+	public boolean valid(GSettings prefs) {
+	    return((prefs == gprefs) ||
+		   (((prefs == null) == (gprefs == null)) &&
+		    (prefs.lightmode.val == gprefs.lightmode.val) &&
+		    (prefs.maxlights.val == gprefs.maxlights.val)));
+	}
+
 	public Pipe.Op compile(Object[][] params, Projection proj) {
 	    if(zgrid == null) {
 		Lighting.SimpleLights ret = new Lighting.SimpleLights(params);
@@ -1088,7 +1095,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
     private LightCompiler lighting;
     protected void lights() {
 	GSettings gprefs = basic.state().get(GSettings.slot);
-	if((lighting == null) || (lighting.gprefs != gprefs)) {
+	if((lighting == null) || !lighting.valid(gprefs)) {
 	    basic(Light.class, null);
 	    lighting = new LightCompiler(gprefs);
 	}
@@ -1715,14 +1722,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     public static class StdPlace implements PlobAdjust {
 	boolean freerot = false;
-	Coord2d gran = (plobpgran == 0) ? null : new Coord2d(1.0 / plobpgran, 1.0 / plobpgran).mul(tilesz);
 
 	public void adjust(Plob plob, Coord pc, Coord2d mc, int modflags) {
 	    Coord2d nc;
 	    if((modflags & UI.MOD_SHIFT) == 0)
 		nc = mc.floor(tilesz).mul(tilesz).add(tilesz.div(2));
-	    else if(gran != null)
-		nc = mc.add(gran.div(2)).floor(gran).mul(gran);
+	    else if(plobpgran > 0)
+		nc = mc.div(tilesz).mul(plobpgran).roundf().div(plobpgran).mul(tilesz);
 	    else
 		nc = mc;
 	    Gob pl = plob.mv().player();

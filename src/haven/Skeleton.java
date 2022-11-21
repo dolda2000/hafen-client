@@ -308,35 +308,31 @@ public class Skeleton {
 		});
 	}
 
-	/* XXXRENDER
-	public class BoneAlign extends Location {
+	public class BoneAlign implements Supplier<Pipe.Op> {
 	    private final Coord3f ref;
 	    private final int orig, tgt;
+	    private Location cur;
 	    private int cseq = -1;
 	    
 	    public BoneAlign(Coord3f ref, Bone orig, Bone tgt) {
-		super(Matrix4f.identity());
 		this.ref = ref;
 		this.orig = orig.idx;
 		this.tgt = tgt.idx;
 	    }
 		
-	    public Matrix4f fin(Matrix4f p) {
+	    public Location get() {
 		if(cseq != seq) {
 		    Coord3f cur = new Coord3f(gpos[tgt][0] - gpos[orig][0], gpos[tgt][1] - gpos[orig][1], gpos[tgt][2] - gpos[orig][2]).norm();
 		    Coord3f axis = cur.cmul(ref).norm();
 		    float ang = (float)Math.acos(cur.dmul(ref));
-		    /-
-		    System.err.println(cur + ", " + ref + ", " + axis + ", " + ang);
-		    -/
-		    update(Transform.makexlate(new Matrix4f(), new Coord3f(gpos[orig][0], gpos[orig][1], gpos[orig][2]))
-			   .mul1(Transform.makerot(new Matrix4f(), axis, -ang)));
+		    // Debug.dump(cur, ref, axis, ang);
+		    this.cur = new Location(Transform.makexlate(new Matrix4f(), new Coord3f(gpos[orig][0], gpos[orig][1], gpos[orig][2]))
+				       .mul1(Transform.makerot(new Matrix4f(), axis, -ang)));
 		    cseq = seq;
 		}
-		return(super.fin(p));
+		return(cur);
 	    }
 	}
-	*/
 
 	public void boneoff(int bone, float[] offtrans) {
 	    /* It would be nice if these "new float"s get
@@ -363,33 +359,58 @@ public class Skeleton {
 	    offtrans[ 9] = yz + xw;
 	}
 	
-	/* XXXRENDER
-	public final Rendered debug = new Rendered() {
-		public void draw(GOut g) {
-		    BGL gl = g.gl;
-		    g.st.put(Light.lighting, null);
-		    g.state(States.xray);
-		    g.apply();
-		    gl.glBegin(GL2.GL_LINES);
-		    for(int i = 0; i < blist.length; i++) {
-			if(blist[i].parent != null) {
-			    int pi = blist[i].parent.idx;
-			    gl.glColor3f(1.0f, 0.0f, 0.0f);
-			    gl.glVertex3f(gpos[pi][0], gpos[pi][1], gpos[pi][2]);
-			    gl.glColor3f(0.0f, 1.0f, 0.0f);
-			    gl.glVertex3f(gpos[i][0], gpos[i][1], gpos[i][2]);
+	public class Debug implements RenderTree.Node, Rendered, TickList.Ticking, TickList.TickNode {
+	    private final VertexArray.Layout fmt = new VertexArray.Layout(new VertexArray.Layout.Input(Homo3D.vertex,     new VectorFormat(3, NumberFormat.FLOAT32), 0,  0, 16),
+									  new VertexArray.Layout.Input(VertexColor.color, new VectorFormat(4, NumberFormat.UNORM8),  0, 12, 16));
+	    private final VertexArray.Buffer data;
+	    private final Model model;
+	    private final int[] bperm;
+
+	    public Debug() {
+		int[] bperm = new int[blist.length];
+		int n = 0;
+		for(int i = 0; i < blist.length; i++) {
+		    if(blist[i].parent != null)
+			bperm[n++] = i;
+		}
+		this.bperm = Arrays.copyOf(bperm, n);
+		if(n > 0) {
+		    data = new VertexArray.Buffer(fmt.inputs[0].stride * n * 2, DataBuffer.Usage.STREAM, null);
+		    model = new Model(Model.Mode.LINES, new VertexArray(fmt, data), null);
+		} else {
+		    data = null;
+		    model = null;
+		}
+	    }
+
+	    public void draw(Pipe state, Render g) {
+		if(model != null)
+		    g.draw(state, model);
+	    }
+
+	    public void autogtick(Render g) {
+		if(data == null)
+		    return;
+		g.update(data, (tgt, env) -> {
+			FillBuffer ret = env.fillbuf(tgt);
+			java.nio.ByteBuffer buf = ret.push();
+			for(int i = 0; i < bperm.length; i++) {
+			    int bi = bperm[i], pi = blist[bi].parent.idx;
+			    buf.putFloat(gpos[pi][0]).putFloat(gpos[pi][1]).putFloat(gpos[pi][2]);
+			    buf.put((byte)255).put((byte)0).put((byte)0).put((byte)255);
+			    buf.putFloat(gpos[bi][0]).putFloat(gpos[bi][1]).putFloat(gpos[bi][2]);
+			    buf.put((byte)0).put((byte)255).put((byte)0).put((byte)255);
 			}
-		    }
-		    gl.glEnd();
-		}
-	    
-		public boolean setup(RenderList rl) {
-		    rl.prepo(States.vertexcolor);
-		    rl.prepo(States.xray);
-		    return(true);
-		}
-	    };
-	*/
+			return(ret);
+		    });
+	    }
+
+	    public TickList.Ticking ticker() {return(this);}
+
+	    public void added(RenderTree.Slot slot) {
+		slot.ostate(Pipe.Op.compose(VertexColor.instance, States.Depthtest.none, Rendered.last));
+	    }
+	}
     }
 
     public interface HasPose {
@@ -1092,26 +1113,16 @@ public class Skeleton {
 		final String bonenm = buf.string();
 		return(equ -> equ.eqpoint(bonenm, Message.nil));
 	    };
-	    /* XXXRENDER
-	    opcodes[3] = new HatingJava() {
-		    public Command make(Message buf) {
-			float rx1 = (float)buf.cpfloat();
-			float ry1 = (float)buf.cpfloat();
-			float rz1 = (float)buf.cpfloat();
-			float l = (float)Math.sqrt((rx1 * rx1) + (ry1 * ry1) + (rz1 * rz1));
-			final Coord3f ref = new Coord3f(rx1 / l, ry1 / l, rz1 / l);
-			final String orignm = buf.string();
-			final String tgtnm = buf.string();
-			return(new Command() {
-				public GLState make(Pose pose) {
-				    Bone orig = pose.skel().bones.get(orignm);
-				    Bone tgt = pose.skel().bones.get(tgtnm);
-				    return(pose.new BoneAlign(ref, orig, tgt));
-				}
-			    });
-		    }
-		};
-	    */
+	    opcodes[3] = buf -> {
+		Coord3f ref = Coord3f.of((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat()).norm();
+		final String orignm = buf.string();
+		final String tgtnm = buf.string();
+		return(pose -> {
+			Bone orig = pose.skel().bones.get(orignm);
+			Bone tgt = pose.skel().bones.get(tgtnm);
+			return(pose.new BoneAlign(ref, orig, tgt));
+		    });
+	    };
 	    opcodes[4] = buf -> {
 		return(pose -> () -> Location.nullrot);
 	    };

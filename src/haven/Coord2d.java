@@ -126,9 +126,15 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
     public Coord round() {
 	return(Coord.of((int)Math.round(x), (int)Math.round(y)));
     }
+    public Coord2d roundf() {
+	return(Coord2d.of(Math.round(x), Math.round(y)));
+    }
 
     public Coord floor() {
 	return(Coord.of((int)Math.floor(x), (int)Math.floor(y)));
+    }
+    public Coord2d floorf() {
+	return(Coord2d.of(Math.floor(x), Math.floor(y)));
     }
 
     public Coord floor(double X, double Y) {
