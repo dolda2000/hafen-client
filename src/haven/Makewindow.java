@@ -38,7 +38,7 @@ public class Makewindow extends Widget {
     public static final Text tooll = Text.render("Tools:");
     public static final Coord boff = UI.scale(new Coord(7, 9));
     public String rcpnm;
-    public List<SpecWidget> inputs = Collections.emptyList();
+    public List<Input> inputs = Collections.emptyList();
     public List<SpecWidget> outputs = Collections.emptyList();
     public List<Indir<Resource>> qmod = Collections.emptyList();
     public List<Indir<Resource>> tools = new ArrayList<>();;
@@ -163,19 +163,21 @@ public class Makewindow extends Widget {
 		inputs.add(new Spec(ui.sess.getres(resid), sdt, num, info));
 	    }
 	    ui.sess.glob.loader.defer(() -> {
-		    List<SpecWidget> wdgs = new ArrayList<>();
+		    List<Input> wdgs = new ArrayList<>();
+		    int idx = 0;
 		    for(Spec spec : inputs)
-			wdgs.add(new SpecWidget(spec));
+			wdgs.add(new Input(spec, idx++));
 		    synchronized(ui) {
 			for(Widget w : this.inputs)
 			    w.destroy();
 			Position pos = new Position(xoff, 0);
-			boolean popt = false;
-			for(SpecWidget wdg : wdgs) {
-			    if(wdg.opt != popt)
+			SpecWidget prev = null;
+			for(Input wdg : wdgs) {
+			    if((prev != null) && (wdg.opt != false))
 				pos = pos.adds(10, 0);
 			    add(wdg, pos);
 			    pos = pos.add(Inventory.sqsz.x, 0);
+			    prev = wdg;
 			}
 			this.inputs = wdgs;
 		    }
@@ -199,12 +201,13 @@ public class Makewindow extends Widget {
 			for(Widget w : this.outputs)
 			    w.destroy();
 			Position pos = new Position(xoff, outy);
-			boolean popt = false;
+			SpecWidget prev = null;
 			for(SpecWidget wdg : wdgs) {
-			    if(wdg.opt != popt)
+			    if((prev != null) && (wdg.opt != prev.opt))
 				pos = pos.adds(10, 0);
 			    add(wdg, pos);
 			    pos = pos.add(Inventory.sqsz.x, 0);
+			    prev = wdg;
 			}
 			this.outputs = wdgs;
 		    }
@@ -216,6 +219,15 @@ public class Makewindow extends Widget {
 	    this.qmod = qmod;
 	} else if(msg == "tool") {
 	    tools.add(ui.sess.getres((Integer)args[0]));
+	} else if(msg == "inprcps") {
+	    int idx = (Integer)args[0];
+	    Collection<MenuGrid.Pagina> rcps = new ArrayList<>();
+	    GameUI gui = getparent(GameUI.class);
+	    if((gui != null) && (gui.menu != null)) {
+		for(int a = 1; a < args.length; a++)
+		    rcps.add(gui.menu.paginafor(ui.sess.getres((Integer)args[a])));
+	    }
+	    inputs.get(idx).recipes(rcps);;
 	} else {
 	    super.uimsg(msg, args);
 	}
@@ -229,7 +241,7 @@ public class Makewindow extends Widget {
 
     public static class SpecWidget extends Widget {
 	public final Spec spec;
-	private final boolean opt;
+	public final boolean opt;
 
 	public SpecWidget(Spec spec) {
 	    super(invsq.sz());
@@ -277,8 +289,61 @@ public class Makewindow extends Widget {
 	}
 
 	public void tick(double dt) {
+	    super.tick(dt);
 	    if(spec.spr != null)
 		spec.spr.tick(dt);
+	}
+    }
+
+    public class Input extends SpecWidget {
+	public final int idx;
+	private Collection<MenuGrid.Pagina> rpag = null;
+	private Coord cc = null;
+
+	public Input(Spec spec, int idx) {
+	    super(spec);
+	    this.idx = idx;
+	}
+
+	public boolean mousedown(Coord c, int button) {
+	    if(button == 1) {
+		if(rpag == null)
+		    Makewindow.this.wdgmsg("findrcps", idx);
+		this.cc = c;
+		return(true);
+	    }
+	    return(super.mousedown(c, button));
+	}
+
+	public void tick(double dt) {
+	    super.tick(dt);
+	    if((cc != null) && (rpag != null)) {
+		if(!rpag.isEmpty()) {
+		    try {
+			List<MenuGrid.PagButton> btns = new ArrayList<>();
+			for(MenuGrid.Pagina pag : rpag)
+			    btns.add(pag.button());
+			new SListMenu<MenuGrid.PagButton, Widget>(UI.scale(250, 120), CharWnd.attrf.height()) {
+			    public List<MenuGrid.PagButton> items() {return(btns);}
+			    public Widget makeitem(MenuGrid.PagButton btn, int idx, Coord sz) {
+				return(SListWidget.IconText.of(sz, btn::img, btn::name));
+			    }
+			    public void choice(MenuGrid.PagButton btn) {
+				if(btn != null)
+				    btn.use(new MenuGrid.Interaction(1, ui.modflags()));
+				destroy();
+			    }
+			}.addat(this, cc.add(UI.scale(5, 5))).tick(dt);
+		    } catch(Loading l) {
+			return;
+		    }
+		}
+		cc = null;
+	    }
+	}
+
+	public void recipes(Collection<MenuGrid.Pagina> pag) {
+	    rpag = pag;
 	}
     }
 
