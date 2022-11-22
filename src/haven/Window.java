@@ -64,6 +64,8 @@ public class Window extends Widget implements DTarget {
 
 	    public Coord btloff() {return(super.btloff().sub(bo));}
 	    public Coord ctloff() {return(super.ctloff().sub(co));}
+	    public Coord bbroff() {return(super.bbroff().sub(bo));}
+	    public Coord cbroff() {return(super.cbroff().sub(co));}
 	    public Coord bisz() {return(super.bisz().sub(bo.mul(2)));}
 	    public Coord cisz() {return(super.cisz().sub(co.mul(2)));}
 	};
