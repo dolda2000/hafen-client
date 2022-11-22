@@ -41,7 +41,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 
     public SListMenu(Coord sz, int itemh) {
 	box = new InnerList(sz, itemh);
-	resize(box.sz.add(obox.bisz()));
+	resize(box.sz.add(obox.cisz()));
 	add(box, obox.ctloff());
     }
 
@@ -93,7 +93,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	    int n = items().size();
 	    if(n < (box.sz.y / box.itemh)) {
 		box.resizeh(box.itemh * n);
-		resize(box.sz.add(obox.bisz()));
+		resize(box.sz.add(obox.cisz()));
 	    }
 	    inited = true;
 	}
