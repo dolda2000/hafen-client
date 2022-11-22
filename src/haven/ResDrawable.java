@@ -27,9 +27,10 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import haven.render.*;
 
-public class ResDrawable extends Drawable {
+public class ResDrawable extends Drawable implements EquipTarget {
     public final Indir<Resource> res;
     public final Sprite spr;
     MessageBuf sdt;
@@ -70,6 +71,12 @@ public class ResDrawable extends Drawable {
 
     public Skeleton.Pose getpose() {
 	return(Skeleton.getpose(spr));
+    }
+
+    public Supplier<? extends Pipe.Op> eqpoint(String nm, Message dat) {
+	if(spr instanceof EquipTarget)
+	    return(((EquipTarget)spr).eqpoint(nm, dat));
+	return(null);
     }
 
     @OCache.DeltaType(OCache.OD_RES)

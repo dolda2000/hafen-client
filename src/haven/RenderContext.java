@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import haven.render.*;
 import haven.render.sl.ShaderMacro;
+import haven.render.Texture.Sampler;
 import haven.render.Texture2D.Sampler2D;
 
 public abstract class RenderContext extends State implements OwnerContext {
@@ -36,11 +37,71 @@ public abstract class RenderContext extends State implements OwnerContext {
     private final List<PostProcessor> post = new ArrayList<>();
     private final Map<Global, Integer> global = new IdentityHashMap<>();
 
-    public static abstract class PostProcessor implements Disposable {
-	public Sampler2D buf = null;
+    public static class FrameFormat {
+	public VectorFormat cfmt;
+	public int samples;
+	public Coord sz;
 
-	public abstract void run(GOut g, Sampler2D in);
-	public int order() {return(0);}
+	public FrameFormat(VectorFormat cfmt, int samples, Coord sz) {
+	    this.cfmt = cfmt; this.samples = samples; this.sz = sz;
+	}
+
+	public FrameFormat(Texture tex) {
+	    if(tex instanceof Texture2D) {
+		Texture2D t = (Texture2D)tex;
+		this.cfmt = t.ifmt;
+		this.samples = 1;
+		this.sz = t.sz();
+	    } else if(tex instanceof Texture2DMS) {
+		Texture2DMS t = (Texture2DMS)tex;
+		this.cfmt = t.ifmt;
+		this.samples = t.s;
+		this.sz = t.sz();
+	    } else {
+		throw(new ClassCastException(String.valueOf(tex)));
+	    }
+	}
+
+	public FrameFormat(FrameFormat from) {
+	    this.cfmt = from.cfmt;
+	    this.samples = from.samples;
+	    this.sz = from.sz;
+	}
+
+	public boolean equals(FrameFormat that) {
+	    return(Utils.eq(this.cfmt, that.cfmt) && (this.samples == that.samples) && Utils.eq(this.sz, that.sz));
+	}
+	public boolean equals(Object x) {
+	    return((x instanceof FrameFormat) && equals((FrameFormat)x));
+	}
+
+	public Texture maketex() {
+	    VectorFormat efmt = cfmt;
+	    if(efmt.cf == NumberFormat.DEPTH)
+		efmt = new VectorFormat(1, NumberFormat.FLOAT32);
+	    if(samples == 1)
+		return(new Texture2D(sz, DataBuffer.Usage.STATIC, cfmt, efmt, null));
+	    else
+		return(new Texture2DMS(sz, samples, cfmt));
+	}
+
+	public boolean matching(Texture tex) {
+	    return((tex != null) && equals(new FrameFormat(tex)));
+	}
+    }
+
+    public static abstract class PostProcessor implements Disposable {
+	public static final int ORDER_RESOLVE = -200, ORDER_TONEMAP = -100, ORDER_DEFAULT = 0, ORDER_RESAMPLE = 100;
+	public Sampler buf = null;
+
+	public void run(GOut g, Sampler2D in) {
+	    throw(new RuntimeException("no PostProcessor.run variant implemented: " + this.getClass()));
+	}
+	public void run(GOut g, Sampler in) {
+	    run(g, (Sampler2D)in);
+	}
+	public int order() {return(ORDER_DEFAULT);}
+	public FrameFormat outformat(FrameFormat in) {return(in);}
 
 	public void dispose() {
 	    if(buf != null)

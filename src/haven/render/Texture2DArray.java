@@ -66,7 +66,7 @@ public class Texture2DArray extends TextureArray {
 
 		int nlevels() {
 		    if((w == 0) || (h == 0)) {
-			return(0);
+			return(1);
 		    } else if(pot) {
 			return(Math.max(Integer.numberOfTrailingZeros(w),
 					Integer.numberOfTrailingZeros(h)) +

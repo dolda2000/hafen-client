@@ -47,6 +47,8 @@ public class FragColor<T> extends State {
     public final boolean srgb;
 
     public FragColor(T image, boolean srgb) {
+	if(image == null)
+	    throw(new NullPointerException());
 	this.image = image;
 	this.srgb = srgb;
     }

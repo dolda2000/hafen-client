@@ -525,6 +525,14 @@ public class GOut {
 	    cb.accept(new BufferedImage(cm, raster, false, null));
 	    break;
 	}
+	case FLOAT16: {
+	    ByteBuffer cvt = ByteBuffer.allocate(data.remaining() * 2);
+	    while(data.remaining() > 0)
+		cvt.putFloat(Utils.hfdec(data.getShort()));
+	    cvt.flip();
+	    debugimage(cvt, sz, new VectorFormat(fmt.nc, NumberFormat.FLOAT32), false, cb);
+	    break;
+	}
 	case FLOAT32: {
 	    int b = Math.max(fmt.nc, 3);
 	    data = filltorgb(data, fmt);
