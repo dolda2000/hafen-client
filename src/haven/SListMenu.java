@@ -106,7 +106,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
     public void tick(double dt) {
 	if(!inited) {
 	    int n = items().size();
-	    if(n < (box.sz.y / box.itemh)) {
+	    if((n * box.itemh) < box.sz.y) {
 		box.resizeh(box.itemh * n);
 		aresize(this.sz, box.sz.add(obox.cisz()));
 	    }
