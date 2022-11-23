@@ -1465,13 +1465,13 @@ public class Widget {
 
     public abstract class Anim {
 	public Anim() {
-	    synchronized(ui) {
+	    synchronized((ui == null) ? this : ui) {
 		nanims.add(this);
 	    }
 	}
 
 	public void clear() {
-	    synchronized(ui) {
+	    synchronized((ui == null) ? this : ui) {
 		nanims.remove(this);
 		anims.remove(this);
 	    }
