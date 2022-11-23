@@ -31,6 +31,8 @@ import java.util.function.*;
 import java.awt.image.BufferedImage;
 
 public abstract class SListMenu<I, W extends Widget> extends Widget {
+    public static final Text.Foundry bigf = CharWnd.attrf;
+    public static final Text.Foundry smallf = new Text.Foundry(Text.fraktur, 14).aa(true);
     public static final Tex bg = Window.bg;
     public static final IBox obox = Window.wbox;
     public final InnerList box;
@@ -156,7 +158,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	    super(sz, fnd.height());
 	    this.fnd = fnd;
 	}
-	public TextMenu(Coord sz) {this(sz, CharWnd.attrf);}
+	public TextMenu(Coord sz) {this(sz, bigf);}
 
 	protected abstract String nameof(I item);
 
@@ -168,21 +170,36 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	}
     }
 
-    public static <I> SListMenu<I, Widget> of(Coord sz, List<? extends I> items, Function<? super I, String> nmf, Consumer<? super I> action, Runnable cancel) {
-	return(new TextMenu<I>(sz) {
+    public static <I> SListMenu<I, Widget> of(Coord sz, Text.Foundry fnd, List<? extends I> items, Function<? super I, String> nmf, Consumer<? super I> action, Runnable cancel) {
+	return(new TextMenu<I>(sz, (fnd == null) ? bigf : fnd) {
 		protected String nameof(I item) {return(nmf.apply(item));}
 		protected List<? extends I> items() {return(items);}
 		protected void choice(I item) {
 		    if(item != null)
 			action.accept(item);
-		    else
+		    else if(cancel != null)
 			cancel.run();
 		    reqdestroy();
 		}
 	    });
     }
     public static <I> SListMenu<I, Widget> of(Coord sz, List<? extends I> items, Function<? super I, String> nmf, Consumer<? super I> action) {
-	return(of(sz, items, nmf, action, null));
+	return(of(sz, null, items, nmf, action, null));
+    }
+
+    public static interface Action extends Runnable {
+	public String name();
+
+	public static Action of(String name, Runnable fun) {
+	    return(new Action() {
+		    public String name() {return(name);}
+		    public void run() {fun.run();}
+		});
+	}
+    }
+
+    public static SListMenu<Action, Widget> of(Coord sz, Text.Foundry fnd, List<? extends Action> actions) {
+	return(of(sz, actions, Action::name, Action::run));
     }
 
     public static abstract class IconMenu<I> extends SListMenu<I, Widget> {
@@ -192,7 +209,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	    super(sz, fnd.height());
 	    this.fnd = fnd;
 	}
-	public IconMenu(Coord sz) {this(sz, CharWnd.attrf);}
+	public IconMenu(Coord sz) {this(sz, bigf);}
 
 	protected abstract String nameof(I item);
 	protected abstract BufferedImage iconof(I item);
@@ -206,21 +223,21 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	}
     }
 
-    public static <I> SListMenu<I, Widget> of(Coord sz, List<? extends I> items, Function<? super I, String> nmf, Function<? super I, BufferedImage> imgf, Consumer<? super I> action, Runnable cancel) {
-	return(new IconMenu<I>(sz) {
+    public static <I> SListMenu<I, Widget> of(Coord sz, Text.Foundry fnd, List<? extends I> items, Function<? super I, String> nmf, Function<? super I, BufferedImage> imgf, Consumer<? super I> action, Runnable cancel) {
+	return(new IconMenu<I>(sz, (fnd == null) ? bigf : fnd) {
 		protected String nameof(I item) {return(nmf.apply(item));}
 		protected BufferedImage iconof(I item) {return(imgf.apply(item));}
 		protected List<? extends I> items() {return(items);}
 		protected void choice(I item) {
 		    if(item != null)
 			action.accept(item);
-		    else
+		    else if(cancel != null)
 			cancel.run();
 		    reqdestroy();
 		}
 	    });
     }
     public static <I> SListMenu<I, Widget> of(Coord sz, List<? extends I> items, Function<? super I, String> nmf, Function<? super I, BufferedImage> imgf, Consumer<? super I> action) {
-	return(of(sz, items, nmf, imgf, action, null));
+	return(of(sz, null, items, nmf, imgf, action, null));
     }
 }
