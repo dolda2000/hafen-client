@@ -44,7 +44,9 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 
     public SListMenu(Coord sz, int itemh) {
 	box = new InnerList(sz, itemh);
-	resize(box.sz.add(obox.cisz()));
+	Coord osz = box.sz.add(obox.cisz());
+	resize(Coord.of(osz.x, 0));
+	aresize(this.sz, osz);
 	add(box, obox.ctloff());
     }
 
@@ -90,13 +92,23 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	}
     }
 
+    private void aresize(Coord f, Coord t) {
+	clearanims(Anim.class);
+	new NormAnim(0.15) {
+	    public void ntick(double a) {
+		double b = (a >= 1) ? 0 : Math.cos(Math.PI * 2.5 * a) * Math.exp(-5 * a);
+		resize(t.add(f.sub(t).mul(b)));
+	    }
+	};
+    }
+
     private boolean inited = false;
     public void tick(double dt) {
 	if(!inited) {
 	    int n = items().size();
 	    if(n < (box.sz.y / box.itemh)) {
 		box.resizeh(box.itemh * n);
-		resize(box.sz.add(obox.cisz()));
+		aresize(this.sz, box.sz.add(obox.cisz()));
 	    }
 	    inited = true;
 	}
