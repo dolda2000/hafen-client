@@ -199,7 +199,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
     }
 
     public static SListMenu<Action, Widget> of(Coord sz, Text.Foundry fnd, List<? extends Action> actions) {
-	return(of(sz, actions, Action::name, Action::run));
+	return(of(sz, fnd, actions, Action::name, Action::run, null));
     }
 
     public static abstract class IconMenu<I> extends SListMenu<I, Widget> {

@@ -73,13 +73,12 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 
 	private Text.Line text = null;
 	protected void drawtext(GOut g) {
-	    int tx = sz.y + UI.scale(5);
 	    try {
 		if((this.text == null) || !valid(text.text)) {
 		    String text = text();
 		    this.text = foundry().render(text);
-		    if(tx + this.text.sz().x > sz.x) {
-			int len = this.text.charat(sz.x - tx - foundry().strsize("...").x);
+		    if(this.text.sz().x > sz.x) {
+			int len = this.text.charat(sz.x - foundry().strsize("...").x);
 			this.text = foundry().render(text.substring(0, len) + "...");
 		    }
 		}
@@ -156,7 +155,7 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 			this.text = foundry().render(text.substring(0, len) + "...");
 		    }
 		}
-		g.image(this.text.tex(), Coord.of(sz.y + UI.scale(5), (sz.y - this.text.sz().y) / 2));
+		g.image(this.text.tex(), Coord.of(tx, (sz.y - this.text.sz().y) / 2));
 	    } catch(Loading l) {
 		Tex missing = foundry().render("...").tex();
 		g.image(missing, Coord.of(sz.y + UI.scale(5), (sz.y - missing.sz().y) / 2));
