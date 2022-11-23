@@ -165,7 +165,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	protected Widget makeitem(I item, int idx, Coord sz) {
 	    return(new SListWidget.TextItem(sz) {
 		    protected String text() {return(nameof(item));}
-		    @Override protected Text.Foundry foundry() {return(fnd);}
+		    protected Text.Foundry foundry() {return(fnd);}
 		});
 	}
     }
@@ -218,7 +218,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	    return(new SListWidget.IconText(sz) {
 		    protected BufferedImage img() {return(iconof(item));}
 		    protected String text() {return(nameof(item));}
-		    @Override protected Text.Foundry foundry() {return(fnd);}
+		    protected Text.Foundry foundry() {return(fnd);}
 		});
 	}
     }
