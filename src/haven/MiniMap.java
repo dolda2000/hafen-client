@@ -607,6 +607,14 @@ public class MiniMap extends Widget {
 
     public void remparty() {
 	Map<Long, Party.Member> memb = ui.sess.glob.party.memb;
+	if(memb.isEmpty()) {
+	    /* XXX: This is a bit of a hack to avoid unknown-player
+	     * notifications only before initial party information has
+	     * been received. Not sure if there's a better
+	     * solution. */
+	    icons.clear();
+	    return;
+	}
 	for(Iterator<DisplayIcon> it = icons.iterator(); it.hasNext();) {
 	    DisplayIcon icon = it.next();
 	    if(memb.containsKey(icon.gob.id))
