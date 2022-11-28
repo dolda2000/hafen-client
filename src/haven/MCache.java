@@ -52,7 +52,7 @@ public class MCache implements MapSource {
     Map<Coord, Grid> grids = new HashMap<Coord, Grid>();
     Session sess;
     Set<Overlay> ols = new HashSet<Overlay>();
-    public int olseq = 0;
+    public int olseq = 0, chseq = 0;
     Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
 
     public static class LoadingMap extends Loading {
@@ -833,6 +833,7 @@ public class MCache implements MapSource {
 		    g.fill(msg);
 		    req.remove(c);
 		    olseq++;
+		    chseq++;
 		    gridwait.wnotify();
 		}
 	    }
