@@ -41,48 +41,59 @@ public class BumpMap extends State {
     public static final Attribute bit = new Attribute(VEC3, "bit");
     private static final Uniform ctex = new Uniform(SAMPLER2D, p -> p.get(slot).tex, slot);
     public final Sampler2D tex;
+    private final ShaderMacro shader;
 
-    public BumpMap(Sampler2D tex) {
+    public BumpMap(Sampler2D tex, boolean otex) {
 	this.tex = tex;
+	this.shader = shaders[otex ? 1 : 0];
+    }
+    public BumpMap(Sampler2D tex) {
+	this(tex, false);
     }
 
-    private static final ShaderMacro shader = new ShaderMacro() {
-	    final AutoVarying tanc = new AutoVarying(VEC3) {
-		    protected Expression root(VertexContext vctx) {
-			return(Homo3D.get(vctx.prog).nlocxf(tan.ref()));
-		    }
-		};
-	    final AutoVarying bitc = new AutoVarying(VEC3) {
-		    protected Expression root(VertexContext vctx) {
-			return(Homo3D.get(vctx.prog).nlocxf(bit.ref()));
-		    }
-		};
-	    public void modify(final ProgramContext prog) {
-		final ValBlock.Value nmod = prog.fctx.uniform.new Value(VEC3) {
-			public Expression root() {
-			    return(mul(sub(pick(texture2D(ctex.ref(), Tex2D.get(prog).texcoord().depref()), "rgb"),
-					   l(0.5)), l(2.0)));
-			}
-		    };
-		nmod.force();
-		Homo3D.frageyen(prog.fctx).mod(in -> {
-			Expression m = nmod.ref();
-			return(add(mul(pick(m, "s"), tanc.ref()),
-				   mul(pick(m, "t"), bitc.ref()),
-				   mul(pick(m, "p"), in)));
-		    }, -100);
-		/*
-		prog.fctx.fragcol.mod(new Macro1<Expression>() {
-			public Expression expand(Expression in) {
-			    return(mix(in, vec4(nmod.ref(), l(1.0)), l(0.5)));
-			}
-		    }, 1000);
-		*/
+    public static class Shader implements ShaderMacro {
+	public final boolean otex;
 
-		MeshMorph.get(prog.vctx).add(tanc.value(prog.vctx), MeshMorph.MorphType.DIR);
-		MeshMorph.get(prog.vctx).add(bitc.value(prog.vctx), MeshMorph.MorphType.DIR);
-	    }
-	};
+	private Shader(boolean otex) {
+	    this.otex = otex;
+	}
+
+	public static final AutoVarying tanc = new AutoVarying(VEC3) {
+		protected Expression root(VertexContext vctx) {
+		    return(Homo3D.get(vctx.prog).nlocxf(tan.ref()));
+		}
+	    };
+	public static final AutoVarying bitc = new AutoVarying(VEC3) {
+		protected Expression root(VertexContext vctx) {
+		    return(Homo3D.get(vctx.prog).nlocxf(bit.ref()));
+		}
+	    };
+	public void modify(final ProgramContext prog) {
+	    ValBlock.Value texc;
+	    if(!otex)
+		texc = Tex2D.get(prog).texcoord();
+	    else
+		texc = OverTex.texcoord(prog.fctx);
+	    final ValBlock.Value nmod = prog.fctx.uniform.new Value(VEC3) {
+		    public Expression root() {
+			return(mul(sub(pick(texture2D(ctex.ref(), texc.depref()), "rgb"),
+				       l(0.5)), l(2.0)));
+		    }
+		};
+	    nmod.force();
+	    Homo3D.frageyen(prog.fctx).mod(in -> {
+		    Expression m = nmod.ref();
+		    return(add(mul(pick(m, "s"), tanc.ref()),
+			       mul(pick(m, "t"), bitc.ref()),
+			       mul(pick(m, "p"), in)));
+		}, -100);
+	    // FragColor.fragcol(prog.fctx).mod(in -> mix(in, vec4(nmod.ref(), l(1.0)), l(0.5)), 1000);
+
+	    MeshMorph.get(prog.vctx).add(tanc.value(prog.vctx), MeshMorph.MorphType.DIR);
+	    MeshMorph.get(prog.vctx).add(bitc.value(prog.vctx), MeshMorph.MorphType.DIR);
+	}
+    }
+    private static final Shader[] shaders = {new Shader(false), new Shader(true)};
 
     public ShaderMacro shader() {return(shader);}
 
@@ -97,6 +108,7 @@ public class BumpMap extends State {
     @Material.ResName("bump")
     public static class $bump implements Material.ResCons2 {
 	public Material.Res.Resolver cons(final Resource res, Object... args) {
+	    boolean totex = false;
 	    final Indir<Resource> tres;
 	    final int tid;
 	    int a = 0;
@@ -109,12 +121,18 @@ public class BumpMap extends State {
 		tid = (Integer)args[a];
 		a += 1;
 	    }
+	    if(a < args.length) {
+		String f = (String)args[a++];
+		if(f.indexOf('o') >= 0)
+		    totex = true;
+	    }
+	    boolean otex = totex;
 	    return(new Material.Res.Resolver() {
 		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
 			TexR rt = tres.get().layer(TexR.class, tid);
 			if(rt == null)
 			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
-			buf.add(new BumpMap(rt.tex().img));
+			buf.add(new BumpMap(rt.tex().img, otex));
 		    }
 		});
 	}
