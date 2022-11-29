@@ -43,7 +43,7 @@ public class WaterTile extends Tiler {
     private static final Pipe.Op bcol = new Light.PhongLight(true, new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0), 0);
     public final Tiler.MCons bottom;
     
-    public static class Bottom extends MapMesh.Hooks {
+    public static class Bottom implements MapMesh.ConsHooks {
 	final MapMesh m;
 	final boolean[] s;
 	final Vertex[] surf;

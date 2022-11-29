@@ -70,17 +70,10 @@ public class MapMesh implements RenderTree.Node, Disposable {
     }
 
     public static interface ConsHooks {
-	public void sfin();
-	public void calcnrm();
-	public void postcalcnrm(Random rnd);
-	public boolean clean();
-    }
-
-    public static class Hooks implements ConsHooks {
-	public void sfin() {};
-	public void calcnrm() {}
-	public void postcalcnrm(Random rnd) {}
-	public boolean clean() {return(false);}
+	public default void sfin() {};
+	public default void calcnrm() {};
+	public default void postcalcnrm(Random rnd) {};
+	public default boolean clean() {return(false);}
     }
 
     @SuppressWarnings("unchecked")
