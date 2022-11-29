@@ -140,7 +140,6 @@ public class WaterTile extends Tiler {
 	}
 
 	public void calcnrm() {
-	    super.calcnrm();
 	    MapMesh.MapSurface ms = m.data(MapMesh.gnd);
 	    Surface.Normals n = ms.data(Surface.nrm);
 	    Coord c = new Coord();
