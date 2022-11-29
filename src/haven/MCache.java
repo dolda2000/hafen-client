@@ -93,6 +93,40 @@ public class MCache implements MapSource {
 	private int reqs = 0;
     }
 
+    public static interface ZSurface {
+	public default double getz(Coord tc) {
+	    return(getz(tc.mul(tilesz)));
+	}
+
+	public default double getz(Coord2d pc) {
+	    double tw = tilesz.x, th = tilesz.y;
+	    Coord ul = Coord.of(Utils.floordiv(pc.x, tw), Utils.floordiv(pc.y, th));
+	    double sx = Utils.floormod(pc.x, tw) / tw, ix = 1.0 - sx;
+	    double sy = Utils.floormod(pc.y, th) / th, iy = 1.0 - sy;
+	    return((iy * ((ix * getz(ul          )) + (sx * getz(ul.add(1, 0))))) +
+		   (sy * ((ix * getz(ul.add(0, 1))) + (sx * getz(ul.add(1, 1))))));
+	}
+    }
+
+    public static class SurfaceID {
+	public final SurfaceID parent;
+
+	public SurfaceID(SurfaceID parent) {
+	    this.parent = parent;
+	}
+
+	public boolean hasparent(SurfaceID p) {
+	    for(SurfaceID id = this; id != null; id = id.parent) {
+		if(id == p)
+		    return(true);
+	    }
+	    return(false);
+	}
+
+	public static final SurfaceID map = new SurfaceID(null);
+	public static final SurfaceID trn = new SurfaceID(map);
+    }
+
     public static interface OverlayInfo {
 	public Collection<String> tags();
 	public Material mat();
@@ -749,6 +783,16 @@ public class MCache implements MapSource {
 
     public Coord3f getzp(Coord2d pc) {
 	return(Coord3f.of((float)pc.x, (float)pc.y, (float)getcz(pc)));
+    }
+
+    public final ZSurface zsurf = new ZSurface() {
+	    public double getz(Coord tc) {
+		return(getfz(tc));
+	    }
+	};
+
+    public double getsz(SurfaceID id, Coord tc) {
+	
     }
 
     public Collection<OverlayInfo> getols(Area a) {
