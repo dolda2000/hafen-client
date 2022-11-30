@@ -384,14 +384,18 @@ public class MCache implements MapSource {
 	public MapMesh getcut(Coord cc) {
 	    Cut cut = geticut(cc);
 	    if(cut.dmesh != null) {
-		if(cut.dmesh.done() || (cut.mesh == null)) {
-		    MapMesh old = cut.mesh;
-		    cut.mesh = cut.dmesh.get();
-		    cut.dmesh = null;
-		    cut.ols.clear();
-		    cut.olols.clear();
-		    if(old != null)
-			old.dispose();
+		synchronized(cut) {
+		    if(cut.dmesh != null) {
+			if(cut.dmesh.done() || (cut.mesh == null)) {
+			    MapMesh old = cut.mesh;
+			    cut.mesh = cut.dmesh.get();
+			    cut.dmesh = null;
+			    cut.ols.clear();
+			    cut.olols.clear();
+			    if(old != null)
+				old.dispose();
+			}
+		    }
 		}
 	    }
 	    return(cut.mesh);
@@ -856,9 +860,7 @@ public class MCache implements MapSource {
     }
     
     public MapMesh getcut(Coord cc) {
-	synchronized(grids) {
-	    return(getgrid(cc.div(cutn)).getcut(cc.mod(cutn)));
-	}
+	return(getgrid(cc.div(cutn)).getcut(cc.mod(cutn)));
     }
     
     public RenderTree.Node getfo(Coord cc) {
