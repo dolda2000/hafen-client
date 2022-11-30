@@ -142,6 +142,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	public Matrix4f getr(Coord2d rc, double ra);
     }
 
+    public static interface Placing {
+	public Placer placer();
+    }
+
     public static class DefaultPlace implements Placer {
 	public final MCache map;
 	public final MCache.SurfaceID surf;

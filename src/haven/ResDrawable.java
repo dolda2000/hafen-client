@@ -73,6 +73,15 @@ public class ResDrawable extends Drawable implements EquipTarget {
 	return(Skeleton.getpose(spr));
     }
 
+    public Gob.Placer placer() {
+	if(spr instanceof Gob.Placing) {
+	    Gob.Placer ret = ((Gob.Placing)spr).placer();
+	    if(ret != null)
+		return(ret);
+	}
+	return(super.placer());
+    }
+
     public Supplier<? extends Pipe.Op> eqpoint(String nm, Message dat) {
 	if(spr instanceof EquipTarget)
 	    return(((EquipTarget)spr).eqpoint(nm, dat));
