@@ -106,6 +106,33 @@ public class MCache implements MapSource {
 	    return((iy * ((ix * getz(ul          )) + (sx * getz(ul.add(1, 0))))) +
 		   (sy * ((ix * getz(ul.add(0, 1))) + (sx * getz(ul.add(1, 1))))));
 	}
+
+	public default Coord3f getnorm(Coord2d pc) {
+	    return(getnormt(pc));
+	}
+
+	public default Coord3f getnormt(Coord2d pc) {
+	    double tw = tilesz.x, th = tilesz.y;
+	    Coord ul = Coord.of(Utils.floordiv(pc.x, tw), Utils.floordiv(pc.y, th));
+	    double sx = Utils.floormod(pc.x, tw) / tw, ix = 1.0 - sx;
+	    double sy = Utils.floormod(pc.y, th) / th, iy = 1.0 - sy;
+	    double z0 = getz(ul), z1 = getz(ul.add(1, 0)), z2 = getz(ul.add(1, 1)), z3 = getz(ul.add(0, 1));
+	    double nx = ((z1 * iy) + (z2 * sy)) - ((z0 * iy) + (z3 * sy));
+	    double ny = ((z3 * iy) + (z2 * sy)) - ((z0 * iy) + (z1 * sy));
+	    return(Coord3f.of((float)tw, 0, (float)nx).cmul(0, (float)th, (float)ny).norm());
+	}
+
+	public default Coord3f getnormp(Coord2d pc) {
+	    double D = 0.01;
+	    Coord2d tul = pc.sub(pc.mod(tilesz)), tbr = tul.add(tilesz);
+	    double l = Math.max(pc.x - D, tul.x), u = Math.max(pc.y - D, tul.y);
+	    double r = Math.min(pc.x + D, tbr.x), b = Math.min(pc.y + D, tbr.y);
+	    double z0 = getz(Coord2d.of(pc.x, u));
+	    double z1 = getz(Coord2d.of(r, pc.y));
+	    double z2 = getz(Coord2d.of(pc.x, b));
+	    double z3 = getz(Coord2d.of(l, pc.y));
+	    return(Coord3f.of((float)(r - l), 0, (float)(z1 - z3)).cmul(0, (float)(b - u), (float)(z2 - z0)).norm());
+	}
     }
 
     public static class SurfaceID {
@@ -815,6 +842,14 @@ public class MCache implements MapSource {
 
     public Coord3f getzp(SurfaceID id, Coord2d pc) {
 	return(Coord3f.of((float)pc.x, (float)pc.y, (float)getz(id, pc)));
+    }
+
+    public Coord3f getnorm(SurfaceID id, Coord2d pc) {
+	Coord tc = pc.floor(tilesz);
+	Grid g = getgridt(tc);
+	MapMesh cut = g.getcut(tc.sub(g.ul).div(cutsz));
+	Tiler t = tiler(g.gettile(tc.sub(g.ul)));
+	return(cut.getsurf(id, t).getnorm(pc));
     }
 
     public Collection<OverlayInfo> getols(Area a) {
