@@ -424,6 +424,17 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	return(gmmat.apply(buf.mkmesh()));
     }
 
+    private Map<Pair<MCache.SurfaceID, Tiler>, MCache.ZSurface> zsurfaces = new HashMap<>();
+    public MCache.ZSurface getsurf(MCache.SurfaceID id, Tiler tile) {
+	MCache.ZSurface ret = zsurfaces.get(new Pair<>(id, tile));
+	if(ret == null) {
+	    Map<Pair<MCache.SurfaceID, Tiler>, MCache.ZSurface> n = new HashMap<>(zsurfaces);
+	    n.put(new Pair<>(id, tile), ret = tile.getsurf(this, id));
+	    zsurfaces = n;
+	}
+	return(ret);
+    }
+
     public static class OLOrder extends Order<OLOrder> {
 	public final MCache.OverlayInfo id;
 

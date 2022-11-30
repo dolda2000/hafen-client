@@ -791,8 +791,23 @@ public class MCache implements MapSource {
 	    }
 	};
 
-    public double getsz(SurfaceID id, Coord tc) {
-	
+    public double getz(SurfaceID id, Coord tc) {
+	Grid g = getgridt(tc);
+	MapMesh cut = g.getcut(tc.sub(g.ul).div(cutsz));
+	Tiler t = tiler(g.gettile(tc.sub(g.ul)));
+	return(cut.getsurf(id, t).getz(tc));
+    }
+
+    public double getz(SurfaceID id, Coord2d pc) {
+	Coord tc = pc.floor(tilesz);
+	Grid g = getgridt(tc);
+	MapMesh cut = g.getcut(tc.sub(g.ul).div(cutsz));
+	Tiler t = tiler(g.gettile(tc.sub(g.ul)));
+	return(cut.getsurf(id, t).getz(pc));
+    }
+
+    public Coord3f getzp(SurfaceID id, Coord2d pc) {
+	return(Coord3f.of((float)pc.x, (float)pc.y, (float)getz(id, pc)));
     }
 
     public Collection<OverlayInfo> getols(Area a) {
