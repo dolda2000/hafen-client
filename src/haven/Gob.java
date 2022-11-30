@@ -172,7 +172,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    Coord3f rot = Coord3f.zu.cmul(norm);
 	    float sin = rot.abs();
 	    if(sin > 0) {
-		Matrix4f incl = Transform.makerot(new Matrix4f(), rot.mul(1 / sin), (float)Math.asin(sin));
+		Matrix4f incl = Transform.makerot(new Matrix4f(), rot.mul(1 / sin), sin, (float)Math.sqrt(1 - (sin * sin)));
 		ret = incl.mul(ret);
 	    }
 	    return(ret);
