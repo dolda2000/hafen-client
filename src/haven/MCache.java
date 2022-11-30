@@ -127,6 +127,9 @@ public class MCache implements MapSource {
 	public static final SurfaceID trn = new SurfaceID(map);
     }
 
+    public final Gob.Placer mapplace = new Gob.DefaultPlace(this, SurfaceID.map);
+    public final Gob.Placer trnplace = new Gob.DefaultPlace(this, SurfaceID.trn);
+
     public static interface OverlayInfo {
 	public Collection<String> tags();
 	public Material mat();

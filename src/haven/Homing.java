@@ -50,7 +50,7 @@ public class Homing extends Moving {
 	    rc = tc;
 	else if(e > 0.00001)
 	    rc = rc.add(d.mul(dist / e));
-	return(gob.glob.map.getzp(rc));
+	return(gob.placer().getc(rc, gob.a));
     }
     
     public double getv() {
