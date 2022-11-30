@@ -47,6 +47,7 @@ public class Resource implements Serializable {
     private static Map<String, LayerFactory<?>> ltypes = new TreeMap<String, LayerFactory<?>>();
     public static Class<Image> imgc = Image.class;
     public static Class<Neg> negc = Neg.class;
+    public static Class<Props> props = Props.class;
     public static Class<Anim> animc = Anim.class;
     public static Class<Pagina> pagina = Pagina.class;
     public static Class<AButton> action = AButton.class;
@@ -1159,6 +1160,26 @@ public class Resource implements Serializable {
 	    }
 	}
 		
+	public void init() {}
+    }
+
+    @LayerName("props")
+    public class Props extends Layer {
+	public final Map<String, Object> props = new HashMap<>();
+
+	public Props(Message buf) {
+	    int ver = buf.uint8();
+	    if(ver != 1)
+		throw(new LoadException("Unknown property layer version: " + ver, getres()));
+	    Object[] raw = buf.list();
+	    for(int a = 0; a < raw.length - 1; a += 2)
+		props.put((String)raw[a], raw[a + 1]);
+	}
+
+	public Object get(String nm) {
+	    return(props.get(nm));
+	}
+
 	public void init() {}
     }
 

@@ -116,8 +116,8 @@ public abstract class Transform extends State {
 	return(d);
     }
 
-    public static Matrix4f makerot(Matrix4f d, Coord3f axis, float angle) {
-	float c = (float)Math.cos(angle), s = (float)Math.sin(angle), C = 1.0f - c;
+    public static Matrix4f makerot(Matrix4f d, Coord3f axis, float s, float c) {
+	float C = 1.0f - c;
 	float x = axis.x, y = axis.y, z = axis.z;
 	d.m[ 3] = d.m[ 7] = d.m[11] = d.m[12] = d.m[13] = d.m[14] = 0.0f;
 	d.m[15] = 1.0f;
@@ -125,6 +125,10 @@ public abstract class Transform extends State {
 	d.m[ 1] = (x * y * C) + (z * s); d.m[ 5] = (y * y * C) + c;       d.m[ 9] = (z * y * C) - (x * s);
 	d.m[ 2] = (x * z * C) - (y * s); d.m[ 6] = (y * z * C) + (x * s); d.m[10] = (z * z * C) + c;
 	return(d);
+    }
+
+    public static Matrix4f makerot(Matrix4f d, Coord3f axis, float angle) {
+	return(makerot(d, axis, (float)Math.sin(angle), (float)Math.cos(angle)));
     }
 
     public static Matrix4f makescale(Matrix4f d, float x, float y, float z) {

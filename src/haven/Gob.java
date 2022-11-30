@@ -133,6 +133,56 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	public default Pipe.Op placestate() {return(null);}
     }
 
+    public static interface Placer {
+	/* XXX: *Quite* arguably, the distinction between getc and
+	 * getr should be abolished and a single transform matrix
+	 * should be used instead, but that requires first abolishing
+	 * the distinction between the gob/gobx location IDs. */
+	public Coord3f getc(Coord2d rc, double ra);
+	public Matrix4f getr(Coord2d rc, double ra);
+    }
+
+    public static interface Placing {
+	public Placer placer();
+    }
+
+    public static class DefaultPlace implements Placer {
+	public final MCache map;
+	public final MCache.SurfaceID surf;
+
+	public DefaultPlace(MCache map, MCache.SurfaceID surf) {
+	    this.map = map;
+	    this.surf = surf;
+	}
+
+	public Coord3f getc(Coord2d rc, double ra) {
+	    return(map.getzp(surf, rc));
+	}
+
+	public Matrix4f getr(Coord2d rc, double ra) {
+	    return(Transform.makerot(new Matrix4f(), Coord3f.zu, -(float)ra));
+	}
+    }
+
+    public static class InclinePlace extends DefaultPlace {
+	public InclinePlace(MCache map, MCache.SurfaceID surf) {
+	    super(map, surf);
+	}
+
+	public Matrix4f getr(Coord2d rc, double ra) {
+	    Matrix4f ret = super.getr(rc, ra);
+	    Coord3f norm = map.getnorm(surf, rc);
+	    norm.y = -norm.y;
+	    Coord3f rot = Coord3f.zu.cmul(norm);
+	    float sin = rot.abs();
+	    if(sin > 0) {
+		Matrix4f incl = Transform.makerot(new Matrix4f(), rot.mul(1 / sin), sin, (float)Math.sqrt(1 - (sin * sin)));
+		ret = incl.mul(ret);
+	    }
+	    return(ret);
+	}
+    }
+
     public Gob(Glob glob, Coord2d c, long id) {
 	this.glob = glob;
 	this.rc = c;
@@ -252,9 +302,19 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	this.a = a;
     }
 
+    public Placer placer() {
+	Drawable d = getattr(Drawable.class);
+	if(d != null) {
+	    Placer ret = d.placer();
+	    if(ret != null)
+		return(ret);
+	}
+	return(glob.map.mapplace);
+    }
+
     public Coord3f getc() {
 	Moving m = getattr(Moving.class);
-	Coord3f ret = (m != null)?m.getc():getrc();
+	Coord3f ret = (m != null) ? m.getc() : getrc();
 	DrawOffset df = getattr(DrawOffset.class);
 	if(df != null)
 	    ret = ret.add(df.off);
@@ -262,7 +322,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     }
 
     public Coord3f getrc() {
-	return(glob.map.getzp(rc));
+	return(placer().getc(rc, a));
     }
 
     protected Pipe.Op getmapstate(Coord3f pc) {
@@ -528,7 +588,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	private class Placement implements Pipe.Op {
 	    final Pipe.Op flw, tilestate, mods;
 	    final Coord3f oc, rc;
-	    final double a;
+	    final Matrix4f rot;
 
 	    Placement() {
 		try {
@@ -542,12 +602,12 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 			this.flw = null;
 			this.oc = oc;
 			this.rc = rc;
-			this.a = Gob.this.a;
+			this.rot = Gob.this.placer().getr(Coord2d.of(oc), Gob.this.a);
 			tilestate = Gob.this.getmapstate(oc);
 		    } else {
 			this.flw = flwxf;
 			this.oc = this.rc = null;
-			this.a = Double.NaN;
+			this.rot = null;
 		    }
 		    this.tilestate = tilestate;
 		    if(setupmods.isEmpty()) {
@@ -577,7 +637,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 		    if(!Utils.eq(this.flw, that.flw))
 			return(false);
 		} else {
-		    if(!(Utils.eq(this.oc, that.oc) && (this.a == that.a)))
+		    if(!(Utils.eq(this.oc, that.oc) && Utils.eq(this.rot, that.rot)))
 			return(false);
 		}
 		if(!Utils.eq(this.tilestate, that.tilestate))
@@ -598,7 +658,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 		} else {
 		    if(gndst == null)
 			gndst = Pipe.Op.compose(new Location(Transform.makexlate(new Matrix4f(), this.rc), "gobx"),
-						new Location(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)-this.a), "gob"));
+						new Location(rot, "gob"));
 		    gndst.apply(buf);
 		}
 		if(tilestate != null)

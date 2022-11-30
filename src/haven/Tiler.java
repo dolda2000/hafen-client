@@ -214,6 +214,22 @@ public abstract class Tiler {
     public abstract void lay(MapMesh m, Random rnd, Coord lc, Coord gc);
     public abstract void trans(MapMesh m, Random rnd, Tiler gt, Coord lc, Coord gc, int z, int bmask, int cmask);
 
+    public static class MapZSurface implements MCache.ZSurface {
+	public final MapMesh m;
+
+	public MapZSurface(MapMesh m) {
+	    this.m = m;
+	}
+
+	public double getz(Coord tc) {
+	    return(m.map.getfz(tc));
+	}
+    }
+
+    public MCache.ZSurface getsurf(MapMesh m, MCache.SurfaceID id) {
+	return(new MapZSurface(m));
+    }
+
     public Pipe.Op clickstate() {
 	return(MapMesh.clickmain);
     }
