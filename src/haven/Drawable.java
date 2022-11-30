@@ -35,15 +35,11 @@ public abstract class Drawable extends GAttrib implements Skeleton.HasPose, Rend
 	
     public abstract Resource getres();
     
-    private static final Gob.Placer nilplace = new Gob.Placer() {
-	    public Coord3f getc(Coord2d rc, double ra) {throw(new RuntimeException());}
-	    public Matrix4f getr(Coord2d rc, double ra) {throw(new RuntimeException());}
-	};
     protected Gob.Placer placer = null;
     public Gob.Placer placer() {
 	if(placer == null) {
 	    Resource res = getres();
-	    Resource.Props props = res.layer(Resource.props);
+	    Resource.Props props = (res == null) ? null : res.layer(Resource.props);
 	    if(props != null) {
 		Object[] desc = (Object[])props.get("place");
 		if(desc != null) {
@@ -78,9 +74,9 @@ public abstract class Drawable extends GAttrib implements Skeleton.HasPose, Rend
 		}
 	    }
 	    if(placer == null)
-		placer = nilplace;
+		placer = gob.glob.map.trnplace;
 	}
-	return((placer == nilplace) ? null : placer);
+	return(placer);
     }
 
     public void gtick(Render g) {

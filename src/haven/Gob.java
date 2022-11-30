@@ -286,7 +286,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    if(ret != null)
 		return(ret);
 	}
-	return(glob.map.trnplace);
+	return(glob.map.mapplace);
     }
 
     public Coord3f getc() {
