@@ -32,9 +32,20 @@ public abstract class Drawable extends GAttrib implements Skeleton.HasPose, Rend
     public Drawable(Gob gob) {
 	super(gob);
     }
-	
+
     public abstract Resource getres();
-    
+
+    /* XXX: Should be somewhere else, but nor sure where just yet. */
+    private MCache.SurfaceID getsurf(String surf) {
+	switch(surf) {
+	case "map": return(MCache.SurfaceID.map);
+	case "trn": return(MCache.SurfaceID.trn);
+	default:
+	    Warning.warn("unknown surface: %s", surf);
+	    return(MCache.SurfaceID.map);
+	}
+    }
+
     protected Gob.Placer placer = null;
     public Gob.Placer placer() {
 	if(placer == null) {
@@ -51,17 +62,10 @@ public abstract class Drawable extends GAttrib implements Skeleton.HasPose, Rend
 		    }
 		    switch(type) {
 		    case "surface":
-			MCache.SurfaceID id;
-			String surf = (String)desc[1];
-			switch(surf) {
-			case "map": id = MCache.SurfaceID.map; break;
-			case "trn": id = MCache.SurfaceID.trn; break;
-			default:
-			    Warning.warn("%s specifes unknown surface: %s", res.name, surf);
-			    id = MCache.SurfaceID.map;
-			    break;
-			}
-			placer = new Gob.DefaultPlace(gob.glob.map, id);
+			placer = new Gob.DefaultPlace(gob.glob.map, getsurf((String)desc[1]));
+			break;
+		    case "incline":
+			placer = new Gob.InclinePlace(gob.glob.map, getsurf((String)desc[1]));
 			break;
 		    default:
 			if(opt) {

@@ -160,6 +160,25 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	}
     }
 
+    public static class InclinePlace extends DefaultPlace {
+	public InclinePlace(MCache map, MCache.SurfaceID surf) {
+	    super(map, surf);
+	}
+
+	public Matrix4f getr(Coord2d rc, double ra) {
+	    Matrix4f ret = super.getr(rc, ra);
+	    Coord3f norm = map.getnorm(surf, rc);
+	    norm.y = -norm.y;
+	    Coord3f rot = Coord3f.zu.cmul(norm);
+	    float sin = rot.abs();
+	    if(sin > 0) {
+		Matrix4f incl = Transform.makerot(new Matrix4f(), rot.mul(1 / sin), (float)Math.asin(sin));
+		ret = incl.mul(ret);
+	    }
+	    return(ret);
+	}
+    }
+
     public Gob(Glob glob, Coord2d c, long id) {
 	this.glob = glob;
 	this.rc = c;
