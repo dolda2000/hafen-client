@@ -48,6 +48,7 @@ public class Resource implements Serializable {
     public static Class<Image> imgc = Image.class;
     public static Class<Neg> negc = Neg.class;
     public static Class<Props> props = Props.class;
+    public static Class<Obstacle> obst = Obstacle.class;
     public static Class<Anim> animc = Anim.class;
     public static Class<Pagina> pagina = Pagina.class;
     public static Class<AButton> action = AButton.class;
@@ -1178,6 +1179,31 @@ public class Resource implements Serializable {
 
 	public Object get(String nm) {
 	    return(props.get(nm));
+	}
+
+	public void init() {}
+    }
+
+    @LayerName("obst")
+    public class Obstacle extends Layer {
+	public final String id;
+	public final Coord2d[][] p;
+
+	public Obstacle(Message buf) {
+	    int ver = buf.uint8();
+	    if((ver >= 1) && (ver <= 2)) {
+		this.id = (ver >= 2) ? buf.string() : "";
+		p = new Coord2d[buf.uint8()][];
+		for(int i = 0; i < p.length; i++)
+		    p[i] = new Coord2d[buf.uint8()];
+		for(int i = 0; i < p.length; i++) {
+		    for(int o = 0; o < p[i].length; o++)
+			p[i][o] = Coord2d.of(buf.float16(), buf.float16());
+		}
+	    } else {
+		this.id = "#";
+		this.p = new Coord2d[0][];
+	    }
 	}
 
 	public void init() {}
