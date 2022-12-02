@@ -1185,7 +1185,7 @@ public class Resource implements Serializable {
     }
 
     @LayerName("obst")
-    public class Obstacle extends Layer {
+    public class Obstacle extends Layer implements IDLayer<String> {
 	public final String id;
 	public final Coord2d[][] p;
 
@@ -1198,7 +1198,7 @@ public class Resource implements Serializable {
 		    p[i] = new Coord2d[buf.uint8()];
 		for(int i = 0; i < p.length; i++) {
 		    for(int o = 0; o < p[i].length; o++)
-			p[i][o] = Coord2d.of(buf.float16(), buf.float16());
+			p[i][o] = Coord2d.of(buf.float16(), buf.float16()).mul(MCache.tilesz);
 		}
 	    } else {
 		this.id = "#";
@@ -1207,6 +1207,7 @@ public class Resource implements Serializable {
 	}
 
 	public void init() {}
+	public String layerid() {return(id);}
     }
 
     @LayerName("anim")
