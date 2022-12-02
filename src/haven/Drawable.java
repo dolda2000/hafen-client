@@ -67,6 +67,9 @@ public abstract class Drawable extends GAttrib implements Skeleton.HasPose, Rend
 		    case "incline":
 			placer = new Gob.InclinePlace(gob.glob.map, getsurf((String)desc[1]));
 			break;
+		    case "base":
+			placer = new Gob.BasePlace(gob.glob.map, getsurf((String)desc[1]), res);
+			break;
 		    default:
 			if(opt) {
 			    Warning.warn("%s specifes unknown placement: %s", res.name, type);

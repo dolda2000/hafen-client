@@ -183,6 +183,62 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	}
     }
 
+    public static class BasePlace extends DefaultPlace {
+	public final Coord2d[][] obst;
+	private Coord2d cc;
+	private double ca;
+	private int seq = -1;
+	private float z;
+
+	public BasePlace(MCache map, MCache.SurfaceID surf, Coord2d[][] obst) {
+	    super(map, surf);
+	    this.obst = obst;
+	}
+
+	public BasePlace(MCache map, MCache.SurfaceID surf, Resource res, String id) {
+	    this(map, surf, res.flayer(Resource.obst, id).p);
+	}
+
+	public BasePlace(MCache map, MCache.SurfaceID surf, Resource res) {
+	    this(map, surf, res, "");
+	}
+
+	private float getz(Coord2d rc, double ra) {
+	    Coord2d[][] no = this.obst, ro = new Coord2d[no.length][];
+	    {
+		double s = Math.sin(ra), c = Math.cos(ra);
+		for(int i = 0; i < no.length; i++) {
+		    ro[i] = new Coord2d[no[i].length];
+		    for(int o = 0; o < ro[i].length; o++)
+			ro[i][o] = Coord2d.of((no[i][o].x * c) - (no[i][o].y * s), (no[i][o].y * c) + (no[i][o].x * s)).add(rc);
+		}
+	    }
+	    float ret = Float.NaN;
+	    for(int i = 0; i < no.length; i++) {
+		for(int o = 0; o < ro[i].length; o++) {
+		    Coord2d a = ro[i][o], b = ro[i][(o + 1) % ro[i].length];
+		    for(Coord2d c : new Coord2d.GridIsect(a, b, MCache.tilesz, false)) {
+			double z = map.getz(surf, c);
+			if(Float.isNaN(ret) || (z < ret))
+			    ret = (float)z;
+		    }
+		}
+	    }
+	    return(ret);
+	}
+
+	public Coord3f getc(Coord2d rc, double ra) {
+	    int mseq = map.chseq;
+	    if((mseq != this.seq) || !Utils.eq(rc, cc) || (ra != ca)) {
+		this.z = getz(rc, ra);
+		this.seq = mseq;
+		this.cc = rc;
+		this.ca = ra;
+	    }
+	    return(Coord3f.of((float)rc.x, (float)rc.y, this.z));
+	}
+    }
+
     public Gob(Glob glob, Coord2d c, long id) {
 	this.glob = glob;
 	this.rc = c;
