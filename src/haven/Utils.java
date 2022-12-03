@@ -1185,7 +1185,7 @@ public class Utils {
     /* Note: Math.floor has historically been surprisingly slow to the
      * extent that it has required a floordiv implementation that
      * avoids using it. That doesn't seem to be the case any longer,
-     * but maybe keep an eye open.. */
+     * but maybe keep an eye open... */
     public static int floordiv(float a, float b) {
 	return((int)Math.floor(a / b));
     }
