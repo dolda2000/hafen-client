@@ -76,6 +76,13 @@ public abstract class Drawable extends GAttrib implements Skeleton.HasPose, Rend
 			placer = new Gob.BasePlace(gob.glob.map, getsurf((String)desc[1]), res, id);
 			break;
 		    }
+		    case "plane": {
+			String id = "";
+			if(desc.length > 2)
+			    id = (String)desc[2];
+			placer = new Gob.PlanePlace(gob.glob.map, getsurf((String)desc[1]), res, id);
+			break;
+		    }
 		    default: {
 			if(opt) {
 			    Warning.warn("%s specifes unknown placement: %s", res.name, type);

@@ -239,6 +239,103 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	}
     }
 
+    public static class PlanePlace extends DefaultPlace {
+	public final Coord2d[] points;
+	private Coord3f c;
+	private Matrix4f r = Matrix4f.id;
+	private int seq = -1;
+	private Coord2d cc;
+	private double ca;
+
+	public static Coord2d[] flatten(Coord2d[][] points) {
+	    int n = 0;
+	    for(int i = 0; i < points.length; i++)
+		n += points[i].length;
+	    Coord2d[] ret = new Coord2d[n];
+	    for(int i = 0, o = 0; i < points.length; o += points[i++].length)
+		System.arraycopy(points[i], 0, ret, o, points[i].length);
+	    return(ret);
+	}
+
+	public PlanePlace(MCache map, MCache.SurfaceID surf, Coord2d[] points) {
+	    super(map, surf);
+	    this.points = points;
+	}
+
+	public PlanePlace(MCache map, MCache.SurfaceID surf, Coord2d[][] points) {
+	    this(map, surf, flatten(points));
+	}
+
+	public PlanePlace(MCache map, MCache.SurfaceID surf, Resource res, String id) {
+	    this(map, surf, res.flayer(Resource.obst, id).p);
+	}
+
+	public PlanePlace(MCache map, MCache.SurfaceID surf, Resource res) {
+	    this(map, surf, res, "");
+	}
+
+	private void recalc(Coord2d rc, double ra) {
+	    double s = Math.sin(ra), c = Math.cos(ra);
+	    Coord2d[] rp = new Coord2d[points.length];
+	    Coord3f[] pp = new Coord3f[rp.length];
+	    for(int i = 0; i < rp.length; i++) {
+		rp[i] = Coord2d.of((points[i].x * c) - (points[i].y * s), (points[i].y * c) + (points[i].x * s));
+		pp[i] = map.getzp(surf, rp[i].add(rc));
+	    }
+	    int I = 0, O = 1, U = 2;
+	    Coord3f mn = Coord3f.zu;
+	    double ma = 0;
+	    for(int i = 0; i < pp.length - 2; i++) {
+		for(int o = i + 1; o < pp.length - 1; o++) {
+		    plane: for(int u = o + 1; u < pp.length; u++) {
+			Coord3f n = pp[o].sub(pp[i]).cmul(pp[u].sub(pp[i])).norm();
+			for(int p = 0; p < pp.length; p++) {
+			    if((p == i) || (p == o) || (p == u))
+				continue;
+			    float pz = (((n.x * (pp[i].x - pp[p].x)) + (n.y * (pp[i].y - pp[p].y))) / n.z) + pp[i].z;
+			    if(pz < pp[p].z - 0.01)
+				continue plane;
+			}
+			double a = n.cmul(Coord3f.zu).abs();
+			if(a > ma) {
+			    mn = n;
+			    ma = a;
+			    I = i; O = o; U = u;
+			}
+		    }
+		}
+	    }
+	    this.c = Coord3f.of((float)rc.x, (float)rc.y, (((mn.x * (pp[I].x - (float)rc.x)) + (mn.y * (pp[I].y - (float)rc.y))) / mn.z) + pp[I].z);
+	    this.r = Transform.makerot(new Matrix4f(), Coord3f.zu, -(float)ra);
+	    mn.y = -mn.y;
+	    Coord3f rot = Coord3f.zu.cmul(mn);
+	    float sin = rot.abs();
+	    if(sin > 0) {
+		Matrix4f incl = Transform.makerot(new Matrix4f(), rot.mul(1 / sin), sin, (float)Math.sqrt(1 - (sin * sin)));
+		this.r = incl.mul(this.r);
+	    }
+	}
+
+	private void check(Coord2d rc, double ra) {
+	    int mseq = map.chseq;
+	    if((mseq != this.seq) || !Utils.eq(rc, cc) || (ra != ca)) {
+		recalc(rc, ra);
+		this.seq = mseq;
+		this.cc = rc;
+		this.ca = ra;
+	    }
+	}
+
+	public Coord3f getc(Coord2d rc, double ra) {
+	    check(rc, ra);
+	    return(this.c);
+	}
+
+	public Matrix4f getr(Coord2d rc, double ra) {
+	    return(this.r);
+	}
+    }
+
     public Gob(Glob glob, Coord2d c, long id) {
 	this.glob = glob;
 	this.rc = c;
