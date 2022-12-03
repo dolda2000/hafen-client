@@ -1183,7 +1183,7 @@ public class Utils {
     }
 
     /* Note: Math.floor has historically been surprisingly slow to the
-     * extend that it has required a floordiv implementation that
+     * extent that it has required a floordiv implementation that
      * avoids using it. That doesn't seem to be the case any longer,
      * but maybe keep an eye open.. */
     public static int floordiv(float a, float b) {
