@@ -101,10 +101,15 @@ public class MCache implements MapSource {
 	public default double getz(Coord2d pc) {
 	    double tw = tilesz.x, th = tilesz.y;
 	    Coord ul = Coord.of(Utils.floordiv(pc.x, tw), Utils.floordiv(pc.y, th));
-	    double sx = Utils.floormod(pc.x, tw) / tw, ix = 1.0 - sx;
-	    double sy = Utils.floormod(pc.y, th) / th, iy = 1.0 - sy;
-	    return((iy * ((ix * getz(ul          )) + (sx * getz(ul.add(1, 0))))) +
-		   (sy * ((ix * getz(ul.add(0, 1))) + (sx * getz(ul.add(1, 1))))));
+	    double sx = (pc.x - (ul.x * tw)) / tw, ix = 1.0 - sx;
+	    double sy = (pc.y - (ul.y * th)) / th, iy = 1.0 - sy;
+	    try {
+		return((iy * ((ix * getz(ul          )) + (sx * getz(ul.add(1, 0))))) +
+		       (sy * ((ix * getz(ul.add(0, 1))) + (sx * getz(ul.add(1, 1))))));
+	    } catch(ArrayIndexOutOfBoundsException e) {
+		Debug.dump(pc, ul, sx, sy);
+		throw(e);
+	    }
 	}
 
 	public default Coord3f getnorm(Coord2d pc) {
@@ -114,8 +119,8 @@ public class MCache implements MapSource {
 	public default Coord3f getnormt(Coord2d pc) {
 	    double tw = tilesz.x, th = tilesz.y;
 	    Coord ul = Coord.of(Utils.floordiv(pc.x, tw), Utils.floordiv(pc.y, th));
-	    double sx = Utils.floormod(pc.x, tw) / tw, ix = 1.0 - sx;
-	    double sy = Utils.floormod(pc.y, th) / th, iy = 1.0 - sy;
+	    double sx = (pc.x - (ul.x * tw)) / tw, ix = 1.0 - sx;
+	    double sy = (pc.y - (ul.y * th)) / th, iy = 1.0 - sy;
 	    double z0 = getz(ul), z1 = getz(ul.add(1, 0)), z2 = getz(ul.add(1, 1)), z3 = getz(ul.add(0, 1));
 	    double nx = ((z1 * iy) + (z2 * sy)) - ((z0 * iy) + (z3 * sy));
 	    double ny = ((z3 * iy) + (z2 * sy)) - ((z0 * iy) + (z1 * sy));
@@ -797,8 +802,8 @@ public class MCache implements MapSource {
     public double getcz(double px, double py) {
 	double tw = tilesz.x, th = tilesz.y;
 	Coord ul = Coord.of(Utils.floordiv(px, tw), Utils.floordiv(py, th));
-	double sx = Utils.floormod(px, tw) / tw;
-	double sy = Utils.floormod(py, th) / th;
+	double sx = (px - (ul.x * tw)) / tw;
+	double sy = (py - (ul.y * th)) / th;
 	return(((1.0f - sy) * (((1.0f - sx) * getfz(ul)) + (sx * getfz(ul.add(1, 0))))) +
 	       (sy * (((1.0f - sx) * getfz(ul.add(0, 1))) + (sx * getfz(ul.add(1, 1))))));
     }
