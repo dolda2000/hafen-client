@@ -276,11 +276,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 
 	private void recalc(Coord2d rc, double ra) {
 	    double s = Math.sin(ra), c = Math.cos(ra);
-	    Coord2d[] rp = new Coord2d[points.length];
-	    Coord3f[] pp = new Coord3f[rp.length];
-	    for(int i = 0; i < rp.length; i++) {
-		rp[i] = Coord2d.of((points[i].x * c) - (points[i].y * s), (points[i].y * c) + (points[i].x * s));
-		pp[i] = map.getzp(surf, rp[i].add(rc));
+	    Coord3f[] pp = new Coord3f[points.length];
+	    for(int i = 0; i < pp.length; i++) {
+		Coord2d rv = Coord2d.of((points[i].x * c) - (points[i].y * s), (points[i].y * c) + (points[i].x * s));
+		pp[i] = map.getzp(surf, rv.add(rc));
 	    }
 	    int I = 0, O = 1, U = 2;
 	    Coord3f mn = Coord3f.zu;
