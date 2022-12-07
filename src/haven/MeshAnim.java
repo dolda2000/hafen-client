@@ -404,13 +404,19 @@ public class MeshAnim extends State {
 		    int t = buf.uint8();
 		    if(t == 0)
 			break;
-		    else if((t < 0) || (t > 3))
+		    else if(t > 4)
 			throw(new Resource.LoadException("Unknown meshanim frame format: " + t, res));
 		    float tm = buf.float32();
 		    int n = buf.uint16();
 		    int[] idx = new int[n];
 		    float[] pos = new float[n * 3];
 		    float[] nrm = new float[n * 3];
+		    float xm = 0, xk = 0, ym = 0, yk = 0, zm = 0, zk = 0;
+		    if(t == 4) {
+			xm = buf.float16(); xk = buf.float16();
+			ym = buf.float16(); yk = buf.float16();
+			zm = buf.float16(); zk = buf.float16();
+		    }
 		    int i = 0;
 		    while(i < n) {
 			int st = buf.uint16();
@@ -433,9 +439,16 @@ public class MeshAnim extends State {
 				nrm[(i * 3) + 1] = 0;
 				nrm[(i * 3) + 2] = 0;
 			    } else if(t == 3) {
-				pos[(i * 3) + 0] = Utils.hfdec((short)buf.int16());
-				pos[(i * 3) + 1] = Utils.hfdec((short)buf.int16());
-				pos[(i * 3) + 2] = Utils.hfdec((short)buf.int16());
+				pos[(i * 3) + 0] = buf.float16();
+				pos[(i * 3) + 1] = buf.float16();
+				pos[(i * 3) + 2] = buf.float16();
+				nrm[(i * 3) + 0] = 0;
+				nrm[(i * 3) + 1] = 0;
+				nrm[(i * 3) + 2] = 0;
+			    } else if(t == 4) {
+				pos[(i * 3) + 0] = xm + (xk * buf.unorm8());
+				pos[(i * 3) + 1] = ym + (yk * buf.unorm8());
+				pos[(i * 3) + 2] = zm + (zk * buf.unorm8());
 				nrm[(i * 3) + 0] = 0;
 				nrm[(i * 3) + 1] = 0;
 				nrm[(i * 3) + 2] = 0;
