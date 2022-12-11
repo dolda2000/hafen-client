@@ -70,17 +70,10 @@ public class MapMesh implements RenderTree.Node, Disposable {
     }
 
     public static interface ConsHooks {
-	public void sfin();
-	public void calcnrm();
-	public void postcalcnrm(Random rnd);
-	public boolean clean();
-    }
-
-    public static class Hooks implements ConsHooks {
-	public void sfin() {};
-	public void calcnrm() {}
-	public void postcalcnrm(Random rnd) {}
-	public boolean clean() {return(false);}
+	public default void sfin() {};
+	public default void calcnrm() {};
+	public default void postcalcnrm(Random rnd) {};
+	public default boolean clean() {return(false);}
     }
 
     @SuppressWarnings("unchecked")
@@ -429,6 +422,17 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	    }
 	}
 	return(gmmat.apply(buf.mkmesh()));
+    }
+
+    private Map<Pair<MCache.SurfaceID, Tiler>, MCache.ZSurface> zsurfaces = new HashMap<>();
+    public MCache.ZSurface getsurf(MCache.SurfaceID id, Tiler tile) {
+	MCache.ZSurface ret = zsurfaces.get(new Pair<>(id, tile));
+	if(ret == null) {
+	    Map<Pair<MCache.SurfaceID, Tiler>, MCache.ZSurface> n = new HashMap<>(zsurfaces);
+	    n.put(new Pair<>(id, tile), ret = tile.getsurf(this, id));
+	    zsurfaces = n;
+	}
+	return(ret);
     }
 
     public static class OLOrder extends Order<OLOrder> {

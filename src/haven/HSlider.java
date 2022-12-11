@@ -31,6 +31,7 @@ import java.awt.image.BufferedImage;
 public class HSlider extends Widget {
     static final Tex sflarp = Resource.loadtex("gfx/hud/sflarp");
     static final Tex schain;
+    static final int chcut = UI.scale(7);
     public int val, min, max;
     private UI.Grab drag = null;
 
@@ -52,9 +53,11 @@ public class HSlider extends Widget {
     }
 
     public void draw(GOut g) {
+	int ew = sz.x + chcut, cw = schain.sz().x;
+	int n = (ew + cw - 1) / cw;
 	int cy = (sflarp.sz().y - schain.sz().y) / 2;
-	for(int x = 0; x < sz.x; x += schain.sz().x)
-	    g.image(schain, new Coord(x, cy));
+	for(int i = 0; i < n; i++)
+	    g.image(schain, Coord.of(((ew - cw) * i) / (n - 1), cy));
 	int fx = ((sz.x - sflarp.sz().x) * (val - min)) / (max - min);
 	g.image(sflarp, new Coord(fx, 0));
     }

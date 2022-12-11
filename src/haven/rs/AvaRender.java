@@ -57,7 +57,7 @@ public class AvaRender {
 		Skeleton.BoneOffset camoff = base.get().flayer(Skeleton.BoneOffset.class, camnm);
 		tcomp = compose(base.get(), mod, equ);
 		Pipe buf = new BufPipe();
-		buf.prep(camoff.forpose(tcomp.pose).get());
+		buf.prep(camoff.from(tcomp).get());
 		tcam = Camera.placed(buf.get(Homo3D.loc));
 		break;
 	    } catch(Loading ev) {

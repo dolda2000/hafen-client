@@ -32,9 +32,74 @@ public abstract class Drawable extends GAttrib implements Skeleton.HasPose, Rend
     public Drawable(Gob gob) {
 	super(gob);
     }
-	
+
     public abstract Resource getres();
-    
+
+    /* XXX: Should be somewhere else, but nor sure where just yet. */
+    private MCache.SurfaceID getsurf(String surf) {
+	switch(surf) {
+	case "map": return(MCache.SurfaceID.map);
+	case "trn": return(MCache.SurfaceID.trn);
+	default:
+	    Warning.warn("unknown surface: %s", surf);
+	    return(MCache.SurfaceID.map);
+	}
+    }
+
+    protected Gob.Placer placer = null;
+    public Gob.Placer placer() {
+	if(placer == null) {
+	    Resource res = getres();
+	    Resource.Props props = (res == null) ? null : res.layer(Resource.props);
+	    if(props != null) {
+		Object[] desc = (Object[])props.get("place");
+		if(desc != null) {
+		    String type = (String)desc[0];
+		    boolean opt = false;
+		    if(type.startsWith("o:")) {
+			opt = true;
+			type = type.substring(2);
+		    }
+		    switch(type) {
+		    case "surface": {
+			placer = new Gob.DefaultPlace(gob.glob.map, getsurf((String)desc[1]));
+			break;
+		    }
+		    case "incline": {
+			placer = new Gob.InclinePlace(gob.glob.map, getsurf((String)desc[1]));
+			break;
+		    }
+		    case "base": {
+			String id = "";
+			if(desc.length > 2)
+			    id = (String)desc[2];
+			placer = new Gob.BasePlace(gob.glob.map, getsurf((String)desc[1]), res, id);
+			break;
+		    }
+		    case "plane": {
+			String id = "";
+			if(desc.length > 2)
+			    id = (String)desc[2];
+			placer = new Gob.PlanePlace(gob.glob.map, getsurf((String)desc[1]), res, id);
+			break;
+		    }
+		    default: {
+			if(opt) {
+			    Warning.warn("%s specifes unknown placement: %s", res.name, type);
+			    break;
+			} else {
+			    throw(new RuntimeException(String.format("%s specifes unknown placement: %s", res.name, type)));
+			}
+		    }
+		    }
+		}
+	    }
+	    if(placer == null)
+		placer = gob.glob.map.trnplace;
+	}
+	return(placer);
+    }
+
     public void gtick(Render g) {
     }
 

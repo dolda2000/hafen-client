@@ -52,7 +52,7 @@ public class MCache implements MapSource {
     Map<Coord, Grid> grids = new HashMap<Coord, Grid>();
     Session sess;
     Set<Overlay> ols = new HashSet<Overlay>();
-    public int olseq = 0;
+    public int olseq = 0, chseq = 0;
     Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
 
     public static class LoadingMap extends Loading {
@@ -92,6 +92,75 @@ public class MCache implements MapSource {
 	private long lastreq = 0;
 	private int reqs = 0;
     }
+
+    public static interface ZSurface {
+	public default double getz(Coord tc) {
+	    return(getz(tc.mul(tilesz)));
+	}
+
+	public default double getz(Coord2d pc) {
+	    double tw = tilesz.x, th = tilesz.y;
+	    Coord ul = Coord.of(Utils.floordiv(pc.x, tw), Utils.floordiv(pc.y, th));
+	    double sx = (pc.x - (ul.x * tw)) / tw, ix = 1.0 - sx;
+	    double sy = (pc.y - (ul.y * th)) / th, iy = 1.0 - sy;
+	    try {
+		return((iy * ((ix * getz(ul          )) + (sx * getz(ul.add(1, 0))))) +
+		       (sy * ((ix * getz(ul.add(0, 1))) + (sx * getz(ul.add(1, 1))))));
+	    } catch(ArrayIndexOutOfBoundsException e) {
+		Debug.dump(pc, ul, sx, sy);
+		throw(e);
+	    }
+	}
+
+	public default Coord3f getnorm(Coord2d pc) {
+	    return(getnormt(pc));
+	}
+
+	public default Coord3f getnormt(Coord2d pc) {
+	    double tw = tilesz.x, th = tilesz.y;
+	    Coord ul = Coord.of(Utils.floordiv(pc.x, tw), Utils.floordiv(pc.y, th));
+	    double sx = (pc.x - (ul.x * tw)) / tw, ix = 1.0 - sx;
+	    double sy = (pc.y - (ul.y * th)) / th, iy = 1.0 - sy;
+	    double z0 = getz(ul), z1 = getz(ul.add(1, 0)), z2 = getz(ul.add(1, 1)), z3 = getz(ul.add(0, 1));
+	    double nx = ((z1 * iy) + (z2 * sy)) - ((z0 * iy) + (z3 * sy));
+	    double ny = ((z3 * iy) + (z2 * sy)) - ((z0 * iy) + (z1 * sy));
+	    return(Coord3f.of((float)tw, 0, (float)nx).cmul(0, (float)th, (float)ny).norm());
+	}
+
+	public default Coord3f getnormp(Coord2d pc) {
+	    double D = 0.01;
+	    Coord2d tul = pc.sub(pc.mod(tilesz)), tbr = tul.add(tilesz);
+	    double l = Math.max(pc.x - D, tul.x), u = Math.max(pc.y - D, tul.y);
+	    double r = Math.min(pc.x + D, tbr.x), b = Math.min(pc.y + D, tbr.y);
+	    double z0 = getz(Coord2d.of(pc.x, u));
+	    double z1 = getz(Coord2d.of(r, pc.y));
+	    double z2 = getz(Coord2d.of(pc.x, b));
+	    double z3 = getz(Coord2d.of(l, pc.y));
+	    return(Coord3f.of((float)(r - l), 0, (float)(z1 - z3)).cmul(0, (float)(b - u), (float)(z2 - z0)).norm());
+	}
+    }
+
+    public static class SurfaceID {
+	public final SurfaceID parent;
+
+	public SurfaceID(SurfaceID parent) {
+	    this.parent = parent;
+	}
+
+	public boolean hasparent(SurfaceID p) {
+	    for(SurfaceID id = this; id != null; id = id.parent) {
+		if(id == p)
+		    return(true);
+	    }
+	    return(false);
+	}
+
+	public static final SurfaceID map = new SurfaceID(null);
+	public static final SurfaceID trn = new SurfaceID(map);
+    }
+
+    public final Gob.Placer mapplace = new Gob.DefaultPlace(this, SurfaceID.map);
+    public final Gob.Placer trnplace = new Gob.DefaultPlace(this, SurfaceID.trn);
 
     public static interface OverlayInfo {
 	public Collection<String> tags();
@@ -350,14 +419,18 @@ public class MCache implements MapSource {
 	public MapMesh getcut(Coord cc) {
 	    Cut cut = geticut(cc);
 	    if(cut.dmesh != null) {
-		if(cut.dmesh.done() || (cut.mesh == null)) {
-		    MapMesh old = cut.mesh;
-		    cut.mesh = cut.dmesh.get();
-		    cut.dmesh = null;
-		    cut.ols.clear();
-		    cut.olols.clear();
-		    if(old != null)
-			old.dispose();
+		synchronized(cut) {
+		    if(cut.dmesh != null) {
+			if(cut.dmesh.done() || (cut.mesh == null)) {
+			    MapMesh old = cut.mesh;
+			    cut.mesh = cut.dmesh.get();
+			    cut.dmesh = null;
+			    cut.ols.clear();
+			    cut.olols.clear();
+			    if(old != null)
+				old.dispose();
+			}
+		    }
 		}
 	    }
 	    return(cut.mesh);
@@ -729,8 +802,8 @@ public class MCache implements MapSource {
     public double getcz(double px, double py) {
 	double tw = tilesz.x, th = tilesz.y;
 	Coord ul = Coord.of(Utils.floordiv(px, tw), Utils.floordiv(py, th));
-	double sx = Utils.floormod(px, tw) / tw;
-	double sy = Utils.floormod(py, th) / th;
+	double sx = (px - (ul.x * tw)) / tw;
+	double sy = (py - (ul.y * th)) / th;
 	return(((1.0f - sy) * (((1.0f - sx) * getfz(ul)) + (sx * getfz(ul.add(1, 0))))) +
 	       (sy * (((1.0f - sx) * getfz(ul.add(0, 1))) + (sx * getfz(ul.add(1, 1))))));
     }
@@ -749,6 +822,39 @@ public class MCache implements MapSource {
 
     public Coord3f getzp(Coord2d pc) {
 	return(Coord3f.of((float)pc.x, (float)pc.y, (float)getcz(pc)));
+    }
+
+    public final ZSurface zsurf = new ZSurface() {
+	    public double getz(Coord tc) {
+		return(getfz(tc));
+	    }
+	};
+
+    public double getz(SurfaceID id, Coord tc) {
+	Grid g = getgridt(tc);
+	MapMesh cut = g.getcut(tc.sub(g.ul).div(cutsz));
+	Tiler t = tiler(g.gettile(tc.sub(g.ul)));
+	return(cut.getsurf(id, t).getz(tc));
+    }
+
+    public double getz(SurfaceID id, Coord2d pc) {
+	Coord tc = pc.floor(tilesz);
+	Grid g = getgridt(tc);
+	MapMesh cut = g.getcut(tc.sub(g.ul).div(cutsz));
+	Tiler t = tiler(g.gettile(tc.sub(g.ul)));
+	return(cut.getsurf(id, t).getz(pc));
+    }
+
+    public Coord3f getzp(SurfaceID id, Coord2d pc) {
+	return(Coord3f.of((float)pc.x, (float)pc.y, (float)getz(id, pc)));
+    }
+
+    public Coord3f getnorm(SurfaceID id, Coord2d pc) {
+	Coord tc = pc.floor(tilesz);
+	Grid g = getgridt(tc);
+	MapMesh cut = g.getcut(tc.sub(g.ul).div(cutsz));
+	Tiler t = tiler(g.gettile(tc.sub(g.ul)));
+	return(cut.getsurf(id, t).getnorm(pc));
     }
 
     public Collection<OverlayInfo> getols(Area a) {
@@ -797,9 +903,7 @@ public class MCache implements MapSource {
     }
     
     public MapMesh getcut(Coord cc) {
-	synchronized(grids) {
-	    return(getgrid(cc.div(cutn)).getcut(cc.mod(cutn)));
-	}
+	return(getgrid(cc.div(cutn)).getcut(cc.mod(cutn)));
     }
     
     public RenderTree.Node getfo(Coord cc) {
@@ -833,6 +937,7 @@ public class MCache implements MapSource {
 		    g.fill(msg);
 		    req.remove(c);
 		    olseq++;
+		    chseq++;
 		    gridwait.wnotify();
 		}
 	    }

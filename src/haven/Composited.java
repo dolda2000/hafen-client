@@ -32,7 +32,7 @@ import haven.render.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 
-public class Composited implements RenderTree.Node {
+public class Composited implements RenderTree.Node, EquipTarget {
     public final Skeleton skel;
     public final Pose pose;
     public Collection<Model> mod = new ArrayList<Model>();
@@ -256,12 +256,12 @@ public class Composited implements RenderTree.Node {
 	    if(bt == null) {
 		Skeleton.BoneOffset bo = ed.res.res.get().layer(Skeleton.BoneOffset.class, ed.at);
 		if(bo != null)
-		    bt = bo.forpose(pose);
+		    bt = bo.from(Composited.this);
 	    }
 	    if((bt == null) && (skel instanceof Skeleton.ResourceSkeleton)) {
 		Skeleton.BoneOffset bo = ((Skeleton.ResourceSkeleton)skel).res.layer(Skeleton.BoneOffset.class, ed.at);
 		if(bo != null)
-		    bt = bo.forpose(pose);
+		    bt = bo.from(Composited.this);
 	    }
 	    if(bt == null) {
 		Skeleton.Bone bone = skel.bones.get(ed.at);
@@ -538,6 +538,7 @@ public class Composited implements RenderTree.Node {
 	    slot.add(mod);
 	for(Equ equ : this.equ)
 	    slot.add(equ);
+	// slot.add(pose.new Debug());
     }
 
     public void added(RenderTree.Slot slot) {
@@ -550,6 +551,10 @@ public class Composited implements RenderTree.Node {
 	slots.remove(slot);
     }
     
+    public Supplier<Pipe.Op> eqpoint(String nm, Message dat) {
+	return(pose.eqpoint(nm, dat));
+    }
+
     public void draw(GOut g) {
     }
     

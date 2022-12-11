@@ -1182,27 +1182,22 @@ public class Utils {
 	return(r);
     }
 
-    /* XXX: These are not actually correct, since an exact integer
-     * will round downwards, but I don't actually expect that to be a
-     * problem given how I use these, and it turns out that
-     * java.lang.Math.floor is actually surprisingly slow (it
-     * delegates to StrictMath.floor for some reason). */
+    /* Note: Math.floor has historically been surprisingly slow to the
+     * extent that it has required a floordiv implementation that
+     * avoids using it. That doesn't seem to be the case any longer,
+     * but maybe keep an eye open... */
     public static int floordiv(float a, float b) {
-	float q = a / b;
-	return((q < 0)?(((int)q) - 1):((int)q));
+	return((int)Math.floor(a / b));
     }
     public static int floordiv(double a, double b) {
-	double q = a / b;
-	return((q < 0)?(((int)q) - 1):((int)q));
+	return((int)Math.floor(a / b));
     }
 
     public static float floormod(float a, float b) {
-	float r = a % b;
-	return((a < 0)?(r + b):r);
+	return(a - (floordiv(a, b) * b));
     }
     public static double floormod(double a, double b) {
-	double r = a % b;
-	return((a < 0)?(r + b):r);
+	return(a - (floordiv(a, b) * b));
     }
 
     public static double cangle(double a) {

@@ -41,7 +41,7 @@ public class LinMove extends Moving {
     }
 
     public Coord3f getc() {
-	return(gob.glob.map.getzp(s.add(v.mul(t))));
+	return(gob.placer().getc(s.add(v.mul(t)), gob.a));
     }
 
     public double getv() {

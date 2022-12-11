@@ -47,6 +47,8 @@ public class Resource implements Serializable {
     private static Map<String, LayerFactory<?>> ltypes = new TreeMap<String, LayerFactory<?>>();
     public static Class<Image> imgc = Image.class;
     public static Class<Neg> negc = Neg.class;
+    public static Class<Props> props = Props.class;
+    public static Class<Obstacle> obst = Obstacle.class;
     public static Class<Anim> animc = Anim.class;
     public static Class<Pagina> pagina = Pagina.class;
     public static Class<AButton> action = AButton.class;
@@ -1160,6 +1162,52 @@ public class Resource implements Serializable {
 	}
 		
 	public void init() {}
+    }
+
+    @LayerName("props")
+    public class Props extends Layer {
+	public final Map<String, Object> props = new HashMap<>();
+
+	public Props(Message buf) {
+	    int ver = buf.uint8();
+	    if(ver != 1)
+		throw(new LoadException("Unknown property layer version: " + ver, getres()));
+	    Object[] raw = buf.list();
+	    for(int a = 0; a < raw.length - 1; a += 2)
+		props.put((String)raw[a], raw[a + 1]);
+	}
+
+	public Object get(String nm) {
+	    return(props.get(nm));
+	}
+
+	public void init() {}
+    }
+
+    @LayerName("obst")
+    public class Obstacle extends Layer implements IDLayer<String> {
+	public final String id;
+	public final Coord2d[][] p;
+
+	public Obstacle(Message buf) {
+	    int ver = buf.uint8();
+	    if((ver >= 1) && (ver <= 2)) {
+		this.id = (ver >= 2) ? buf.string() : "";
+		p = new Coord2d[buf.uint8()][];
+		for(int i = 0; i < p.length; i++)
+		    p[i] = new Coord2d[buf.uint8()];
+		for(int i = 0; i < p.length; i++) {
+		    for(int o = 0; o < p[i].length; o++)
+			p[i][o] = Coord2d.of(buf.float16(), buf.float16()).mul(MCache.tilesz);
+		}
+	    } else {
+		this.id = "#";
+		this.p = new Coord2d[0][];
+	    }
+	}
+
+	public void init() {}
+	public String layerid() {return(id);}
     }
 
     @LayerName("anim")

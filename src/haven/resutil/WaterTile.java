@@ -42,16 +42,34 @@ public class WaterTile extends Tiler {
     public final int depth;
     private static final Pipe.Op bcol = new Light.PhongLight(true, new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0), 0);
     public final Tiler.MCons bottom;
-    
-    public static class Bottom extends MapMesh.Hooks {
+
+    public static class BottomData implements MapMesh.ConsHooks {
+	public final float[] depth;
+	public final Scan ds;
+
+	public BottomData(MapMesh m) {
+	    ds = new Scan(Coord.z, m.sz.add(1, 1));
+	    depth = new float[ds.l];
+	}
+
+	public boolean clean() {
+	    return(true);
+	}
+
+	public static final MapMesh.DataID<BottomData> id = MapMesh.makeid(BottomData.class);
+    }
+
+    public static class Bottom implements MapMesh.ConsHooks {
 	final MapMesh m;
 	final boolean[] s;
 	final Vertex[] surf;
 	final boolean[] split;
-	int[] ed;
+	float[] ed;
 	final Scan vs, ss;
+	final BottomData prs;
 	
 	public Bottom(MapMesh m) {
+	    this.prs = m.data(BottomData.id);
 	    this.m = m;
 	    MapMesh.MapSurface ms = m.data(m.gnd);
 	    this.vs = ms.vs;
@@ -62,9 +80,9 @@ public class WaterTile extends Tiler {
 	    MCache map = m.map;
 	    Scan ds = new Scan(new Coord(-10, -10), sz.add(21, 21));
 	    ss = new Scan(new Coord(-9, -9), sz.add(19,  19));
-	    int[] d = new int[ds.l];
+	    float[] d = new float[ds.l];
 	    s = new boolean[ss.l];
-	    ed = new int[ss.l];
+	    ed = new float[ss.l];
 	    for(int y = ds.ul.y; y < ds.br.y; y++) {
 		for(int x = ds.ul.x; x < ds.br.x; x++) {
 		    Tiler t = map.tiler(map.gettile(m.ul.add(x, y)));
@@ -76,7 +94,7 @@ public class WaterTile extends Tiler {
 	    }
 	    for(int y = ss.ul.y; y < ss.br.y; y++) {
 		for(int x = ss.ul.x; x < ss.br.x; x++) {
-		    int td = d[ds.o(x, y)];
+		    float td = d[ds.o(x, y)];
 		    td = Math.min(td, d[ds.o(x - 1, y - 1)]);
 		    td = Math.min(td, d[ds.o(x, y - 1)]);
 		    td = Math.min(td, d[ds.o(x - 1, y)]);
@@ -86,7 +104,7 @@ public class WaterTile extends Tiler {
 		}
 	    }
 	    for(int i = 0; i < 8; i++) {
-		int[] sd = new int[ss.l];
+		float[] sd = new float[ss.l];
 		for(int y = ss.ul.y + 1; y < ss.br.y - 1; y++) {
 		    for(int x = ss.ul.x + 1; x < ss.br.x - 1; x++) {
 			if(s[ss.o(x, y)]) {
@@ -102,7 +120,7 @@ public class WaterTile extends Tiler {
 	    }
 	    for(int y = vs.ul.y; y < vs.br.y; y++) {
 		for(int x = vs.ul.x; x < vs.br.x; x++) {
-		    int vd = ed[ss.o(x, y)];
+		    float vd = ed[ss.o(x, y)];
 		    surf[vs.o(x, y)] = new BottomVertex(ms, ms.surf[vs.o(x, y)].add(0, 0, -vd), vd);
 		}
 	    }
@@ -110,6 +128,11 @@ public class WaterTile extends Tiler {
 		for(int x = ts.ul.x; x < ts.br.x; x++) {
 		    split[ts.o(x, y)] = Math.abs(surf[vs.o(x, y)].z - surf[vs.o(x + 1, y + 1)].z) > Math.abs(surf[vs.o(x + 1, y)].z - surf[vs.o(x, y + 1)].z);
 		}
+	    }
+
+	    for(int y = prs.ds.ul.y; y < prs.ds.br.y; y++) {
+		for(int x = prs.ds.ul.x; x < prs.ds.br.x; x++)
+		    prs.depth[prs.ds.o(x, y)] = ed[ss.o(x, y)];
 	    }
 	}
 
@@ -126,7 +149,7 @@ public class WaterTile extends Tiler {
 	    }
 	}
 
-	public int d(int x, int y) {
+	public float d(int x, int y) {
 	    return(ed[ss.o(x, y)]);
 	}
 
@@ -140,7 +163,6 @@ public class WaterTile extends Tiler {
 	}
 
 	public void calcnrm() {
-	    super.calcnrm();
 	    MapMesh.MapSurface ms = m.data(MapMesh.gnd);
 	    Surface.Normals n = ms.data(Surface.nrm);
 	    Coord c = new Coord();
@@ -418,6 +440,25 @@ public class WaterTile extends Tiler {
 	    if(bottom instanceof Tiler)
 		((Tiler)bottom).trans(m, rnd, gt, lc, gc, z, bmask, cmask);
 	}
+    }
+
+    public static class BottomSurface extends MapZSurface {
+	public final BottomData b;
+
+	public BottomSurface(MapMesh m) {
+	    super(m);
+	    this.b = m.data(BottomData.id);
+	}
+
+	public double getz(Coord tc) {
+	    return(super.getz(tc) - b.depth[b.ds.o(tc.sub(m.ul))]);
+	}
+    }
+
+    public MCache.ZSurface getsurf(MapMesh m, MCache.SurfaceID id) {
+	if(id.hasparent(MCache.SurfaceID.trn))
+	    return(new BottomSurface(m));
+	return(super.getsurf(m, id));
     }
 
     public static final Pipe.Op clickstate = Pipe.Op.compose(MapMesh.clickpost, States.maskdepth);

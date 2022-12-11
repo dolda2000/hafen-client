@@ -81,7 +81,7 @@ public class Following extends Moving {
 	    if(tgt != null) {
 		Skeleton.Pose cpose = getpose(tgt);
 		if(!hlpose || (cpose != lpose)) {
-		    bxf = xfres.get().flayer(Skeleton.BoneOffset.class, xfname).forpose(lpose = cpose);
+		    bxf = xfres.get().flayer(Skeleton.BoneOffset.class, xfname).from(lpose = cpose);
 		    hlpose = true;
 		}
 	    } else {
