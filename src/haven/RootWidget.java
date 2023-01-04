@@ -105,6 +105,16 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget {
 			clip = new Audio.VolAdjust(clip, vol);
 		    Audio.play(clip);
 		}, null);
+	} else if(msg == "bgm") {
+	    int a = 0;
+	    Indir<Resource> resid = (args.length > a) ? ui.sess.getres((Integer)args[a++]) : null;
+	    boolean loop = (args.length > a) ? ((Number)args[a++]).intValue() != 0 : false;
+	    if(Music.enabled) {
+		if(resid == null)
+		    Music.play(null, false);
+		else
+		    Music.play(resid, loop);
+	    }
 	} else {
 	    super.uimsg(msg, args);
 	}
