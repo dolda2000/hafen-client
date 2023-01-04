@@ -30,9 +30,6 @@ import java.util.*;
 import java.awt.Color;
 
 public class Party {
-    public static final int PD_LIST = 0;
-    public static final int PD_LEADER = 1;
-    public static final int PD_MEMBER = 2;
     public Map<Long, Member> memb = Collections.emptyMap();
     public Member leader = null;
     private final Glob glob;
@@ -79,46 +76,6 @@ public class Party {
 
 	public double geta() {
 	    return(Double.isNaN(oa) ? ma : oa);
-	}
-    }
-
-    public void msg(Message msg) {
-	while(!msg.eom()) {
-	    int type = msg.uint8();
-	    if(type == PD_LIST) {
-		ArrayList<Long> ids = new ArrayList<Long>();
-		while(true) {
-		    long id = msg.uint32();
-		    if(id == 0xffffffffl)
-			break;
-		    ids.add(id);
-		}
-		Map<Long, Member> nmemb = new HashMap<Long, Member>();
-		for(long id : ids) {
-		    Member m = memb.get(id);
-		    if(m == null)
-			m = new Member(id);
-		    nmemb.put(id, m);
-		}
-		long lid = (leader == null)?-1:leader.gobid;
-		memb = nmemb;
-		leader = memb.get(lid);
-	    } else if(type == PD_LEADER) {
-		Member m = memb.get(msg.uint32());
-		if(m != null)
-		    leader = m;
-	    } else if(type == PD_MEMBER) {
-		Member m = memb.get(msg.uint32());
-		Coord2d c = null;
-		boolean vis = msg.uint8() == 1;
-		if(vis)
-		    c = msg.coord().mul(OCache.posres);
-		Color col = msg.color();
-		if(m != null) {
-		    m.setc(c);
-		    m.col = col;
-		}
-	    }
 	}
     }
 }
