@@ -129,6 +129,7 @@ public class Inventory extends Widget implements DTarget {
 	if(msg == "sz") {
 	    isz = (Coord)args[0];
 	    resize(invsq.sz().add(UI.scale(new Coord(-1, -1))).mul(isz).add(UI.scale(new Coord(1, 1))));
+	    sqmask = null;
 	} else if(msg == "mask") {
 	    boolean[] nmask;
 	    if(args[0] == null) {
