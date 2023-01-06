@@ -32,6 +32,20 @@ import java.util.function.*;
 public interface OwnerContext {
     public <T> T context(Class<T> cl);
 
+    public default <T> T context(Class<T> cl, boolean fail) {
+	try {
+	    return(context(cl));
+	} catch(NoContext e) {
+	    if(fail)
+		throw(e);
+	    return(null);
+	}
+    }
+
+    public default <T> Optional<T> ocontext(Class<T> cl) {
+	return(Optional.ofNullable(context(cl, false)));
+    }
+
     public static class NoContext extends RuntimeException {
 	public final Class<?> requested;
 
