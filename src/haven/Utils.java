@@ -688,6 +688,12 @@ public class Utils {
 	buf[2] = z * f;
     }
 
+    public static Coord3f oct2uvec(float x, float y) {
+	float[] buf = new float[3];
+	oct2uvec(buf, x, y);
+	return(Coord3f.of(buf[0], buf[1], buf[2]));
+    }
+
     static char num2hex(int num) {
 	if(num < 10)
 	    return((char)('0' + num));
