@@ -150,6 +150,8 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    return(info);
 	}
 	private static final OwnerContext.ClassResolver<PagButton> ctxr = new OwnerContext.ClassResolver<PagButton>()
+	    .add(PagButton.class, p -> p)
+	    .add(MenuGrid.class, p -> p.pag.scm)
 	    .add(Glob.class, p -> p.pag.scm.ui.sess.glob)
 	    .add(Session.class, p -> p.pag.scm.ui.sess);
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}

@@ -52,6 +52,7 @@ public class Makewindow extends Widget {
     }
 
     private static final OwnerContext.ClassResolver<Makewindow> ctxr = new OwnerContext.ClassResolver<Makewindow>()
+	.add(Makewindow.class, wdg -> wdg)
 	.add(Glob.class, wdg -> wdg.ui.sess.glob)
 	.add(Session.class, wdg -> wdg.ui.sess);
     public class Spec implements GSprite.Owner, ItemInfo.SpriteOwner {

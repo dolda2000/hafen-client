@@ -72,6 +72,7 @@ public abstract class PView extends Widget {
 	}
 
 	private static final ClassResolver<PView> ctxr = new ClassResolver<PView>()
+	    .add(PView.class, wdg -> wdg)
 	    .add(Glob.class, wdg -> wdg.ui.sess.glob)
 	    .add(Session.class, wdg -> wdg.ui.sess);
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, wdg));}

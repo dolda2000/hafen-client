@@ -119,6 +119,7 @@ public class Avaview extends PView {
     }
 
     private static final OwnerContext.ClassResolver<Avaview> ctxr = new OwnerContext.ClassResolver<Avaview>()
+	.add(Avaview.class, v -> v)
 	.add(Glob.class, v -> v.ui.sess.glob)
 	.add(Session.class, v -> v.ui.sess)
 	.add(Resource.Resolver.class, v -> (v.resmap == null ? v.ui.sess : v.resmap));
