@@ -175,4 +175,12 @@ public class Partyview extends Widget {
 	    super.uimsg(msg, args);
 	}
     }
+
+    public void dispose() {
+	/* XXX: Arguably, glob.party should be removed entirely, but
+	 * until then, at least clear it when logging out. */
+	party.memb = Collections.emptyMap();
+	party.leader = null;
+	super.dispose();
+    }
 }

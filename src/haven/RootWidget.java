@@ -92,6 +92,29 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget {
 	    ui.error((String)args[0]);
 	} else if(msg == "msg") {
 	    ui.msg((String)args[0]);
+	} else if(msg == "sfx") {
+	    int a = 0;
+	    Indir<Resource> resid = ui.sess.getres((Integer)args[a++]);
+	    double vol = (args.length > a) ? ((Number)args[a++]).doubleValue() : 1.0;
+	    double spd = (args.length > a) ? ((Number)args[a++]).doubleValue() : 1.0;
+	    ui.sess.glob.loader.defer(() -> {
+		    Audio.CS clip = Audio.fromres(resid.get());
+		    if(spd != 1.0)
+			clip = new Audio.Resampler(clip).sp(spd);
+		    if(vol != 1.0)
+			clip = new Audio.VolAdjust(clip, vol);
+		    Audio.play(clip);
+		}, null);
+	} else if(msg == "bgm") {
+	    int a = 0;
+	    Indir<Resource> resid = (args.length > a) ? ui.sess.getres((Integer)args[a++]) : null;
+	    boolean loop = (args.length > a) ? ((Number)args[a++]).intValue() != 0 : false;
+	    if(Music.enabled) {
+		if(resid == null)
+		    Music.play(null, false);
+		else
+		    Music.play(resid, loop);
+	    }
 	} else {
 	    super.uimsg(msg, args);
 	}

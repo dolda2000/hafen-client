@@ -33,7 +33,7 @@ import java.awt.image.*;
 import com.jogamp.opengl.*;
 
 public class Debug {
-    public static final int FRAME_DEBUG_KEY = java.awt.event.KeyEvent.VK_F8;
+    public static final int FRAME_DEBUG_KEY = java.awt.event.KeyEvent.VK_PAUSE;
     public static boolean kf1, kf2, kf3, kf4;
     public static boolean pk1, pk2, pk3, pk4;
     public static boolean fdk, pfdk, ff;

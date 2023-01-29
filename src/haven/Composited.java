@@ -204,7 +204,8 @@ public class Composited implements RenderTree.Node, EquipTarget {
     }
 
     private static final OwnerContext.ClassResolver<SpriteEqu> eqctxr = new OwnerContext.ClassResolver<SpriteEqu>()
-	.add(SpriteEqu.class, eq -> eq);
+	.add(SpriteEqu.class, eq -> eq)
+	.add(Composited.class, eq -> eq.comp());
     public class SpriteEqu extends Equ<Sprite> implements Sprite.Owner, Skeleton.HasPose {
 	private SpriteEqu(ED ed) {
 	    super(Sprite.create(eqowner, ed.res.res.get(), ed.res.sdt.clone()), ed);
@@ -234,6 +235,10 @@ public class Composited implements RenderTree.Node, EquipTarget {
 
 	public Pose getpose() {
 	    return(Skeleton.getpose(r));
+	}
+
+	public Composited comp() {
+	    return(Composited.this);
 	}
     }
 

@@ -317,8 +317,6 @@ public class Session implements Resource.Resolver {
 		String resname = msg.string();
 		int resver = msg.uint16();
 		cachedres(resid).set(resname, resver);
-	    } else if(msg.type == RMessage.RMSG_PARTY) {
-		glob.party.msg(msg);
 	    } else if(msg.type == RMessage.RMSG_SFX) {
 		Indir<Resource> resid = getres(msg.uint16());
 		double vol = ((double)msg.uint16()) / 256.0;

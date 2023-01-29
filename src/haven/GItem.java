@@ -129,6 +129,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     }
     public Resource getres() {return(res.get());}
     private static final OwnerContext.ClassResolver<GItem> ctxr = new OwnerContext.ClassResolver<GItem>()
+	.add(GItem.class, wdg -> wdg)
 	.add(Glob.class, wdg -> wdg.ui.sess.glob)
 	.add(Session.class, wdg -> wdg.ui.sess);
     public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
