@@ -26,7 +26,10 @@
 
 package haven;
 
+import java.io.PrintWriter;
+
 public class Chatwindow extends Window {
+    private static final PrintWriter stdout = new PrintWriter(System.out);
     public final TextEntry in;
     public final Textlog out;
     private boolean stdio;
@@ -60,9 +63,25 @@ public class Chatwindow extends Window {
 	    try {
 		int c = System.in.read();
 		if(c == '\n') {
-		    wdgmsg("msg", readbuf.toString());
+		    String cmd = readbuf.toString();
 		    readbuf.setLength(0);
-		    
+		    if((cmd.length() > 0) && (cmd.charAt(0) == ':')) {
+			PrintWriter prev = ui.cons.out;
+			try {
+			    ui.cons.out = stdout;
+			    ui.cons.run(cmd.substring(1));
+			    stdout.flush();
+			} catch(Exception e) {
+			    String msg = e.getMessage();
+			    if(msg == null)
+				msg = e.toString();
+			    System.out.println(msg);
+			} finally {
+			    ui.cons.out = prev;
+			}
+		    } else {
+			wdgmsg("msg", cmd);
+		    }
 		    System.out.print("> "); System.out.flush();
 		} else if(c > 0) {
 		    readbuf.append((char)c);
