@@ -127,25 +127,25 @@ public abstract class NormNumber extends Number {
 	public double doubleValue() {return((val & 0xffffffffl) * (1.0 / 0x100000000.0p0));}
     }
 
-    public static SNorm8   snorm8(int val) {return(new SNorm8((byte)Utils.clip(val, -127, 127)));}
-    public static UNorm8   unorm8(int val) {return(new UNorm8((byte)Utils.clip(val, 0, 255)));}
-    public static MNorm8   mnorm8(int val) {return(new MNorm8((byte)val));}
-    public static SNorm16 snorm16(int val) {return(new SNorm16((short)Utils.clip(val, -32767, 32767)));}
-    public static UNorm16 unorm16(int val) {return(new UNorm16((short)Utils.clip(val, 0, 65535)));}
-    public static MNorm16 mnorm16(int val) {return(new MNorm16((short)val));}
-    public static SNorm32 snorm32(int val) {return(new SNorm32(val));}
-    public static UNorm32 unorm32(int val) {return(new UNorm32(val));}
-    public static MNorm32 mnorm32(int val) {return(new MNorm32(val));}
+    public static SNorm8   decsnorm8(int val) {return(new SNorm8((byte)Utils.clip(val, -127, 127)));}
+    public static UNorm8   decunorm8(int val) {return(new UNorm8((byte)Utils.clip(val, 0, 255)));}
+    public static MNorm8   decmnorm8(int val) {return(new MNorm8((byte)val));}
+    public static SNorm16 decsnorm16(int val) {return(new SNorm16((short)Utils.clip(val, -32767, 32767)));}
+    public static UNorm16 decunorm16(int val) {return(new UNorm16((short)Utils.clip(val, 0, 65535)));}
+    public static MNorm16 decmnorm16(int val) {return(new MNorm16((short)val));}
+    public static SNorm32 decsnorm32(int val) {return(new SNorm32(val));}
+    public static UNorm32 decunorm32(int val) {return(new UNorm32(val));}
+    public static MNorm32 decmnorm32(int val) {return(new MNorm32(val));}
 
-    public static SNorm8   snorm8(Message msg) {return( snorm8(msg.int8()));}
-    public static UNorm8   unorm8(Message msg) {return( unorm8(msg.uint8()));}
-    public static MNorm8   mnorm8(Message msg) {return( mnorm8(msg.uint8()));}
-    public static SNorm16 snorm16(Message msg) {return(snorm16(msg.int16()));}
-    public static UNorm16 unorm16(Message msg) {return(unorm16(msg.uint16()));}
-    public static MNorm16 mnorm16(Message msg) {return(mnorm16(msg.uint16()));}
-    public static SNorm32 snorm32(Message msg) {return(snorm32(msg.int32()));}
-    public static UNorm32 unorm32(Message msg) {return(unorm32(msg.int32()));}
-    public static MNorm32 mnorm32(Message msg) {return(mnorm32(msg.int32()));}
+    public static SNorm8   decsnorm8(Message msg) {return( decsnorm8(msg.int8()));}
+    public static UNorm8   decunorm8(Message msg) {return( decunorm8(msg.uint8()));}
+    public static MNorm8   decmnorm8(Message msg) {return( decmnorm8(msg.uint8()));}
+    public static SNorm16 decsnorm16(Message msg) {return(decsnorm16(msg.int16()));}
+    public static UNorm16 decunorm16(Message msg) {return(decunorm16(msg.uint16()));}
+    public static MNorm16 decmnorm16(Message msg) {return(decmnorm16(msg.uint16()));}
+    public static SNorm32 decsnorm32(Message msg) {return(decsnorm32(msg.int32()));}
+    public static UNorm32 decunorm32(Message msg) {return(decunorm32(msg.int32()));}
+    public static MNorm32 decmnorm32(Message msg) {return(decmnorm32(msg.int32()));}
 
     public static SNorm8   snorm8(float val) {return( snorm8(Math.round(Utils.clip(val, -1, 1) * 0x7f.0p0f)));}
     public static SNorm16 snorm16(float val) {return(snorm16(Math.round(Utils.clip(val, -1, 1) * 0x7fff.0p0f)));}

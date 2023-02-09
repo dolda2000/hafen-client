@@ -330,15 +330,15 @@ public abstract class Message {
 	    case T_FCOORD64:
 		ret.add(new Coord2d(float64(), float64()));
 		break;
-	    case T_SNORM8:  ret.add( NormNumber.snorm8(this)); break;
-	    case T_SNORM16: ret.add(NormNumber.snorm16(this)); break;
-	    case T_SNORM32: ret.add(NormNumber.snorm32(this)); break;
-	    case T_UNORM8:  ret.add( NormNumber.unorm8(this)); break;
-	    case T_UNORM16: ret.add(NormNumber.unorm16(this)); break;
-	    case T_UNORM32: ret.add(NormNumber.unorm32(this)); break;
-	    case T_MNORM8:  ret.add( NormNumber.mnorm8(this)); break;
-	    case T_MNORM16: ret.add(NormNumber.mnorm16(this)); break;
-	    case T_MNORM32: ret.add(NormNumber.mnorm32(this)); break;
+	    case T_SNORM8:  ret.add( NormNumber.decsnorm8(this)); break;
+	    case T_SNORM16: ret.add(NormNumber.decsnorm16(this)); break;
+	    case T_SNORM32: ret.add(NormNumber.decsnorm32(this)); break;
+	    case T_UNORM8:  ret.add( NormNumber.decunorm8(this)); break;
+	    case T_UNORM16: ret.add(NormNumber.decunorm16(this)); break;
+	    case T_UNORM32: ret.add(NormNumber.decunorm32(this)); break;
+	    case T_MNORM8:  ret.add( NormNumber.decmnorm8(this)); break;
+	    case T_MNORM16: ret.add(NormNumber.decmnorm16(this)); break;
+	    case T_MNORM32: ret.add(NormNumber.decmnorm32(this)); break;
 	    default:
 		throw(new FormatError("Encountered unknown type " + t + " in TTO list.").msg(this));
 	    }
