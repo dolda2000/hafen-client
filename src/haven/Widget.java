@@ -521,6 +521,7 @@ public class Widget {
 	if(parent != null) {
 	    unlink();
 	    parent.cdestroy(this);
+	    parent = null;
 	}
 	if(ui != null)
 	    ui.removed(this);
