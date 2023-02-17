@@ -1213,7 +1213,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		help.res = res;
 	} else if(msg == "map-mark") {
 	    long gobid = Utils.uint32((Integer)args[0]);
-	    long oid = (Long)args[1];
+	    long oid = ((Number)args[1]).longValue();
 	    Indir<Resource> res = ui.sess.getres((Integer)args[2]);
 	    String nm = (String)args[3];
 	    if(mapfile != null)
