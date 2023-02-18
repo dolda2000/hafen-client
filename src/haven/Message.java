@@ -477,7 +477,7 @@ public abstract class Message {
 		addfloat32(((Float)o).floatValue());
 	    } else if(o instanceof Double) {
 		adduint8(T_FLOAT64);
-		addfloat64(((Double)o).floatValue());
+		addfloat64(((Double)o).doubleValue());
 	    } else if(o instanceof NormNumber.SNorm8) {
 		adduint8(T_SNORM8);
 		addint8(((NormNumber.SNorm8)o).val);
