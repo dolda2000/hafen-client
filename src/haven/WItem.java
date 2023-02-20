@@ -268,16 +268,12 @@ public class WItem extends Widget implements DTarget {
 	public static final IBox obox = Window.wbox;
 	public final WItem cont;
 	public final Widget inv;
-	private boolean invdest;
+	public final ProxyWidget<Widget> invp;
 
 	public Contents(WItem cont, Widget inv) {
 	    z(90);
 	    this.cont = cont;
-	    /* XXX? This whole movement of the inv widget between
-	     * various parents is kind of weird, but it's not
-	     * obviously incorrect either. Could some sort of proxy
-	     * widget be called for? */
-	    this.inv = add(inv, obox.ctloff());
+	    this.invp = add(new ProxyWidget<>(this.inv = inv), obox.ctloff());
 	    this.tick(0);
 	}
 
@@ -294,26 +290,13 @@ public class WItem extends Widget implements DTarget {
 	}
 
 	public void tick(double dt) {
-	    super.tick(dt);
-	    resize(inv.c.add(inv.sz).add(obox.btloff()));
-	}
-
-	public void destroy() {
-	    if(!invdest) {
-		inv.unlink();
-		cont.item.add(inv);
-	    }
-	    super.destroy();
-	}
-
-	public void cdestroy(Widget w) {
-	    super.cdestroy(w);
-	    if(w == inv) {
-		cont.item.cdestroy(w);
-		invdest = true;
-		this.destroy();
+	    if(cont.item.contents != inv) {
+		destroy();
 		cont.contents = null;
+		return;
 	    }
+	    super.tick(dt);
+	    resize(invp.c.add(invp.sz).add(obox.btloff()));
 	}
     }
 }
