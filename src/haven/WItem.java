@@ -38,6 +38,7 @@ import static haven.Inventory.sqsz;
 public class WItem extends Widget implements DTarget {
     public static final Resource missing = Resource.local().loadwait("gfx/invobjs/missing");
     public final GItem item;
+    public Contents contents;
     private Resource cspr = null;
     private Message csdt = Message.nil;
 
@@ -173,6 +174,10 @@ public class WItem extends Widget implements DTarget {
 	    resize(sz);
 	    lspr = spr;
 	}
+	if((contents != null) && !tvisible()) {
+	    contents.reqdestroy();
+	    contents = null;
+	}
     }
 
     public void draw(GOut g) {
@@ -227,5 +232,88 @@ public class WItem extends Widget implements DTarget {
     public boolean iteminteract(Coord cc, Coord ul) {
 	item.wdgmsg("itemact", ui.modflags());
 	return(true);
+    }
+
+    public void mousemove(Coord c) {
+	super.mousemove(c);
+	if(contents == null) {
+	    if((item.contents != null) && c.isect(Coord.z, sz)) {
+		/* XXX: This is a bit weird, but I'm not sure what the alternative is... */
+		Widget cont = getparent(GameUI.class);
+		if(cont == null) cont = ui.root;
+		if(cont.getchild(Contents.class) == null) {
+		    item.contents.unlink();
+		    contents = cont.add(new Contents(this, item.contents), parentpos(cont, sz.sub(5, 5)));
+		}
+	    }
+	} else {
+	    if(!c.isect(Coord.z, sz) && !contents.rootxlate(rootpos(c)).isect(Contents.hovermarg.inv(), contents.sz.add(Contents.hovermarg))) {
+		contents.reqdestroy();
+		contents = null;
+	    }
+	}
+    }
+
+    public void destroy() {
+	if(contents != null) {
+	    contents.reqdestroy();
+	    contents = null;
+	}
+	super.destroy();
+    }
+
+    public static class Contents extends Widget {
+	public static final Coord hovermarg = UI.scale(8, 8);
+	public static final Tex bg = Window.bg;
+	public static final IBox obox = Window.wbox;
+	public final WItem cont;
+	public final Widget inv;
+	private boolean invdest;
+
+	public Contents(WItem cont, Widget inv) {
+	    z(90);
+	    this.cont = cont;
+	    /* XXX? This whole movement of the inv widget between
+	     * various parents is kind of weird, but it's not
+	     * obviously incorrect either. Could some sort of proxy
+	     * widget be called for? */
+	    this.inv = add(inv, obox.ctloff());
+	    this.tick(0);
+	}
+
+	public void draw(GOut g) {
+	    Coord bgc = new Coord();
+	    Coord ctl = obox.btloff();
+	    Coord cbr = sz.sub(obox.cisz()).add(ctl);
+	    for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bg.sz().y) {
+		for(bgc.x = ctl.x; bgc.x < cbr.x; bgc.x += bg.sz().x)
+		    g.image(bg, bgc, ctl, cbr);
+	    }
+	    obox.draw(g, Coord.z, sz);
+	    super.draw(g);
+	}
+
+	public void tick(double dt) {
+	    super.tick(dt);
+	    resize(inv.c.add(inv.sz).add(obox.btloff()));
+	}
+
+	public void destroy() {
+	    if(!invdest) {
+		inv.unlink();
+		cont.item.add(inv);
+	    }
+	    super.destroy();
+	}
+
+	public void cdestroy(Widget w) {
+	    super.cdestroy(w);
+	    if(w == inv) {
+		cont.item.cdestroy(w);
+		invdest = true;
+		this.destroy();
+		cont.contents = null;
+	    }
+	}
     }
 }
