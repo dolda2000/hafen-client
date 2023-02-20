@@ -966,6 +966,8 @@ public class Widget {
     }
 
     public void resize(Coord sz) {
+	if(Utils.eq(this.sz, sz))
+	    return;
 	this.sz = sz;
 	for(Widget ch = child; ch != null; ch = ch.next)
 	    ch.presize();
