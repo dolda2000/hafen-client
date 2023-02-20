@@ -33,6 +33,6 @@ public class AWidget extends Widget {
     }
 
     public void addchild(Widget child, Object... args) {
-	new UI.UIWarning("unknown abstract widget child " + child + " added to" + this, null, args).issue();
+	new UI.UIWarning("unknown abstract widget child " + child + " added to " + this, null, args).issue();
     }
 }
