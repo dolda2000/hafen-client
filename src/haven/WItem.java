@@ -39,6 +39,7 @@ public class WItem extends Widget implements DTarget {
     public static final Resource missing = Resource.local().loadwait("gfx/invobjs/missing");
     public final GItem item;
     public Contents contents;
+    public Window contentswnd;
     private Resource cspr = null;
     private Message csdt = Message.nil;
 
@@ -237,7 +238,7 @@ public class WItem extends Widget implements DTarget {
     public void mousemove(Coord c) {
 	super.mousemove(c);
 	if(contents == null) {
-	    if((item.contents != null) && c.isect(Coord.z, sz)) {
+	    if((item.contents != null) && (contentswnd == null) && c.isect(Coord.z, sz)) {
 		/* XXX: This is a bit weird, but I'm not sure what the alternative is... */
 		Widget cont = getparent(GameUI.class);
 		if(cont == null) cont = ui.root;
@@ -259,6 +260,10 @@ public class WItem extends Widget implements DTarget {
 	    contents.reqdestroy();
 	    contents = null;
 	}
+	if(contentswnd != null) {
+	    contentswnd.reqdestroy();
+	    contentswnd = null;
+	}
 	super.destroy();
     }
 
@@ -269,6 +274,8 @@ public class WItem extends Widget implements DTarget {
 	public final WItem cont;
 	public final Widget inv;
 	public final ProxyWidget<Widget> invp;
+	private UI.Grab dm = null;
+	private Coord doff;
 
 	public Contents(WItem cont, Widget inv) {
 	    z(90);
@@ -297,6 +304,76 @@ public class WItem extends Widget implements DTarget {
 	    }
 	    super.tick(dt);
 	    resize(invp.c.add(invp.sz).add(obox.btloff()));
+	}
+
+	public boolean mousedown(Coord c, int btn) {
+	    if(super.mousedown(c, btn))
+		return(true);
+	    if(btn == 1) {
+		dm = ui.grabmouse(this);
+		doff = c;
+		return(true);
+	    }
+	    return(false);
+	}
+
+	public boolean mouseup(Coord c, int btn) {
+	    if((dm != null) && (btn == 1)) {
+		dm.remove();
+		dm = null;
+		return(true);
+	    }
+	    return(super.mouseup(c, btn));
+	}
+
+	public void mousemove(Coord c) {
+	    if(dm != null) {
+		if(c.dist(doff) > 10) {
+		    dm.remove();
+		    dm = null;
+		    ContentsWindow wnd = new ContentsWindow(cont, inv);
+		    cont.contentswnd = parent.add(wnd, this.c);
+		    wnd.drag(doff);
+		    destroy();
+		    cont.contents = null;
+		}
+	    } else {
+		super.mousemove(c);
+	    }
+	}
+    }
+
+    public static class ContentsWindow extends Window {
+	public final WItem cont;
+	public final Widget inv;
+	public final ProxyWidget<Widget> invp;
+	private Coord psz = null;
+
+	public ContentsWindow(WItem cont, Widget inv) {
+	    super(Coord.z, "Barda");
+	    this.cont = cont;
+	    this.invp = add(new ProxyWidget<>(this.inv = inv), Coord.z);
+	    this.tick(0);
+	}
+
+	public void tick(double dt) {
+	    if(cont.item.contents != inv) {
+		destroy();
+		cont.contentswnd = null;
+		return;
+	    }
+	    super.tick(dt);
+	    if(!Utils.eq(invp.sz, psz))
+		resize(invp.c.add(psz = invp.sz));
+	}
+
+	public void wdgmsg(Widget sender, String msg, Object... args) {
+	    if((sender == this) && (msg == "close")) {
+		reqdestroy();
+		cont.contentswnd = null;
+	    } else {
+		super.wdgmsg(sender, msg, args);
+	    }
 	}
     }
 }
