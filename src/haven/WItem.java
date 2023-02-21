@@ -242,13 +242,22 @@ public class WItem extends Widget implements DTarget {
 		/* XXX: This is a bit weird, but I'm not sure what the alternative is... */
 		Widget cont = getparent(GameUI.class);
 		if(cont == null) cont = ui.root;
-		if(cont.getchild(Contents.class) == null) {
-		    item.contents.unlink();
-		    contents = cont.add(new Contents(this, item.contents), parentpos(cont, sz.sub(5, 5)));
+		ckparent: for(Widget prev : cont.children()) {
+		    if(prev instanceof Contents) {
+			for(Widget p = parent; p != null; p = p.parent) {
+			    if(p == prev)
+				break ckparent;
+			    if(p instanceof Contents)
+				break;
+			}
+			return;
+		    }
 		}
+		item.contents.unlink();
+		contents = cont.add(new Contents(this, item.contents), parentpos(cont, sz.sub(5, 5)));
 	    }
 	} else {
-	    if(!c.isect(Coord.z, sz) && !contents.rootxlate(rootpos(c)).isect(Contents.hovermarg.inv(), contents.sz.add(Contents.hovermarg))) {
+	    if(!c.isect(Coord.z, sz) && !contents.rootxlate(rootpos(c)).isect(Contents.hovermarg.inv(), contents.sz.add(Contents.hovermarg)) && !contents.hasmore()) {
 		contents.reqdestroy();
 		contents = null;
 	    }
@@ -312,6 +321,14 @@ public class WItem extends Widget implements DTarget {
 		cont.item.add(inv);
 	    }
 	    super.destroy();
+	}
+
+	public boolean hasmore() {
+	    for(WItem item : children(WItem.class)) {
+		if(item.contents != null)
+		    return(true);
+	    }
+	    return(false);
 	}
 
 	public void cdestroy(Widget w) {
