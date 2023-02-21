@@ -273,14 +273,19 @@ public class WItem extends Widget implements DTarget {
 	public static final IBox obox = Window.wbox;
 	public final WItem cont;
 	public final Widget inv;
-	public final ProxyWidget<Widget> invp;
+	private boolean invdest;
 	private UI.Grab dm = null;
 	private Coord doff;
 
 	public Contents(WItem cont, Widget inv) {
 	    z(90);
 	    this.cont = cont;
-	    this.invp = add(new ProxyWidget<>(this.inv = inv), obox.ctloff());
+	    /* XXX? This whole movement of the inv widget between
+	     * various parents is kind of weird, but it's not
+	     * obviously incorrect either. A proxy widget was tried,
+	     * but that was even worse, due to rootpos and similar
+	     * things being unavoidable wrong. */
+	    this.inv = add(inv, obox.ctloff());
 	    this.tick(0);
 	}
 
@@ -297,13 +302,26 @@ public class WItem extends Widget implements DTarget {
 	}
 
 	public void tick(double dt) {
-	    if(cont.item.contents != inv) {
-		destroy();
-		cont.contents = null;
-		return;
-	    }
 	    super.tick(dt);
-	    resize(invp.c.add(invp.sz).add(obox.btloff()));
+	    resize(inv.c.add(inv.sz).add(obox.btloff()));
+	}
+
+	public void destroy() {
+	    if(!invdest) {
+		inv.unlink();
+		cont.item.add(inv);
+	    }
+	    super.destroy();
+	}
+
+	public void cdestroy(Widget w) {
+	    super.cdestroy(w);
+	    if(w == inv) {
+		cont.item.cdestroy(w);
+		invdest = true;
+		this.destroy();
+		cont.contents = null;
+	    }
 	}
 
 	public boolean mousedown(Coord c, int btn) {
@@ -331,9 +349,11 @@ public class WItem extends Widget implements DTarget {
 		if(c.dist(doff) > 10) {
 		    dm.remove();
 		    dm = null;
+		    inv.unlink();
 		    ContentsWindow wnd = new ContentsWindow(cont, inv);
 		    cont.contentswnd = parent.add(wnd, this.c);
 		    wnd.drag(doff);
+		    invdest = true;
 		    destroy();
 		    cont.contents = null;
 		}
@@ -346,13 +366,13 @@ public class WItem extends Widget implements DTarget {
     public static class ContentsWindow extends Window {
 	public final WItem cont;
 	public final Widget inv;
-	public final ProxyWidget<Widget> invp;
+	private boolean invdest;
 	private Coord psz = null;
 
 	public ContentsWindow(WItem cont, Widget inv) {
 	    super(Coord.z, "Barda");
 	    this.cont = cont;
-	    this.invp = add(new ProxyWidget<>(this.inv = inv), Coord.z);
+	    this.inv = add(inv, Coord.z);
 	    this.tick(0);
 	}
 
@@ -363,8 +383,8 @@ public class WItem extends Widget implements DTarget {
 		return;
 	    }
 	    super.tick(dt);
-	    if(!Utils.eq(invp.sz, psz))
-		resize(invp.c.add(psz = invp.sz));
+	    if(!Utils.eq(inv.sz, psz))
+		resize(inv.c.add(psz = inv.sz));
 	}
 
 	public void wdgmsg(Widget sender, String msg, Object... args) {
@@ -373,6 +393,24 @@ public class WItem extends Widget implements DTarget {
 		cont.contentswnd = null;
 	    } else {
 		super.wdgmsg(sender, msg, args);
+	    }
+	}
+
+	public void destroy() {
+	    if(!invdest) {
+		inv.unlink();
+		cont.item.add(inv);
+	    }
+	    super.destroy();
+	}
+
+	public void cdestroy(Widget w) {
+	    super.cdestroy(w);
+	    if(w == inv) {
+		cont.item.cdestroy(w);
+		invdest = true;
+		this.destroy();
+		cont.contentswnd = null;
 	    }
 	}
     }
