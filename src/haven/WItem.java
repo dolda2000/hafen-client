@@ -349,10 +349,12 @@ public class WItem extends Widget implements DTarget {
 		if(c.dist(doff) > 10) {
 		    dm.remove();
 		    dm = null;
+		    Coord off = inv.c;
 		    inv.unlink();
 		    ContentsWindow wnd = new ContentsWindow(cont, inv);
-		    cont.contentswnd = parent.add(wnd, this.c);
-		    wnd.drag(doff);
+		    off = off.sub(wnd.xlate(wnd.inv.c, true));
+		    cont.contentswnd = parent.add(wnd, this.c.add(off));
+		    wnd.drag(doff.sub(off));
 		    invdest = true;
 		    destroy();
 		    cont.contents = null;
