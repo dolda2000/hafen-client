@@ -37,6 +37,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     public int meter = 0;
     public int num = -1;
     public Widget contents = null;
+    public String contentsnm = null;
     public Object contentsid = null;
     private GSprite spr;
     private ItemInfo.Raw rawinfo;
@@ -194,9 +195,10 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	 * on that. */
 	if(true || ((String)args[0]).equals("contents")) {
 	    contents = add(child);
+	    contentsnm = (String)args[1];
 	    contentsid = null;
-	    if(args.length > 1)
-		contentsid = args[1];
+	    if(args.length > 2)
+		contentsid = args[2];
 	}
     }
 

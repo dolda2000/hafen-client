@@ -400,7 +400,7 @@ public class WItem extends Widget implements DTarget {
 	private Coord psz = null;
 
 	public ContentsWindow(WItem cont, Widget inv) {
-	    super(Coord.z, "Barda");
+	    super(Coord.z, cont.item.contentsnm);
 	    this.cont = cont;
 	    this.inv = add(inv, Coord.z);
 	    this.tick(0);
