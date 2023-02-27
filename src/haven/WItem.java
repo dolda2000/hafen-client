@@ -40,6 +40,7 @@ public class WItem extends Widget implements DTarget {
     public final GItem item;
     public Contents contents;
     public Window contentswnd;
+    private boolean hovering = false;
     private Resource cspr = null;
     private Message csdt = Message.nil;
 
@@ -175,10 +176,34 @@ public class WItem extends Widget implements DTarget {
 	    resize(sz);
 	    lspr = spr;
 	}
-	if((contents != null) && !tvisible()) {
-	    contents.reqdestroy();
-	    contents = null;
+	if(hovering) {
+	    if(contents == null) {
+		if((item.contents != null) && (contentswnd == null)) {
+		    /* XXX: This is a bit weird, but I'm not sure what the alternative is... */
+		    Widget cont = getparent(GameUI.class);
+		    if(cont == null) cont = ui.root;
+		    ckparent: for(Widget prev : cont.children()) {
+			if(prev instanceof Contents) {
+			    for(Widget p = parent; p != null; p = p.parent) {
+				if(p == prev)
+				    break ckparent;
+				if(p instanceof Contents)
+				    break;
+			    }
+			    return;
+			}
+		    }
+		    item.contents.unlink();
+		    contents = cont.add(new Contents(this, item.contents), parentpos(cont, sz.sub(5, 5).sub(Contents.hovermarg)));
+		}
+	    }
+	} else {
+	    if((contents != null) && !contents.hovering && !contents.hasmore()) {
+		contents.reqdestroy();
+		contents = null;
+	    }
 	}
+	hovering = false;
     }
 
     public void draw(GOut g) {
@@ -235,33 +260,12 @@ public class WItem extends Widget implements DTarget {
 	return(true);
     }
 
-    public void mousemove(Coord c) {
-	super.mousemove(c);
-	if(contents == null) {
-	    if((item.contents != null) && (contentswnd == null) && c.isect(Coord.z, sz)) {
-		/* XXX: This is a bit weird, but I'm not sure what the alternative is... */
-		Widget cont = getparent(GameUI.class);
-		if(cont == null) cont = ui.root;
-		ckparent: for(Widget prev : cont.children()) {
-		    if(prev instanceof Contents) {
-			for(Widget p = parent; p != null; p = p.parent) {
-			    if(p == prev)
-				break ckparent;
-			    if(p instanceof Contents)
-				break;
-			}
-			return;
-		    }
-		}
-		item.contents.unlink();
-		contents = cont.add(new Contents(this, item.contents), parentpos(cont, sz.sub(5, 5)));
-	    }
-	} else {
-	    if(!c.isect(Coord.z, sz) && !contents.rootxlate(rootpos(c)).isect(Contents.hovermarg.inv(), contents.sz.add(Contents.hovermarg)) && !contents.hasmore()) {
-		contents.reqdestroy();
-		contents = null;
-	    }
+    public boolean mousehover(Coord c) {
+	if(item.contents != null) {
+	    hovering = true;
+	    return(true);
 	}
+	return(super.mousehover(c));
     }
 
     public void destroy() {
@@ -282,7 +286,7 @@ public class WItem extends Widget implements DTarget {
 	public static final IBox obox = Window.wbox;
 	public final WItem cont;
 	public final Widget inv;
-	private boolean invdest;
+	private boolean invdest, hovering;
 	private UI.Grab dm = null;
 	private Coord doff;
 
@@ -294,25 +298,26 @@ public class WItem extends Widget implements DTarget {
 	     * obviously incorrect either. A proxy widget was tried,
 	     * but that was even worse, due to rootpos and similar
 	     * things being unavoidable wrong. */
-	    this.inv = add(inv, obox.ctloff());
+	    this.inv = add(inv, hovermarg.add(obox.ctloff()));
 	    this.tick(0);
 	}
 
 	public void draw(GOut g) {
 	    Coord bgc = new Coord();
-	    Coord ctl = obox.btloff();
+	    Coord ctl = hovermarg.add(obox.btloff());
 	    Coord cbr = sz.sub(obox.cisz()).add(ctl);
 	    for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bg.sz().y) {
 		for(bgc.x = ctl.x; bgc.x < cbr.x; bgc.x += bg.sz().x)
 		    g.image(bg, bgc, ctl, cbr);
 	    }
-	    obox.draw(g, Coord.z, sz);
+	    obox.draw(g, hovermarg, sz.sub(hovermarg));
 	    super.draw(g);
 	}
 
 	public void tick(double dt) {
 	    super.tick(dt);
 	    resize(inv.c.add(inv.sz).add(obox.btloff()));
+	    hovering = false;
 	}
 
 	public void destroy() {
@@ -379,6 +384,12 @@ public class WItem extends Widget implements DTarget {
 	    } else {
 		super.mousemove(c);
 	    }
+	}
+
+	public boolean mousehover(Coord c) {
+	    super.mousehover(c);
+	    hovering = true;
+	    return(true);
 	}
     }
 
