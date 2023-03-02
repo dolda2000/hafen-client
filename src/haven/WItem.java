@@ -53,38 +53,28 @@ public class WItem extends Widget implements DTarget {
 	spr.draw(g);
     }
 
-    public static BufferedImage shorttip(List<ItemInfo> info) {
-	return(ItemInfo.shorttip(info));
-    }
-
-    public static BufferedImage longtip(GItem item, List<ItemInfo> info) {
-	return(ItemInfo.longtip(info));
-    }
-
-    public BufferedImage longtip(List<ItemInfo> info) {
-	return(longtip(item, info));
-    }
-
     public class ItemTip implements Indir<Tex>, ItemInfo.InfoTip {
+	private final List<ItemInfo> info;
 	private final TexI tex;
 
-	public ItemTip(BufferedImage img) {
+	public ItemTip(List<ItemInfo> info, BufferedImage img) {
+	    this.info = info;
 	    if(img == null)
 		throw(new Loading());
 	    tex = new TexI(img);
 	}
 
 	public GItem item() {return(item);}
-	public List<ItemInfo> info() {return(item.info());}
+	public List<ItemInfo> info() {return(info);}
 	public Tex get() {return(tex);}
     }
 
     public class ShortTip extends ItemTip {
-	public ShortTip(List<ItemInfo> info) {super(shorttip(info));}
+	public ShortTip(List<ItemInfo> info) {super(info, ItemInfo.shorttip(info));}
     }
 
     public class LongTip extends ItemTip {
-	public LongTip(List<ItemInfo> info) {super(longtip(info));}
+	public LongTip(List<ItemInfo> info) {super(info, ItemInfo.longtip(info));}
     }
 
     private double hoverstart;
