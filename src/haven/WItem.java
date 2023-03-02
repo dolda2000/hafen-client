@@ -161,7 +161,14 @@ public class WItem extends Widget implements DTarget {
 	});
     public final AttrCache<Double> itemmeter = new AttrCache<>(this::info, AttrCache.map1(GItem.MeterInfo.class, minf -> minf::meter));
 
+    private Widget contparent() {
+	/* XXX: This is a bit weird, but I'm not sure what the alternative is... */
+	Widget cont = getparent(GameUI.class);
+	return((cont == null) ? cont = ui.root : cont);
+    }
+
     private GSprite lspr = null;
+    private Widget lcont = null;
     public void tick(double dt) {
 	/* XXX: This is ugly and there should be a better way to
 	 * ensure the resizing happens as it should, but I can't think
@@ -176,12 +183,20 @@ public class WItem extends Widget implements DTarget {
 	    resize(sz);
 	    lspr = spr;
 	}
+	if(lcont != item.contents) {
+	    if((item.contents != null) && (item.contentsid != null) && (contents == null) && (contentswnd == null)) {
+		Coord c = Utils.getprefc(String.format("cont-wndc/%s", item.contentsid), null);
+		if(c != null) {
+		    item.contents.unlink();
+		    contentswnd = contparent().add(new ContentsWindow(this, item.contents), c);
+		}
+	    }
+	    lcont = item.contents;
+	}
 	if(hovering) {
 	    if(contents == null) {
 		if((item.contents != null) && (contentswnd == null)) {
-		    /* XXX: This is a bit weird, but I'm not sure what the alternative is... */
-		    Widget cont = getparent(GameUI.class);
-		    if(cont == null) cont = ui.root;
+		    Widget cont = contparent();
 		    ckparent: for(Widget prev : cont.children()) {
 			if(prev instanceof Contents) {
 			    for(Widget p = parent; p != null; p = p.parent) {
@@ -398,14 +413,17 @@ public class WItem extends Widget implements DTarget {
 	public final Widget inv;
 	private boolean invdest;
 	private Coord psz = null;
+	private Object id;
 
 	public ContentsWindow(WItem cont, Widget inv) {
 	    super(Coord.z, cont.item.contentsnm);
 	    this.cont = cont;
 	    this.inv = add(inv, Coord.z);
+	    this.id = cont.item.contentsid;
 	    this.tick(0);
 	}
 
+	private Coord lc = null;
 	public void tick(double dt) {
 	    if(cont.item.contents != inv) {
 		destroy();
@@ -415,12 +433,16 @@ public class WItem extends Widget implements DTarget {
 	    super.tick(dt);
 	    if(!Utils.eq(inv.sz, psz))
 		resize(inv.c.add(psz = inv.sz));
+	    if(!Utils.eq(lc, this.c) && (cont.item.contentsid != null))
+		Utils.setprefc(String.format("cont-wndc/%s", cont.item.contentsid), lc = this.c);
 	}
 
 	public void wdgmsg(Widget sender, String msg, Object... args) {
 	    if((sender == this) && (msg == "close")) {
 		reqdestroy();
 		cont.contentswnd = null;
+		if(cont.item.contentsid != null)
+		    Utils.setprefc(String.format("cont-wndc/%s", cont.item.contentsid), null);
 	    } else {
 		super.wdgmsg(sender, msg, args);
 	    }
