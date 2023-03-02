@@ -157,8 +157,12 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     }
 
     public List<ItemInfo> info() {
-	if(info == null)
+	if(info == null) {
 	    info = ItemInfo.buildinfo(this, rawinfo);
+	    Resource.Pagina pg = res.get().layer(Resource.pagina);
+	    if(pg != null)
+		info.add(new ItemInfo.Pagina(this, pg.text));
+	}
 	return(info);
     }
 
