@@ -134,6 +134,8 @@ public class Cons {
 
     public static Expression col4(java.awt.Color c) {return(vec4(l(c.getRed() / 255.0), l(c.getGreen() / 255.0), l(c.getBlue() / 255.0), l(c.getAlpha() / 255.0)));}
     public static Expression col3(java.awt.Color c) {return(vec3(l(c.getRed() / 255.0), l(c.getGreen() / 255.0), l(c.getBlue() / 255.0)));}
+    public static Expression col4(haven.FColor c)   {return(vec4(l(c.r), l(c.g), l(c.b), l(c.a)));}
+    public static Expression col3(haven.FColor c)   {return(vec3(l(c.r), l(c.g), l(c.b)));}
     public static Expression vec2(haven.Coord c)    {return(vec2(l((double)c.x), l((double)c.y)));}
     public static Expression vec3(haven.Coord3f c)  {return(vec3(l(c.x), l(c.y), l(c.z)));}
     public static Expression vec2(double a, double b)                     {return(vec2(l(a), l(b)));}
