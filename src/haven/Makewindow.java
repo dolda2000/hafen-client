@@ -413,7 +413,7 @@ public class Makewindow extends Widget {
 	public Tip shortvar() {return(this);}
     }
 
-    public static class MakePrep extends ItemInfo implements GItem.ColorInfo {
+    public static class MakePrep extends ItemInfo implements GItem.ColorInfo, GItem.ContentsInfo {
 	private final static Color olcol = new Color(0, 255, 0, 64);
 	public MakePrep(Owner owner) {
 	    super(owner);
@@ -421,6 +421,11 @@ public class Makewindow extends Widget {
 
 	public Color olcol() {
 	    return(olcol);
+	}
+
+	public void propagate(List<ItemInfo> buf, Owner outer) {
+	    if(ItemInfo.find(MakePrep.class, buf) == null)
+		buf.add(new MakePrep(outer));
 	}
     }
 }
