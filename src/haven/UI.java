@@ -461,6 +461,10 @@ public class UI {
 	root.mousemove(c);
     }
 
+    public void mousehover(Coord c) {
+	root.mousehover(c);
+    }
+
     public void setmousepos(Coord c) {
 	uictx.setmousepos(c);
     }

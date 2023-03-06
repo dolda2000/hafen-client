@@ -36,6 +36,9 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     public MessageBuf sdt;
     public int meter = 0;
     public int num = -1;
+    public Widget contents = null;
+    public String contentsnm = null;
+    public Object contentsid = null;
     private GSprite spr;
     private ItemInfo.Raw rawinfo;
     private List<ItemInfo> info = Collections.emptyList();
@@ -154,8 +157,12 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     }
 
     public List<ItemInfo> info() {
-	if(info == null)
+	if(info == null) {
 	    info = ItemInfo.buildinfo(this, rawinfo);
+	    Resource.Pagina pg = res.get().layer(Resource.pagina);
+	    if(pg != null)
+		info.add(new ItemInfo.Pagina(this, pg.text));
+	}
 	return(info);
     }
 
@@ -183,6 +190,27 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    rawinfo = new ItemInfo.Raw(args);
 	} else if(name == "meter") {
 	    meter = (int)((Number)args[0]).doubleValue();
+	}
+    }
+
+    public void addchild(Widget child, Object... args) {
+	/* XXX: Update this to use a checkable args[0] once a
+	 * reasonable majority of clients can be expected to not crash
+	 * on that. */
+	if(true || ((String)args[0]).equals("contents")) {
+	    contents = add(child);
+	    contentsnm = (String)args[1];
+	    contentsid = null;
+	    if(args.length > 2)
+		contentsid = args[2];
+	}
+    }
+
+    public void cdestroy(Widget w) {
+	super.cdestroy(w);
+	if(w == contents) {
+	    contents = null;
+	    contentsid = null;
 	}
     }
 }
