@@ -40,6 +40,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     public String contentsnm = null;
     public Object contentsid = null;
     public int infoseq;
+    public Widget hovering;
     private GSprite spr;
     private ItemInfo.Raw rawinfo;
     private List<ItemInfo> info = Collections.emptyList();
@@ -157,6 +158,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	if(spr != null)
 	    spr.tick(dt);
 	updcontinfo();
+	ckconthover();
     }
 
     public List<ItemInfo> info() {
@@ -196,6 +198,8 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    infoseq++;
 	} else if(name == "meter") {
 	    meter = (int)((Number)args[0]).doubleValue();
+	} else {
+	    super.uimsg(name, args);
 	}
     }
 
@@ -282,6 +286,238 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 			    propagate(inf, buf, this);
 		    }
 		}
+	    }
+	}
+    }
+
+    private Widget contparent() {
+	/* XXX: This is a bit weird, but I'm not sure what the alternative is... */
+	Widget cont = getparent(GameUI.class);
+	return((cont == null) ? cont = ui.root : cont);
+    }
+
+    public void destroy() {
+	if(contents != null) {
+	    contents.reqdestroy();
+	    contents = null;
+	}
+	if(contentswnd != null) {
+	    contentswnd.reqdestroy();
+	    contentswnd = null;
+	}
+	super.destroy();
+    }
+
+    private Widget lcont = null;
+    public Contents contentswdg;
+    public Window contentswnd;
+    private void ckconthover() {
+	if(lcont != this.contents) {
+	    if((this.contents != null) && (this.contentsid != null) && (contentswdg == null) && (contentswnd == null)) {
+		Coord c = Utils.getprefc(String.format("cont-wndc/%s", this.contentsid), null);
+		if(c != null) {
+		    this.contents.unlink();
+		    contentswnd = contparent().add(new ContentsWindow(this, this.contents), c);
+		}
+	    }
+	    lcont = this.contents;
+	}
+	if(hovering != null) {
+	    if(contentswdg == null) {
+		if((this.contents != null) && (contentswnd == null)) {
+		    Widget cont = contparent();
+		    ckparent: for(Widget prev : cont.children()) {
+			if(prev instanceof Contents) {
+			    for(Widget p = hovering; p != null; p = p.parent) {
+				if(p == prev)
+				    break ckparent;
+				if(p instanceof Contents)
+				    break;
+			    }
+			    return;
+			}
+		    }
+		    this.contents.unlink();
+		    contentswdg = cont.add(new Contents(this, this.contents), hovering.parentpos(cont, hovering.sz.sub(5, 5).sub(Contents.hovermarg)));
+		}
+	    }
+	} else {
+	    if((contentswdg != null) && !contentswdg.hovering && !contentswdg.hasmore()) {
+		contentswdg.reqdestroy();
+		contentswdg = null;
+	    }
+	}
+	hovering = null;
+    }
+
+    public static class Contents extends Widget {
+	public static final Coord hovermarg = UI.scale(8, 8);
+	public static final Tex bg = Window.bg;
+	public static final IBox obox = Window.wbox;
+	public final GItem cont;
+	public final Widget inv;
+	private boolean invdest, hovering;
+	private UI.Grab dm = null;
+	private Coord doff;
+
+	public Contents(GItem cont, Widget inv) {
+	    z(90);
+	    this.cont = cont;
+	    /* XXX? This whole movement of the inv widget between
+	     * various parents is kind of weird, but it's not
+	     * obviously incorrect either. A proxy widget was tried,
+	     * but that was even worse, due to rootpos and similar
+	     * things being unavoidable wrong. */
+	    this.inv = add(inv, hovermarg.add(obox.ctloff()));
+	    this.tick(0);
+	}
+
+	public void draw(GOut g) {
+	    Coord bgc = new Coord();
+	    Coord ctl = hovermarg.add(obox.btloff());
+	    Coord cbr = sz.sub(obox.cisz()).add(ctl);
+	    for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bg.sz().y) {
+		for(bgc.x = ctl.x; bgc.x < cbr.x; bgc.x += bg.sz().x)
+		    g.image(bg, bgc, ctl, cbr);
+	    }
+	    obox.draw(g, hovermarg, sz.sub(hovermarg));
+	    super.draw(g);
+	}
+
+	public void tick(double dt) {
+	    super.tick(dt);
+	    resize(inv.c.add(inv.sz).add(obox.btloff()));
+	    hovering = false;
+	}
+
+	public void destroy() {
+	    if(!invdest) {
+		inv.unlink();
+		cont.add(inv);
+	    }
+	    super.destroy();
+	}
+
+	public boolean hasmore() {
+	    for(GItem item : children(GItem.class)) {
+		if(item.contentswdg != null)
+		    return(true);
+	    }
+	    return(false);
+	}
+
+	public void cdestroy(Widget w) {
+	    super.cdestroy(w);
+	    if(w == inv) {
+		cont.cdestroy(w);
+		invdest = true;
+		this.destroy();
+		cont.contentswdg = null;
+	    }
+	}
+
+	public boolean mousedown(Coord c, int btn) {
+	    if(super.mousedown(c, btn))
+		return(true);
+	    if(btn == 1) {
+		dm = ui.grabmouse(this);
+		doff = c;
+		return(true);
+	    }
+	    return(false);
+	}
+
+	public boolean mouseup(Coord c, int btn) {
+	    if((dm != null) && (btn == 1)) {
+		dm.remove();
+		dm = null;
+		return(true);
+	    }
+	    return(super.mouseup(c, btn));
+	}
+
+	public void mousemove(Coord c) {
+	    if(dm != null) {
+		if(c.dist(doff) > 10) {
+		    dm.remove();
+		    dm = null;
+		    Coord off = inv.c;
+		    inv.unlink();
+		    ContentsWindow wnd = new ContentsWindow(cont, inv);
+		    off = off.sub(wnd.xlate(wnd.inv.c, true));
+		    cont.contentswnd = parent.add(wnd, this.c.add(off));
+		    wnd.drag(doff.sub(off));
+		    invdest = true;
+		    destroy();
+		    cont.contentswdg = null;
+		}
+	    } else {
+		super.mousemove(c);
+	    }
+	}
+
+	public boolean mousehover(Coord c) {
+	    super.mousehover(c);
+	    hovering = true;
+	    return(true);
+	}
+    }
+
+    public static class ContentsWindow extends Window {
+	public final GItem cont;
+	public final Widget inv;
+	private boolean invdest;
+	private Coord psz = null;
+	private Object id;
+
+	public ContentsWindow(GItem cont, Widget inv) {
+	    super(Coord.z, cont.contentsnm);
+	    this.cont = cont;
+	    this.inv = add(inv, Coord.z);
+	    this.id = cont.contentsid;
+	    this.tick(0);
+	}
+
+	private Coord lc = null;
+	public void tick(double dt) {
+	    if(cont.contents != inv) {
+		destroy();
+		cont.contentswnd = null;
+		return;
+	    }
+	    super.tick(dt);
+	    if(!Utils.eq(inv.sz, psz))
+		resize(inv.c.add(psz = inv.sz));
+	    if(!Utils.eq(lc, this.c) && (cont.contentsid != null))
+		Utils.setprefc(String.format("cont-wndc/%s", cont.contentsid), lc = this.c);
+	}
+
+	public void wdgmsg(Widget sender, String msg, Object... args) {
+	    if((sender == this) && (msg == "close")) {
+		reqdestroy();
+		cont.contentswnd = null;
+		if(cont.contentsid != null)
+		    Utils.setprefc(String.format("cont-wndc/%s", cont.contentsid), null);
+	    } else {
+		super.wdgmsg(sender, msg, args);
+	    }
+	}
+
+	public void destroy() {
+	    if(!invdest) {
+		inv.unlink();
+		cont.add(inv);
+	    }
+	    super.destroy();
+	}
+
+	public void cdestroy(Widget w) {
+	    super.cdestroy(w);
+	    if(w == inv) {
+		cont.cdestroy(w);
+		invdest = true;
+		this.destroy();
+		cont.contentswnd = null;
 	    }
 	}
     }
