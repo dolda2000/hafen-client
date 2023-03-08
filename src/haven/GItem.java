@@ -198,6 +198,13 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    infoseq++;
 	} else if(name == "meter") {
 	    meter = (int)((Number)args[0]).doubleValue();
+	} else if(name == "contopen") {
+	    boolean nst;
+	    if(args[0] == null)
+		nst = contentswnd == null;
+	    else
+		nst = ((Integer)args[0]) != 0;
+	    showcontwnd(nst);
 	} else {
 	    super.uimsg(name, args);
 	}
@@ -313,7 +320,8 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     public Window contentswnd;
     private void ckconthover() {
 	if(lcont != this.contents) {
-	    if((this.contents != null) && (this.contentsid != null) && (contentswdg == null) && (contentswnd == null)) {
+	    if((this.contents != null) && (this.contentsid != null) && (contentswdg == null) && (contentswnd == null) &&
+	       Utils.getprefb(String.format("cont-wndvis/%s", this.contentsid), false)) {
 		Coord c = Utils.getprefc(String.format("cont-wndc/%s", this.contentsid), null);
 		if(c != null) {
 		    this.contents.unlink();
@@ -338,7 +346,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 			}
 		    }
 		    this.contents.unlink();
-		    contentswdg = cont.add(new Contents(this, this.contents), hovering.parentpos(cont, hovering.sz.sub(5, 5).sub(Contents.hovermarg)));
+		    contentswdg = cont.add(new Contents(this, this.contents), hovering.parentpos(cont, hovering.sz.sub(UI.scale(5, 5)).sub(Contents.hovermarg)));
 		}
 	    }
 	} else {
@@ -348,6 +356,32 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    }
 	}
 	hovering = null;
+    }
+
+    public void showcontwnd(boolean show) {
+	if(show && (contentswnd == null)) {
+	    Widget cont = contparent();
+	    Coord wc = null;
+	    if(this.contentsid != null)
+		wc = Utils.getprefc(String.format("cont-wndc/%s", this.contentsid), null);
+	    if(wc == null)
+		wc = cont.rootxlate(ui.mc).add(UI.scale(5, 5));
+	    contents.unlink();
+	    if(contentswdg != null) {
+		contentswdg.invdest = true;
+		contentswdg.reqdestroy();
+		contentswdg = null;
+	    }
+	    ContentsWindow wnd = new ContentsWindow(this, this.contents);
+	    contentswnd = cont.add(wnd, wc);
+	    if(this.contentsid != null) {
+		Utils.setprefb(String.format("cont-wndvis/%s", this.contentsid), true);
+		Utils.setprefc(String.format("cont-wndc/%s", this.contentsid), wc);
+	    }
+	} else if(!show && (contentswnd != null)) {
+	    contentswnd.reqdestroy();
+	    contentswnd = null;
+	}
     }
 
     public static class Contents extends Widget {
@@ -488,8 +522,10 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    super.tick(dt);
 	    if(!Utils.eq(inv.sz, psz))
 		resize(inv.c.add(psz = inv.sz));
-	    if(!Utils.eq(lc, this.c) && (cont.contentsid != null))
+	    if(!Utils.eq(lc, this.c) && (cont.contentsid != null)) {
 		Utils.setprefc(String.format("cont-wndc/%s", cont.contentsid), lc = this.c);
+		Utils.setprefb(String.format("cont-wndvis/%s", cont.contentsid), true);
+	    }
 	}
 
 	public void wdgmsg(Widget sender, String msg, Object... args) {
@@ -497,7 +533,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 		reqdestroy();
 		cont.contentswnd = null;
 		if(cont.contentsid != null)
-		    Utils.setprefc(String.format("cont-wndc/%s", cont.contentsid), null);
+		    Utils.setprefb(String.format("cont-wndvis/%s", cont.contentsid), false);
 	    } else {
 		super.wdgmsg(sender, msg, args);
 	    }
