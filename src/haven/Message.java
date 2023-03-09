@@ -304,7 +304,7 @@ public abstract class Message {
 		ret.add(null);
 		break;
 	    case T_UID:
-		ret.add(int64());
+		ret.add(UID.of(int64()));
 		break;
 	    case T_BYTES:
 		int len = uint8();
@@ -478,6 +478,9 @@ public abstract class Message {
 	    } else if(o instanceof Double) {
 		adduint8(T_FLOAT64);
 		addfloat64(((Double)o).doubleValue());
+	    } else if(o instanceof UID) {
+		adduint8(T_UID);
+		addint64(((UID)o).longValue());
 	    } else if(o instanceof NormNumber.SNorm8) {
 		adduint8(T_SNORM8);
 		addint8(((NormNumber.SNorm8)o).val);
