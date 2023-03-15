@@ -150,18 +150,28 @@ public class UI {
 	}
     }
 
-    @SuppressWarnings("serial")
     public static class UIException extends RuntimeException {
 	public String mname;
 	public Object[] args;
-		
+
 	public UIException(String message, String mname, Object... args) {
 	    super(message);
 	    this.mname = mname;
 	    this.args = args;
 	}
     }
-	
+
+    public static class UIWarning extends Warning {
+	public String mname;
+	public Object[] args;
+
+	public UIWarning(String message, String mname, Object... args) {
+	    super(message);
+	    this.mname = mname;
+	    this.args = args;
+	}
+    }
+
     public UI(Context uictx, Coord sz, Runner fun) {
 	this.uictx = uictx;
 	root = new RootWidget(this, sz);
@@ -170,7 +180,7 @@ public class UI {
 	if(fun != null)
 	    fun.init(this);
     }
-	
+
     public void setreceiver(Receiver rcvr) {
 	this.rcvr = rcvr;
     }
@@ -449,6 +459,10 @@ public class UI {
 	setmods(ev);
 	mc = c;
 	root.mousemove(c);
+    }
+
+    public void mousehover(Coord c) {
+	root.mousehover(c);
     }
 
     public void setmousepos(Coord c) {

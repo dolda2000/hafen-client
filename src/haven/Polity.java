@@ -65,7 +65,6 @@ public class Polity extends Widget {
 	    super(sz, UI.scale(20));
 	}
 
-	@Deprecated
 	public MemberList(int w, int h) {
 	    this(Coord.of(w, h * UI.scale(20)));
 	}

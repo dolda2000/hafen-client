@@ -357,7 +357,8 @@ public class Utils {
 
     public static void setprefc(String prefname, Coord val) {
 	try {
-	    prefs().put(prefname, val.x + "x" + val.y);
+	    String enc = (val == null) ? "" : val.x + "x" + val.y;
+	    prefs().put(prefname, enc);
 	} catch(SecurityException e) {
 	}
     }

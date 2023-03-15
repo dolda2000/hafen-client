@@ -304,6 +304,11 @@ public class Window extends Widget implements DTarget {
 	}
     }
 
+    public boolean mousehover(Coord c) {
+	super.mousehover(c);
+	return(true);
+    }
+
     public void wdgmsg(Widget sender, String msg, Object... args) {
 	if(sender == cbtn) {
 	    wdgmsg("close");

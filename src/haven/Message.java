@@ -304,7 +304,7 @@ public abstract class Message {
 		ret.add(null);
 		break;
 	    case T_UID:
-		ret.add(int64());
+		ret.add(UID.of(int64()));
 		break;
 	    case T_BYTES:
 		int len = uint8();
@@ -330,15 +330,15 @@ public abstract class Message {
 	    case T_FCOORD64:
 		ret.add(new Coord2d(float64(), float64()));
 		break;
-	    case T_SNORM8:  ret.add( snorm8()); break;
-	    case T_SNORM16: ret.add(snorm16()); break;
-	    case T_SNORM32: ret.add(snorm32()); break;
-	    case T_UNORM8:  ret.add( unorm8()); break;
-	    case T_UNORM16: ret.add(unorm16()); break;
-	    case T_UNORM32: ret.add(unorm32()); break;
-	    case T_MNORM8:  ret.add( mnorm8()); break;
-	    case T_MNORM16: ret.add(mnorm16()); break;
-	    case T_MNORM32: ret.add(mnorm32()); break;
+	    case T_SNORM8:  ret.add( NormNumber.decsnorm8(this)); break;
+	    case T_SNORM16: ret.add(NormNumber.decsnorm16(this)); break;
+	    case T_SNORM32: ret.add(NormNumber.decsnorm32(this)); break;
+	    case T_UNORM8:  ret.add( NormNumber.decunorm8(this)); break;
+	    case T_UNORM16: ret.add(NormNumber.decunorm16(this)); break;
+	    case T_UNORM32: ret.add(NormNumber.decunorm32(this)); break;
+	    case T_MNORM8:  ret.add( NormNumber.decmnorm8(this)); break;
+	    case T_MNORM16: ret.add(NormNumber.decmnorm16(this)); break;
+	    case T_MNORM32: ret.add(NormNumber.decmnorm32(this)); break;
 	    default:
 		throw(new FormatError("Encountered unknown type " + t + " in TTO list.").msg(this));
 	    }
@@ -477,7 +477,37 @@ public abstract class Message {
 		addfloat32(((Float)o).floatValue());
 	    } else if(o instanceof Double) {
 		adduint8(T_FLOAT64);
-		addfloat64(((Double)o).floatValue());
+		addfloat64(((Double)o).doubleValue());
+	    } else if(o instanceof UID) {
+		adduint8(T_UID);
+		addint64(((UID)o).longValue());
+	    } else if(o instanceof NormNumber.SNorm8) {
+		adduint8(T_SNORM8);
+		addint8(((NormNumber.SNorm8)o).val);
+	    } else if(o instanceof NormNumber.UNorm8) {
+		adduint8(T_UNORM8);
+		adduint8(((NormNumber.UNorm8)o).val & 0xff);
+	    } else if(o instanceof NormNumber.MNorm8) {
+		adduint8(T_MNORM8);
+		adduint8(((NormNumber.MNorm8)o).val & 0xff);
+	    } else if(o instanceof NormNumber.SNorm16) {
+		adduint8(T_SNORM16);
+		addint16(((NormNumber.SNorm16)o).val);
+	    } else if(o instanceof NormNumber.UNorm16) {
+		adduint8(T_UNORM16);
+		adduint16(((NormNumber.UNorm16)o).val & 0xffff);
+	    } else if(o instanceof NormNumber.MNorm16) {
+		adduint8(T_MNORM16);
+		adduint16(((NormNumber.MNorm16)o).val & 0xffff);
+	    } else if(o instanceof NormNumber.SNorm32) {
+		adduint8(T_SNORM32);
+		addint32(((NormNumber.SNorm32)o).val);
+	    } else if(o instanceof NormNumber.UNorm32) {
+		adduint8(T_UNORM32);
+		addint32(((NormNumber.UNorm32)o).val);
+	    } else if(o instanceof NormNumber.MNorm32) {
+		adduint8(T_MNORM32);
+		adduint32(((NormNumber.MNorm32)o).val);
 	    } else if(o instanceof Coord2d) {
 		adduint8(T_FCOORD64);
 		addfloat64(((Coord2d)o).x);

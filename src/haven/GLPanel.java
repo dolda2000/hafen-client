@@ -360,6 +360,7 @@ public interface GLPanel extends UIPanel, UI.Context {
 		    int cfno = frameno++;
 		    synchronized(ui) {
 			ed.dispatch(ui);
+			ui.mousehover(ui.mc);
 			if(curf != null) curf.tick("dsp");
 
 			if(ui.sess != null) {

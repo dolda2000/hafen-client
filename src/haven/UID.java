@@ -26,13 +26,30 @@
 
 package haven;
 
-public class AWidget extends Widget {
-    public AWidget() {
-	super(Coord.z);
-	hide();
+public class UID extends Number {
+    public final long bits;
+
+    private UID(long bits) {
+	this.bits = bits;
+    }
+    public static UID of(long bits) {return(new UID(bits));}
+
+    public long longValue() {return(bits);}
+
+    public byte byteValue() {return((byte)bits);}
+    public short shortValue() {return((short)bits);}
+    public int intValue() {return((int)bits);}
+    public float floatValue() {return((float)bits);}
+    public double doubleValue() {return((double)bits);}
+
+    public int hashCode() {
+	return(Long.hashCode(bits));
+    }
+    public boolean equals(Object x) {
+	return((x instanceof UID) && (((UID)x).bits == bits));
     }
 
-    public void addchild(Widget child, Object... args) {
-	new UI.UIWarning("unknown abstract widget child " + child + " added to " + this, null, args).issue();
+    public String toString() {
+	return(Long.toUnsignedString(bits, 16));
     }
 }
