@@ -165,6 +165,7 @@ public class Window extends Widget implements DTarget {
     public static class DefaultDeco extends DragDeco {
 	public final boolean lg;
 	public final IButton cbtn;
+	public boolean dragsize;
 	public Area aa, ca;
 	public Coord cptl, cpsz;
 	public int cmw;
@@ -175,6 +176,11 @@ public class Window extends Widget implements DTarget {
 	    cbtn = add(new IButton(cbtni[0], cbtni[1], cbtni[2])).action(() -> parent.wdgmsg("close"));
 	}
 	public DefaultDeco() {this(false);}
+
+	public DefaultDeco dragsize(boolean v) {
+	    this.dragsize = v;
+	    return(this);
+	}
 
 	public void iresize(Coord isz) {
 	    Coord mrgn = lg ? dlmrgn : dsmrgn;
@@ -219,6 +225,8 @@ public class Window extends Widget implements DTarget {
 		cpsz = Coord.of(cpo.x + cmw, cm.sz().y).sub(cptl);
 		cmw = cmw - (cl.sz().x - cpo.x) - UI.scale(5);
 	    }
+	    if(dragsize)
+		g.image(sizer, ca.br.sub(sizer.sz()));
 	    Coord mdo, cbr;
 	    g.image(cl, Coord.z);
 	    mdo = Coord.of(cl.sz().x, 0);
@@ -260,6 +268,35 @@ public class Window extends Widget implements DTarget {
 	    cdraw(g.reclip(aa.ul, aa.sz()));
 	    drawframe(g);
 	    super.draw(g);
+	}
+
+	private UI.Grab szdrag;
+	private Coord szdragc;
+	public boolean mousedown(Coord c, int button) {
+	    if(dragsize) {
+		Coord cc = c.sub(ca.ul);
+		if((button == 1) && (c.x < ca.br.x) && (c.y < ca.br.y) && (c.y >= ca.br.y - UI.scale(25) + (ca.br.x - c.x))) {
+		    szdrag = ui.grabmouse(this);
+		    szdragc = aa.sz().sub(c);
+		    return(true);
+		}
+	    }
+	    return(super.mousedown(c, button));
+	}
+
+	public void mousemove(Coord c) {
+	    if(szdrag != null)
+		((Window)parent).resize(c.add(szdragc));
+	    super.mousemove(c);
+	}
+
+	public boolean mouseup(Coord c, int button) {
+	    if((button == 1) && (szdrag != null)) {
+		szdrag.remove();
+		szdrag = null;
+		return(true);
+	    }
+	    return(super.mouseup(c, button));
 	}
 
 	public boolean checkhit(Coord c) {
