@@ -124,17 +124,21 @@ public class Window extends Widget implements DTarget {
     }
 
     public void chdeco(Deco deco) {
-	Coord psz;
+	Coord psz, poff;
 	if(this.deco != null) {
-	    psz = this.deco.contarea().sz();
+	    Area ca = this.deco.contarea();
+	    psz = ca.sz();
+	    poff = ca.ul;
 	    this.deco.reqdestroy();
 	    this.deco = null;
 	} else {
 	    psz = this.sz;
+	    poff = Coord.z;
 	}
 	if(deco != null)
 	    this.deco = add(deco);
 	resize2(psz);
+	this.c = this.c.add(poff).sub(ca().ul);
     }
 
     public static abstract class Deco extends Widget {
