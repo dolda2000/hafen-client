@@ -45,9 +45,9 @@ public class Chatwindow extends Window {
 
     public Chatwindow(Coord sz) {
 	super(sz, "Chat");
-	in = adda(new TextEntry(sz.x, ""), 0, asz.y, 0.0, 1.0);
+	in = adda(new TextEntry(sz.x, ""), 0, sz.y, 0.0, 1.0);
 	in.canactivate = true;
-	out = add(new Textlog(new Coord(asz.x, in.c.y)), Coord.z);
+	out = add(new Textlog(new Coord(sz.x, in.c.y)), Coord.z);
     }
 
     private void stdin() {

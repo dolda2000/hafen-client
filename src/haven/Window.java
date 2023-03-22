@@ -287,6 +287,17 @@ public class Window extends Widget implements DTarget {
 	return(max);
     }
 
+    public Area ca() {
+	if(deco == null)
+	    return(Area.sized(this.sz));
+	else
+	    return(deco.contarea());
+    }
+
+    public Coord csz() {
+	return(ca().sz());
+    }
+
     private void resize2(Coord sz) {
 	if(deco != null) {
 	    deco.iresize(sz);
@@ -303,11 +314,13 @@ public class Window extends Widget implements DTarget {
 	resize2(sz);
     }
 
+    @Deprecated
     public void decohide(boolean h) {
 	chdeco(h ? null : makedeco());
 	this.decohide = h;
     }
 
+    @Deprecated
     public boolean decohide() {
 	return(decohide);
     }
