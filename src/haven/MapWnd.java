@@ -114,7 +114,7 @@ public class MapWnd extends Window implements Console.Directory {
 		})
 	    .settip("Hide markers").setgkey(kb_hmark);
 	toolbar.add(new ICheckBox("gfx/hud/mmap/wnd", "", "-d", "-h", "-dh"))
-	    .state(() -> decohide()).set(a -> {
+	    .state(this::compact).set(a -> {
 		    compact(a);
 		    Utils.setprefb("compact-map", a);
 		})
@@ -156,7 +156,7 @@ public class MapWnd extends Window implements Console.Directory {
 
 	public void draw(GOut g) {
 	    super.draw(g);
-	    if(decohide())
+	    if(compact())
 		g.image(sizer, sc);
 	}
 
@@ -164,7 +164,7 @@ public class MapWnd extends Window implements Console.Directory {
 	private Coord dragc;
 	public boolean mousedown(Coord c, int button) {
 	    Coord cc = c.sub(sc);
-	    if((button == 1) && decohide() && (cc.x < sizer.sz().x) && (cc.y < sizer.sz().y) && (cc.y >= sizer.sz().y - UI.scale(25) + (sizer.sz().x - cc.x))) {
+	    if((button == 1) && compact() && (cc.x < sizer.sz().x) && (cc.y < sizer.sz().y) && (cc.y >= sizer.sz().y - UI.scale(25) + (sizer.sz().x - cc.x))) {
 		if(drag == null) {
 		    drag = ui.grabmouse(this);
 		    dragc = csz().sub(parentpos(MapWnd.this, c));
@@ -292,7 +292,7 @@ public class MapWnd extends Window implements Console.Directory {
 
 	public boolean clickmarker(DisplayMarker mark, Location loc, int button, boolean press) {
 	    if(button == 1) {
-		if(!decohide() && !press && !domark) {
+		if(!compact() && !press && !domark) {
 		    focus(mark.m);
 		    return(true);
 		}
@@ -669,10 +669,10 @@ public class MapWnd extends Window implements Console.Directory {
     }
 
     public void resize(Coord sz) {
-	sz = sz.max(decohide() ? UI.scale(150, 150) : UI.scale(350, 240));
+	sz = sz.max(compact() ? UI.scale(150, 150) : UI.scale(350, 240));
 	super.resize(sz);
 	tool.resize(sz.y);
-	if(!decohide()) {
+	if(!compact()) {
 	    tool.c = new Coord(sz.x - tool.sz.x, 0);
 	    viewf.resize(tool.pos("bl").subs(10, 0));
 	} else {
@@ -683,13 +683,17 @@ public class MapWnd extends Window implements Console.Directory {
 	toolbar.c = viewf.c.add(0, viewf.sz.y - toolbar.sz.y).add(UI.scale(2), UI.scale(-2));
     }
 
+    private boolean compact() {
+	return(deco == null);
+    }
+
     public void compact(boolean a) {
 	tool.show(!a);
 	if(a)
 	    delfocusable(tool);
 	else
 	    newfocusable(tool);
-	decohide(a);
+	chdeco(a ? null : makedeco());
 	pack();
     }
 
