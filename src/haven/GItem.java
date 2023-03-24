@@ -41,7 +41,8 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     public Object contentsid = null;
     public ContentsWindow contentswnd = null;
     public int infoseq;
-    public Widget hovering;
+    private Widget hovering;
+    private boolean hoverset;
     private GSprite spr;
     private ItemInfo.Raw rawinfo;
     private List<ItemInfo> info = Collections.emptyList();
@@ -313,6 +314,11 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	super.destroy();
     }
 
+    public void hovering(Widget hovering) {
+	this.hovering = hovering;
+	this.hoverset = true;
+    }
+
     /*
     private void ckconthover() {
 	if(hovering != null) {
@@ -340,7 +346,9 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 		contentswdg = null;
 	    }
 	}
-	hovering = null;
+	if(!hoverset)
+	    hovering = null;
+	hoverset = false;
     }
     */
 
@@ -439,7 +447,6 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	public void tick(double dt) {
 	    super.tick(dt);
 	    resize(inv.c.add(inv.sz).add(obox.btloff()));
-	    hovering = false;
 	}
 
 	public void destroy() {
@@ -514,10 +521,10 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    }
 	}
 
-	public boolean mousehover(Coord c) {
-	    super.mousehover(c);
-	    hovering = true;
-	    return(true);
+	public boolean mousehover(Coord c, boolean on) {
+	    super.mousehover(c, hovering);
+	    hovering = on;
+	    return(on);
 	}
     }
     */
@@ -641,10 +648,9 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    }
 	}
 
-	public boolean mousehover(Coord c) {
-	    super.mousehover(c);
+	public boolean mousehover(Coord c, boolean on) {
 	    hovering = true;
-	    return(true);
+	    return(super.mousehover(c, on));
 	}
     }
 }

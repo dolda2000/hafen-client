@@ -424,9 +424,9 @@ public class Window extends Widget implements DTarget {
 	}
     }
 
-    public boolean mousehover(Coord c) {
-	super.mousehover(c);
-	return(true);
+    public boolean mousehover(Coord c, boolean hovering) {
+	super.mousehover(c, hovering);
+	return(hovering);
     }
 
     public boolean keydown(java.awt.event.KeyEvent ev) {

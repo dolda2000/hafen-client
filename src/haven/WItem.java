@@ -222,11 +222,12 @@ public class WItem extends Widget implements DTarget {
 	return(true);
     }
 
-    public boolean mousehover(Coord c) {
-	if(item.contents != null) {
-	    item.hovering = this;
+    public boolean mousehover(Coord c, boolean on) {
+	boolean ret = super.mousehover(c, on);
+	if(on && (item.contents != null)) {
+	    item.hovering(this);
 	    return(true);
 	}
-	return(super.mousehover(c));
+	return(ret);
     }
 }
