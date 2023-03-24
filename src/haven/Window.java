@@ -304,9 +304,9 @@ public class Window extends Widget implements DTarget {
 	}
     }
 
-    public boolean mousehover(Coord c) {
-	super.mousehover(c);
-	return(true);
+    public boolean mousehover(Coord c, boolean hovering) {
+	super.mousehover(c, hovering);
+	return(hovering);
     }
 
     public void wdgmsg(Widget sender, String msg, Object... args) {
