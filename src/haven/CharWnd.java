@@ -1331,7 +1331,7 @@ public class CharWnd extends Window {
 			Indir<Resource> wres = ui.sess.getres((Integer)cond[i].wdata[0]);
 			nw[i] = (CondWidget)wres.get().getcode(Widget.Factory.class, true).create(ui, new Object[] {cond[i]});
 		    } else {
-			nw[i] = new DefaultCond(cont, cond[i]);
+			nw[i] = new DefaultCond(cond[i]);
 		    }
 		    y += cont.add(nw[i], new Coord(0, y)).sz.y;
 		}

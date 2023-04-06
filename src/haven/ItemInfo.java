@@ -346,12 +346,13 @@ public abstract class ItemInfo {
 
     public static List<ItemInfo> buildinfo(Owner owner, Raw raw) {
 	List<ItemInfo> ret = new ArrayList<ItemInfo>();
+	Resource.Resolver rr = owner.context(Resource.Resolver.class);
 	for(Object o : raw.data) {
 	    if(o instanceof Object[]) {
 		Object[] a = (Object[])o;
 		Resource ttres;
 		if(a[0] instanceof Integer) {
-		    ttres = owner.glob().sess.getres((Integer)a[0]).get();
+		    ttres = rr.getres((Integer)a[0]).get();
 		} else if(a[0] instanceof Resource) {
 		    ttres = (Resource)a[0];
 		} else if(a[0] instanceof Indir) {

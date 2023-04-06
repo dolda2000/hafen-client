@@ -971,7 +971,7 @@ public class Skeleton {
 				public Pipe.Op apply(ModOwner owner) {
 				    if(eqp == null)
 					eqp = src.get().flayer(BoneOffset.class, eqnm);
-				    return(eqp.forpose(getpose(owner)).get());
+				    return(eqp.from(getpose(owner)).get());
 				}
 			    };
 		    }
