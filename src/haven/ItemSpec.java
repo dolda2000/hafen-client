@@ -41,8 +41,6 @@ public class ItemSpec implements GSprite.Owner, ItemInfo.SpriteOwner {
     }
 
     public <T> T context(Class<T> cl) {return(ctx.context(cl));}
-    @Deprecated
-    public Glob glob() {return(context(Glob.class));}
     public Resource getres() {return(res.res.get());}
     private Random rnd = null;
     public Random mkrandoom() {

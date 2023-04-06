@@ -36,8 +36,6 @@ public abstract class ItemInfo {
     public final Owner owner;
 
     public interface Owner extends OwnerContext {
-	@Deprecated
-	public default Glob glob() {return(context(Glob.class));}
 	public List<ItemInfo> info();
     }
 
