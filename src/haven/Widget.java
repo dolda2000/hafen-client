@@ -1393,11 +1393,6 @@ public class Widget {
 	}
     }
 
-    @Deprecated
-    public Object tooltip(Coord c, boolean again) {
-	return(null);
-    }
-
     public Object tooltip(Coord c, Widget prev) {
 	if(prev != this)
 	    prevtt = null;
@@ -1418,7 +1413,7 @@ public class Widget {
 	    }
 	}
 	prevtt = null;
-	return(tooltip(c, prev == this));
+	return(null);
     }
 
     public Widget settip(String text, boolean rich) {
