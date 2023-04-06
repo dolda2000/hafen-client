@@ -1034,8 +1034,6 @@ public class CharWnd extends Window {
 	    public Text text;
 
 	    public DefaultCond(Condition cond) {super(cond);}
-	    @Deprecated
-	    public DefaultCond(Widget parent, Condition cond) {super(cond);}
 
 	    protected void added() {
 		super.added();

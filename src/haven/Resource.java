@@ -848,16 +848,6 @@ public class Resource implements Serializable {
 	remote().add(src);
     }
 
-    @Deprecated
-    public static Resource load(String name, int ver) {
-	return(remote().loadwait(name, ver));
-    }
-
-    @Deprecated
-    public Resource loadwait() {
-	return(this);
-    }
-
     public static class LoadException extends RuntimeException {
 	public Resource res;
 	public ResSource src;

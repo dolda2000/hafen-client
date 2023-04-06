@@ -152,20 +152,10 @@ public class Composite extends Drawable implements EquipTarget {
 	nposesold = !interp;
     }
     
-    @Deprecated
-    public void chposes(List<Indir<Resource>> poses, boolean interp) {
-	chposes(ResData.wrap(poses), interp);
-    }
-
     public void tposes(Collection<ResData> poses, WrapMode mode, float time) {
 	this.tposes = poses;
 	this.tpmode = mode;
 	this.tptime = time;
-    }
-    
-    @Deprecated
-    public void tposes(List<Indir<Resource>> poses, WrapMode mode, float time) {
-	tposes(ResData.wrap(poses), mode, time);
     }
 
     public void chmod(List<MD> mod) {

@@ -252,10 +252,6 @@ public class MCache implements MapSource {
 		this.a = a;
 	    }
 	}
-
-	@Deprecated public void update(Coord c1, Coord c2) {
-	    update(new Area(c1, c2.add(1, 1)));
-	}
     }
 
     private void cktileid(int id) {
@@ -792,11 +788,6 @@ public class MCache implements MapSource {
     public double getfz(Coord tc) {
 	Grid g = getgridt(tc);
 	return(g.getz(tc.sub(g.ul)));
-    }
-
-    @Deprecated
-    public int getz(Coord tc) {
-	return((int)Math.round(getfz(tc)));
     }
 
     public double getcz(double px, double py) {

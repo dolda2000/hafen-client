@@ -446,11 +446,6 @@ public class Skeleton {
 		lrot[i][0] = 1;
 	}
 
-	@Deprecated
-	public PoseMod() {
-	    this(ModOwner.nil);
-	}
-
 	public Skeleton skel() {return(Skeleton.this);}
 	
 	public void reset() {
@@ -664,10 +659,6 @@ public class Skeleton {
 	    aupdate(0.0f);
 	}
 
-	@Deprecated
-	public TrackMod(Track[] tracks, float len, WrapMode mode) {
-	    this(ModOwner.nil, tracks, new FxTrack[0], len, mode);
-	}
 	
 	public void aupdate(float time) {
 	    if(time > len)
