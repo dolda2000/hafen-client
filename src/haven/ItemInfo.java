@@ -65,13 +65,7 @@ public abstract class ItemInfo {
 
     @Resource.PublishedCode(name = "tt", instancer = FactMaker.class)
     public static interface InfoFactory {
-	public default ItemInfo build(Owner owner, Raw raw, Object... args) {
-	    return(build(owner, args));
-	}
-	@Deprecated
-	public default ItemInfo build(Owner owner, Object... args) {
-	    throw(new AbstractMethodError("info factory missing either build bmethod"));
-	}
+	public ItemInfo build(Owner owner, Raw raw, Object... args);
     }
 
     public static class FactMaker extends Resource.PublishedCode.Instancer.Chain<InfoFactory> {
@@ -206,7 +200,7 @@ public abstract class ItemInfo {
 	}
 
 	public static class Default implements InfoFactory {
-	    public ItemInfo build(Owner owner, Object... args) {
+	    public ItemInfo build(Owner owner, Raw raw, Object... args) {
 		if(owner instanceof SpriteOwner) {
 		    GSprite spr = ((SpriteOwner)owner).sprite();
 		    if(spr instanceof Dynamic)
