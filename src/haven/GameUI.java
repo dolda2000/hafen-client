@@ -740,7 +740,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    Utils.setprefc("wndc-zerg", zerg.c);
 	if(mapfile != null) {
 	    Utils.setprefc("wndc-map", mapfile.c);
-	    Utils.setprefc("wndsz-map", mapfile.asz);
+	    Utils.setprefc("wndsz-map", mapfile.csz());
 	}
     }
 
