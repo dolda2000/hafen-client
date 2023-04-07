@@ -138,7 +138,10 @@ public class Window extends Widget implements DTarget {
 	if(deco != null)
 	    this.deco = add(deco);
 	resize2(psz);
-	this.c = this.c.add(poff).sub(ca().ul);
+	Coord coff = poff.sub(ca().ul);
+	this.c = this.c.add(coff);
+	if(dm != null)
+	    this.doff = this.doff.sub(coff);
     }
 
     public static abstract class Deco extends Widget {
