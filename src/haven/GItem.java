@@ -140,8 +140,6 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	.add(Glob.class, wdg -> wdg.ui.sess.glob)
 	.add(Session.class, wdg -> wdg.ui.sess);
     public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
-    @Deprecated
-    public Glob glob() {return(ui.sess.glob);}
 
     public GSprite spr() {
 	GSprite spr = this.spr;

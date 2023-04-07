@@ -76,16 +76,6 @@ public class IBox {
 	return(ctl.sz().add(cbr.sz()));
     }
 
-    @Deprecated
-    public Coord tloff() {
-	return(btloff());
-    }
-
-    @Deprecated
-    public Coord bsz() {
-	return(cisz());
-    }
-
     public void draw(GOut g, Coord tl, Coord sz) {
 	g.image(bt, tl.add(new Coord(ctl.sz().x, 0)), new Coord(sz.x - ctr.sz().x - ctl.sz().x, bt.sz().y));
 	g.image(bb, tl.add(new Coord(cbl.sz().x, sz.y - bb.sz().y)), new Coord(sz.x - cbr.sz().x - cbl.sz().x, bb.sz().y));

@@ -407,11 +407,6 @@ public class WaterTile extends Tiler {
 	this.depth = depth;
     }
 
-    @Deprecated
-    public WaterTile(int id, Tileset set, int depth) {
-	this(id, new GroundTile(0, set), depth);
-    }
-
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	MapMesh.MapSurface ms = m.data(MapMesh.gnd);
 	SModel smod = SModel.get(m, surfmat, VertFactory.id);

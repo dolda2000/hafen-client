@@ -186,7 +186,7 @@ public class GLEnvironment implements Environment {
     private void initialize(GL3 gl) {
 	if(debuglog) {
 	    gl.glEnable(GL3.GL_DEBUG_OUTPUT);
-	    /* gl.glDebugMessageControl(GL.GL_DONT_CARE, GL.GL_DONT_CARE, GL3.GL_DEBUG_SEVERITY_NOTIFICATION, 0, null, 0, false); */
+	    gl.glDebugMessageControl(GL.GL_DONT_CARE, GL.GL_DONT_CARE, GL3.GL_DONT_CARE, 0, null, 0, true);
 	    /* gl.glDebugMessageControl(GL3.GL_DEBUG_SOURCE_API, GL3.GL_DEBUG_TYPE_OTHER, GL3.GL_DONT_CARE, 1, new int[] {131185}, 0, false); */
 	}
 	gl.glEnable(GL3.GL_PROGRAM_POINT_SIZE);

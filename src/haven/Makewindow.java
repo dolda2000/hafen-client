@@ -129,8 +129,6 @@ public class Makewindow extends Widget {
 	}
 	public Resource getres() {return(res.get());}
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, Makewindow.this));}
-	@Deprecated
-	public Glob glob() {return(ui.sess.glob);}
 
 	public List<ItemInfo> info() {
 	    if(info == null)

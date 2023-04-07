@@ -53,10 +53,7 @@ public class TextEntry extends Widget implements ReadLine.Owner {
     @RName("text")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    if(args[0] instanceof Coord)
-		return(new TextEntry(UI.scale((Coord)args[0]), (String)args[1]));
-	    else
-		return(new TextEntry(UI.scale((Integer)args[0]), (String)args[1]));
+	    return(new TextEntry(UI.scale((Integer)args[0]), (String)args[1]));
 	}
     }
 
@@ -146,11 +143,6 @@ public class TextEntry extends Widget implements ReadLine.Owner {
 	super(new Coord(w, mext.sz().y));
 	rsettext(deftext);
 	setcanfocus(true);
-    }
-
-    @Deprecated
-    public TextEntry(Coord sz, String deftext) {
-	this(sz.x, deftext);
     }
 
     protected void changed() {

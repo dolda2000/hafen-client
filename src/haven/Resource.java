@@ -848,16 +848,6 @@ public class Resource implements Serializable {
 	remote().add(src);
     }
 
-    @Deprecated
-    public static Resource load(String name, int ver) {
-	return(remote().loadwait(name, ver));
-    }
-
-    @Deprecated
-    public Resource loadwait() {
-	return(this);
-    }
-
     public static class LoadException extends RuntimeException {
 	public Resource res;
 	public ResSource src;
@@ -1693,6 +1683,14 @@ public class Resource implements Serializable {
 			ClassLoader l = cl.getClassLoader();
 			if(l instanceof ResClassLoader)
 			    return(((ResClassLoader)l).getres());
+			FromResource src = ResClassLoader.getsource(cl);
+			if(src != null) {
+			    /* XXX? This feels like a hack, but I can't think of
+			     * any better way to let resource code that has been
+			     * downloaded with `get-code' reference data in its
+			     * originating resource. */
+			    return(remote().loadwait(src.name(), src.version()));
+			}
 			throw(new RuntimeException("Cannot fetch resource of non-resloaded class " + cl));
 		    }
 		}));
