@@ -833,7 +833,8 @@ public class MCache implements MapSource {
 	Grid g = getgridt(tc);
 	MapMesh cut = g.getcut(tc.sub(g.ul).div(cutsz));
 	Tiler t = tiler(g.gettile(tc.sub(g.ul)));
-	return(cut.getsurf(id, t).getz(pc));
+	ZSurface surf = cut.getsurf(id, t);
+	return(surf.getz(pc));
     }
 
     public Coord3f getzp(SurfaceID id, Coord2d pc) {
