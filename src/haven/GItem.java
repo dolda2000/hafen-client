@@ -158,11 +158,9 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	if(spr != null)
 	    spr.tick(dt);
 	updcontinfo();
-    }
-
-    public void mousemove(Coord c) {
-	super.mousemove(c);
-	hovering = null;
+	if(!hoverset)
+	    hovering = null;
+	hoverset = false;
     }
 
     public List<ItemInfo> info() {
@@ -203,12 +201,14 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	} else if(name == "meter") {
 	    meter = (int)((Number)args[0]).doubleValue();
 	} else if(name == "contopen") {
-	    boolean nst;
-	    if(args[0] == null)
-		nst = contentswnd == null;
-	    else
-		nst = ((Integer)args[0]) != 0;
-	    // showcontwnd(nst);
+	    if(contentswnd != null) {
+		boolean nst;
+		if(args[0] == null)
+		    nst = (contentswnd.st != "wnd");
+		else
+		    nst = ((Integer)args[0]) != 0;
+		contentswnd.wndshow(nst);
+	    }
 	} else {
 	    super.uimsg(name, args);
 	}
@@ -317,73 +317,13 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	this.hoverset = true;
     }
 
-    /*
-    private void ckconthover() {
-	if(hovering != null) {
-	    if(contentswdg == null) {
-		if((this.contents != null) && (contentswnd == null)) {
-		    Widget cont = contparent();
-		    ckparent: for(Widget prev : cont.children()) {
-			if(prev instanceof Contents) {
-			    for(Widget p = hovering; p != null; p = p.parent) {
-				if(p == prev)
-				    break ckparent;
-				if(p instanceof Contents)
-				    break;
-			    }
-			    return;
-			}
-		    }
-		    this.contents.unlink();
-		    contentswdg = cont.add(new Contents(this, this.contents), hovering.parentpos(cont, hovering.sz.sub(Contents.overlap).sub(Contents.hovermarg)));
-		}
-	    }
-	} else {
-	    if((contentswdg != null) && !contentswdg.hovering && !contentswdg.hasmore()) {
-		contentswdg.reqdestroy();
-		contentswdg = null;
-	    }
-	}
-	if(!hoverset)
-	    hovering = null;
-	hoverset = false;
-    }
-    */
-
-    /*
-    public void showcontwnd(boolean show) {
-	if(show && (contentswnd == null)) {
-	    Widget cont = contparent();
-	    Coord wc = null;
-	    if(this.contentsid != null)
-		wc = Utils.getprefc(String.format("cont-wndc/%s", this.contentsid), null);
-	    if(wc == null)
-		wc = cont.rootxlate(ui.mc).add(Contents.overlap);
-	    contents.unlink();
-	    if(contentswdg != null) {
-		contentswdg.invdest = true;
-		contentswdg.reqdestroy();
-		contentswdg = null;
-	    }
-	    ContentsWindow wnd = new ContentsWindow(this, this.contents);
-	    contentswnd = cont.add(wnd, wc);
-	    if(this.contentsid != null) {
-		Utils.setprefb(String.format("cont-wndvis/%s", this.contentsid), true);
-		Utils.setprefc(String.format("cont-wndc/%s", this.contentsid), wc);
-	    }
-	} else if(!show && (contentswnd != null)) {
-	    contentswnd.reqdestroy();
-	    contentswnd = null;
-	    Utils.setprefb(String.format("cont-wndvis/%s", this.contentsid), false);
-	}
-    }
-    */
-
     public static class HoverDeco extends Window.Deco {
 	public static final Coord hovermarg = UI.scale(12, 12);
 	public static final Tex bg = Window.bg;
 	public static final IBox box = Window.wbox;
 	public Area ca;
+	private UI.Grab dm = null;
+	private Coord doff;
 
 	public void iresize(Coord isz) {
 	    ca = Area.sized(hovermarg.add(box.btloff()), isz);
@@ -409,83 +349,14 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	public boolean checkhit(Coord c) {
 	    return((c.x >= hovermarg.x) && (c.y >= hovermarg.y));
 	}
-    }
-
-    /*
-    public static class Contents extends Widget {
-	public static final Coord hovermarg = UI.scale(12, 12);
-	public static final Coord overlap = UI.scale(2, 2);
-	public static final Tex bg = Window.bg;
-	public static final IBox obox = Window.wbox;
-	public final GItem cont;
-	public final Widget inv;
-	private boolean invdest, hovering;
-	private UI.Grab dm = null;
-	private Coord doff;
-
-	public Contents(GItem cont, Widget inv) {
-	    z(90);
-	    this.cont = cont;
-	    this.inv = add(inv, hovermarg.add(obox.ctloff()));
-	    this.tick(0);
-	}
-
-	public void draw(GOut g) {
-	    Coord bgc = new Coord();
-	    Coord ctl = hovermarg.add(obox.btloff());
-	    Coord cbr = sz.sub(obox.cisz()).add(ctl);
-	    for(bgc.y = ctl.y; bgc.y < cbr.y; bgc.y += bg.sz().y) {
-		for(bgc.x = ctl.x; bgc.x < cbr.x; bgc.x += bg.sz().x)
-		    g.image(bg, bgc, ctl, cbr);
-	    }
-	    obox.draw(g, hovermarg, sz.sub(hovermarg));
-	    super.draw(g);
-	}
-
-	public void tick(double dt) {
-	    super.tick(dt);
-	    resize(inv.c.add(inv.sz).add(obox.btloff()));
-	}
-
-	public void destroy() {
-	    if(!invdest) {
-		inv.unlink();
-		cont.add(inv);
-	    }
-	    super.destroy();
-	}
-
-	public boolean hasmore() {
-	    for(GItem item : children(GItem.class)) {
-		if(item.contentswdg != null)
-		    return(true);
-	    }
-	    return(false);
-	}
-
-	public void cdestroy(Widget w) {
-	    super.cdestroy(w);
-	    if(w == inv) {
-		cont.cdestroy(w);
-		invdest = true;
-		this.destroy();
-		cont.contentswdg = null;
-	    }
-	}
-
-	public boolean checkhit(Coord c) {
-	    return((c.x >= hovermarg.x) && (c.y >= hovermarg.y));
-	}
 
 	public boolean mousedown(Coord c, int btn) {
 	    if(super.mousedown(c, btn))
 		return(true);
-	    if(checkhit(c)) {
-		if(btn == 1) {
-		    dm = ui.grabmouse(this);
-		    doff = c;
-		    return(true);
-		}
+	    if(checkhit(c) && (btn == 1)) {
+		dm = ui.grabmouse(this);
+		doff = c;
+		return(true);
 	    }
 	    return(false);
 	}
@@ -504,28 +375,15 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 		if(c.dist(doff) > 10) {
 		    dm.remove();
 		    dm = null;
-		    Coord off = inv.c;
-		    inv.unlink();
-		    ContentsWindow wnd = new ContentsWindow(cont, inv);
-		    off = off.sub(wnd.xlate(wnd.inv.c, true));
-		    cont.contentswnd = parent.add(wnd, this.c.add(off));
-		    wnd.drag(doff.sub(off));
-		    invdest = true;
-		    destroy();
-		    cont.contentswdg = null;
+		    ContentsWindow wnd = (ContentsWindow)parent;
+		    wnd.drag(doff);
+		    wnd.chstate("wnd");
 		}
 	    } else {
 		super.mousemove(c);
 	    }
 	}
-
-	public boolean mousehover(Coord c, boolean on) {
-	    super.mousehover(c, hovering);
-	    hovering = on;
-	    return(on);
-	}
     }
-    */
 
     public static class ContentsWindow extends Window {
 	public static final Coord overlap = UI.scale(2, 2);
@@ -554,18 +412,29 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	}
 
 	private void chstate(String nst) {
+	    if(nst == st)
+		return;
+	    if(st == "wnd") {
+		if(id != null)
+		    Utils.setprefb(String.format("cont-wndvis/%s", id), false);
+	    }
 	    st = nst;
-	    Debug.dump(st);
 	    if(nst == "hide") {
 		hide();
 	    } else if(nst == "hover") {
 		chdeco(new HoverDeco());
 		show();
-		raise();
+		z(90);
+		if(parent != null)
+		    raise();
 	    } else if(nst == "wnd") {
 		chdeco(new DefaultDeco());
 		show();
-		raise();
+		z(0);
+		if(parent != null)
+		    raise();
+		if(id != null)
+		    Utils.setprefb(String.format("cont-wndvis/%s", id), true);
 	    }
 	}
 
@@ -583,8 +452,8 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 			return;
 		    }
 		}
-		move(hover.parentpos(parent, hover.sz.sub(overlap).sub(HoverDeco.hovermarg)));
 		chstate("hover");
+		move(hover.parentpos(parent, hover.sz.sub(overlap).sub(HoverDeco.hovermarg)));
 	    }
 	}
 
@@ -613,23 +482,14 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    if(!Utils.eq(inv.sz, psz))
 		resize(inv.c.add(psz = inv.sz));
 	    if(st == "wnd") {
-		if(!Utils.eq(lc, this.c) && (id != null)) {
+		if(!Utils.eq(lc, this.c) && (id != null))
 		    Utils.setprefc(String.format("cont-wndc/%s", id), lc = this.c);
-		    Utils.setprefb(String.format("cont-wndvis/%s", id), true);
-		}
 	    }
-	}
-
-	public void mousemove(Coord c) {
-	    super.mousemove(c);
-	    hovering = false;
 	}
 
 	public void wdgmsg(Widget sender, String msg, Object... args) {
 	    if((sender == this) && (msg == "close")) {
 		chstate("hide");
-		if(id != null)
-		    Utils.setprefb(String.format("cont-wndvis/%s", id), false);
 	    } else {
 		super.wdgmsg(sender, msg, args);
 	    }
@@ -647,8 +507,25 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	}
 
 	public boolean mousehover(Coord c, boolean on) {
-	    hovering = true;
+	    hovering = on;
 	    return(super.mousehover(c, on));
+	}
+
+	public void wndshow(boolean show) {
+	    if(show && (st != "wnd")) {
+		Coord wc = null;
+		if(id != null)
+		    wc = Utils.getprefc(String.format("cont-wndc/%s", id), null);
+		if(st == "hide") {
+		    if(wc == null)
+			wc = cont.rootxlate(ui.mc).add(overlap);
+		}
+		chstate("wnd");
+		if(wc != null)
+		    move(wc);
+	    } else if(!show && (st == "wnd")) {
+		chstate("hide");
+	    }
 	}
     }
 }
