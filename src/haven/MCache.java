@@ -414,22 +414,22 @@ public class MCache implements MapSource {
 
 	public MapMesh getcut(Coord cc) {
 	    Cut cut = geticut(cc);
-	    if(cut.dmesh != null) {
+	    MapMesh ret = cut.mesh;
+	    if((ret == null) || (cut.dmesh != null)) {
 		synchronized(cut) {
-		    if(cut.dmesh != null) {
-			if(cut.dmesh.done() || (cut.mesh == null)) {
-			    MapMesh old = cut.mesh;
-			    cut.mesh = cut.dmesh.get();
-			    cut.dmesh = null;
-			    cut.ols.clear();
-			    cut.olols.clear();
-			    if(old != null)
-				old.dispose();
-			}
+		    ret = cut.mesh;
+		    if((ret == null) || ((cut.dmesh != null) && cut.dmesh.done())) {
+			MapMesh old = cut.mesh;
+			cut.mesh = ret = cut.dmesh.get();
+			cut.dmesh = null;
+			cut.ols.clear();
+			cut.olols.clear();
+			if(old != null)
+			    old.dispose();
 		    }
 		}
 	    }
-	    return(cut.mesh);
+	    return(ret);
 	}
 	
 	public RenderTree.Node getolcut(OverlayInfo id, Coord cc) {
