@@ -418,6 +418,10 @@ public class MCache implements MapSource {
 	    if((ret == null) || (cut.dmesh != null)) {
 		synchronized(cut) {
 		    ret = cut.mesh;
+		    if((ret == null) && (cut.dmesh == null)) {
+			/* Grid has been disposed, so wait for new one to arrive. */
+			throw(new LoadingMap(MCache.this, gc));
+		    }
 		    if((ret == null) || ((cut.dmesh != null) && cut.dmesh.done())) {
 			MapMesh old = cut.mesh;
 			cut.mesh = ret = cut.dmesh.get();
@@ -464,21 +468,23 @@ public class MCache implements MapSource {
 
 	private void buildcut(final Coord cc) {
 	    final Cut cut = geticut(cc);
-	    Defer.Future<?> prev = cut.dmesh;
-	    cut.dmesh = Defer.later(new Defer.Callable<MapMesh>() {
-		    public MapMesh call() {
-			Random rnd = new Random(id);
-			rnd.setSeed(rnd.nextInt() ^ cc.x);
-			rnd.setSeed(rnd.nextInt() ^ cc.y);
-			return(MapMesh.build(MCache.this, rnd, ul.add(cc.mul(cutsz)), cutsz));
-		    }
+	    synchronized(cut) {
+		Defer.Future<?> prev = cut.dmesh;
+		cut.dmesh = Defer.later(new Defer.Callable<MapMesh>() {
+			public MapMesh call() {
+			    Random rnd = new Random(id);
+			    rnd.setSeed(rnd.nextInt() ^ cc.x);
+			    rnd.setSeed(rnd.nextInt() ^ cc.y);
+			    return(MapMesh.build(MCache.this, rnd, ul.add(cc.mul(cutsz)), cutsz));
+			}
 
-		    public String toString() {
-			return("Building map...");
-		    }
-		});
-	    if(prev != null)
-		prev.cancel();
+			public String toString() {
+			    return("Building map...");
+			}
+		    });
+		if(prev != null)
+		    prev.cancel();
+	    }
 	}
 
 	public void ivneigh(Coord nc) {
@@ -525,17 +531,23 @@ public class MCache implements MapSource {
 
 	public void dispose() {
 	    for(Cut cut : cuts) {
-		if(cut.dmesh != null)
-		    cut.dmesh.cancel();
-		if(cut.mesh != null)
-		    cut.mesh.dispose();
-		for(RenderTree.Node r : cut.ols.values()) {
-		    if(r instanceof Disposable)
-			((Disposable)r).dispose();
-		}
-		for(RenderTree.Node r : cut.olols.values()) {
-		    if(r instanceof Disposable)
-			((Disposable)r).dispose();
+		synchronized(cut) {
+		    if(cut.dmesh != null) {
+			cut.dmesh.cancel();
+			cut.dmesh = null;
+		    }
+		    if(cut.mesh != null) {
+			cut.mesh.dispose();
+			cut.mesh = null;
+		    }
+		    for(RenderTree.Node r : cut.ols.values()) {
+			if(r instanceof Disposable)
+			    ((Disposable)r).dispose();
+		    }
+		    for(RenderTree.Node r : cut.olols.values()) {
+			if(r instanceof Disposable)
+			    ((Disposable)r).dispose();
+		    }
 		}
 	    }
 	}
