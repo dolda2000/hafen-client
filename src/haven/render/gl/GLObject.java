@@ -80,7 +80,7 @@ public abstract class GLObject implements Disposable {
     private static final java.util.concurrent.atomic.AtomicInteger ar = new java.util.concurrent.atomic.AtomicInteger(0);
     void get() {
 	synchronized(this) {
-	    if(disp)
+	    if(del)
 		throw(new UseAfterFreeException(disptrace));
 	    rc++;
 	    int na = ar.incrementAndGet();
