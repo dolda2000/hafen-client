@@ -425,8 +425,6 @@ public class Skeleton {
     public interface ModOwner extends OwnerContext {
 	public double getv();
 	public Collection<Location.Chain> getloc();
-	@Deprecated
-	public default Glob glob() {return(context(Glob.class));}
 
 	public static final ModOwner nil = new ModOwner() {
 		public double getv() {return(0);}
@@ -446,11 +444,6 @@ public class Skeleton {
 	    lrot = new float[nb][4];
 	    for(int i = 0; i < nb; i++)
 		lrot[i][0] = 1;
-	}
-
-	@Deprecated
-	public PoseMod() {
-	    this(ModOwner.nil);
 	}
 
 	public Skeleton skel() {return(Skeleton.this);}
@@ -666,10 +659,6 @@ public class Skeleton {
 	    aupdate(0.0f);
 	}
 
-	@Deprecated
-	public TrackMod(Track[] tracks, float len, WrapMode mode) {
-	    this(ModOwner.nil, tracks, new FxTrack[0], len, mode);
-	}
 	
 	public void aupdate(float time) {
 	    if(time > len)
@@ -971,7 +960,7 @@ public class Skeleton {
 				public Pipe.Op apply(ModOwner owner) {
 				    if(eqp == null)
 					eqp = src.get().flayer(BoneOffset.class, eqnm);
-				    return(eqp.forpose(getpose(owner)).get());
+				    return(eqp.from(getpose(owner)).get());
 				}
 			    };
 		    }

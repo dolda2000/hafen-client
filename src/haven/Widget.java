@@ -811,15 +811,20 @@ public class Widget {
 	}
     }
 
-    public boolean mousehover(Coord c) {
+    public boolean mousehover(Coord c, boolean hovering) {
+	boolean ret = false;
 	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
+	    boolean ch = hovering;
 	    if(!wdg.visible)
-		continue;
+		ch = false;
 	    Coord cc = xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz) && wdg.mousehover(c.add(cc.inv())))
-		return(true);
+	    boolean inside = c.isect(cc, wdg.sz);
+	    if(wdg.mousehover(c.add(cc.inv()), ch && inside)) {
+		hovering = false;
+		ret = true;
+	    }
 	}
-	return(false);
+	return(ret);
     }
 
     private static final Map<Integer, Integer> gkeys = Utils.<Integer, Integer>map().
@@ -1388,11 +1393,6 @@ public class Widget {
 	}
     }
 
-    @Deprecated
-    public Object tooltip(Coord c, boolean again) {
-	return(null);
-    }
-
     public Object tooltip(Coord c, Widget prev) {
 	if(prev != this)
 	    prevtt = null;
@@ -1413,7 +1413,7 @@ public class Widget {
 	    }
 	}
 	prevtt = null;
-	return(tooltip(c, prev == this));
+	return(null);
     }
 
     public Widget settip(String text, boolean rich) {

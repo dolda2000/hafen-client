@@ -175,17 +175,7 @@ public class Material implements Pipe.Op {
 
     @Resource.PublishedCode(name = "mat")
     public static interface Factory {
-	public default Material create(Owner owner, Resource res, Message sdt) {
-	    try {
-		return(create(owner.context(Glob.class), res, sdt));
-	    } catch(OwnerContext.NoContext e) {
-		return(create((Glob)null, res, sdt));
-	    }
-	}
-	@Deprecated
-	public default Material create(Glob glob, Resource res, Message sdt) {
-	    throw(new AbstractMethodError("material factory missing either create method"));
-	}
+	public Material create(Owner owner, Resource res, Message sdt);
     }
 
     public static Material fromres(Owner owner, Resource res, Message sdt) {
@@ -207,10 +197,6 @@ public class Material implements Pipe.Op {
 	    .add(Glob.class, o -> o.glob)
 	    .add(Session.class, o -> o.glob.sess);
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
-    }
-    @Deprecated
-    public static Material fromres(Glob glob, Resource res, Message sdt) {
-	return(fromres(new LegacyOwner(glob), res, sdt));
     }
 
     public static class Res extends Resource.Layer implements Resource.IDLayer<Integer> {

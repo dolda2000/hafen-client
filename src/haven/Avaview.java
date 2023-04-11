@@ -127,7 +127,6 @@ public class Avaview extends PView {
 	public Random mkrandoom() {return(new Random());}
 	public Resource getres() {return(null);}
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, Avaview.this));}
-	@Deprecated public Glob glob() {return(context(Glob.class));}
 
 	public Collection<Location.Chain> getloc() {return(Collections.emptyList());}
 	public double getv() {return(0);}

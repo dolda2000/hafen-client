@@ -43,6 +43,7 @@ public interface GL {
     public static final int GL_DEBUG_OUTPUT = com.jogamp.opengl.GL3.GL_DEBUG_OUTPUT;
     public static final int GL_DEPTH_ATTACHMENT = com.jogamp.opengl.GL.GL_DEPTH_ATTACHMENT;
     public static final int GL_DEPTH_BUFFER_BIT = com.jogamp.opengl.GL3.GL_DEPTH_BUFFER_BIT;
+    public static final int GL_DONT_CARE = com.jogamp.opengl.GL3.GL_DONT_CARE;
     public static final int GL_DST_ALPHA = com.jogamp.opengl.GL.GL_DST_ALPHA;
     public static final int GL_DST_COLOR = com.jogamp.opengl.GL.GL_DST_COLOR;
     public static final int GL_DYNAMIC_DRAW = com.jogamp.opengl.GL3.GL_DYNAMIC_DRAW;

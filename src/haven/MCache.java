@@ -252,10 +252,6 @@ public class MCache implements MapSource {
 		this.a = a;
 	    }
 	}
-
-	@Deprecated public void update(Coord c1, Coord c2) {
-	    update(new Area(c1, c2.add(1, 1)));
-	}
     }
 
     private void cktileid(int id) {
@@ -794,11 +790,6 @@ public class MCache implements MapSource {
 	return(g.getz(tc.sub(g.ul)));
     }
 
-    @Deprecated
-    public int getz(Coord tc) {
-	return((int)Math.round(getfz(tc)));
-    }
-
     public double getcz(double px, double py) {
 	double tw = tilesz.x, th = tilesz.y;
 	Coord ul = Coord.of(Utils.floordiv(px, tw), Utils.floordiv(py, th));
@@ -842,7 +833,8 @@ public class MCache implements MapSource {
 	Grid g = getgridt(tc);
 	MapMesh cut = g.getcut(tc.sub(g.ul).div(cutsz));
 	Tiler t = tiler(g.gettile(tc.sub(g.ul)));
-	return(cut.getsurf(id, t).getz(pc));
+	ZSurface surf = cut.getsurf(id, t);
+	return(surf.getz(pc));
     }
 
     public Coord3f getzp(SurfaceID id, Coord2d pc) {
