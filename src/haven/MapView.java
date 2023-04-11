@@ -1344,7 +1344,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
 
 	public void fuzzyget(Render out, Coord c, int rad, Consumer<ClickData> cb) {
-	    Coord gc = Coord.of(c.x, sz().y - c.y);
+	    Coord gc = Coord.of(c.x, sz().y - 1 - c.y);
 	    Area area = new Area(gc.sub(rad, rad), gc.add(rad + 1, rad + 1)).overlap(Area.sized(Coord.z, this.sz()));
 	    out.pget(basic, FragID.fragid, area, new VectorFormat(1, NumberFormat.SINT32), data -> {
 		    Clickslot cs;

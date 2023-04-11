@@ -174,7 +174,7 @@ public class Window extends Widget implements DTarget {
 	public final IButton cbtn;
 	public boolean dragsize;
 	public Area aa, ca;
-	public Coord cptl, cpsz;
+	public Coord cptl = Coord.z, cpsz = Coord.z;
 	public int cmw;
 	public Text cap = null;
 
