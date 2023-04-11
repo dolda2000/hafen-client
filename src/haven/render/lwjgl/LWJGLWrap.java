@@ -132,7 +132,7 @@ public class LWJGLWrap implements GL {
     public void glGenTextures(int n, int[] buffer) {GL30.glGenTextures(ckbuf(buffer, n));}
     public void glGenVertexArrays(int n, int[] buffer) {GL30.glGenVertexArrays(ckbuf(buffer, n));}
     public void glGetBufferSubData(int target, int offset, int size, ByteBuffer data) {GL30.glGetBufferSubData(target, offset, ckbuf(data, size));}
-    public int glGetDebugMessageLog(int count, int bufsize, int[] sources, int[] types, int[] ids, int[] severities, int[] lengths, byte[] buffer) {return(GL43.glGetDebugMessageLog(count, ckbuf(sources, bufsize), ckbuf(types, bufsize), ckbuf(ids, bufsize), ckbuf(severities, bufsize), ckbuf(lengths, bufsize), ByteBuffer.wrap(buffer)));}
+    public int glGetDebugMessageLog(int count, int bufsize, int[] sources, int[] types, int[] ids, int[] severities, int[] lengths, byte[] buffer) {return(GL43.glGetDebugMessageLog(count, ckbuf(sources, count), ckbuf(types, count), ckbuf(ids, count), ckbuf(severities, count), ckbuf(lengths, count), ByteBuffer.wrap(buffer)));}
     public int glGetError() {return(GL30.glGetError());}
     public void glGetFloatv(int pname, float[] data) {GL30.glGetFloatv(pname, data);}
     public void glGetIntegerv(int pname, int[] data) {GL30.glGetIntegerv(pname, data);}
