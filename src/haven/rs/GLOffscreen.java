@@ -91,7 +91,12 @@ public class GLOffscreen implements Context {
 	if(benv.ctx != ctx)
 	    throw(new AssertionError());
 	benv.process(gl);
-	benv.finish(gl);
+	try {
+	    benv.finish(gl);
+	} catch(InterruptedException e) {
+	    Thread.currentThread().interrupt();
+	    throw(new RuntimeException(e));
+	}
     }
 
     public Environment env() {
