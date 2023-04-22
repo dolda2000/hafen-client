@@ -43,7 +43,9 @@ public class DrawBuffer implements Disposable {
 	this.depth = new Texture2D(sz.x, sz.y, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null);
 	Area vp = Area.sized(Coord.z, sz);
 	this.basic = Pipe.Op.compose(new States.Viewport(vp), new FrameConfig(sz),
-				     new FragColor<>(color.image(0)), new DepthBuffer<>(depth.image(0)));
+				     new FragColor<>(color.image(0)), new DepthBuffer<>(depth.image(0)),
+				     FragColor.blend(new BlendMode(BlendMode.Function.ADD, BlendMode.Factor.SRC_ALPHA, BlendMode.Factor.INV_SRC_ALPHA,
+								   BlendMode.Function.MAX, BlendMode.Factor.SRC_ALPHA, BlendMode.Factor.ONE)));
     }
 
     public Pipe.Op basic() {
@@ -53,8 +55,6 @@ public class DrawBuffer implements Disposable {
     public GOut graphics() {
 	Pipe state = new BufPipe();
 	state.prep(basic());
-	state.prep(FragColor.blend(new BlendMode(BlendMode.Function.ADD, BlendMode.Factor.SRC_ALPHA, BlendMode.Factor.INV_SRC_ALPHA,
-						 BlendMode.Function.MAX, BlendMode.Factor.SRC_ALPHA, BlendMode.Factor.ONE)));
 	state.prep(new Ortho2D(Area.sized(Coord.z, this.sz)));
 	return(new GOut(env.render(), state, this.sz));
     }
