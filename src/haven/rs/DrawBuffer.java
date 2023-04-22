@@ -69,31 +69,34 @@ public class DrawBuffer implements Disposable {
 	RenderTree tree = new RenderTree();
 	TickList tick = new TickList();
 	DrawList rnd = env.drawlist();
-	Light.LightList lights = new Light.LightList();
-	tree.add(tick, TickList.TickNode.class);
-	tree.add(rnd, Rendered.class);
-	RenderTree.Slot basic = tree.add((RenderTree.Node)null);
-	Pipe.Op bstate = Pipe.Op.compose(basic(),
-					 Homo3D.state, new States.Depthtest(States.Depthtest.Test.LE), new States.Facecull(), lights,
-					 state);
-	basic.ostate(bstate);
-	Loading.waitfor(() -> basic.add(n));
-	basic.ostate(Pipe.Op.compose(bstate, lights.compile()));
-	Render cmd = env.render();
-	tick.tick(0);
-	tick.gtick(cmd);
-	cmd.clear(basic.state(), FragColor.fragcol, new FColor(0, 0, 0 ,0));
-	cmd.clear(basic.state(), 1.0);
-	rnd.draw(cmd);
-	BufferedImage[] retbuf = {null};
-	GOut.getimage(cmd, basic.state(), FragColor.fragcol, Area.sized(Coord.z, this.sz), img -> {
-		retbuf[0] = img;
-	    });
-	env.submit(cmd);
-	if(retbuf[0] == null)
-	    throw(new AssertionError());
-	rnd.dispose();
-	return(retbuf[0]);
+	try {
+	    Light.LightList lights = new Light.LightList();
+	    tree.add(tick, TickList.TickNode.class);
+	    tree.add(rnd, Rendered.class);
+	    RenderTree.Slot basic = tree.add((RenderTree.Node)null);
+	    Pipe.Op bstate = Pipe.Op.compose(basic(),
+					     Homo3D.state, new States.Depthtest(States.Depthtest.Test.LE), new States.Facecull(), lights,
+					     state);
+	    basic.ostate(bstate);
+	    Loading.waitfor(() -> basic.add(n));
+	    basic.ostate(Pipe.Op.compose(bstate, lights.compile()));
+	    Render cmd = env.render();
+	    tick.tick(0);
+	    tick.gtick(cmd);
+	    cmd.clear(basic.state(), FragColor.fragcol, new FColor(0, 0, 0 ,0));
+	    cmd.clear(basic.state(), 1.0);
+	    rnd.draw(cmd);
+	    BufferedImage[] retbuf = {null};
+	    GOut.getimage(cmd, basic.state(), FragColor.fragcol, Area.sized(Coord.z, this.sz), img -> {
+		    retbuf[0] = img;
+		});
+	    env.submit(cmd);
+	    if(retbuf[0] == null)
+		throw(new AssertionError());
+	    return(retbuf[0]);
+	} finally {
+	    rnd.dispose();
+	}
     }
 
     public void dispose() {
