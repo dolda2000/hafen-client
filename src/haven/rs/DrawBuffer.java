@@ -65,7 +65,6 @@ public class DrawBuffer implements Disposable {
 	env.submit(g.out);
     }
 
-    static DrawList merdel = null;
     public BufferedImage draw(Pipe.Op state, RenderTree.Node n) {
 	RenderTree tree = new RenderTree();
 	TickList tick = new TickList();
@@ -93,7 +92,7 @@ public class DrawBuffer implements Disposable {
 	env.submit(cmd);
 	if(retbuf[0] == null)
 	    throw(new AssertionError());
-	merdel = rnd;
+	rnd.dispose();
 	return(retbuf[0]);
     }
 
