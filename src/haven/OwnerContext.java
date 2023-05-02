@@ -32,7 +32,7 @@ import java.util.function.*;
 public interface OwnerContext {
     public <T> T context(Class<T> cl);
 
-    public default <T> T context(Class<T> cl, boolean fail) {
+    public default <T> T fcontext(Class<T> cl, boolean fail) {
 	try {
 	    return(context(cl));
 	} catch(NoContext e) {
@@ -43,7 +43,7 @@ public interface OwnerContext {
     }
 
     public default <T> Optional<T> ocontext(Class<T> cl) {
-	return(Optional.ofNullable(context(cl, false)));
+	return(Optional.ofNullable(fcontext(cl, false)));
     }
 
     public static class NoContext extends RuntimeException {

@@ -1446,7 +1446,7 @@ public class Utils {
     }
     */
     public static ByteBuffer wbbuf(int n) {
-	return(ByteBuffer.wrap(new byte[n]));
+	return(ByteBuffer.wrap(new byte[n]).order(ByteOrder.nativeOrder()));
     }
     public static IntBuffer wibuf(int n) {
 	return(IntBuffer.wrap(new int[n]));

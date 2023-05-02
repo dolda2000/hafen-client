@@ -252,6 +252,20 @@ public abstract class GLEnvironment implements Environment {
 	}
     }
 
+    public void synccallbacks() throws InterruptedException {
+	boolean[] done = {false};
+	callback(() -> {
+		synchronized(done) {
+		    done[0] = true;
+		    done.notifyAll();
+		}
+	    });
+	synchronized(done) {
+	    while(!done[0])
+		done.wait();
+	}
+    }
+
     private void checkqueries(GL gl) {
 	for(Iterator<GLQuery> i = queries.iterator(); i.hasNext();) {
 	    GLQuery query = i.next();
@@ -359,12 +373,13 @@ public abstract class GLEnvironment implements Environment {
 	}
     }
 
-    public void finish(GL gl) {
+    public void finish(GL gl) throws InterruptedException {
 	synchronized(drawmon) {
 	    gl.glFinish();
 	    checkqueries(gl);
 	    if(!queries.isEmpty())
 		throw(new AssertionError("active queries left after glFinish"));
+	    synccallbacks();
 	}
     }
 
