@@ -83,12 +83,11 @@ public class JOGLPanel extends GLCanvas implements GLPanel, Console.Directory {
 	return(caps);
     }
 
-    public JOGLPanel(Coord sz) {
+    public JOGLPanel() {
 	super(mkcaps(), null, null);
 	base = new BufPipe();
 	base.prep(new FragColor<>(FragColor.defcolor)).prep(new DepthBuffer<>(DepthBuffer.defdepth));
 	base.prep(FragColor.blend(new BlendMode()));
-	setSize(sz.x, sz.y);
 	addGLEventListener(new GLEventListener() {
 		public void display(GLAutoDrawable d) {
 		    redraw(d.getGL());

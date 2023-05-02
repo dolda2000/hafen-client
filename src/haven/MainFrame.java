@@ -168,13 +168,13 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	setIconImage(icon);
     }
 
-    private UIPanel renderer(Coord sz) {
+    private UIPanel renderer() {
 	String id = renderer.get();
 	switch(id) {
 	case "jogl":
-	    return(new JOGLPanel(sz));
+	    return(new JOGLPanel());
 	case "lwjgl":
-	    return(new LWJGLPanel(sz));
+	    return(new LWJGLPanel());
 	default:
 	    throw(new RuntimeException("invalid renderer specified in haven.renderer: " + id));
 	}
@@ -191,13 +191,14 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    sz = isz;
 	}
 	this.g = new ThreadGroup(HackThread.tg(), "Haven client");
-	Component pp = (Component)(this.p = renderer(sz));
+	Component pp = (Component)(this.p = renderer());
 	if(fsmode == null) {
 	    Coord pfm = Utils.getprefc("fsmode", null);
 	    if((pfm != null) && !pfm.equals(Coord.z))
 		fsmode = findmode(pfm.x, pfm.y);
 	}
 	add(pp);
+	pp.setSize(sz.x, sz.y);
 	pack();
 	setResizable(!Utils.getprefb("wndlock", false));
 	pp.requestFocus();

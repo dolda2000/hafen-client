@@ -53,12 +53,11 @@ public class LWJGLPanel extends AWTGLCanvas implements GLPanel, Console.Director
 	return(caps);
     }
 
-    public LWJGLPanel(Coord sz) {
+    public LWJGLPanel() {
 	super(mkcaps());
 	base = new BufPipe();
 	base.prep(new FragColor<>(FragColor.defcolor)).prep(new DepthBuffer<>(DepthBuffer.defdepth));
 	base.prep(FragColor.blend(new BlendMode()));
-	setSize(sz.x, sz.y);
 	setFocusTraversalKeysEnabled(false);
 	newui(null);
     }
