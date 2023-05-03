@@ -82,7 +82,7 @@ public class StreamBuffer implements haven.Disposable {
 	if(buf == null) throw(new NullPointerException());
 	synchronized(this) {
 	    for(int i = 0; i < xfbufs.length; i++) {
-		if(xfbufs[i].data() == buf) {
+		if((xfbufs[i] != null) && (xfbufs[i].data() == buf)) {
 		    if(!used[i])
 			throw(new RuntimeException());
 		    used[i] = false;
