@@ -172,9 +172,11 @@ public class Defer extends ThreadGroup {
 		this.exc = exc;
 		chstate("done");
 	    } finally {
-		if(state != "done")
-		    chstate("resched");
-		running = null;
+		synchronized(this) {
+		    if(state != "done")
+			chstate("resched");
+		    running = null;
+		}
 		busy.getAndDecrement();
 		/* XXX: This is a race; a cancelling thread could have
 		 * gotten the thread reference via running and then
