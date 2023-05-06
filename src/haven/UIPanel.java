@@ -47,6 +47,8 @@ public interface UIPanel extends Runnable {
      * be declared since Java is stupid. */
     public void setSize(int w, int h);
     public Dimension getSize();
+    public void setCursor(Cursor c);
+    public Component getParent();
 
     public static class Dispatcher implements KeyListener, MouseListener, MouseWheelListener, MouseMotionListener {
 	public final Queue<InputEvent> events = new LinkedList<>();

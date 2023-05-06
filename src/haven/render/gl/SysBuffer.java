@@ -28,19 +28,8 @@ package haven.render.gl;
 
 import java.nio.*;
 import haven.Disposable;
-import haven.render.*;
 
-public class HeapBuffer implements Disposable {
-    public SysBuffer mem;
-
-    public <T extends DataBuffer> HeapBuffer(GLEnvironment env, T obj, DataBuffer.Filler<? super T> init) {
-	if(init != null) {
-	    FillBuffers.Array buf = (FillBuffers.Array)init.fill(obj, env);
-	    this.mem = buf.mem();
-	}
-    }
-
-    public void dispose() {
-	mem.dispose();
-    }
+public interface SysBuffer extends Disposable, AutoCloseable {
+    public ByteBuffer data();
+    public default void close() {dispose();}
 }

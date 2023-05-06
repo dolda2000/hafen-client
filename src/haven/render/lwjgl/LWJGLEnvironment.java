@@ -24,23 +24,51 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render.lwjgl;
 
 import java.nio.*;
-import haven.Disposable;
-import haven.render.*;
+import haven.*;
+import haven.render.gl.*;
+import org.lwjgl.opengl.awt.*;
+import haven.render.gl.GL;
 
-public class HeapBuffer implements Disposable {
-    public SysBuffer mem;
+public class LWJGLEnvironment extends GLEnvironment {
+    public final GLData effdata;
 
-    public <T extends DataBuffer> HeapBuffer(GLEnvironment env, T obj, DataBuffer.Filler<? super T> init) {
-	if(init != null) {
-	    FillBuffers.Array buf = (FillBuffers.Array)init.fill(obj, env);
-	    this.mem = buf.mem();
+    public LWJGLEnvironment(GLData effdata, Area wnd) {
+	super(LWJGLWrap.instance, wnd);
+	this.effdata = effdata;
+    }
+
+    public static class LWJGLCaps extends Caps {
+	public final boolean coreprof;
+
+	public LWJGLCaps(GL gl, LWJGLEnvironment env) {
+	    super(gl);
+	    this.coreprof = true;
+	    // this.coreprof = (env.effdata.profile == GLData.Profile.CORE);
+	}
+
+	public void checkreq() {
+	    super.checkreq();
+	    if(!coreprof)
+		throw(new HardwareException("Graphics context is not a core OpenGL profile.", this));
 	}
     }
 
-    public void dispose() {
-	mem.dispose();
+    public LWJGLCaps mkcaps(GL initgl) {
+	return(new LWJGLCaps(initgl, this));
+    }
+
+    public SysBuffer malloc(int sz) {
+	return(new LWJGLBuffer(this, sz));
+    }
+
+    public SysBuffer subsume(ByteBuffer data, int sz) {
+	SysBuffer ret = new LWJGLBuffer(this, sz);
+	ByteBuffer cp = ret.data();
+	cp.put(data);
+	cp.rewind();
+	return(ret);
     }
 }

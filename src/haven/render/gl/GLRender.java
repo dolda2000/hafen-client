@@ -29,7 +29,6 @@ package haven.render.gl;
 import java.nio.*;
 import java.util.function.*;
 import java.util.concurrent.atomic.*;
-import com.jogamp.opengl.*;
 import haven.*;
 import haven.render.*;
 import haven.render.sl.*;
@@ -80,16 +79,16 @@ public class GLRender implements Render, Disposable {
 	case SNORM8:    return(GL.GL_BYTE);
 	case UNORM16:   return(GL.GL_UNSIGNED_SHORT);
 	case SNORM16:   return(GL.GL_SHORT);
-	case UNORM32:   return(GL3.GL_UNSIGNED_INT);
-	case SNORM32:   return(GL3.GL_INT);
+	case UNORM32:   return(GL.GL_UNSIGNED_INT);
+	case SNORM32:   return(GL.GL_INT);
 	case FLOAT16:   return(GL.GL_HALF_FLOAT);
 	case FLOAT32:   return(GL.GL_FLOAT);
 	case UINT8:     return(GL.GL_UNSIGNED_BYTE);
 	case SINT8:     return(GL.GL_BYTE);
 	case UINT16:    return(GL.GL_UNSIGNED_SHORT);
 	case SINT16:    return(GL.GL_SHORT);
-	case UINT32:    return(GL3.GL_UNSIGNED_INT);
-	case SINT32:    return(GL3.GL_INT);
+	case UINT32:    return(GL.GL_UNSIGNED_INT);
+	case SINT32:    return(GL.GL_INT);
 	default:
 	    throw(new RuntimeException("unimplemented vertex attribute format " + fmt));
 	}
@@ -113,7 +112,7 @@ public class GLRender implements Render, Disposable {
 	switch(fmt) {
 	case UINT8:     return(GL.GL_UNSIGNED_BYTE);
 	case UINT16:    return(GL.GL_UNSIGNED_SHORT);
-	case UINT32:    return(GL3.GL_UNSIGNED_INT);
+	case UINT32:    return(GL.GL_UNSIGNED_INT);
 	default:
 	    throw(new RuntimeException("unimplemented vertex index format " + fmt));
 	}
@@ -127,25 +126,25 @@ public class GLRender implements Render, Disposable {
 	else if(type == Type.USAMPLER2D)
 	    return(GL.GL_TEXTURE_2D);
 	else if(type == Type.SAMPLER2DMS)
-	    return(GL3.GL_TEXTURE_2D_MULTISAMPLE);
+	    return(GL.GL_TEXTURE_2D_MULTISAMPLE);
 	else if(type == Type.SAMPLER2DMSARRAY)
-	    return(GL3.GL_TEXTURE_2D_MULTISAMPLE_ARRAY);
+	    return(GL.GL_TEXTURE_2D_MULTISAMPLE_ARRAY);
 	else if(type == Type.SAMPLER2DARRAY)
-	    return(GL3.GL_TEXTURE_2D_ARRAY);
+	    return(GL.GL_TEXTURE_2D_ARRAY);
 	else if(type == Type.SAMPLER2DSHADOW)
 	    return(GL.GL_TEXTURE_2D);
 	else if(type == Type.SAMPLERCUBE)
 	    return(GL.GL_TEXTURE_CUBE_MAP);
 	else if(type == Type.SAMPLERCUBEARRAY)
-	    return(GL4.GL_TEXTURE_CUBE_MAP_ARRAY);
+	    return(GL.GL_TEXTURE_CUBE_MAP_ARRAY);
 	else if(type == Type.SAMPLERCUBESHADOW)
 	    return(GL.GL_TEXTURE_CUBE_MAP);
 	else if(type == Type.SAMPLER3D)
-	    return(GL3.GL_TEXTURE_3D);
+	    return(GL.GL_TEXTURE_3D);
 	else if(type == Type.SAMPLER1D)
-	    return(GL3.GL_TEXTURE_1D);
+	    return(GL.GL_TEXTURE_1D);
 	else if(type == Type.SAMPLER1DARRAY)
-	    return(GL3.GL_TEXTURE_1D_ARRAY);
+	    return(GL.GL_TEXTURE_1D_ARRAY);
 	else
 	    throw(new RuntimeException("invalid sampler type: " + type));
     }
@@ -164,7 +163,7 @@ public class GLRender implements Render, Disposable {
 	BGL gl = gl();
 	gl.bglCallList(sub.gl);
 	gl.bglSubmit(new BGL.Request() {
-		public void run(GL3 gl) {abort();}
+		public void run(GL gl) {abort();}
 		public void abort() {sub.dispose();}
 	    });
 	gl.bglSubmit(rgl -> sub.dispose());
@@ -216,7 +215,7 @@ public class GLRender implements Render, Disposable {
 			    }
 			}
 		    }
-		    gl.glBufferData(GL.GL_ARRAY_BUFFER, data.va.bufs[sbuf].size(), ((HeapBuffer)bufs[sbuf]).buf, GL3.GL_STREAM_DRAW);
+		    gl.glBufferData(GL.GL_ARRAY_BUFFER, data.va.bufs[sbuf].size(), ((HeapBuffer)bufs[sbuf]).mem.data(), GL.GL_STREAM_DRAW);
 		    offsets[sbuf] = 0;
 		} else {
 		    int sz = 0;
@@ -228,14 +227,15 @@ public class GLRender implements Render, Disposable {
 		    }
 		    int jdsz = sz; GLBuffer jdvbuf = vbuf;
 		    gl.bglSubmit(new BGL.Request() {
-			    public void run(GL3 gl) {
-				ByteBuffer buf = ByteBuffer.wrap(new byte[jdsz]);
-				for(int i = 0; i < data.va.bufs.length; i++) {
-				    if(data.va.bufs[i].usage == EPHEMERAL)
-					buf.put(((HeapBuffer)bufs[i]).buf);
+			    public void run(GL gl) {
+				try(SysBuffer buf = env.malloc(jdsz)) {
+				    for(int i = 0; i < data.va.bufs.length; i++) {
+					if(data.va.bufs[i].usage == EPHEMERAL)
+					    buf.data().put(((HeapBuffer)bufs[i]).mem.data());
+				    }
+				    buf.data().flip();
+				    gl.glBufferData(GL.GL_ARRAY_BUFFER, jdsz, buf.data(), GL.GL_STREAM_DRAW);
 				}
-				buf.flip();
-				gl.glBufferData(GL.GL_ARRAY_BUFFER, jdsz, buf, GL3.GL_STREAM_DRAW);
 			    }
 			});
 		}
@@ -263,7 +263,7 @@ public class GLRender implements Render, Disposable {
 	    } else {
 		if(data.ind.usage == EPHEMERAL) {
 		    Vao0State.apply(this.env, gl, state, env.tempindex.get());
-		    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, data.ind.size(), ((HeapBuffer)indo).buf, GL3.GL_STREAM_DRAW);
+		    gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, data.ind.size(), ((HeapBuffer)indo).mem.data(), GL.GL_STREAM_DRAW);
 		} else {
 		    throw(new NotImplemented("non-ephemeral index arrays"));
 		}
@@ -328,6 +328,7 @@ public class GLRender implements Render, Disposable {
 		Vao0State.apply(this.env, this.gl, state, (GLBuffer)env.prepare(ibuf));
 		BGL gl = gl();
 		gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, buf.size(), data.data(), GL.GL_STATIC_DRAW);
+		data.dispose();
 		break;
 	    }
 	    case STREAM: {
@@ -351,6 +352,7 @@ public class GLRender implements Render, Disposable {
 		VboState.apply(this.gl, state, (GLBuffer)env.prepare(vbuf));
 		BGL gl = gl();
 		gl.glBufferData(GL.GL_ARRAY_BUFFER, buf.size(), data.data(), GL.GL_STATIC_DRAW);
+		data.dispose();
 		break;
 	    }
 	    case STREAM: {
@@ -371,7 +373,8 @@ public class GLRender implements Render, Disposable {
 	    /* XXX: Textures marked for streaming usage should
 	     * probably support stream-buffers. Luckily, there are
 	     * currently no textures marked as such. */
-	    ByteBuffer data = ((FillBuffers.Array)fill.fill(buf, env)).data();
+	    FillBuffers.Array fbuf = (FillBuffers.Array)fill.fill(buf, env);
+	    ByteBuffer data = fbuf.data();
 	    if(img.tex instanceof Texture2D) {
 		GLTexture.Tex2D tex = env.prepare((Texture2D)img.tex);
 		BGL gl = gl();
@@ -389,7 +392,7 @@ public class GLRender implements Render, Disposable {
 		state.apply(gl, Pipe.nil);
 		gl.glActiveTexture(GL.GL_TEXTURE0);
 		tex.bind(gl);
-		gl.glTexImage3D(GL3.GL_TEXTURE_3D, img.level, GLTexture.texifmt(img.tex), img.w, img.h, img.d, 0,
+		gl.glTexImage3D(GL.GL_TEXTURE_3D, img.level, GLTexture.texifmt(img.tex), img.w, img.h, img.d, 0,
 				GLTexture.texefmt1(img.tex.ifmt, img.tex.efmt, img.tex.eperm),
 				GLTexture.texefmt2(img.tex.ifmt, img.tex.efmt),
 				data);
@@ -401,7 +404,7 @@ public class GLRender implements Render, Disposable {
 		state.apply(gl, Pipe.nil);
 		gl.glActiveTexture(GL.GL_TEXTURE0);
 		tex.bind(gl);
-		gl.glTexSubImage3D(GL3.GL_TEXTURE_2D_ARRAY, img.level,
+		gl.glTexSubImage3D(GL.GL_TEXTURE_2D_ARRAY, img.level,
 				   0, 0, aimg.layer, img.w, img.h, 1,
 				   GLTexture.texefmt1(img.tex.ifmt, img.tex.efmt, img.tex.eperm),
 				   GLTexture.texefmt2(img.tex.ifmt, img.tex.efmt),
@@ -420,6 +423,7 @@ public class GLRender implements Render, Disposable {
 				data);
 		tex.unbind(gl);
 	    }
+	    fbuf.dispose();
 	} else {
 	    throw(new NotImplemented("updating buffer of type: " + buf.getClass().getName()));
 	}
@@ -441,6 +445,7 @@ public class GLRender implements Render, Disposable {
 	    Vao0State.apply(this.env, this.gl, state, glbuf);
 	    BGL gl = gl();
 	    gl.glBufferSubData(GL.GL_ELEMENT_ARRAY_BUFFER, from, to - from, data.data());
+	    data.dispose();
 	} else if(buf instanceof VertexArray.Buffer) {
 	    VertexArray.Buffer vbuf = (VertexArray.Buffer)buf;
 	    FillBuffers.Array data = (FillBuffers.Array)fill.fill(buf, env, from, to);
@@ -449,6 +454,7 @@ public class GLRender implements Render, Disposable {
 	    VboState.apply(this.gl, state, glbuf);
 	    BGL gl = gl();
 	    gl.glBufferSubData(GL.GL_ARRAY_BUFFER, from, to - from, data.data());
+	    data.dispose();
 	} else {
 	    throw(new NotImplemented("updating buffer of type: " + buf.getClass().getName()));
 	}
@@ -485,16 +491,16 @@ public class GLRender implements Render, Disposable {
 	*/
 
 	GLBuffer pbo = new GLBuffer(env);
-	gl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, pbo);
-	gl.glBufferData(GL3.GL_PIXEL_PACK_BUFFER, fmt.size() * area.area(), null, GL3.GL_STREAM_READ);
+	gl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, pbo);
+	gl.glBufferData(GL.GL_PIXEL_PACK_BUFFER, fmt.size() * area.area(), null, GL.GL_STREAM_READ);
 	gl.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
 	gl.glReadBuffer(fc.dbufs[n]);
 	gl.glReadPixels(area.ul.x, area.ul.y, sz.x, sz.y, GLTexture.texefmt1(fmt, fmt, null), GLTexture.texefmt2(fmt, fmt), 0);
-	gl.bglCreate(new GLFence(env, new Abortable.Consumer<GL3>() {
-		public void accept(GL3 cgl) {
-		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, pbo.glid());
-		    cgl.glGetBufferSubData(GL3.GL_PIXEL_PACK_BUFFER, 0, fmt.size() * area.area(), dstbuf);
-		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, 0);
+	gl.bglCreate(new GLFence(env, new Abortable.Consumer<GL>() {
+		public void accept(GL cgl) {
+		    cgl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, pbo.glid());
+		    cgl.glGetBufferSubData(GL.GL_PIXEL_PACK_BUFFER, 0, fmt.size() * area.area(), dstbuf);
+		    cgl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, 0);
 		    pbo.dispose();
 		    GLException.checkfor(cgl, env);
 		    env.callback(() -> callback.accept(dstbuf));
@@ -505,7 +511,7 @@ public class GLRender implements Render, Disposable {
 			env.callback(() -> ((Abortable)callback).abort());
 		}
 	    }));
-	gl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, null);
+	gl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, null);
     }
 
     public void pget(Texture.Image img, VectorFormat fmt, ByteBuffer dstbuf, Consumer<ByteBuffer> callback) {
@@ -516,8 +522,8 @@ public class GLRender implements Render, Disposable {
 	BGL gl = gl();
 	state.apply(gl, new Applier(env));
 	GLBuffer pbo = new GLBuffer(env);
-	gl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, pbo);
-	gl.glBufferData(GL3.GL_PIXEL_PACK_BUFFER, dsz, null, GL3.GL_STREAM_READ);
+	gl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, pbo);
+	gl.glBufferData(GL.GL_PIXEL_PACK_BUFFER, dsz, null, GL.GL_STREAM_READ);
 	gl.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
 	if(img.tex instanceof Texture2D) {
 	    GLTexture.Tex2D tex = env.prepare((Texture2D)img.tex);
@@ -526,7 +532,7 @@ public class GLRender implements Render, Disposable {
 	    if(img.tex.ifmt.cf == NumberFormat.DEPTH) {
 		if(fmt.nc != 1)
 		    throw(new IllegalArgumentException(String.format("externalformat components != 1 for depth texture: %s", fmt)));
-		gl.glGetTexImage(GL.GL_TEXTURE_2D, img.level, GL3.GL_DEPTH_COMPONENT, GLTexture.texefmt2(fmt, fmt), 0);
+		gl.glGetTexImage(GL.GL_TEXTURE_2D, img.level, GL.GL_DEPTH_COMPONENT, GLTexture.texefmt2(fmt, fmt), 0);
 	    } else {
 		gl.glGetTexImage(GL.GL_TEXTURE_2D, img.level, GLTexture.texefmt1(fmt, fmt, null), GLTexture.texefmt2(fmt, fmt), 0);
 	    }
@@ -534,11 +540,11 @@ public class GLRender implements Render, Disposable {
 	} else {
 	    throw(new NotImplemented("texture-get for " + img.tex.getClass()));
 	}
-	gl.bglCreate(new GLFence(env, new Abortable.Consumer<GL3>() {
-		public void accept(GL3 cgl) {
-		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, pbo.glid());
-		    cgl.glGetBufferSubData(GL3.GL_PIXEL_PACK_BUFFER, 0, dsz, dstbuf);
-		    cgl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, 0);
+	gl.bglCreate(new GLFence(env, new Abortable.Consumer<GL>() {
+		public void accept(GL cgl) {
+		    cgl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, pbo.glid());
+		    cgl.glGetBufferSubData(GL.GL_PIXEL_PACK_BUFFER, 0, dsz, dstbuf);
+		    cgl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, 0);
 		    pbo.dispose();
 		    GLException.checkfor(cgl, env);
 		    env.callback(() -> callback.accept(dstbuf));
@@ -549,7 +555,7 @@ public class GLRender implements Render, Disposable {
 			env.callback(() -> ((Abortable)callback).abort());
 		}
 	    }));
-	gl.glBindBuffer(GL3.GL_PIXEL_PACK_BUFFER, null);
+	gl.glBindBuffer(GL.GL_PIXEL_PACK_BUFFER, null);
     }
 
     public void timestamp(Consumer<Long> callback) {
@@ -558,7 +564,7 @@ public class GLRender implements Render, Disposable {
 
     public void fence(Runnable callback) {
 	gl().bglSubmit(new BGL.Request() {
-		public void run(GL3 g) {env.callback(callback);}
+		public void run(GL g) {env.callback(callback);}
 		public void abort() {
 		    if(callback instanceof Abortable)
 			env.callback(() -> ((Abortable)callback).abort());

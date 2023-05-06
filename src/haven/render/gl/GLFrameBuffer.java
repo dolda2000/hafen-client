@@ -29,7 +29,6 @@ package haven.render.gl;
 import haven.Coord;
 import haven.render.*;
 import java.util.*;
-import com.jogamp.opengl.*;
 
 public class GLFrameBuffer extends GLObject implements BGL.ID {
     public final Attachment[] color;
@@ -71,16 +70,16 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 	register();
     }
 	
-    public void create(GL3 gl) {
+    public void create(GL gl) {
 	int[] buf = new int[1];
-	gl.glGenFramebuffers(1, buf, 0);
+	gl.glGenFramebuffers(1, buf);
 	GLException.checkfor(gl, env);
 	this.id = buf[0];
 	setmem(GLEnvironment.MemStats.FBOS, 0);
     }
 	
-    protected void delete(GL3 gl) {
-	gl.glDeleteFramebuffers(1, new int[] {id}, 0);
+    protected void delete(GL gl) {
+	gl.glDeleteFramebuffers(1, new int[] {id});
 	setmem(null, 0);
     }
 	

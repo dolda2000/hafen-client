@@ -26,17 +26,14 @@
 
 package haven.render.gl;
 
-import com.jogamp.opengl.*;
-
 public class GLException extends RuntimeException {
     public int code;
     public String str;
-    private static com.jogamp.opengl.glu.GLU glu = new com.jogamp.opengl.glu.GLU();
 
     public GLException(int code) {
-	super("GL Error: " + code + " (" + glu.gluErrorString(code) + ")");
+	super("GL Error: " + code + " (" + constname(code) + ")");
 	this.code = code;
-	this.str = glu.gluErrorString(code);
+	this.str = constname(code);
     }
 
     public static String constname(Class<?> cl, int val) {
@@ -65,7 +62,7 @@ public class GLException extends RuntimeException {
     }
 
     public static String constname(int val) {
-	return(constname(GL3.class, val));
+	return(constname(GL.class, val));
     }
 
     public static class GLInvalidEnumException extends GLException {

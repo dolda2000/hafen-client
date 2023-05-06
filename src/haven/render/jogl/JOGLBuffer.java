@@ -24,23 +24,22 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven.render.gl;
+package haven.render.jogl;
 
 import java.nio.*;
-import haven.Disposable;
-import haven.render.*;
+import haven.render.gl.*;
 
-public class HeapBuffer implements Disposable {
-    public SysBuffer mem;
+public class JOGLBuffer implements SysBuffer {
+    public final ByteBuffer data;
 
-    public <T extends DataBuffer> HeapBuffer(GLEnvironment env, T obj, DataBuffer.Filler<? super T> init) {
-	if(init != null) {
-	    FillBuffers.Array buf = (FillBuffers.Array)init.fill(obj, env);
-	    this.mem = buf.mem();
-	}
+    public JOGLBuffer(int sz) {
+	this.data = ByteBuffer.allocate(sz).order(ByteOrder.nativeOrder());
     }
 
-    public void dispose() {
-	mem.dispose();
+    public JOGLBuffer(ByteBuffer data) {
+	this.data = data;
     }
+
+    public ByteBuffer data() {return(data);}
+    public void dispose() {}
 }
