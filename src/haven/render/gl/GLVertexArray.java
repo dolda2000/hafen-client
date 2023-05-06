@@ -28,7 +28,6 @@ package haven.render.gl;
 
 import java.lang.ref.*;
 import java.util.*;
-import com.jogamp.opengl.*;
 import haven.Disposable;
 import haven.render.*;
 import haven.render.sl.Type;
@@ -43,18 +42,18 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	env.prepare(this);
     }
 
-    public void create(GL3 gl) {
+    public void create(GL gl) {
 	ckstate(state, 0);
 	int[] buf = new int[1];
-	gl.glGenVertexArrays(1, buf, 0);
+	gl.glGenVertexArrays(1, buf);
 	this.id = buf[0];
 	state = 1;
 	setmem(GLEnvironment.MemStats.VAOS, 0);
     }
 
-    protected void delete(GL3 gl) {
+    protected void delete(GL gl) {
 	ckstate(state, 1);
-	gl.glDeleteVertexArrays(1, new int[] {id}, 0);
+	gl.glDeleteVertexArrays(1, new int[] {id});
 	state = 2;
 	setmem(null, 0);
     }
@@ -158,7 +157,7 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 		    }
 		}
 		if(env.labels && (mod.desc != null))
-		    gl.glObjectLabel(GL2.GL_VERTEX_ARRAY, this, String.valueOf(mod.desc));
+		    gl.glObjectLabel(GL.GL_VERTEX_ARRAY, this, String.valueOf(mod.desc));
 	    });
     }
 

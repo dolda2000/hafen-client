@@ -26,8 +26,6 @@
 
 package haven.render.gl;
 
-import com.jogamp.opengl.*;
-
 public class VaoBindState extends VaoState {
     public static final boolean DO_GL_EBO_FIXUP = true;
     public final GLVertexArray vao;

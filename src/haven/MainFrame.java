@@ -35,6 +35,7 @@ import java.lang.reflect.*;
 
 public class MainFrame extends java.awt.Frame implements Console.Directory {
     public static final Config.Variable<Boolean> initfullscreen = Config.Variable.propb("haven.fullscreen", false);
+    public static final Config.Variable<String> renderer = Config.Variable.prop("haven.renderer", "lwjgl");
     final UIPanel p;
     private final ThreadGroup g;
     private Thread mt;
@@ -167,6 +168,18 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	setIconImage(icon);
     }
 
+    private UIPanel renderer() {
+	String id = renderer.get();
+	switch(id) {
+	case "jogl":
+	    return(new JOGLPanel());
+	case "lwjgl":
+	    return(new LWJGLPanel());
+	default:
+	    throw(new RuntimeException("invalid renderer specified in haven.renderer: " + id));
+	}
+    }
+
     public MainFrame(Coord isz) {
 	super("Haven & Hearth");
 	Coord sz;
@@ -178,13 +191,14 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    sz = isz;
 	}
 	this.g = new ThreadGroup(HackThread.tg(), "Haven client");
-	Component pp = (Component)(this.p = new JOGLPanel(sz));
+	Component pp = (Component)(this.p = renderer());
 	if(fsmode == null) {
 	    Coord pfm = Utils.getprefc("fsmode", null);
 	    if((pfm != null) && !pfm.equals(Coord.z))
 		fsmode = findmode(pfm.x, pfm.y);
 	}
 	add(pp);
+	pp.setSize(sz.x, sz.y);
 	pack();
 	setResizable(!Utils.getprefb("wndlock", false));
 	pp.requestFocus();

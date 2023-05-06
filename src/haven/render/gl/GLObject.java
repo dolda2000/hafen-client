@@ -28,7 +28,6 @@ package haven.render.gl;
 
 import haven.*;
 import java.util.*;
-import com.jogamp.opengl.*;
 
 public abstract class GLObject implements Disposable {
     public static final boolean LEAK_CHECK = true;
@@ -43,9 +42,9 @@ public abstract class GLObject implements Disposable {
 	this.env = env;
     }
 
-    public abstract void create(GL3 gl);
+    public abstract void create(GL gl);
     public void abortcreate() {}
-    protected abstract void delete(GL3 gl);
+    protected abstract void delete(GL gl);
 
     private final Disposable lck = LEAK_CHECK ? Finalizer.leakcheck(this) : null;
     protected void dispose0() {
