@@ -35,7 +35,7 @@ import java.lang.reflect.*;
 
 public class MainFrame extends java.awt.Frame implements Console.Directory {
     public static final Config.Variable<Boolean> initfullscreen = Config.Variable.propb("haven.fullscreen", false);
-    public static final Config.Variable<String> renderer = Config.Variable.prop("haven.renderer", "lwjgl");
+    public static final Config.Variable<String> renderer = Config.Variable.prop("haven.renderer", "jogl");
     final UIPanel p;
     private final ThreadGroup g;
     private Thread mt;
