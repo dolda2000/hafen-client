@@ -243,9 +243,9 @@ public class PoseMorph {
 		}
 	    }
 	}
+	sortweights(bw, ba, mba);
 	int tbn = 4;
 	if(mba > tbn) {
-	    sortweights(bw, ba, mba);
 	    IntBuffer tba = Utils.wibuf(nv * tbn);
 	    FloatBuffer tbw = Utils.wfbuf(nv * tbn);
 	    for(int i = 0, off = 0, toff = 0; i < nv; i++, off += mba, toff += tbn) {
@@ -269,7 +269,6 @@ public class PoseMorph {
 	    ba = tba; bw = tbw; mba = tbn;
 	}
 	String[] bnames = bones.toArray(new String[0]);
-	sortnames(bw, ba, mba, bnames);
 	normweights(bw, ba, mba);
 	dst.add(new BoneData(mba, ba, bnames));
 	dst.add(new WeightData(mba, bw));
@@ -321,32 +320,6 @@ public class PoseMorph {
 		    else if(wa > wb)
 			return(-1);
 		    return(0);
-		});
-	    for(int o = 0; o < n; o++) {
-		cw[o] = bw.get(i + o);
-		ca[o] = ba.get(i + o);
-	    }
-	    for(int o = 0; o < n; o++) {
-		bw.put(i + o, cw[p[o]]);
-		ba.put(i + o, ca[p[o]]);
-	    }
-	}
-    }
-
-    public static void sortnames(FloatBuffer bw, IntBuffer ba, int mba, String[] bnames) {
-	Integer[] p = new Integer[mba];
-	float[] cw = new float[mba];
-	int[] ca = new int[mba];
-	for(int i = 0; i < bw.capacity(); i += mba) {
-	    int n = 0;
-	    for(int o = 0; o < mba; o++) {
-		if(ba.get(i + o) < 0)
-		    break;
-		p[n++] = Integer.valueOf(o);
-	    }
-	    int ci = i;
-	    Arrays.sort(p, 0, n, (a, b) -> {
-		    return(bnames[ba.get(ci + a)].compareTo(bnames[ba.get(ci + b)]));
 		});
 	    for(int o = 0; o < n; o++) {
 		cw[o] = bw.get(i + o);
