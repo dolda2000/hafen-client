@@ -35,8 +35,16 @@ import haven.render.gl.GL;
 public class JOGLEnvironment extends GLEnvironment {
     public final GLContext ctx;
 
-    public JOGLEnvironment(GL3 initgl, GLContext ctx, Area wnd) {
-	super(new JOGLWrap(initgl), wnd);
+    private static GL bestwrap(com.jogamp.opengl.GL back) {
+	try {
+	    return(new JOGLWrap(back.getGL3()));
+	} catch(com.jogamp.opengl.GLException e) {
+	    return(new JOGLWrapBackup(back));
+	}
+    }
+
+    public JOGLEnvironment(com.jogamp.opengl.GL initgl, GLContext ctx, Area wnd) {
+	super(bestwrap(initgl), wnd);
 	if(debuglog)
 	    ctx.enableGLDebugMessage(true);
 	this.ctx = ctx;

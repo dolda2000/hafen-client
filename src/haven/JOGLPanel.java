@@ -155,7 +155,7 @@ public class JOGLPanel extends GLCanvas implements GLPanel, Console.Directory {
 	GLEnvironment env;
 	synchronized(this) {
 	    if((this.env == null) || (this.env.ctx != ctx)) {
-		setenv(new JOGLEnvironment(gl.getGL3(), ctx, shape));
+		setenv(new JOGLEnvironment(gl, ctx, shape));
 		initgl(gl);
 	    }
 	    env = this.env;
