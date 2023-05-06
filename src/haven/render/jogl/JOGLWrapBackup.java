@@ -32,12 +32,14 @@ import com.jogamp.opengl.*;
 import haven.render.gl.GL;
 import haven.render.gl.GLException;
 
-public class JOGLWrapBackup implements GL {
+public class JOGLWrapBackup implements GL, WrappedJOGL {
     public final com.jogamp.opengl.GL back;
 
     public JOGLWrapBackup(com.jogamp.opengl.GL back) {
 	this.back = back;
     }
+
+    public com.jogamp.opengl.GL getGL() {return(back);}
 
     public void glActiveTexture(int texture) {back.glActiveTexture(texture);}
     public void glAttachShader(int program, int shader) {back.getGL2GL3().glAttachShader(program, shader);}

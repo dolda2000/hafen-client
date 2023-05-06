@@ -57,7 +57,7 @@ public class JOGLEnvironment extends GLEnvironment {
 
 	public JOGLCaps(GL gl) {
 	    super(gl);
-	    this.coreprof = ((JOGLWrap)gl).back.getContext().isGLCoreProfile();
+	    this.coreprof = ((WrappedJOGL)gl).getGL().getContext().isGLCoreProfile();
 	}
 
 	public void checkreq() {

@@ -197,7 +197,7 @@ public class JOGLPanel extends GLCanvas implements GLPanel, Console.Directory {
 	if(main.gldebug)
 	    haven.render.gl.GLException.checkfor(gl, null);
 	if(iswap != aswap)
-	    ((JOGLWrap)gl).back.setSwapInterval((aswap = iswap) ? 1 : 0);
+	    ((WrappedJOGL)gl).getGL().setSwapInterval((aswap = iswap) ? 1 : 0);
 	if(main.gldebug)
 	    haven.render.gl.GLException.checkfor(gl, null);
 	JOGLPanel.this.swapBuffers();
