@@ -166,7 +166,7 @@ public class JOGLWrap implements GL, WrappedJOGL {
     public void glViewport(int x, int y, int w, int h) {back.glViewport(x, y, w, h);}
 
     private static final Pattern joglerrp = Pattern.compile("GL-Error 0x([0-9a-fA-F]+)\\s");
-    public void xlateexc(RuntimeException exc) {
+    public static void xlatejoglexc(RuntimeException exc) {
 	/* How nice wouldn't it be if DebugGL could be
 	 * subclasseed to customize the errors. */
 	if(exc instanceof com.jogamp.opengl.GLException) {
@@ -195,5 +195,9 @@ public class JOGLWrap implements GL, WrappedJOGL {
 		throw(wrap);
 	    }
 	}
+    }
+
+    public void xlateexc(RuntimeException exc) {
+	xlatejoglexc(exc);
     }
 }

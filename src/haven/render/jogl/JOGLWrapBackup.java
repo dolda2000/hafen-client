@@ -164,4 +164,8 @@ public class JOGLWrapBackup implements GL, WrappedJOGL {
     public void glVertexAttribPointer(int location, int size, int type, boolean normalized, int stride, long pointer) {back.getGL2GL3().glVertexAttribPointer(location, size, type, normalized, stride, pointer);}
     public void glVertexAttribIPointer(int location, int size, int type, int stride, long pointer) {back.getGL2GL3().glVertexAttribIPointer(location, size, type, stride, pointer);}
     public void glViewport(int x, int y, int w, int h) {back.glViewport(x, y, w, h);}
+
+    public void xlateexc(RuntimeException exc) {
+	JOGLWrap.xlatejoglexc(exc);
+    }
 }
