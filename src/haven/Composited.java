@@ -162,12 +162,7 @@ public class Composited implements RenderTree.Node, EquipTarget {
 	    }
 
 	    public void added(RenderTree.Slot slot) {
-		float z = Model.this.z;
-		/* XXX: The depth-bias should not be necessary, but
-		 * without it Z-fighting between meshes appears to
-		 * occur for unclear reasons. GLSL variance due to
-		 * different... bone indices? */
-		slot.ostate(Pipe.Op.compose(mat, new States.DepthBias(-z, -z), order, (order.z2 == 0) ? null : (p -> p.put(Clickable.slot, null))));
+		slot.ostate(Pipe.Op.compose(mat, order, (order.z2 == 0) ? null : (p -> p.put(Clickable.slot, null))));
 		slot.lockstate();
 		slot.add(m);
 	    }
