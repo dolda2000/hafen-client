@@ -38,7 +38,7 @@ public class Homo3D {
     public static final Slot<Camera> cam = new Slot<>(Slot.Type.SYS, Camera.class);
     public static final Slot<Location.Chain> loc = new Slot<>(Slot.Type.GEOM, Location.Chain.class)
 	.instanced(st -> Location.Chain.instancer);
-    public static final Attribute vertex = new Attribute(VEC3, "vertex");
+    public static final Attribute vertex = new Attribute(VEC3, "vertex").primary();
     public static final Attribute normal = new Attribute(VEC3, "normal");
     static final Uniform u_prj = new Uniform(MAT4, "proj", Homo3D::prjxf, prj);
     static final Uniform u_cam = new Uniform(MAT4, "cam", Homo3D::camxf, cam);

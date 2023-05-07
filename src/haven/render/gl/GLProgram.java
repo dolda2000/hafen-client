@@ -114,7 +114,13 @@ public class GLProgram implements Disposable {
 	}
 	{
 	    this.attribs = ctx.attribs.toArray(new Attribute[0]);
-	    Arrays.sort(this.attribs, Utils.idcmp);
+	    Arrays.sort(this.attribs, (a, b) -> {
+		    if(a.primary && !b.primary)
+			return(-1);
+		    if(!a.primary && b.primary)
+			return(1);
+		    return(Utils.idcmp.compare(a, b));
+		});
 	    Map<Attribute, AttrID> amap = new IdentityHashMap<>();
 	    for(int i = 0, loc = 0; i < this.attribs.length; i++) {
 		Attribute attr = this.attribs[i];
@@ -482,13 +488,13 @@ public class GLProgram implements Disposable {
 	    this.fsrc = prog.fsrc;
 	    this.id = System.identityHashCode(prog);
 	    this.fragnms = Arrays.copyOf(prog.fragnms, prog.fragnms.length);
-	    this.attrnms = new String[prog.amap.size()];
-	    this.attrlocs = new int[prog.amap.size()];
-	    int n = 0;
-	    for(AttrID attr : prog.amap.values()) {
-		attrnms[n] = attr.name;
-		attrlocs[n] = attr.id;
-		n++;
+	    AttrID[] aorder = prog.amap.values().toArray(new AttrID[0]);
+	    Arrays.sort(aorder, (a, b) -> a.id - b.id);
+	    this.attrnms = new String[aorder.length];
+	    this.attrlocs = new int[aorder.length];
+	    for(int i = 0; i < aorder.length; i++) {
+		attrnms[i] = aorder[i].name;
+		attrlocs[i] = aorder[i].id;
 	    }
 	}
     }
