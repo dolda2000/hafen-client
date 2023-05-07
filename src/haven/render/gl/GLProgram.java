@@ -216,11 +216,11 @@ public class GLProgram implements Disposable {
     }
 
     public static class ProgramException extends RuntimeException {
-	public final GLProgram program;
+	public final Dump program;
 
 	public ProgramException(String msg, GLProgram program) {
 	    super(msg);
-	    this.program = program;
+	    this.program = program.dump();
 	}
     }
 
