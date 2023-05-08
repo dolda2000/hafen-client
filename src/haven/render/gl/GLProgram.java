@@ -114,7 +114,13 @@ public class GLProgram implements Disposable {
 	}
 	{
 	    this.attribs = ctx.attribs.toArray(new Attribute[0]);
-	    Arrays.sort(this.attribs, Utils.idcmp);
+	    Arrays.sort(this.attribs, (a, b) -> {
+		    if(a.primary && !b.primary)
+			return(-1);
+		    if(!a.primary && b.primary)
+			return(1);
+		    return(Utils.idcmp.compare(a, b));
+		});
 	    Map<Attribute, AttrID> amap = new IdentityHashMap<>();
 	    for(int i = 0, loc = 0; i < this.attribs.length; i++) {
 		Attribute attr = this.attribs[i];
@@ -216,11 +222,11 @@ public class GLProgram implements Disposable {
     }
 
     public static class ProgramException extends RuntimeException {
-	public final GLProgram program;
+	public final Dump program;
 
 	public ProgramException(String msg, GLProgram program) {
 	    super(msg);
-	    this.program = program;
+	    this.program = program.dump();
 	}
     }
 
@@ -474,11 +480,22 @@ public class GLProgram implements Disposable {
     public static class Dump implements Serializable {
 	public final String vsrc, fsrc;
 	public final int id;
+	public final String[] fragnms, attrnms;
+	public final int[] attrlocs;
 
 	public Dump(GLProgram prog) {
 	    this.vsrc = prog.vsrc;
 	    this.fsrc = prog.fsrc;
 	    this.id = System.identityHashCode(prog);
+	    this.fragnms = Arrays.copyOf(prog.fragnms, prog.fragnms.length);
+	    AttrID[] aorder = prog.amap.values().toArray(new AttrID[0]);
+	    Arrays.sort(aorder, (a, b) -> a.id - b.id);
+	    this.attrnms = new String[aorder.length];
+	    this.attrlocs = new int[aorder.length];
+	    for(int i = 0; i < aorder.length; i++) {
+		attrnms[i] = aorder[i].name;
+		attrlocs[i] = aorder[i].id;
+	    }
 	}
     }
 

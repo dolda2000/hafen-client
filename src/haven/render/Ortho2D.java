@@ -34,7 +34,7 @@ import static haven.render.sl.Cons.*;
 public class Ortho2D extends State {
     public final float l, u, r, b;
     private final float[] k, m;
-    public static final Attribute pos = new Attribute(VEC2, "opos2d");
+    public static final Attribute pos = new Attribute(VEC2, "opos2d").primary();
     private static final Uniform kv = new Uniform(VEC2, "k2d", p -> ((Ortho2D)p.get(States.vxf)).k, States.vxf);
     private static final Uniform mv = new Uniform(VEC2, "m2d", p -> ((Ortho2D)p.get(States.vxf)).m, States.vxf);
 
