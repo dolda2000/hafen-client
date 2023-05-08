@@ -119,7 +119,7 @@ public class OptWnd extends Window {
 		    Label dpy = new Label("");
 		    final int steps = 4;
 		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
-			   prev = new HSlider(UI.scale(160), -2 * steps, 2 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
+			   prev = new HSlider(UI.scale(160), -2 * steps, 1 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
 			       protected void added() {
 				   dpy();
 			       }
