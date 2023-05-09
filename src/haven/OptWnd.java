@@ -248,13 +248,13 @@ public class OptWnd extends Window {
 		    Label dpy = new Label("");
 		    int val = prefs.maxlights.val, max = 32;
 		    if(val == 0) {    /* XXX: This is just ugly. */
-			if(prefs.lightmode.val == GSettings.LightMode.ZONED) {
+			if(prefs.lightmode.val == GSettings.LightMode.ZONED)
 			    val = Lighting.LightGrid.defmax;
-			} else {
+			else
 			    val = Lighting.SimpleLights.defmax;
-			    max = 4;
-			}
 		    }
+		    if(prefs.lightmode.val == GSettings.LightMode.SIMPLE)
+			max = 4;
 		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
 			   prev = new HSlider(UI.scale(160), 1, max, val / 4) {
 			       protected void added() {
