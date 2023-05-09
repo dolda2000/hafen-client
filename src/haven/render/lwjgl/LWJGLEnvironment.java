@@ -51,7 +51,7 @@ public class LWJGLEnvironment extends GLEnvironment {
 
 	public void checkreq() {
 	    super.checkreq();
-	    if(!coreprof)
+	    if(!coreprof || ((major < 3) || ((major == 3) && (minor < 2))))
 		throw(new HardwareException("Graphics context is not a core OpenGL profile.", this));
 	}
     }
