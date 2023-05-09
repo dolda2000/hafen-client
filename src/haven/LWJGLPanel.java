@@ -47,9 +47,17 @@ public class LWJGLPanel extends AWTGLCanvas implements GLPanel, Console.Director
 
     private static GLData mkcaps() {
 	GLData caps = new GLData();
+	/* XXX? Technically, I'd like to explicitly request a Core
+	 * profile, but on Windows, AWTGLCanvas then also forces me to
+	 * request a specific OpenGL version, while I'd like to have
+	 * the latest. Checking the specs, however, a Core profile
+	 * should be the default if nothing else is specified, so
+	 * perhaps this is fine?
+
 	caps.profile = GLData.Profile.CORE;
 	caps.majorVersion = 3;
 	caps.minorVersion = 3;
+	*/
 	return(caps);
     }
 
