@@ -158,12 +158,14 @@ public class GLProgram implements Disposable {
     }
 
     public static class ShaderException extends RuntimeException {
-	public final ShaderOb shader;
+	public final int type;
+	public final String text;
 	public final String info;
 	
 	public ShaderException(String msg, ShaderOb shader, String info) {
 	    super(msg);
-	    this.shader = shader;
+	    this.type = shader.type;
+	    this.text = shader.text;
 	    this.info = info;
 	}
 	
