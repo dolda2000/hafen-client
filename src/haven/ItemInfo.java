@@ -353,18 +353,23 @@ public abstract class ItemInfo {
 	for(Object o : raw.data) {
 	    if(o instanceof Object[]) {
 		Object[] a = (Object[])o;
-		Resource ttres;
-		if(a[0] instanceof Integer) {
-		    ttres = rr.getres((Integer)a[0]).get();
-		} else if(a[0] instanceof Resource) {
-		    ttres = (Resource)a[0];
-		} else if(a[0] instanceof Indir) {
-		    ttres = (Resource)((Indir)a[0]).get();
+		ItemInfo inf;
+		if(a[0] instanceof InfoFactory) {
+		    inf = ((InfoFactory)a[0]).build(owner, raw, a);
 		} else {
-		    throw(new ClassCastException("Unexpected info specification " + a[0].getClass()));
+		    Resource ttres;
+		    if(a[0] instanceof Integer) {
+			ttres = rr.getres((Integer)a[0]).get();
+		    } else if(a[0] instanceof Resource) {
+			ttres = (Resource)a[0];
+		    } else if(a[0] instanceof Indir) {
+			ttres = (Resource)((Indir)a[0]).get();
+		    } else {
+			throw(new ClassCastException("Unexpected info specification " + a[0].getClass()));
+		    }
+		    InfoFactory f = ttres.getcode(InfoFactory.class, true);
+		    inf = f.build(owner, raw, a);
 		}
-		InfoFactory f = ttres.getcode(InfoFactory.class, true);
-		ItemInfo inf = f.build(owner, raw, a);
 		if(inf != null)
 		    ret.add(inf);
 	    } else if(o instanceof String) {
