@@ -198,11 +198,11 @@ public abstract class ItemInfo {
 	}
 
 	public static class Default implements InfoFactory {
-	    public ItemInfo build(Owner owner, Raw raw, Object... args) {
+	    public static String get(Owner owner) {
 		if(owner instanceof SpriteOwner) {
 		    GSprite spr = ((SpriteOwner)owner).sprite();
 		    if(spr instanceof Dynamic)
-			return(new Name(owner, ((Dynamic)spr).name()));
+			return(((Dynamic)spr).name());
 		}
 		if(!(owner instanceof ResOwner))
 		    return(null);
@@ -210,7 +210,12 @@ public abstract class ItemInfo {
 		Resource.Tooltip tt = res.layer(Resource.tooltip);
 		if(tt == null)
 		    throw(new RuntimeException("Item resource " + res + " is missing default tooltip"));
-		return(new Name(owner, tt.t));
+		return(tt.t);
+	    }
+
+	    public ItemInfo build(Owner owner, Raw raw, Object... args) {
+		String nm = get(owner);
+		return((nm == null) ? null : new Name(owner, nm));
 	    }
 	}
     }
