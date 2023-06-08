@@ -230,26 +230,4 @@ public class Tileset extends Resource.Layer {
 	    this.btrans = btrans;
 	packtiles(tiles, tsz);
     }
-
-    /* Only for backwards compatibility */
-    @Resource.LayerName("tileset")
-    public static class OrigTileset implements Resource.LayerFactory<Tileset> {
-	public Tileset cons(Resource res, Message buf) {
-	    Tileset ret = new Tileset(res);
-	    int fl = buf.uint8();
-	    int flnum = buf.uint16();
-	    ret.flavprob = buf.uint16();
-	    for(int i = 0; i < flnum; i++) {
-		String fln = buf.string();
-		int flv = buf.uint16();
-		int flw = buf.uint8();
-		try {
-		    ret.flavobjs.add(res.pool.load(fln, flv), flw);
-		} catch(RuntimeException e) {
-		    throw(new Resource.LoadException("Illegal resource dependency", e, res));
-		}
-	    }
-	    return(ret);
-	}
-    }
 }
