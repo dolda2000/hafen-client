@@ -267,7 +267,7 @@ public class MCache implements MapSource {
 	}
     }
 
-    public class Grid {
+    public class Grid implements MapSource {
 	public final Coord gc, ul;
 	public final int tiles[] = new int[cmaps.x * cmaps.y];
 	public final float z[] = new float[cmaps.x * cmaps.y];
@@ -373,32 +373,42 @@ public class MCache implements MapSource {
 	}
 
 	private Flavobjs makeflavor(Coord cutc) {
-	    Map<NodeWrap, Collection<Gob>> buf = new HashMap<>();
-	    Coord o = new Coord(0, 0);
-	    Coord ul = cutc.mul(cutsz);
-	    Coord gul = ul.add(gc.mul(cmaps));
-	    int i = ul.x + (ul.y * cmaps.x);
+	    Area area = Area.sized(cutc.mul(cutsz), cutsz);
+	    Area garea = area.xl(gc.mul(cmaps));
 	    Random rnd = new Random(id + cutc.x + (cutc.y * cutn.x));
-	    for(o.y = 0; o.y < cutsz.x; o.y++, i += (cmaps.x - cutsz.x)) {
-		for(o.x = 0; o.x < cutsz.y; o.x++, i++) {
-		    Tileset set = tileset(tiles[i]);
-		    Collection<Gob> mbuf = buf.get(set.flavobjmat);
-		    if(mbuf == null)
-			buf.put(set.flavobjmat, mbuf = new ArrayList<>());
-		    int fp = rnd.nextInt();
-		    int rp = rnd.nextInt();
-		    double a = rnd.nextDouble();
-		    if(set.flavobjs.size() > 0) {
-			if((fp % set.flavprob) == 0) {
-			    Indir<Resource> r = set.flavobjs.pick(rp % set.flavobjs.tw);
-			    Gob g = new Flavobj(o.add(gul).mul(tilesz).add(tilesz.div(2)), a * 2 * Math.PI);
-			    g.setattr(new ResDrawable(g, r, Message.nil));
-			    mbuf.add(g);
+	    Tileset.Flavor.Buffer buf = new Tileset.Flavor.Buffer(sess.glob, garea, rnd.nextLong());
+
+	    int[] ids = new int[16];
+	    int nids = 0;
+	    {
+		boolean[] uids = new boolean[nsets.length];
+		int i = area.ul.x + (area.ul.y * cmaps.x);
+		for(int y = 0; y < cutsz.y; y++, i += (cmaps.x - cutsz.x)) {
+		    for(int x = 0; x < cutsz.x; x++, i++) {
+			int id = tiles[i];
+			if(!uids[id]) {
+			    uids[id] = true;
+			    if(nids >= ids.length)
+				ids = Arrays.copyOf(ids, ids.length * 2);
+			    ids[nids++] = id;
 			}
 		    }
 		}
 	    }
-	    return(new Flavobjs(buf));
+
+	    for(int i = 0; i < nids; i++) {
+		Tileset.Flavor.Terrain trn = new Tileset.Flavor.Terrain(this, ids[i], garea, area.ul.sub(garea.ul));
+		Tileset set = trn.tileset(ids[i]);
+		int o = 0;
+		for(Indir<Tileset.Flavor> flp : set.flavors) {
+		    rnd.setSeed(buf.seed ^ (ids[i] << 16) ^ o);
+		    flp.get().flavor(buf, trn, rnd);
+		    o++;
+		}
+	    }
+	    buf.finish();
+
+	    return(new Flavobjs(buf.mats));
 	}
 
 	public RenderTree.Node getfo(Coord cc) {
@@ -726,6 +736,10 @@ public class MCache implements MapSource {
 	    invalidate();
 	    seq++;
 	}
+
+	public double getfz(Coord c) {return(getz(c));}
+	public Tileset tileset(int i) {return(MCache.this.tileset(i));}
+	public Tiler tiler(int i) {return(MCache.this.tiler(i));}
     }
 
     public MCache(Session sess) {

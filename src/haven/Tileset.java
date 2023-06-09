@@ -27,10 +27,12 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import java.io.*;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import haven.render.*;
+import static haven.MCache.tilesz;
 
 @Resource.LayerName("tileset2")
 public class Tileset extends Resource.Layer {
@@ -38,7 +40,7 @@ public class Tileset extends Resource.Layer {
     public String[] tags = {};
     public Object[] ta = new Object[0];
     private transient Tiler.Factory tfac;
-    public WeightList<Indir<Resource>> flavobjs = new WeightList<Indir<Resource>>();
+    public Collection<Indir<Flavor>> flavors = new ArrayList<>();
     public NodeWrap flavobjmat = null;
     public WeightList<Tile> ground;
     public WeightList<Tile>[] ctrans, btrans;
@@ -51,7 +53,7 @@ public class Tileset extends Resource.Layer {
 	public final int id;
 	public final int w;
 	public final char t;
-		
+
 	public Tile(Resource res, Message buf) {
 	    res.super();
 	    t = (char)buf.uint8();
@@ -69,8 +71,167 @@ public class Tileset extends Resource.Layer {
 		tex = new TexI(img);
 	    return(tex);
 	}
-		
+
 	public void init() {}
+    }
+
+    @Resource.PublishedCode(name = "flavor")
+    public static interface Flavor {
+	public static class Obj extends Gob {
+	    private final long seed;
+
+	    public Obj(Buffer buf, Coord2d c, double a) {
+		super(buf.glob, c);
+		this.a = a;
+		Coord2d ul = Coord2d.of(buf.area.ul).mul(tilesz);
+		Random r = new Random(buf.seed);
+		r.setSeed(r.nextLong() ^ Double.doubleToLongBits(rc.x - ul.x));
+		this.seed = r.nextLong() ^ Double.doubleToLongBits(rc.y - ul.y);
+	    }
+
+	    public Random mkrandoom() {
+		return(new Random(seed));
+	    }
+	}
+
+	public static class Buffer {
+	    public final Glob glob;
+	    public final Area area;
+	    public final long seed;
+	    final Map<NodeWrap, Collection<Gob>> mats = new HashMap<>();
+	    private final Map<Object, Object> data = new IdentityHashMap<>();
+	    private final Collection<Runnable> finish = new LinkedList<>();
+
+	    public Buffer(Glob glob, Area area, long seed) {
+		this.glob = glob;
+		this.area = area;
+		this.seed = seed;
+	    }
+
+	    public Collection<Gob> matslot(NodeWrap mat) {
+		Collection<Gob> ret = mats.get(mat);
+		if(ret == null)
+		    mats.put(mat, ret = new ArrayList<>());
+		return(ret);
+	    }
+
+	    public void add(Gob ob, NodeWrap mat) {
+		matslot(mat).add(ob);
+	    }
+
+	    public void add(Gob ob) {
+		add(ob, null);
+	    }
+
+	    @SuppressWarnings("unchecked")
+	    public <T> T datum(Function<Buffer, T> id) {
+		T ret = (T)data.get(id);
+		if(ret == null)
+		    data.put(id, ret = id.apply(this));
+		return(ret);
+	    }
+
+	    public void finish(Runnable act) {
+		finish.add(act);
+	    }
+
+	    public void finish() {
+		for(Runnable act = Utils.take(finish); act != null; act = Utils.take(finish))
+		    act.run();
+	    }
+	}
+
+	public static class Terrain implements MapSource {
+	    public final MapSource grid;
+	    public final int tile;
+	    public final Area area;
+	    private final Coord toff;
+
+	    public Terrain(MapSource grid, int tile, Area area, Coord toff) {
+		this.grid = grid;
+		this.tile = tile;
+		this.area = area;
+		this.toff = toff;
+	    }
+
+	    private boolean[] mask = null;
+	    public boolean[] mask() {
+		if(mask == null) {
+		    mask = new boolean[area.area()];
+		    int o = 0;
+		    for(int y = area.ul.y; y < area.br.y; y++) {
+			for(int x = area.ul.x; x < area.br.x; x++) {
+			    mask[o++] = gettile(Coord.of(x, y)) == tile;
+			}
+		    }
+		}
+		return(mask);
+	    }
+
+	    private List<Coord> tiles = null;
+	    public List<Coord> tiles() {
+		if(tiles == null) {
+		    int[] X = new int[area.area()], Y = new int[area.area()];
+		    int n = 0;
+		    for(int y = area.ul.y; y < area.br.y; y++) {
+			for(int x = area.ul.x; x < area.br.x; x++) {
+			    if(gettile(Coord.of(x, y)) == tile) {
+				X[n] = x;
+				Y[n] = y;
+				n++;
+			    }
+			}
+		    }
+		    int N = n;
+		    tiles = new AbstractList<Coord>() {
+			    public int size() {
+				return(N);
+			    }
+
+			    public Coord get(int i) {
+				if((i < 0) || (i >= N))
+				    throw(new IndexOutOfBoundsException(String.format("%s/%s", i, N)));
+				return(Coord.of(X[i], Y[i]));
+			    }
+			};
+		}
+		return(tiles);
+	    }
+
+	    public int gettile(Coord tc) {return(grid.gettile(tc.add(toff)));}
+	    public double getfz(Coord tc) {return(grid.getfz(tc.add(toff)));}
+	    public Tileset tileset(int t) {return(grid.tileset(t));}
+	    public Tiler tiler(int t) {return(grid.tiler(t));}
+	}
+
+	public void flavor(Buffer buf, Terrain trn, Random rnd);
+    }
+
+    public static class SpriteFlavor implements Flavor {
+	public final Indir<Resource> res;
+	public final double p;
+
+	public SpriteFlavor(Indir<Resource> res, double p) {
+	    this.res = res;
+	    this.p = p;
+	}
+
+	public void flavor(Buffer buf, Terrain trn, Random seed) {
+	    Resource res = this.res.get();
+	    DRandom trnd = new DRandom(new DRandom(seed).randl(res.name.hashCode(), trn.tile));
+	    Random ornd = new Random();
+	    Tileset set = trn.tileset(trn.tile);
+	    for(Coord tc : trn.tiles()) {
+		ornd.setSeed(trnd.randl(tc.x - trn.area.ul.x, tc.y - trn.area.ul.y));
+		if(ornd.nextDouble() < p) {
+		    Gob g = new Flavor.Obj(buf,
+					   tc.mul(tilesz).add(tilesz.mul(ornd.nextDouble(), ornd.nextDouble())),
+					   ornd.nextDouble() * 2 * Math.PI);
+		    g.setattr(new ResDrawable(g, this.res, Message.nil));
+		    buf.add(g, set.flavobjmat);
+		}
+	    }
+	}
     }
 
     private Tileset(Resource res) {
@@ -89,15 +250,34 @@ public class Tileset extends Resource.Layer {
 	    case 1:
 		int flnum = buf.uint16();
 		flavprob = buf.uint16();
+		List<Indir<Resource>> flr = new ArrayList<>();
+		List<Integer> flw = new ArrayList<>();
+		int twa = 0;
 		for(int i = 0; i < flnum; i++) {
-		    String fln = buf.string();
-		    int flv = buf.uint16();
-		    int flw = buf.uint8();
-		    try {
-			flavobjs.add(res.pool.load(fln, flv), flw);
-		    } catch(RuntimeException e) {
-			throw(new Resource.LoadException("Illegal resource dependency", e, res));
-		    }
+		    flr.add(res.pool.load(buf.string(), buf.uint16()));
+		    int w = buf.uint8();
+		    flw.add(w);
+		    twa += w;
+		}
+		/* XXX: Bug-for-bug compatibility */
+		flw.set(0, flw.get(0) + twa);
+		twa += twa;
+		int tw = twa;
+		for(int i = 0; i < flnum; i++) {
+		    Indir<Resource> fres = flr.get(i);
+		    int w = flw.get(i);
+		    flavors.add(new Indir<Flavor>() {
+			    Flavor flav;
+
+			    public Flavor get() {
+				if(flav == null) {
+				    flav = fres.get().getcode(Flavor.class, false);
+				    if(flav == null)
+					flav = new SpriteFlavor(fres, (double)w / (double)(flavprob * tw));
+				}
+				return(flav);
+			    }
+			});
 		}
 		break;
 	    case 2:
