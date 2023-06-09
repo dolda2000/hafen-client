@@ -75,7 +75,6 @@ public class Tileset extends Resource.Layer {
 	public void init() {}
     }
 
-    @Resource.PublishedCode(name = "flavor")
     public static interface Flavor {
 	public static class Obj extends Gob {
 	    private final long seed;
@@ -204,7 +203,69 @@ public class Tileset extends Resource.Layer {
 	    public Tiler tiler(int t) {return(grid.tiler(t));}
 	}
 
-	public void flavor(Buffer buf, Terrain trn, Random rnd);
+	public void flavor(Buffer buf, Terrain trn, Random seed);
+
+	@Resource.PublishedCode(name = "flavor", instancer = FactMaker.class)
+	public static interface Factory {
+	    public Flavor make(Tileset trn, Object... args);
+	}
+
+	public static class FactMaker extends Resource.PublishedCode.Instancer.Chain<Factory> {
+	    public FactMaker() {super(Factory.class);}
+	    {
+		add(new Direct<>(Factory.class));
+		add(new StaticCall<>(Factory.class, "mkflavor", Flavor.class, new Class<?>[] {Tileset.class, Object[].class},
+				     (make) -> new Factory() {
+					     public Flavor make(Tileset trn, Object... args) {
+						 return(make.apply(new Object[]{trn, args}));
+					     }
+					 }));
+		add(new Construct<>(Factory.class, Flavor.class, new Class<?>[] {Tileset.class, Object[].class},
+				    (cons) -> new Factory() {
+					    public Flavor make(Tileset trn, Object... args) {
+						return(cons.apply(new Object[] {trn, args}));
+					    }
+					}));
+		add(new Construct<>(Factory.class, Flavor.class, new Class<?>[] {Object[].class},
+				    (cons) -> new Factory() {
+					    public Flavor make(Tileset set, Object... args) {
+						return(cons.apply(new Object[] {args}));
+					    }
+					}));
+	    }
+	}
+
+	@Resource.LayerName("flavobj")
+	public static class Res extends Resource.Layer implements Indir<Flavor> {
+	    public final Indir<Resource> res;
+	    public final Object[] args;
+	    private Flavor flav;
+
+	    public Res(Resource res, Message buf) {
+		res.super();
+		int ver = buf.uint8();
+		if(ver == 1) {
+		    this.res = new Resource.Spec(res.pool, buf.string(), buf.uint16());
+		    this.args = buf.list();
+		} else {
+		    throw(new Resource.LoadException("unknown flavobj version: " + ver, res));
+		}
+	    }
+
+	    public Flavor get() {
+		if(this.flav == null) {
+		    Resource res = this.res.get();
+		    Factory ret = res.getcode(Factory.class, false);
+		    if(ret != null)
+			this.flav = ret.make(getres().flayer(Tileset.class), this.args);
+		    else
+			this.flav = new SpriteFlavor(this.res, ((Number)this.args[0]).doubleValue());
+		}
+		return(this.flav);
+	    }
+
+	    public void init() {}
+	}
     }
 
     public static class SpriteFlavor implements Flavor {
@@ -266,18 +327,7 @@ public class Tileset extends Resource.Layer {
 		for(int i = 0; i < flnum; i++) {
 		    Indir<Resource> fres = flr.get(i);
 		    int w = flw.get(i);
-		    flavors.add(new Indir<Flavor>() {
-			    Flavor flav;
-
-			    public Flavor get() {
-				if(flav == null) {
-				    flav = fres.get().getcode(Flavor.class, false);
-				    if(flav == null)
-					flav = new SpriteFlavor(fres, (double)w / (double)(flavprob * tw));
-				}
-				return(flav);
-			    }
-			});
+		    flavors.add(Utils.cache(() -> new SpriteFlavor(fres, (double)w / (double)(flavprob * tw))));
 		}
 		break;
 	    case 2:
@@ -409,5 +459,14 @@ public class Tileset extends Resource.Layer {
 	if(bn > 0)
 	    this.btrans = btrans;
 	packtiles(tiles, tsz);
+
+	boolean has = false;
+	for(Flavor.Res fr : getres().layers(Flavor.Res.class)) {
+	    if(!has) {
+		flavors.clear();
+		has = true;
+	    }
+	    flavors.add(fr);
+	}
     }
 }
