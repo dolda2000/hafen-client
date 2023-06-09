@@ -1395,11 +1395,7 @@ public class Resource implements Serializable {
 	    }
 
 	    public static final Instancer<Object> simple = (cl, res, args) -> {
-		try {
-		    Constructor<?> cons = cl.getConstructor(Object[].class);
-		    return(Utils.construct(cons, args));
-		} catch(NoSuchMethodException e) {}
-		return(Utils.construct(cl));
+		return(stdmake(Object.class, cl, res, args));
 	    };
 	}
 	public static final Map<PublishedCode, Instancer> instancers = new WeakHashMap<>();
