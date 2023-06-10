@@ -959,7 +959,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	String cc;
 	try {
 	    Coord3f c = getcc();
-	    cc = String.format("(%.1f %.1f %.1f)", c.x, c.y, c.z);
+	    cc = String.format("(%.1f %.1f %.1f)", c.x / tilesz.x, c.y / tilesz.y, c.z / tilesz.x);
 	} catch(Loading l) {
 	    cc = "<nil>";
 	}
