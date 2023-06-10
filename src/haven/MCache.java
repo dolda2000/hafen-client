@@ -277,13 +277,13 @@ public class MCache implements MapSource {
 	public int seq = -1;
 	private int olseq = -1;
 	private final Cut cuts[];
-	private Flavobjs[] fo = new Flavobjs[cutn.x * cutn.y];
 
 	private class Cut {
 	    MapMesh mesh;
 	    Defer.Future<MapMesh> dmesh;
 	    Map<OverlayInfo, RenderTree.Node> ols = new HashMap<>();
 	    Map<OverlayInfo, RenderTree.Node> olols = new HashMap<>();
+	    Flavobjs fo;
 	}
 
 	private class Flavobj extends Gob {
@@ -412,12 +412,12 @@ public class MCache implements MapSource {
 	}
 
 	public RenderTree.Node getfo(Coord cc) {
-	    int foo = cc.x + (cc.y * cutn.x);
-	    if(fo[foo] == null)
-		fo[foo] = makeflavor(cc);
-	    return(fo[foo]);
+	    Cut cut = geticut(cc);
+	    if(cut.fo == null)
+		cut.fo = makeflavor(cc);
+	    return(cut.fo);
 	}
-	
+
 	private Cut geticut(Coord cc) {
 	    return(cuts[cc.x + (cc.y * cutn.x)]);
 	}
@@ -508,27 +508,28 @@ public class MCache implements MapSource {
 		}
 	    }
 	}
-	
+
 	public void tick(double dt) {
-	    for(Flavobjs fol : fo) {
-		if(fol != null)
-		    fol.tick(dt);
+	    for(Cut cut : cuts) {
+		if(cut.fo != null)
+		    cut.fo.tick(dt);
 	    }
 	}
 	
 	public void gtick(Render g) {
-	    for(Flavobjs fol : fo) {
-		if(fol != null)
-		    fol.gtick(g);
+	    for(Cut cut : cuts) {
+		if(cut.fo != null)
+		    cut.fo.gtick(g);
 	    }
 	}
 	
 	private void invalidate() {
 	    for(int y = 0; y < cutn.y; y++) {
-		for(int x = 0; x < cutn.x; x++)
+		for(int x = 0; x < cutn.x; x++) {
 		    buildcut(Coord.of(x, y));
+		    geticut(Coord.of(x, y)).fo = null;
+		}
 	    }
-	    fo = new Flavobjs[cutn.x * cutn.y];
 	    for(Coord ic : new Coord[] {
 		    Coord.of(-1, -1), Coord.of( 0, -1), Coord.of( 1, -1),
 		    Coord.of(-1,  0),                   Coord.of( 1,  0),
