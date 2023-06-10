@@ -286,20 +286,6 @@ public class MCache implements MapSource {
 	    Flavobjs fo;
 	}
 
-	private class Flavobj extends Gob {
-	    private Flavobj(Coord2d c, double a) {
-		super(sess.glob, c);
-		this.a = a;
-	    }
-
-	    public Random mkrandoom() {
-		Random r = new Random(Grid.this.id);
-		r.setSeed(r.nextLong() ^ Double.doubleToLongBits(rc.x));
-		r.setSeed(r.nextLong() ^ Double.doubleToLongBits(rc.y));
-		return(r);
-	    }
-	}
-
 	public Grid(Coord gc) {
 	    this.gc = gc;
 	    this.ul = gc.mul(cmaps);
