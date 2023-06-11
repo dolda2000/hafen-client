@@ -376,7 +376,7 @@ public class MCache implements MapSource {
 			    return(makeflavor(cc));
 			}
 			public String message() {
-			    return("Building map...");
+			    return("Flavoring map...");
 			}
 		    };
 	    }
