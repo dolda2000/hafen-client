@@ -555,6 +555,8 @@ public interface ReadLine {
 	    } else {
 		return(false);
 	    }
+	    if(mark > length)
+		mark = length;
 	    return(true);
 	}
     }
