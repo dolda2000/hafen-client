@@ -275,6 +275,7 @@ public class MCache implements MapSource {
 	public boolean ol[][];
 	public long id;
 	public int seq = -1;
+	public boolean removed = false;
 	private int olseq = -1;
 	private final Cut cuts[];
 
@@ -605,6 +606,7 @@ public class MCache implements MapSource {
 	}
 
 	public void dispose() {
+	    removed = true;
 	    for(Cut cut : cuts)
 		cut.dispose();
 	}
@@ -835,17 +837,19 @@ public class MCache implements MapSource {
 	}
     }
 
-    private Grid cached = null;
+    private final ThreadLocal<Grid> cached = new ThreadLocal<>();
     public Grid getgrid(Coord gc) {
+	Grid ret = cached.get();
+	if((ret != null) && ret.gc.equals(gc) && !ret.removed)
+	    return(ret);
 	synchronized(grids) {
-	    if((cached == null) || !cached.gc.equals(gc)) {
-		cached = grids.get(gc);
-		if(cached == null) {
-		    request(gc);
-		    throw(new LoadingMap(this, gc));
-		}
+	    ret = grids.get(gc);
+	    if(ret == null) {
+		request(gc);
+		throw(new LoadingMap(this, gc));
 	    }
-	    return(cached);
+	    cached.set(ret);
+	    return(ret);
 	}
     }
 
@@ -995,10 +999,8 @@ public class MCache implements MapSource {
 	    synchronized(req) {
 		if(req.containsKey(c)) {
 		    Grid g = grids.get(c);
-		    if(g == null) {
+		    if(g == null)
 			grids.put(c, g = new Grid(c));
-			cached = null;
-		    }
 		    g.fill(msg);
 		    req.remove(c);
 		    olseq++;
@@ -1093,7 +1095,6 @@ public class MCache implements MapSource {
 		    g.dispose();
 		grids.clear();
 		req.clear();
-		cached = null;
 	    }
 	    gridwait.wnotify();
 	}
@@ -1116,7 +1117,6 @@ public class MCache implements MapSource {
 		    if((gc.x < ul.x) || (gc.y < ul.y) || (gc.x > lr.x) || (gc.y > lr.y))
 			i.remove();
 		}
-		cached = null;
 	    }
 	    gridwait.wnotify();
 	}
