@@ -732,7 +732,13 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     }
 
     public class Placed implements RenderTree.Node, TickList.Ticking, TickList.TickNode {
-	private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
+	/* XXX: Using a COW list is far from an ideal solution. It
+	 * should work for the specific case of flavobjs (which are
+	 * added asynchronously in a way that makes it difficult to
+	 * lock on each individually), but it's certainly not a
+	 * general solution, and it would be nice with something that
+	 * is in fact more general. */
+	private final Collection<RenderTree.Slot> slots = new java.util.concurrent.CopyOnWriteArrayList<>();
 	private Placement cur;
 
 	private Placed() {}
