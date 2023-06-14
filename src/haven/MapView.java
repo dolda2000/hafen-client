@@ -651,8 +651,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	Loading lastload = new Loading("Initializing map...");
 
 	abstract class Grid<T> extends RenderTree.Node.Track1 {
-	    final Map<Coord, Cut> cuts = new HashMap<>();
-	    final Collection<Cut> queued = new HashSet<>();
+	    final Map<Coord, Pair<T, RenderTree.Slot>> cuts = new HashMap<>();
 	    final boolean position;
 	    Loading lastload = new Loading("Initializing map...");
 
@@ -665,90 +664,34 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    abstract T getcut(Coord cc);
 	    RenderTree.Node produce(T cut) {return((RenderTree.Node)cut);}
 
-	    class Cut {
-		final Coord cc;
-		T cur, drawn;
-		RenderTree.Slot slot;
-		Loader.Future<?> applier;
-
-		Cut(Coord cc) {
-		    this.cc = cc;
-		}
-
-		void set(T ob) {
-		    if(ob != cur) {
-			synchronized(this) {
-			    cur = ob;
-			    if(applier == null) {
-				applier = glob.loader.defer(this::apply, null);
-				synchronized(queued) {
-				    queued.add(this);
-				}
-			    }
-			}
-		    }
-		}
-
-		void apply() {
-		    try {
-			while(true) {
-			    T set;
-			    synchronized(this) {
-				if((set = cur) == drawn) {
-				    applier = null;
-				    synchronized(queued) {
-					queued.remove(this);
-				    }
-				    break;
-				}
-			    }
-			    RenderTree.Slot nslot = null;
-			    if(set != null) {
-				Coord2d pc = cc.mul(MCache.cutsz).mul(tilesz);
-				RenderTree.Node draw = produce(set);
-				Pipe.Op cs = null;
-				if(position)
-				    cs = Location.xlate(new Coord3f((float)pc.x, -(float)pc.y, 0));
-				nslot = Grid.this.slot.add(draw, cs);
-			    }
-			    if(this.slot != null)
-				this.slot.remove();
-			    this.slot = nslot;
-			    drawn = set;
-			}
-		    } catch(Loading l) {
-			l.boostprio(5);
-			throw(l);
-		    }
-		}
-
-		void dispose() {
-		    set(null);
-		}
-	    }
-
 	    void tick() {
 		if(slot == null)
 		    return;
 		Loading curload = null;
 		for(Coord cc : area) {
 		    try {
-			/* One could make the argument that the getcut
-			 * implementations don't need to be asynchronous
-			 * themselves any longer, but rather that MapView could
-			 * deal with the whole asynchronicity. Not sure how to
-			 * feel about that. */
-			cuts.computeIfAbsent(cc, Cut::new).set(getcut(cc));
+			T cut = getcut(cc);
+			Pair<T, RenderTree.Slot> cur = cuts.get(cc);
+			if((cur == null) || (cur.a != cut)) {
+			    Coord2d pc = cc.mul(MCache.cutsz).mul(tilesz);
+			    RenderTree.Node draw = produce(cut);
+			    Pipe.Op cs = null;
+			    if(position)
+				cs = Location.xlate(new Coord3f((float)pc.x, -(float)pc.y, 0));
+			    cuts.put(cc, new Pair<>(cut, slot.add(draw, cs)));
+			    if(cur != null)
+				cur.b.remove();
+			}
 		    } catch(Loading l) {
 			l.boostprio(5);
 			curload = l;
 		    }
 		}
 		this.lastload = curload;
-		for(Iterator<Map.Entry<Coord, Cut>> i = cuts.entrySet().iterator(); i.hasNext();) {
-		    Map.Entry<Coord, Cut> ent = i.next();
+		for(Iterator<Map.Entry<Coord, Pair<T, RenderTree.Slot>>> i = cuts.entrySet().iterator(); i.hasNext();) {
+		    Map.Entry<Coord, Pair<T, RenderTree.Slot>> ent = i.next();
 		    if(!area.contains(ent.getKey())) {
-			ent.getValue().dispose();
+			ent.getValue().b.remove();
 			i.remove();
 		    }
 		}
@@ -758,24 +701,11 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		super.removed(slot);
 		cuts.clear();
 	    }
-
-	    public Loading loading() {
-		Loading ret = lastload;
-		if(ret != null)
-		    return(ret);
-		synchronized(queued) {
-		    if(queued.isEmpty())
-			return(null);
-		    for(Cut cut : queued) {
-			if((ret = cut.applier.lastload()) != null)
-			    return(ret);
-		    }
-		}
-		return(new Loading("Map update queued..."));
-	    }
 	}
 
 	void tick() {
+	    /* XXX: Should be taken out of the main rendering
+	     * loop. Probably not a big deal, but still. */
 	    try {
 		Coord cc = new Coord2d(getcc()).floor(tilesz).div(MCache.cutsz);
 		area = new Area(cc.sub(view, view), cc.add(view, view).add(1, 1));
@@ -827,9 +757,9 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    Loading ret = super.loading();
 	    if(ret != null)
 		return(ret);
-	    if((ret = main.loading()) != null)
+	    if((ret = main.lastload) != null)
 		return(ret);
-	    if((ret = flavobjs.loading()) != null)
+	    if((ret = flavobjs.lastload) != null)
 		return(ret);
 	    return(null);
 	}
@@ -875,7 +805,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    Loading ret = super.loading();
 	    if(ret != null)
 		return(ret);
-	    if((ret = base.loading()) != null)
+	    if((ret = base.lastload) != null)
 		return(ret);
 	    return(null);
 	}
@@ -1010,7 +940,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    Loading ret = super.loading();
 	    if(ret != null)
 		return(ret);
-	    if((ret = grid.loading()) != null)
+	    if((ret = grid.lastload) != null)
 		return(ret);
 	    return(null);
 	}
