@@ -504,7 +504,7 @@ public class MCache implements MapSource {
 	    }
 
 	    for(int i = 0; i < nids; i++) {
-		Tileset.Flavor.Terrain trn = new Tileset.Flavor.Terrain(this, ids[i], garea, area.ul.sub(garea.ul));
+		Tileset.Flavor.Terrain trn = new Tileset.Flavor.Terrain(this, MCache.this, ids[i], garea, area.ul.sub(garea.ul));
 		Tileset set = trn.tileset(ids[i]);
 		int o = 0;
 		for(Indir<Tileset.Flavor> flp : set.flavors) {
