@@ -131,6 +131,11 @@ public class Homo3D {
 	};
 
     /* Optional derived values */
+    public static final AutoVarying fragvert = new AutoVarying(VEC3, "s_vert") {
+	    protected Expression root(VertexContext vctx) {
+		return(pick(vertex.ref(), "xyz"));
+	    }
+	};
     public static final AutoVarying fragobjv = new AutoVarying(VEC3, "s_objv") {
 	    protected Expression root(VertexContext vctx) {
 		return(pick(get(vctx.prog).objv.depref(), "xyz"));
