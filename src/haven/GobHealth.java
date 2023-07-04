@@ -28,20 +28,23 @@ package haven;
 
 import java.awt.Color;
 import haven.render.*;
+import haven.resutil.CrackTex;
 
 public class GobHealth extends GAttrib implements Gob.SetupMod {
     public final float hp;
-    public final MixColor fx;
+    public final Pipe.Op fx;
     
     public GobHealth(Gob g, float hp) {
 	super(g);
 	this.hp = hp;
-	this.fx = new MixColor(255, 0, 0, 128 - Math.round(hp * 128));
+	int level = 3 - Math.round(hp * 4);
+	if(level >= 0)
+	    this.fx = new CrackTex(CrackTex.imgs[Math.min(level, 2)]);
+	else
+	    this.fx = null;
     }
     
     public Pipe.Op gobstate() {
-	if(hp >= 1)
-	    return(null);
 	return(fx);
     }
 
