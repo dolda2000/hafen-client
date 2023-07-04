@@ -414,7 +414,7 @@ public abstract class GLTexture extends GLObject implements BGL.ID {
 		    for(int i = 1; i < pixels.length; i++) {
 			if(pixels[i] != null) {
 			    Image<?> img = data.image(i);
-			    gl.glTexImage3D(GL.GL_TEXTURE_2D, i, ifmt, img.w, img.h, img.d, 0, pfmt, pnum, pixels[i].data());
+			    gl.glTexImage3D(GL.GL_TEXTURE_3D, i, ifmt, img.w, img.h, img.d, 0, pfmt, pnum, pixels[i].data());
 			    mem += data.ifmt.size() * img.w * img.h * img.d;
 			}
 		    }
