@@ -31,6 +31,7 @@ import haven.render.*;
 import haven.render.sl.*;
 import java.io.*;
 import java.nio.*;
+import java.util.zip.GZIPInputStream;
 import haven.render.Texture3D.Sampler3D;
 import static haven.render.sl.Type.*;
 import static haven.render.sl.Cons.*;
@@ -42,6 +43,7 @@ public class CrackTex extends State  {
     public final Sampler3D img;
 
     public static Sampler3D loadtex(InputStream fp) throws IOException {
+	fp = new GZIPInputStream(fp);
 	byte[][] data = new byte[Integer.numberOfTrailingZeros(texsz) + 1][];
 	data[0] = new byte[texsz * texsz * texsz];
 	for(int i = 0, n = 8, b = 0; i < data[0].length; i++, n++) {
@@ -94,7 +96,7 @@ public class CrackTex extends State  {
     static {
 	imgs = new Sampler3D[3];
 	for(int i = 0; i < imgs.length; i++) {
-	    try(InputStream fp = CrackTex.class.getResourceAsStream("crack-tex-" + i)) {
+	    try(InputStream fp = CrackTex.class.getResourceAsStream("crack-tex-" + i + ".gz")) {
 		imgs[i] = loadtex(fp);
 	    } catch(IOException e) {
 		throw(new RuntimeException(e));
