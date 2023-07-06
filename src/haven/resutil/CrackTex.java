@@ -41,6 +41,7 @@ public class CrackTex extends State  {
     public static final Slot<CrackTex> slot = new Slot<>(Slot.Type.DRAW, CrackTex.class);
     public static final Sampler3D[] imgs;
     public final Sampler3D img;
+    public final float[] rot;
 
     public static Sampler3D loadtex(InputStream fp) throws IOException {
 	fp = new GZIPInputStream(fp);
@@ -104,14 +105,21 @@ public class CrackTex extends State  {
 	}
     }
 
-    public CrackTex(Sampler3D img) {
+    public CrackTex(Sampler3D img, Coord3f rax, float rang) {
 	this.img = img;
+	this.rot = MiscLib.rotasq(rax, rang);
     }
 
     private static final Uniform u_tex = new Uniform(SAMPLER3D, "cracktex", p -> p.get(slot).img, slot);
+    private static final Uniform u_rot = new Uniform(VEC4, "crackrot", p -> p.get(slot).rot, slot);
     private static final ShaderMacro shader = prog -> {
+	final AutoVarying crackc = new AutoVarying(VEC3, "s_crackc") {
+		protected Expression root(VertexContext vctx) {
+		    return(MiscLib.vqrot.call(pick(Homo3D.vertex.ref(), "xyz"), u_rot.ref()));
+		}
+	    };
 	FragColor.fragcol(prog.fctx).mod(in -> MiscLib.colblend.call(in, vec4(l(0.0), l(0.0), l(0.0),
-									      texture3D(u_tex.ref(), mul(Homo3D.fragvert.ref(), l(0.025))))),
+									      texture3D(u_tex.ref(), mul(crackc.ref(), l(0.025))))),
 					 100);
     };
 
