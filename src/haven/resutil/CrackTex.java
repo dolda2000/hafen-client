@@ -37,7 +37,7 @@ import static haven.render.sl.Type.*;
 import static haven.render.sl.Cons.*;
 
 public class CrackTex extends State  {
-    public static final int texsz = 64;
+    public static final int texsz = 256;
     public static final Slot<CrackTex> slot = new Slot<>(Slot.Type.DRAW, CrackTex.class);
     public static final Sampler3D[] imgs;
     public final Sampler3D img;
@@ -111,7 +111,7 @@ public class CrackTex extends State  {
     private static final Uniform u_tex = new Uniform(SAMPLER3D, "cracktex", p -> p.get(slot).img, slot);
     private static final ShaderMacro shader = prog -> {
 	FragColor.fragcol(prog.fctx).mod(in -> MiscLib.colblend.call(in, vec4(l(0.0), l(0.0), l(0.0),
-									      texture3D(u_tex.ref(), mul(Homo3D.fragvert.ref(), l(0.1))))),
+									      texture3D(u_tex.ref(), mul(Homo3D.fragvert.ref(), l(0.025))))),
 					 100);
     };
 
