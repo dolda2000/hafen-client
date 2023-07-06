@@ -27,6 +27,7 @@
 package haven;
 
 import java.awt.Color;
+import java.util.Random;
 import haven.render.*;
 import haven.resutil.CrackTex;
 
@@ -38,10 +39,14 @@ public class GobHealth extends GAttrib implements Gob.SetupMod {
 	super(g);
 	this.hp = hp;
 	int level = 3 - Math.round(hp * 4);
-	if(level >= 0)
-	    this.fx = new CrackTex(CrackTex.imgs[Math.min(level, 2)]);
-	else
+	if(level >= 0) {
+	    Random rnd = g.mkrandoom();
+	    this.fx = new CrackTex(CrackTex.imgs[Math.min(level, 2)],
+				   Coord3f.of((rnd.nextFloat() * 2) - 1, (rnd.nextFloat() * 2) - 1, (rnd.nextFloat() * 2) - 1).norm(),
+				   rnd.nextFloat() * (float)Math.PI * 2);
+	} else {
 	    this.fx = null;
+	}
     }
     
     public Pipe.Op gobstate() {
