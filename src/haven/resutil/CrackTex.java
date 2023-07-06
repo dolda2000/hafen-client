@@ -31,14 +31,21 @@ import haven.render.*;
 import haven.render.sl.*;
 import java.io.*;
 import java.nio.*;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 import haven.render.Texture3D.Sampler3D;
 import static haven.render.sl.Type.*;
 import static haven.render.sl.Cons.*;
 
-public class CrackTex extends State  {
+public class CrackTex extends State implements InstanceBatch.AttribState {
+    public static final Slot<CrackTex> slot = new Slot<>(Slot.Type.DRAW, CrackTex.class)
+	.instanced(new Instancable<CrackTex>() {
+		final Instancer<CrackTex> nil = Instancer.dummy();
+		public Instancer<CrackTex> instid(CrackTex st) {
+		    return((st == null) ? nil : st.instancer());
+		}
+	    });
     public static final int texsz = 256;
-    public static final Slot<CrackTex> slot = new Slot<>(Slot.Type.DRAW, CrackTex.class);
     public static final Sampler3D[] imgs;
     public final Sampler3D img;
     public final float[] rot;
@@ -110,8 +117,12 @@ public class CrackTex extends State  {
 	this.rot = MiscLib.rotasq(rax, rang);
     }
 
+    public CrackTex(Sampler3D img) {
+	this(img, Coord3f.zu, 0);
+    }
+
     private static final Uniform u_tex = new Uniform(SAMPLER3D, "cracktex", p -> p.get(slot).img, slot);
-    private static final Uniform u_rot = new Uniform(VEC4, "crackrot", p -> p.get(slot).rot, slot);
+    private static final InstancedUniform u_rot = new InstancedUniform.Vec4("crackrot", p -> p.get(slot).rot, slot);
     private static final ShaderMacro shader = prog -> {
 	final AutoVarying crackc = new AutoVarying(VEC3, "s_crackc") {
 		protected Expression root(VertexContext vctx) {
@@ -129,5 +140,25 @@ public class CrackTex extends State  {
 
     public void apply(Pipe buf) {
 	buf.put(slot, this);
+    }
+
+    private static final Map<Sampler3D, Instancer<CrackTex>> instids = new WeakHashMap<>();
+    private Instancer<CrackTex> instancer() {
+	synchronized(instids) {
+	    Instancer<CrackTex> ret = instids.get(img);
+	    if(ret == null) {
+		ret = new Instancer<CrackTex>() {
+			public CrackTex inststate(CrackTex uinst, InstanceBatch bat) {
+			    return(CrackTex.this);
+			}
+		    };
+	    }
+	    instids.put(img, ret);
+	    return(ret);
+	}
+    }
+
+    public InstancedAttribute[] attribs() {
+	return(new InstancedAttribute[] {u_rot.attrib});
     }
 }
