@@ -68,7 +68,10 @@ public class CrackTex extends State implements InstanceBatch.AttribState {
 	    b >>= 1;
 	}
 	for(int i = 1; i < data.length; i++) {
-	    data[i] = new byte[data[i - 1].length >> 3];
+	    /* XXX: There seems to be a bug with JOGL and buffer-space
+	     * checking for mip-mapped 3D textures. The 14 should not
+	     * be necessary. */
+	    data[i] = new byte[Math.max(data[i - 1].length >> 3, 14)];
 	    int lsz = texsz >> i, usz = lsz << 1, ssz = usz * usz;
 	    int[] offs = new int[] {
 		0, 1, usz, usz + 1,
