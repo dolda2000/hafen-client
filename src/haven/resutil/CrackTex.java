@@ -32,6 +32,7 @@ import haven.render.sl.*;
 import java.io.*;
 import java.nio.*;
 import java.util.*;
+import java.awt.Color;
 import java.util.zip.GZIPInputStream;
 import haven.render.Texture3D.Sampler3D;
 import static haven.render.sl.Type.*;
@@ -48,6 +49,7 @@ public class CrackTex extends State implements InstanceBatch.AttribState {
     public static final int texsz = 256;
     public static final Sampler3D[] imgs;
     public final Sampler3D img;
+    public final Color color;
     public final float[] rot;
 
     public static Sampler3D loadtex(InputStream fp) throws IOException {
@@ -112,16 +114,18 @@ public class CrackTex extends State implements InstanceBatch.AttribState {
 	}
     }
 
-    public CrackTex(Sampler3D img, Coord3f rax, float rang) {
+    public CrackTex(Sampler3D img, Color color, Coord3f rax, float rang) {
 	this.img = img;
+	this.color = color;
 	this.rot = MiscLib.rotasq(rax, rang);
     }
 
-    public CrackTex(Sampler3D img) {
-	this(img, Coord3f.zu, 0);
+    public CrackTex(Sampler3D img, Color color) {
+	this(img, color, Coord3f.zu, 0);
     }
 
     private static final Uniform u_tex = new Uniform(SAMPLER3D, "cracktex", p -> p.get(slot).img, slot);
+    private static final Uniform u_col = new Uniform(VEC3, "crackcol", p -> p.get(slot).color, slot);
     private static final InstancedUniform u_rot = new InstancedUniform.Vec4("crackrot", p -> p.get(slot).rot, slot);
     private static final ShaderMacro shader = prog -> {
 	final AutoVarying crackc = new AutoVarying(VEC3, "s_crackc") {
@@ -129,7 +133,7 @@ public class CrackTex extends State implements InstanceBatch.AttribState {
 		    return(MiscLib.vqrot.call(pick(Homo3D.vertex.ref(), "xyz"), u_rot.ref()));
 		}
 	    };
-	FragColor.fragcol(prog.fctx).mod(in -> MiscLib.colblend.call(in, vec4(l(0.0), l(0.0), l(0.0),
+	FragColor.fragcol(prog.fctx).mod(in -> MiscLib.colblend.call(in, vec4(u_col.ref(),
 									      texture3D(u_tex.ref(), mul(crackc.ref(), l(0.025))))),
 					 100);
     };
