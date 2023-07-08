@@ -32,6 +32,7 @@ import haven.render.sl.*;
 import java.io.*;
 import java.nio.*;
 import java.util.*;
+import java.util.function.*;
 import java.awt.Color;
 import java.util.zip.GZIPInputStream;
 import haven.render.Texture3D.Sampler3D;
@@ -52,55 +53,86 @@ public class CrackTex extends State implements InstanceBatch.AttribState {
     public final Color color;
     public final float[] rot;
 
-    public static Sampler3D loadtex(InputStream fp) throws IOException {
-	fp = new GZIPInputStream(fp);
-	byte[][] data = new byte[Integer.numberOfTrailingZeros(texsz) + 1][];
-	data[0] = new byte[texsz * texsz * texsz];
-	for(int i = 0, n = 8, b = 0; i < data[0].length; i++, n++) {
-	    if(n >= 8) {
-		b = fp.read();
-		n = 0;
-	    }
-	    if((b & 1) != 0)
-		data[0][i] = (byte)255;
-	    else
-		data[0][i] = 0;
-	    b >>= 1;
+    public static class Decoder implements DataBuffer.Filler<Texture.Image> {
+	public final Supplier<InputStream> src;
+	private Defer.Future<FillBuffer[]> decode;
+	private FillBuffer[] data;
+
+	public Decoder(Supplier<InputStream> src) {
+	    this.src = src;
 	}
-	for(int i = 1; i < data.length; i++) {
-	    /* XXX: There seems to be a bug with JOGL and buffer-space
-	     * checking for mip-mapped 3D textures. The 14 should not
-	     * be necessary. */
-	    data[i] = new byte[Math.max(data[i - 1].length >> 3, 14)];
-	    int lsz = texsz >> i, usz = lsz << 1, ssz = usz * usz;
-	    int[] offs = new int[] {
-		0, 1, usz, usz + 1,
-		ssz, ssz + 1, ssz + usz, ssz + usz + 1
-	    };
-	    int lo = 0, uo = 0;
-	    for(int z = 0; z < lsz; z++, uo += ssz) {
-		for(int y = 0; y < lsz; y++, uo += usz) {
-		    for(int x = 0; x < lsz; x++, lo++, uo += 2) {
-			int v = 0;
-			for(int o = 0; o < 8; o++)
-			    v += data[i - 1][uo + offs[o]] & 0xff;
-			v >>= 3;
-			data[i][lo] = (v >= 64) ? (byte)255 : (byte)0;
-			/*
-			if(v >= 128)
-			    data[i][lo] = (byte)255;
-			else
-			    data[i][lo] = (byte)(v << 1);
-			*/
+
+	private FillBuffer[] decode(Texture3D tex, Environment env) {
+	    try(InputStream raw = src.get()) {
+		InputStream fp = new GZIPInputStream(raw);
+		FillBuffer[] data = new FillBuffer[tex.images().size()];
+		ByteBuffer[] bufs = new ByteBuffer[data.length];
+		for(int i = 0; i < data.length; i++) {
+		    data[i] = env.fillbuf(tex.image(i));
+		    bufs[i] = data[i].push();
+		}
+		for(int i = 0, n = 8, b = 0; i < texsz * texsz * texsz; i++, n++) {
+		    if(n >= 8) {
+			b = fp.read();
+			n = 0;
+		    }
+		    if((b & 1) != 0)
+			bufs[0].put(i, (byte)255);
+		    else
+			bufs[0].put(i, (byte)0);
+		    b >>= 1;
+		}
+		for(int i = 1; i < data.length; i++) {
+		    int lsz = texsz >> i, usz = lsz << 1, ssz = usz * usz;
+		    int[] offs = new int[] {
+			0, 1, usz, usz + 1,
+			ssz, ssz + 1, ssz + usz, ssz + usz + 1
+		    };
+		    int lo = 0, uo = 0;
+		    for(int z = 0; z < lsz; z++, uo += ssz) {
+			for(int y = 0; y < lsz; y++, uo += usz) {
+			    for(int x = 0; x < lsz; x++, lo++, uo += 2) {
+				int v = 0;
+				for(int o = 0; o < 8; o++)
+				    v += bufs[i - 1].get(uo + offs[o]) & 0xff;
+				v >>= 3;
+				bufs[i].put(lo, (v >= 64) ? (byte)255 : (byte)0);
+				/*
+				if(v >= 128)
+				    bufs[i].put(lo, (byte)255);
+				else
+				    bufs[i].put(lo, (byte)(v << 1));
+				*/
+			    }
+			}
 		    }
 		}
+		return(data);
+	    } catch(IOException e) {
+		throw(new RuntimeException(e));
 	    }
 	}
-	Texture3D tex = new Texture3D(texsz, texsz, texsz, DataBuffer.Usage.STATIC, new VectorFormat(1, NumberFormat.UNORM8), (img, env) -> {
-		FillBuffer buf = env.fillbuf(img);
-		buf.pull(java.nio.ByteBuffer.wrap(data[img.level]));
-		return(buf);
-	});
+
+	public FillBuffer fill(Texture.Image img, Environment env) {
+	    while(data == null) {
+		if(decode == null)
+		    decode = Defer.later(() -> this.decode((Texture3D)img.tex, env));
+		data = decode.get();
+		decode = null;
+		if(!data[0].compatible(env))
+		    data = null;
+	    }
+	    return(data[img.level]);
+	}
+
+	public void done() {
+	    decode = null;
+	    data = null;
+	}
+    }
+
+    public static Sampler3D loadtex(Supplier<InputStream> fp) {
+	Texture3D tex = new Texture3D(texsz, texsz, texsz, DataBuffer.Usage.STATIC, new VectorFormat(1, NumberFormat.UNORM8), new Decoder(fp));
 	Sampler3D ret = tex.sampler();
 	ret.minfilter(Texture.Filter.LINEAR).mipfilter(Texture.Filter.LINEAR);
 	return(ret);
@@ -108,13 +140,9 @@ public class CrackTex extends State implements InstanceBatch.AttribState {
 
     static {
 	imgs = new Sampler3D[3];
-	for(int i = 0; i < imgs.length; i++) {
-	    try(InputStream fp = CrackTex.class.getResourceAsStream("crack-tex-" + i + ".gz")) {
-		imgs[i] = loadtex(fp);
-		imgs[i].tex.desc("crack-tex " + i);
-	    } catch(IOException e) {
-		throw(new RuntimeException(e));
-	    }
+	for(int i : Utils.range(0, 3, 1)) {
+	    imgs[i] = loadtex(() -> CrackTex.class.getResourceAsStream("crack-tex-" + i + ".gz"));
+	    imgs[i].tex.desc("crack-tex " + i);
 	}
     }
 
