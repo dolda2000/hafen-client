@@ -111,6 +111,7 @@ public class CrackTex extends State implements InstanceBatch.AttribState {
 	for(int i = 0; i < imgs.length; i++) {
 	    try(InputStream fp = CrackTex.class.getResourceAsStream("crack-tex-" + i + ".gz")) {
 		imgs[i] = loadtex(fp);
+		imgs[i].tex.desc("crack-tex " + i);
 	    } catch(IOException e) {
 		throw(new RuntimeException(e));
 	    }
@@ -159,8 +160,8 @@ public class CrackTex extends State implements InstanceBatch.AttribState {
 			    return(CrackTex.this);
 			}
 		    };
+		instids.put(img, ret);
 	    }
-	    instids.put(img, ret);
 	    return(ret);
 	}
     }
