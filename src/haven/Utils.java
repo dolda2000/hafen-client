@@ -580,101 +580,10 @@ public class Utils {
 	if(ze == 8) ret[2] = 0; else ret[2] = Float.intBitsToFloat((zs << 31) | ((me - ze + 127) << 23) | ((zb << (ze + 16)) & 0x007fffff));
     }
 
-    public static float hfdec(short bits) {
-	int b = ((int)bits) & 0xffff;
-	int e = (b & 0x7c00) >> 10;
-	int m = b & 0x03ff;
-	int ee;
-	if(e == 0) {
-	    if(m == 0) {
-		ee = 0;
-	    } else {
-		int n = Integer.numberOfLeadingZeros(m) - 22;
-		ee = (-15 - n) + 127;
-		m = (m << (n + 1)) & 0x03ff;
-	    }
-	} else if(e == 0x1f) {
-	    ee = 0xff;
-	} else {
-	    ee = e - 15 + 127;
-	}
-	int f32 = ((b & 0x8000) << 16) |
-	    (ee << 23) |
-	    (m << 13);
-	return(Float.intBitsToFloat(f32));
-    }
-
-    public static short hfenc(float f) {
-	int b = Float.floatToIntBits(f);
-	int e = (b & 0x7f800000) >> 23;
-	int m = b & 0x007fffff;
-	int ee;
-	if(e == 0) {
-	    ee = 0;
-	    m = 0;
-	} else if(e == 0xff) {
-	    ee = 0x1f;
-	} else if(e < 127 - 14) {
-	    ee = 0;
-	    m = (m | 0x00800000) >> ((127 - 14) - e);
-	} else if(e > 127 + 15) {
-	    return(((b & 0x80000000) == 0)?((short)0x7c00):((short)0xfc00));
-	} else {
-	    ee = e - 127 + 15;
-	}
-	int f16 = ((b >> 16) & 0x8000) |
-	    (ee << 10) |
-	    (m >> 13);
-	return((short)f16);
-    }
-
-    public static float mfdec(byte bits) {
-	int b = ((int)bits) & 0xff;
-	int e = (b & 0x78) >> 3;
-	int m = b & 0x07;
-	int ee;
-	if(e == 0) {
-	    if(m == 0) {
-		ee = 0;
-	    } else {
-		int n = Integer.numberOfLeadingZeros(m) - 29;
-		ee = (-7 - n) + 127;
-		m = (m << (n + 1)) & 0x07;
-	    }
-	} else if(e == 0x0f) {
-	    ee = 0xff;
-	} else {
-	    ee = e - 7 + 127;
-	}
-	int f32 = ((b & 0x80) << 24) |
-	    (ee << 23) |
-	    (m << 20);
-	return(Float.intBitsToFloat(f32));
-    }
-
-    public static byte mfenc(float f) {
-	int b = Float.floatToIntBits(f);
-	int e = (b & 0x7f800000) >> 23;
-	int m = b & 0x007fffff;
-	int ee;
-	if(e == 0) {
-	    ee = 0;
-	    m = 0;
-	} else if(e == 0xff) {
-	    ee = 0x0f;
-	} else if(e < 127 - 6) {
-	    ee = 0;
-	    m = (m | 0x00800000) >> ((127 - 6) - e);
-	} else if(e > 127 + 7) {
-	    return(((b & 0x80000000) == 0)?((byte)0x78):((byte)0xf8));
-	} else {
-	    ee = e - 127 + 7;
-	}
-	int f8 = ((b >> 24) & 0x80) |
-	    (ee << 3) |
-	    (m >> 20);
-	return((byte)f8);
-    }
+    public static float hfdec(short bits) {return(HalfFloat.bits(bits));}
+    public static short hfenc(float f)    {return(HalfFloat.bits(f));}
+    public static float mfdec(byte bits)  {return(MiniFloat.bits(bits));}
+    public static byte  mfenc(float f)    {return(MiniFloat.bits(f));}
 
     public static void uvec2oct(float[] buf, float x, float y, float z) {
 	float m = 1.0f / (Math.abs(x) + Math.abs(y) + Math.abs(z));
