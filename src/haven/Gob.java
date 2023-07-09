@@ -289,8 +289,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    float sin = dz / hyp, cos = dx / hyp;
 	    c = Coord3f.of((float)rc.x, (float)rc.y, (float)minz + (dz * (float)(-min / (max - min))));
 	    r = Transform.makerot(new Matrix4f(), rax, sin, cos).mul(super.getr(rc, ra));
-	    if(Debug.kf3)
-		Debug.dump(maxz, minz, sin, cos, c, r);
 	}
 
 	private void check(Coord2d rc, double ra) {
