@@ -163,8 +163,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(Math.abs(tangl - angl) < 0.0001)
 		angl = tangl;
 	    
-	    Coord3f cc = getcc();
-	    cc.y = -cc.y;
+	    Coord3f cc = getcc().invy();
 	    if(curc == null)
 		curc = cc;
 	    float dx = cc.x - curc.x, dy = cc.y - curc.y;
@@ -219,8 +218,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	private float elevorig, anglorig;
 
 	public void tick(double dt) {
-	    Coord3f cc = getcc();
-	    cc.y = -cc.y;
+	    Coord3f cc = getcc().invy();
 	    view = haven.render.Camera.pointed(cc.add(camoff).add(0.0f, 0.0f, 15f), dist, elev, angl);
 	}
 	
@@ -275,8 +273,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    dist = dist + ((tdist - dist) * cf);
 	    if(Math.abs(tdist - dist) < 0.0001) dist = tdist;
 
-	    Coord3f mc = getcc();
-	    mc.y = -mc.y;
+	    Coord3f mc = getcc().invy();
 	    if((cc == null) || (Math.hypot(mc.x - cc.x, mc.y - cc.y) > 250))
 		cc = mc;
 	    else
@@ -323,9 +320,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	protected Coord3f cc, jc;
 
 	public void tick2(double dt) {
-	    Coord3f cc = getcc();
-	    cc.y = -cc.y;
-	    this.cc = cc;
+	    this.cc = getcc().invy();
 	}
 
 	public void tick(double dt) {
@@ -409,8 +404,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	public void tick2(double dt) {
 	    dt *= tf;
 	    float cf = 1f - (float)Math.pow(500, -dt);
-	    Coord3f mc = getcc();
-	    mc.y = -mc.y;
+	    Coord3f mc = getcc().invy();
 	    if((cc == null) || (Math.hypot(mc.x - cc.x, mc.y - cc.y) > 250))
 		cc = mc;
 	    else if(!exact || (mc.dist(cc) > 2))
@@ -976,7 +970,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    Coord3f dir, cc;
 	    try {
 		dir = new Coord3f(-light.dir[0], -light.dir[1], -light.dir[2]);
-		cc = getcc();
+		cc = getcc().invy();
 	    } catch(Loading l) {
 		return;
 	    }
@@ -992,7 +986,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		basic(ShadowMap.class, null);
 	    }
 	    smap = smap.light(light);
-	    cc.y = -cc.y;
 	    boolean ch = false;
 	    double now = Utils.rtime();
 	    if((smapcc == null) || (smapcc.dist(cc) > 50)) {
