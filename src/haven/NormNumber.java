@@ -147,25 +147,25 @@ public abstract class NormNumber extends Number {
     public static UNorm32 decunorm32(Message msg) {return(decunorm32(msg.int32()));}
     public static MNorm32 decmnorm32(Message msg) {return(decmnorm32(msg.int32()));}
 
-    public static SNorm8   snorm8(float val) {return( snorm8(Math.round(Utils.clip(val, -1, 1) * 0x7f.0p0f)));}
-    public static SNorm16 snorm16(float val) {return(snorm16(Math.round(Utils.clip(val, -1, 1) * 0x7fff.0p0f)));}
-    public static SNorm32 snorm32(float val) {return(snorm32(Math.round(Utils.clip(val, -1, 1) * 0x7fffff80.0p0f)));}
-    public static UNorm8   unorm8(float val) {return( unorm8(Math.round(Utils.clip(val,  0, 1) * 0xff.0p0f)));}
-    public static UNorm16 unorm16(float val) {return(unorm16(Math.round(Utils.clip(val,  0, 1) * 0xffff.0p0f)));}
-    public static UNorm32 unorm32(float val) {return(unorm32(Math.round(Utils.clip(val,  0, 1) * 0xffffff00.0p0f)));}
-    public static MNorm8   mnorm8(float val) {return( mnorm8(Math.round(Utils.floormod(val, 1.0f) * 0x100.0p0f)));}
-    public static MNorm16 mnorm16(float val) {return(mnorm16(Math.round(Utils.floormod(val, 1.0f) * 0x10000.0p0f)));}
-    public static MNorm32 mnorm32(float val) {return(mnorm32(Math.round(Utils.floormod(val, 1.0f) * 0x10000000.0p0f) << 4));}
+    public static SNorm8   snorm8(float val) {return( decsnorm8(Math.round(Utils.clip(val, -1, 1) * 0x7f.0p0f)));}
+    public static SNorm16 snorm16(float val) {return(decsnorm16(Math.round(Utils.clip(val, -1, 1) * 0x7fff.0p0f)));}
+    public static SNorm32 snorm32(float val) {return(decsnorm32(Math.round(Utils.clip(val, -1, 1) * 0x7fffff80.0p0f)));}
+    public static UNorm8   unorm8(float val) {return( decunorm8(Math.round(Utils.clip(val,  0, 1) * 0xff.0p0f)));}
+    public static UNorm16 unorm16(float val) {return(decunorm16(Math.round(Utils.clip(val,  0, 1) * 0xffff.0p0f)));}
+    public static UNorm32 unorm32(float val) {return(decunorm32(Math.round(Utils.clip(val,  0, 1) * 0xffffff00.0p0f)));}
+    public static MNorm8   mnorm8(float val) {return( decmnorm8(Math.round(Utils.floormod(val, 1.0f) * 0x100.0p0f)));}
+    public static MNorm16 mnorm16(float val) {return(decmnorm16(Math.round(Utils.floormod(val, 1.0f) * 0x10000.0p0f)));}
+    public static MNorm32 mnorm32(float val) {return(decmnorm32(Math.round(Utils.floormod(val, 1.0f) * 0x10000000.0p0f) << 4));}
 
-    public static SNorm8   snorm8(double val) {return( snorm8((int)Math.round(Utils.clip(val, -1, 1) * 0x7f.0p0)));}
-    public static SNorm16 snorm16(double val) {return(snorm16((int)Math.round(Utils.clip(val, -1, 1) * 0x7fff.0p0)));}
-    public static SNorm32 snorm32(double val) {return(snorm32((int)Math.round(Utils.clip(val, -1, 1) * 0x7fffffff.0p0)));}
-    public static UNorm8   unorm8(double val) {return( unorm8((int)Math.round(Utils.clip(val,  0, 1) * 0xff.0p0)));}
-    public static UNorm16 unorm16(double val) {return(unorm16((int)Math.round(Utils.clip(val,  0, 1) * 0xffff.0p0)));}
-    public static UNorm32 unorm32(double val) {return(unorm32((int)Math.round(Utils.clip(val,  0, 1) * 0xffffffff.0p0)));}
-    public static MNorm8   mnorm8(double val) {return( mnorm8((int)Math.round(Utils.floormod(val, 1.0) * 0x100.0p0)));}
-    public static MNorm16 mnorm16(double val) {return(mnorm16((int)Math.round(Utils.floormod(val, 1.0) * 0x10000.0p0)));}
-    public static MNorm32 mnorm32(double val) {return(mnorm32((int)Math.round(Utils.floormod(val, 1.0) * 0x100000000.0p0)));}
+    public static SNorm8   snorm8(double val) {return( decsnorm8((int)Math.round(Utils.clip(val, -1, 1) * 0x7f.0p0)));}
+    public static SNorm16 snorm16(double val) {return(decsnorm16((int)Math.round(Utils.clip(val, -1, 1) * 0x7fff.0p0)));}
+    public static SNorm32 snorm32(double val) {return(decsnorm32((int)Math.round(Utils.clip(val, -1, 1) * 0x7fffffff.0p0)));}
+    public static UNorm8   unorm8(double val) {return( decunorm8((int)Math.round(Utils.clip(val,  0, 1) * 0xff.0p0)));}
+    public static UNorm16 unorm16(double val) {return(decunorm16((int)Math.round(Utils.clip(val,  0, 1) * 0xffff.0p0)));}
+    public static UNorm32 unorm32(double val) {return(decunorm32((int)Math.round(Utils.clip(val,  0, 1) * 0xffffffff.0p0)));}
+    public static MNorm8   mnorm8(double val) {return( decmnorm8((int)Math.round(Utils.floormod(val, 1.0) * 0x100.0p0)));}
+    public static MNorm16 mnorm16(double val) {return(decmnorm16((int)Math.round(Utils.floormod(val, 1.0) * 0x10000.0p0)));}
+    public static MNorm32 mnorm32(double val) {return(decmnorm32((int)Math.round(Utils.floormod(val, 1.0) * 0x100000000.0p0)));}
 
     public String toString() {
 	return(Double.toString(doubleValue()));
