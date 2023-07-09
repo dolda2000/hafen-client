@@ -422,6 +422,18 @@ public class Utils {
 	}
     }
 
+    public static int iv(Object arg) {
+	return(((Number)arg).intValue());
+    }
+
+    public static float fv(Object arg) {
+	return(((Number)arg).floatValue());
+    }
+
+    public static double dv(Object arg) {
+	return(((Number)arg).doubleValue());
+    }
+
     public static int sb(int n, int b) {
 	return((n << (32 - b)) >> (32 - b));
     }
