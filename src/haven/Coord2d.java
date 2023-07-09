@@ -178,86 +178,16 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
 	return(norm(1.0));
     }
 
+    public Coord2d rot(double a) {
+	double s = Math.sin(a), c = Math.cos(a);
+	return(of((x * c) - (y * s), (y * c) + (x * s)));
+    }
+
     public static Coord2d sc(double a, double r) {
 	return(of(Math.cos(a) * r, Math.sin(a) * r));
     }
 
     public String toString() {
 	return("(" + x + ", " + y + ")");
-    }
-
-    public static class GridIsect implements DefaultCollection<Coord2d> {
-	public final Coord2d s, t, d, g, o;
-	public final boolean incl;
-
-	public GridIsect(Coord2d s, Coord2d t, Coord2d g, Coord2d o, boolean incl) {
-	    this.s = s;
-	    this.t = t;
-	    this.d = t.sub(s);
-	    this.g = g;
-	    this.o = o;
-	    this.incl = incl;
-	}
-
-	public GridIsect(Coord2d s, Coord2d t, Coord2d g, boolean incl) {
-	    this(s, t, g, z, incl);
-	}
-
-	public GridIsect(Coord2d s, Coord2d t, Coord2d g) {
-	    this(s, t, g, z, true);
-	}
-
-	public Iterator<Coord2d> iterator() {
-	    return(new Iterator<Coord2d>() {
-		    Coord2d next = s;;
-		    double nx, ny, nxt, nyt;
-		    {
-			if(d.x > 0)
-			    nx = Math.floor((s.x - o.x) / g.x) + 1;
-			else
-			    nx = Math.ceil ((s.x - o.x) / g.x) - 1;
-			nxt = Math.abs(((nx * g.x) + o.x - s.x) / d.x);
-			if(d.y > 0)
-			    ny = Math.floor((s.y - o.y) / g.y) + 1;
-			else
-			    ny = Math.ceil ((s.y - o.y) / g.y) - 1;
-			nyt = Math.abs(((ny * g.y) + o.y - s.y) / d.y);
-		    }
-
-		    public boolean hasNext() {
-			return(next != null);
-		    }
-
-		    public Coord2d next() {
-			if(next == null)
-			    throw(new java.util.NoSuchElementException());
-			Coord2d ret = next;
-			boolean ux = false, uy = false;
-			if(next == t) {
-			    next = null;
-			} else if((nxt >= 1) && (nyt >= 1)) {
-			    next = incl ? t : null;
-			} else if(nxt == nyt) {
-			    next = Coord2d.of((nx * g.x) + o.x, (ny * g.y) + o.y);
-			    ux = uy = true;
-			} else if(nxt < nyt) {
-			    next = Coord2d.of((nx * g.x) + o.x, s.y + (d.y * nxt));
-			    ux = true;
-			} else {
-			    next = Coord2d.of(s.x + (d.x * nyt), (ny * g.y) + o.y);
-			    uy = true;
-			}
-			if(ux) {
-			    nx += (d.x > 0) ? 1 : -1;
-			    nxt = ((nx * g.x) + o.x - s.x) / d.x;
-			}
-			if(uy) {
-			    ny += (d.y > 0) ? 1 : -1;
-			    nyt = ((ny * g.y) + o.y - s.y) / d.y;
-			}
-			return(ret);
-		    }
-		});
-	}
     }
 }

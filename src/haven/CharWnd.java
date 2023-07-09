@@ -204,11 +204,11 @@ public class CharWnd extends Window {
 
 	public void update(Object... args) {
 	    int n = 0;
-	    this.cap = (Float)args[n++];
+	    this.cap = Utils.fv(args[n++]);
 	    List<El> enew = new LinkedList<El>();
 	    while(n < args.length) {
 		Indir<Resource> res = ui.sess.getres((Integer)args[n++]);
-		double a = (Float)args[n++];
+		double a = Utils.fv(args[n++]);
 		enew.add(new El(res, a));
 	    }
 	    this.enew = enew;
