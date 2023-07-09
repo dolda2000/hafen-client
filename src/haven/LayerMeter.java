@@ -62,14 +62,14 @@ public abstract class LayerMeter extends Widget implements ItemInfo.Owner {
 	ArrayList<Meter> buf = new ArrayList<>();
 	if(args[s] instanceof Number) {
 	    for(int a = s; a < args.length; a += 2)
-		buf.add(new Meter(((Number)args[a]).doubleValue() * 0.01, (Color)args[a + 1]));
+		buf.add(new Meter(Utils.dv(args[a]) * 0.01, (Color)args[a + 1]));
 	} else {
 	    /* XXX: To be considered deprecated, but is was the
 	     * traditional argument layout of IMeter, so let clients
 	     * with the newer convention spread before converting the
 	     * server. */
 	    for(int a = s; a < args.length; a += 2)
-		buf.add(new Meter(((Number)args[a + 1]).doubleValue() * 0.01, (Color)args[a]));
+		buf.add(new Meter(Utils.dv(args[a + 1]) * 0.01, (Color)args[a]));
 	}
 	buf.trimToSize();
 	return(buf);
@@ -113,7 +113,7 @@ public abstract class LayerMeter extends Widget implements ItemInfo.Owner {
     public void uimsg(String msg, Object... args) {
 	if(msg == "set") {
 	    if(args.length == 1) {
-		set(((Number)args[0]).doubleValue() * 0.01, meters.isEmpty() ? Color.WHITE : meters.get(0).c);
+		set(Utils.dv(args[0]) * 0.01, meters.isEmpty() ? Color.WHITE : meters.get(0).c);
 	    } else {
 		set(decmeters(args, 0));
 	    }
