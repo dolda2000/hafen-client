@@ -172,7 +172,7 @@ public abstract class Light implements RenderTree.Node {
 	}
 
 	public PhongLight(Resource res, Object... args) {
-	    this(true, (Color)args[0], (Color)args[1], (Color)args[2], (Color)args[3], (Float)args[4]);
+	    this(true, (Color)args[0], (Color)args[1], (Color)args[2], (Color)args[3], Utils.fv(args[4]));
 	}
 
 	public ShaderMacro shader() {return(shader);}

@@ -104,13 +104,13 @@ public class AvaRender {
 			String at = (String)cequ[1];
 			Indir<Resource> er = Resource.local().load((String)cequ[2]);
 			byte[] sdt = (byte[])cequ[3];
-			Coord3f off = new Coord3f((Float)cequ[4], (Float)cequ[5], (Float)cequ[6]);
+			Coord3f off = new Coord3f(Utils.fv(cequ[4]), Utils.fv(cequ[5]), Utils.fv(cequ[6]));
 			equ.add(new ED(t, at, new ResData(er, new MessageBuf(sdt)), off));
 		    } else {
 			int t = (Integer)aequ[i++];
 			String at = (String)aequ[i++];
 			Indir<Resource> er = Resource.local().load((String)aequ[i++]);
-			Coord3f off = new Coord3f((Float)aequ[i++], (Float)aequ[i++], (Float)aequ[i++]);
+			Coord3f off = new Coord3f(Utils.fv(aequ[i++]), Utils.fv(aequ[i++]), Utils.fv(aequ[i++]));
 			equ.add(new ED(t, at, new ResData(er, Message.nil), off));
 		    }
 		}

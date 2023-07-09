@@ -242,10 +242,10 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		    int mid = (Integer)desc[1];
 		    double thrl, thrh;
 		    if(desc[2] instanceof Object[]) {
-			thrl = (Float)((Object[])desc[2])[0];
-			thrh = (Float)((Object[])desc[2])[1];
+			thrl = Utils.fv(((Object[])desc[2])[0]);
+			thrh = Utils.fv(((Object[])desc[2])[1]);
 		    } else {
-			thrl = (Float)desc[2];
+			thrl = Utils.fv(desc[2]);
 			thrh = Double.MAX_VALUE;
 		    }
 		    double nz = (res.name.hashCode() * mid * 8129) % 10000;
@@ -385,7 +385,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 			Resource mres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
 			mat = mres.flayer(Material.Res.class).get();
 			if(desc.length > 3)
-			    texh = (Float)desc[3];
+			    texh = Utils.fv(desc[3]);
 		    } else if(p.equals("rthres")) {
 			rth = ((Number)desc[1]).doubleValue();
 		    }
