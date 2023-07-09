@@ -217,7 +217,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    for(int i = 0; i < no.length; i++) {
 		for(int o = 0; o < ro[i].length; o++) {
 		    Coord2d a = ro[i][o], b = ro[i][(o + 1) % ro[i].length];
-		    for(Coord2d c : new Coord2d.GridIsect(a, b, MCache.tilesz, false)) {
+		    for(Coord2d c : new Line2d.GridIsect(a, b, MCache.tilesz, false)) {
 			double z = map.getz(surf, c);
 			if(Float.isNaN(ret) || (z < ret))
 			    ret = (float)z;
