@@ -27,6 +27,17 @@
 package haven;
 
 public abstract class NormNumber extends Number {
+    public abstract int bits();
+
+    public boolean equals(Object that) {
+	if(!(that instanceof NormNumber) || (that.getClass() != this.getClass()))
+	    return(false);
+	return(((NormNumber)that).bits() == this.bits());
+    }
+    public int hashCode() {
+	return(getClass().hashCode() ^ bits());
+    }
+
     public long longValue() {
 	return(intValue());
     }
@@ -45,6 +56,7 @@ public abstract class NormNumber extends Number {
 
 	public SNorm8(byte val) {avoid(val & 0xff, 0x80); this.val = val;}
 
+	public int bits() {return(val & 0xff);}
 	public int intValue()       {return(val == 127 ? 1 : val == -127 ? -1 : 0);}
 	public float floatValue()   {return(val * (1.0f / 127.0f));}
 	public double doubleValue() {return(val * (1.0  / 127.0 ));}
@@ -55,6 +67,7 @@ public abstract class NormNumber extends Number {
 
 	public UNorm8(byte val) {this.val = val;}
 
+	public int bits() {return(val & 0xff);}
 	public int intValue()       {return((val & 0xff) == 255 ? 1 : 0);}
 	public float floatValue()   {return((val & 0xff) * (1.0f / 255.0f));}
 	public double doubleValue() {return((val & 0xff) * (1.0  / 255.0 ));}
@@ -65,6 +78,7 @@ public abstract class NormNumber extends Number {
 
 	public MNorm8(byte val) {this.val = val;}
 
+	public int bits() {return(val & 0xff);}
 	public int intValue()       {return(0);}
 	public float floatValue()   {return((val & 0xff) * (1.0f / 256.0f));}
 	public double doubleValue() {return((val & 0xff) * (1.0  / 256.0 ));}
@@ -75,6 +89,7 @@ public abstract class NormNumber extends Number {
 
 	public SNorm16(short val) {avoid(val & 0xffff, 0x8000); this.val = val;}
 
+	public int bits() {return(val & 0xffff);}
 	public int intValue()       {return(val == 32767 ? 1 : val == -32767 ? -1 : 0);}
 	public float floatValue()   {return(val * (1.0f / 32767.0f));}
 	public double doubleValue() {return(val * (1.0  / 32767.0 ));}
@@ -85,6 +100,7 @@ public abstract class NormNumber extends Number {
 
 	public UNorm16(short val) {this.val = val;}
 
+	public int bits() {return(val & 0xffff);}
 	public int intValue()       {return((val & 0xffff) == 65535 ? 1 : 0);}
 	public float floatValue()   {return((val & 0xffff) * (1.0f / 65535.0f));}
 	public double doubleValue() {return((val & 0xffff) * (1.0  / 65535.0 ));}
@@ -95,6 +111,7 @@ public abstract class NormNumber extends Number {
 
 	public MNorm16(short val) {this.val = val;}
 
+	public int bits() {return(val & 0xffff);}
 	public int intValue()       {return(0);}
 	public float floatValue()   {return((val & 0xffff) * (1.0f / 65536.0f));}
 	public double doubleValue() {return((val & 0xffff) * (1.0  / 65536.0 ));}
@@ -105,6 +122,7 @@ public abstract class NormNumber extends Number {
 
 	public SNorm32(int val) {avoid(val, 0x80000000); this.val = val;}
 
+	public int bits() {return(val);}
 	public int intValue()       {return(val == 0x7fffffff ? 1 : val == -0x7fffffff ? -1 : 0);}
 	public double doubleValue() {return(val * (1.0  / 0x7fffffff.0p0));}
     }
@@ -114,6 +132,7 @@ public abstract class NormNumber extends Number {
 
 	public UNorm32(int val) {this.val = val;}
 
+	public int bits() {return(val);}
 	public int intValue()       {return(val == 0xffffffff ? 1 : 0);}
 	public double doubleValue() {return((val & 0xffffffffl) * (1.0 / 0xffffffff.0p0));}
     }
@@ -123,6 +142,7 @@ public abstract class NormNumber extends Number {
 
 	public MNorm32(int val) {this.val = val;}
 
+	public int bits() {return(val);}
 	public int intValue()       {return(0);}
 	public double doubleValue() {return((val & 0xffffffffl) * (1.0 / 0x100000000.0p0));}
     }
