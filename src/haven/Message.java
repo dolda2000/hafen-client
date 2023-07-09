@@ -313,10 +313,10 @@ public abstract class Message {
 		ret.add(bytes(len));
 		break;
 	    case T_FLOAT8:
-		ret.add(float8());
+		ret.add(MiniFloat.decode((byte)int8()));
 		break;
 	    case T_FLOAT16:
-		ret.add(float16());
+		ret.add(HalfFloat.decode((short)int16()));
 		break;
 	    case T_FLOAT32:
 		ret.add(float32());
@@ -472,6 +472,12 @@ public abstract class Message {
 	    } else if(o instanceof FColor) {
 		adduint8(T_FCOLOR);
 		addfcolor((FColor)o);
+	    } else if(o instanceof MiniFloat) {
+		adduint8(T_FLOAT8);
+		addint8(((MiniFloat)o).bits);
+	    } else if(o instanceof HalfFloat) {
+		adduint8(T_FLOAT16);
+		addint16(((HalfFloat)o).bits);
 	    } else if(o instanceof Float) {
 		adduint8(T_FLOAT32);
 		addfloat32(((Float)o).floatValue());
