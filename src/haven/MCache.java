@@ -837,9 +837,13 @@ public class MCache implements MapSource {
 	}
     }
 
-    private final ThreadLocal<Grid> cached = new ThreadLocal<>();
+    /* Apparently, the values of thread-locals don't necessarily
+     * become unreachable just because the thread-local itself becomes
+     * unreachable, so keep the grid in a weak reference. */
+    private final ThreadLocal<Reference<Grid>> cached = new ThreadLocal<>();
     public Grid getgrid(Coord gc) {
-	Grid ret = cached.get();
+	Reference<Grid> ref = cached.get();
+	Grid ret = (ref == null) ? null : ref.get();
 	if((ret != null) && ret.gc.equals(gc) && !ret.removed)
 	    return(ret);
 	synchronized(grids) {
@@ -848,7 +852,7 @@ public class MCache implements MapSource {
 		request(gc);
 		throw(new LoadingMap(this, gc));
 	    }
-	    cached.set(ret);
+	    cached.set(new WeakReference<>(ret));
 	    return(ret);
 	}
     }
