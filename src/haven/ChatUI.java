@@ -139,9 +139,9 @@ public class ChatUI extends Widget {
 
     public static abstract class Channel extends Widget {
 	public final List<RenderedMessage> rmsgs = new ArrayList<>();
+	public int urgency = 0;
 	private final Scrollbar sb;
 	private final IButton cb;
-	public int urgency = 0;
 
 	/* Deprecated? */
 	public final List<Message> msgs = new AbstractList<Message>() {
@@ -158,9 +158,8 @@ public class ChatUI extends Widget {
 	public static class RenderedMessage {
 	    public final Message msg;
 	    public final int idx;
-	    private int w;
 	    private Text text;
-	    int y;
+	    int w, y;
 
 	    public RenderedMessage(Message msg, int idx, int iw) {
 		this.msg = msg;
@@ -179,6 +178,8 @@ public class ChatUI extends Widget {
 	    }
 
 	    public void resize(int w) {
+		if(this.w == w)
+		    return;
 		this.w = w;
 		if(text != null) {
 		    text.dispose();
@@ -287,22 +288,53 @@ public class ChatUI extends Widget {
 	    }
 	}
 
+	private void updyseq(int mi) {
+	    synchronized(rmsgs) {
+		mi = Math.min(mi, rmsgs.size() - 1);
+		RenderedMessage lm = rmsgs.get(mi++);
+		int y = lm.y + lm.h();
+		while(mi < rmsgs.size()) {
+		    RenderedMessage rm = rmsgs.get(mi++);
+		    rm.y = y;
+		    y += rm.h();
+		}
+		boolean b = sb.val >= sb.max;
+		sb.max = y - ih();
+		if(b)
+		    sb.val = sb.max;
+		if(sb.val > sb.max)
+		    sb.val = sb.max;
+	    }
+	}
+
 	public void draw(GOut g) {
 	    g.chcolor(0, 0, 0, 128);
 	    g.frect(Coord.z, sz);
 	    g.chcolor();
-	    int sy = sb.val, h = ih();
+	    int sy = sb.val, h = ih(), w = iw();
 	    boolean sel = false;
 	    synchronized(rmsgs) {
-		for(int mi = messageat(sy, true); mi < rmsgs.size(); mi++) {
-		    RenderedMessage rm = rmsgs.get(mi);
-		    if(rm.y > sy + h)
-			break;
-		    if((selstart != null) && (selend != null)) {
-			if((rm.idx >= selstart.rm.idx) && (rm.idx <= selend.rm.idx))
-			    drawsel(g, rm, rm.y - sy);
+		int smi = messageat(sy, true);
+		if(smi < rmsgs.size()) {
+		    int y = rmsgs.get(smi).y;
+		    boolean upd = false;
+		    for(int mi = smi; mi < rmsgs.size(); mi++) {
+			RenderedMessage rm = rmsgs.get(mi);
+			if(y > sy + h)
+			    break;
+			if(rm.w != w) {
+			    rm.resize(w);
+			    upd = true;
+			}
+			if((selstart != null) && (selend != null)) {
+			    if((rm.idx >= selstart.rm.idx) && (rm.idx <= selend.rm.idx))
+				drawsel(g, rm, rm.y - sy);
+			}
+			g.image(rm.text().tex(), new Coord(0, y - sy));
+			y += rm.h();
 		    }
-		    g.image(rm.text().tex(), new Coord(0, rm.y - sy));
+		    if(upd)
+			updyseq(smi);
 		}
 	    }
 	    super.draw(g);
