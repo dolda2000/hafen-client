@@ -138,10 +138,16 @@ public class ChatUI extends Widget {
     }
 
     public static abstract class Channel extends Widget {
-	public final List<RenderedMessage> msgs = new ArrayList<>();
+	public final List<RenderedMessage> rmsgs = new ArrayList<>();
 	private final Scrollbar sb;
 	private final IButton cb;
 	public int urgency = 0;
+
+	/* Deprecated? */
+	public final List<Message> msgs = new AbstractList<Message>() {
+		public int size() {return(rmsgs.size());}
+		public Message get(int i) {return(rmsgs.get(i).msg);}
+	    };
 
 	public static abstract class Message {
 	    public final double time = Utils.ntime();
@@ -189,6 +195,9 @@ public class ChatUI extends Widget {
 		this.col = col;
 	    }
 
+	    @Deprecated
+	    public SimpleMessage(String text, Color col, int w) {this(text, col);}
+
 	    public Indir<Text> render(int w) {
 		if(col == null)
 		    return(() -> fnd.render(RichText.Parser.quote(text), w));
@@ -206,10 +215,10 @@ public class ChatUI extends Widget {
 	}
 
 	public void append(Message msg) {
-	    synchronized(msgs) {
-		msgs.add(new RenderedMessage(msg, msgs.size(), iw()));
+	    synchronized(rmsgs) {
+		rmsgs.add(new RenderedMessage(msg, rmsgs.size(), iw()));
 		int y = 0;
-		for(RenderedMessage m : msgs)
+		for(RenderedMessage m : rmsgs)
 		    y += m.h();
 		boolean b = sb.val >= sb.max;
 		sb.max = y - ih();
@@ -247,8 +256,8 @@ public class ChatUI extends Widget {
 	    g.chcolor();
 	    int y = 0;
 	    boolean sel = false;
-	    synchronized(msgs) {
-		for(RenderedMessage rm : msgs) {
+	    synchronized(rmsgs) {
+		for(RenderedMessage rm : rmsgs) {
 		    if((selstart != null) && (rm == selstart.rm))
 			sel = true;
 		    int y1 = y - sb.val;
@@ -279,7 +288,7 @@ public class ChatUI extends Widget {
 		sb.move(new Coord(sz.x - (UI.scale(12) - marg.x), UI.scale(34) - marg.y));
 		sb.resize(ih() - sb.c.y);
 		int y = 0;
-		for(RenderedMessage rm : msgs)
+		for(RenderedMessage rm : rmsgs)
 		    y += rm.h();
 		boolean b = sb.val >= sb.max;
 		sb.max = y - ih();
@@ -340,8 +349,8 @@ public class ChatUI extends Widget {
 
 	public RenderedMessage messageat(Coord c, Coord hc) {
 	    int y = -sb.val;
-	    synchronized(msgs) {
-		for(RenderedMessage rm : msgs) {
+	    synchronized(rmsgs) {
+		for(RenderedMessage rm : rmsgs) {
 		    Coord sz = rm.text().sz();
 		    if((c.y >= y) && (c.y < y + sz.y)) {
 			if(hc != null) {
@@ -358,10 +367,10 @@ public class ChatUI extends Widget {
 
 	public CharPos charat(Coord c) {
 	    if(c.y < -sb.val) {
-		synchronized(msgs) {
-		    if(msgs.size() < 1)
+		synchronized(rmsgs) {
+		    if(rmsgs.size() < 1)
 			return(null);
-		    RenderedMessage rm = msgs.get(0);
+		    RenderedMessage rm = rmsgs.get(0);
 		    if(!(rm.text() instanceof RichText))
 			return(null);
 		    RichText.TextPart fp = null;
@@ -440,9 +449,9 @@ public class ChatUI extends Widget {
 
 	protected void selected(CharPos start, CharPos end) {
 	    StringBuilder buf = new StringBuilder();
-	    synchronized(msgs) {
+	    synchronized(rmsgs) {
 		boolean sel = false;
-		for(RenderedMessage rm : msgs) {
+		for(RenderedMessage rm : rmsgs) {
 		    if(!(rm.text() instanceof RichText))
 			continue;
 		    RichText rt = (RichText)rm.text();
@@ -730,6 +739,9 @@ public class ChatUI extends Widget {
 	    public MyMessage(String text) {
 		super(text, col);
 	    }
+
+	    @Deprecated
+	    public MyMessage(String text, int w) {this(text);}
 	}
 
 	public MultiChat(boolean closable, String name, int urgency) {
