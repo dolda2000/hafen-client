@@ -160,6 +160,7 @@ public class ChatUI extends Widget {
 	    public final int idx;
 	    private int w;
 	    private Text text;
+	    int y;
 
 	    public RenderedMessage(Message msg, int idx, int iw) {
 		this.msg = msg;
@@ -216,12 +217,16 @@ public class ChatUI extends Widget {
 
 	public void append(Message msg) {
 	    synchronized(rmsgs) {
-		rmsgs.add(new RenderedMessage(msg, rmsgs.size(), iw()));
-		int y = 0;
-		for(RenderedMessage m : rmsgs)
-		    y += m.h();
+		RenderedMessage rm = new RenderedMessage(msg, rmsgs.size(), iw());
+		if(rmsgs.isEmpty()) {
+		    rm.y = 0;
+		} else {
+		    RenderedMessage lm = rmsgs.get(rmsgs.size() - 1);
+		    rm.y = lm.y + lm.h();
+		}
+		rmsgs.add(rm);
 		boolean b = sb.val >= sb.max;
-		sb.max = y - ih();
+		sb.max = rm.y + rm.h() - ih();
 		if(b)
 		    sb.val = sb.max;
 	    }
@@ -250,29 +255,56 @@ public class ChatUI extends Widget {
 	    }
 	}
 
+	public int messageat(int y, boolean nearest) {
+	    synchronized(rmsgs) {
+		int t = 0, b = rmsgs.size();
+		while(b > t) {
+		    int c = (t + b) / 2;
+		    RenderedMessage rm = rmsgs.get(c);
+		    if(rm.y > y) {
+			b = c;
+		    } else if(rm.y + rm.h() < y) {
+			t = c + 1;
+		    } else {
+			return(c);
+		    }
+		}
+		return(nearest ? t : -1);
+	    }
+	}
+
+	public RenderedMessage messageat(Coord c, Coord hc) {
+	    synchronized(rmsgs) {
+		int mi = messageat(sb.val + c.y, false);
+		if(mi < 0)
+		    return(null);
+		RenderedMessage rm = rmsgs.get(mi);
+		if(hc != null) {
+		    hc.x = c.x;
+		    hc.y = sb.val + c.y - rm.y;
+		}
+		return(rm);
+	    }
+	}
+
 	public void draw(GOut g) {
 	    g.chcolor(0, 0, 0, 128);
 	    g.frect(Coord.z, sz);
 	    g.chcolor();
-	    int y = 0;
+	    int sy = sb.val, h = ih();
 	    boolean sel = false;
 	    synchronized(rmsgs) {
-		for(RenderedMessage rm : rmsgs) {
-		    if((selstart != null) && (rm == selstart.rm))
-			sel = true;
-		    int y1 = y - sb.val;
-		    int y2 = y1 + rm.h();
-		    if((y2 > 0) && (y1 < ih())) {
-			if(sel)
-			    drawsel(g, rm, y1);
-			g.image(rm.text().tex(), new Coord(0, y1));
+		for(int mi = messageat(sy, true); mi < rmsgs.size(); mi++) {
+		    RenderedMessage rm = rmsgs.get(mi);
+		    if(rm.y > sy + h)
+			break;
+		    if((selstart != null) && (selend != null)) {
+			if((rm.idx >= selstart.rm.idx) && (rm.idx <= selend.rm.idx))
+			    drawsel(g, rm, rm.y - sy);
 		    }
-		    if((selend != null) && (rm == selend.rm))
-			sel = false;
-		    y += rm.h();
+		    g.image(rm.text().tex(), new Coord(0, rm.y - sy));
 		}
 	    }
-	    sb.max = y - ih();
 	    super.draw(g);
 	    updurgency(0);
 	}
@@ -287,13 +319,13 @@ public class ChatUI extends Widget {
 	    if(sb != null) {
 		sb.move(new Coord(sz.x - (UI.scale(12) - marg.x), UI.scale(34) - marg.y));
 		sb.resize(ih() - sb.c.y);
-		int y = 0;
-		for(RenderedMessage rm : rmsgs)
-		    y += rm.h();
-		boolean b = sb.val >= sb.max;
-		sb.max = y - ih();
-		if(b)
-		    sb.val = sb.max;
+		if(!rmsgs.isEmpty()) {
+		    RenderedMessage lm = rmsgs.get(rmsgs.size() - 1);
+		    boolean b = sb.val >= sb.max;
+		    sb.max = lm.y + lm.h() - ih();
+		    if(b)
+			sb.val = sb.max;
+		}
 	    }
 	    if(cb != null) {
 		cb.c = new Coord(sz.x + marg.x - cb.sz.x, -marg.y);
@@ -347,28 +379,10 @@ public class ChatUI extends Widget {
 	    }
 	};
 
-	public RenderedMessage messageat(Coord c, Coord hc) {
-	    int y = -sb.val;
-	    synchronized(rmsgs) {
-		for(RenderedMessage rm : rmsgs) {
-		    Coord sz = rm.text().sz();
-		    if((c.y >= y) && (c.y < y + sz.y)) {
-			if(hc != null) {
-			    hc.x = c.x;
-			    hc.y = c.y - y;
-			}
-			return(rm);
-		    }
-		    y += sz.y;
-		}
-	    }
-	    return(null);
-	}
-
 	public CharPos charat(Coord c) {
 	    if(c.y < -sb.val) {
 		synchronized(rmsgs) {
-		    if(rmsgs.size() < 1)
+		    if(rmsgs.isEmpty())
 			return(null);
 		    RenderedMessage rm = rmsgs.get(0);
 		    if(!(rm.text() instanceof RichText))
@@ -450,50 +464,43 @@ public class ChatUI extends Widget {
 	protected void selected(CharPos start, CharPos end) {
 	    StringBuilder buf = new StringBuilder();
 	    synchronized(rmsgs) {
-		boolean sel = false;
-		for(RenderedMessage rm : rmsgs) {
+		for(int mi = start.rm.idx; mi <= end.rm.idx; mi++) {
+		    RenderedMessage rm = rmsgs.get(mi);
 		    if(!(rm.text() instanceof RichText))
 			continue;
 		    RichText rt = (RichText)rm.text();
 		    RichText.Part part = null;
-		    if(sel) {
-			part = rt.parts;
-		    } else if(rm == start.rm) {
-			sel = true;
+		    if(rm == start.rm) {
 			for(part = rt.parts; part != null; part = part.next) {
 			    if(part == start.part)
 				break;
 			}
+		    } else {
+			part = rt.parts;
 		    }
-		    if(sel) {
-			for(; part != null; part = part.next) {
-			    if(!(part instanceof RichText.TextPart))
-				continue;
-			    RichText.TextPart tp = (RichText.TextPart)part;
-			    CharacterIterator iter = tp.ti();
-			    int sch;
-			    if(tp == start.part)
-				sch = tp.start + start.ch.getInsertionIndex();
-			    else
-				sch = tp.start;
-			    int ech;
-			    if(tp == end.part)
-				ech = tp.start + end.ch.getInsertionIndex();
-			    else
-				ech = tp.end;
-			    for(int i = sch; i < ech; i++)
-				buf.append(iter.setIndex(i));
-			    if(part == end.part) {
-				sel = false;
-				break;
-			    }
-			    buf.append(' ');
-			}
-			if(sel)
-			    buf.append('\n');
+		    for(; part != null; part = part.next) {
+			if(!(part instanceof RichText.TextPart))
+			    continue;
+			RichText.TextPart tp = (RichText.TextPart)part;
+			CharacterIterator iter = tp.ti();
+			int sch;
+			if(tp == start.part)
+			    sch = tp.start + start.ch.getInsertionIndex();
+			else
+			    sch = tp.start;
+			int ech;
+			if(tp == end.part)
+			    ech = tp.start + end.ch.getInsertionIndex();
+			else
+			    ech = tp.end;
+			for(int i = sch; i < ech; i++)
+			    buf.append(iter.setIndex(i));
+			if(part == end.part)
+			    break;
+			buf.append(' ');
 		    }
-		    if(rm == end.rm)
-			break;
+		    if(rm != end.rm)
+			buf.append('\n');
 		}
 	    }
 	    Clipboard cl;
