@@ -73,7 +73,7 @@ public class ChatUI extends Widget {
 	base = this.c;
 	resize(this.sz);
     }
-    
+
     public static class ChatAttribute extends Attribute {
 	private ChatAttribute(String name) {
 	    super(name);
@@ -81,7 +81,7 @@ public class ChatUI extends Widget {
 
 	public static final Attribute HYPERLINK = new ChatAttribute("hyperlink");
     }
-    
+
     public static class FuckMeGentlyWithAChainsaw {
 	/* This wrapper class exists to work around the possibly most
 	 * stupid Java bug ever (and that's saying a lot): That
@@ -89,7 +89,7 @@ public class ChatUI extends Widget {
 	 * block. Which, of course, not only sucks performance-wise
 	 * but also breaks actual correct URL equality. */
 	public final URL url;
-	
+
 	public FuckMeGentlyWithAChainsaw(URL url) {
 	    this.url = url;
 	}
@@ -99,11 +99,11 @@ public class ChatUI extends Widget {
 	public static final Pattern urlpat = Pattern.compile("\\b((https?://)|(www\\.[a-z0-9_.-]+\\.[a-z0-9_.-]+))[a-z0-9/_.~#%+?&:*=-]*", Pattern.CASE_INSENSITIVE);
 	public static final Map<? extends Attribute, ?> urlstyle = RichText.fillattrs(TextAttribute.FOREGROUND, new Color(64, 64, 255),
 										      TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-	
+
 	public ChatParser(Object... args) {
 	    super(args);
 	}
-	
+
 	protected RichText.Part text(PState s, String text, Map<? extends Attribute, ?> attrs) throws IOException {
 	    RichText.Part ret = null;
 	    int p = 0;
@@ -138,39 +138,62 @@ public class ChatUI extends Widget {
     }
 
     public static abstract class Channel extends Widget {
-	public final List<Message> msgs = new LinkedList<Message>();
+	public final List<RenderedMessage> msgs = new ArrayList<>();
 	private final Scrollbar sb;
 	private final IButton cb;
 	public int urgency = 0;
-	
+
 	public static abstract class Message {
 	    public final double time = Utils.ntime();
-	    
-	    public abstract Text text();
-	    public abstract Tex tex();
-	    public abstract Coord sz();
+
+	    public abstract Indir<Text> render(int w);
 	}
-	
-	public static class SimpleMessage extends Message {
-	    private final Text t;
-	    
-	    public SimpleMessage(String text, Color col, int w) {
-		if(col == null)
-		    this.t = fnd.render(RichText.Parser.quote(text), w);
-		else
-		    this.t = fnd.render(RichText.Parser.quote(text), w, TextAttribute.FOREGROUND, col);
-	    }
-	    
-	    public Text text() {
-		return(t);
+
+	public static class RenderedMessage {
+	    public final Message msg;
+	    public final int idx;
+	    private int w;
+	    private Text text;
+
+	    public RenderedMessage(Message msg, int idx, int iw) {
+		this.msg = msg;
+		this.idx = idx;
+		this.w = iw;
 	    }
 
-	    public Tex tex() {
-		return(t.tex());
+	    public Text text() {
+		if(text == null)
+		    text = msg.render(w).get();
+		return(text);
 	    }
-	    
-	    public Coord sz() {
-		return(t.sz());
+
+	    public int h() {
+		return(text().sz().y);
+	    }
+
+	    public void resize(int w) {
+		this.w = w;
+		if(text != null) {
+		    text.dispose();
+		    text = null;
+		}
+	    }
+	}
+
+	public static class SimpleMessage extends Message {
+	    public final String text;
+	    public final Color col;
+
+	    public SimpleMessage(String text, Color col) {
+		this.text = text;
+		this.col = col;
+	    }
+
+	    public Indir<Text> render(int w) {
+		if(col == null)
+		    return(() -> fnd.render(RichText.Parser.quote(text), w));
+		else
+		    return(() -> fnd.render(RichText.Parser.quote(text), w, TextAttribute.FOREGROUND, col));
 	    }
 	}
 
@@ -181,13 +204,13 @@ public class ChatUI extends Widget {
 	    else
 		cb = null;
 	}
-	
+
 	public void append(Message msg) {
 	    synchronized(msgs) {
-		msgs.add(msg);
+		msgs.add(new RenderedMessage(msg, msgs.size(), iw()));
 		int y = 0;
-		for(Message m : msgs)
-		    y += m.sz().y;
+		for(RenderedMessage m : msgs)
+		    y += m.h();
 		boolean b = sb.val >= sb.max;
 		sb.max = y - ih();
 		if(b)
@@ -196,17 +219,17 @@ public class ChatUI extends Widget {
 	}
 
 	public void append(String line, Color col) {
-	    append(new SimpleMessage(line, col, iw()));
+	    append(new SimpleMessage(line, col));
 	}
-	
+
 	public int iw() {
 	    return(sz.x - sb.sz.x);
 	}
-	
+
 	public int ih() {
 	    return(sz.y);
 	}
-	
+
 	public void updurgency(int urg) {
 	    if(urgency != urg) {
 		urgency = urg;
@@ -225,39 +248,39 @@ public class ChatUI extends Widget {
 	    int y = 0;
 	    boolean sel = false;
 	    synchronized(msgs) {
-		for(Message msg : msgs) {
-		    if((selstart != null) && (msg == selstart.msg))
+		for(RenderedMessage rm : msgs) {
+		    if((selstart != null) && (rm == selstart.rm))
 			sel = true;
 		    int y1 = y - sb.val;
-		    int y2 = y1 + msg.sz().y;
+		    int y2 = y1 + rm.h();
 		    if((y2 > 0) && (y1 < ih())) {
 			if(sel)
-			    drawsel(g, msg, y1);
-			g.image(msg.tex(), new Coord(0, y1));
+			    drawsel(g, rm, y1);
+			g.image(rm.text().tex(), new Coord(0, y1));
 		    }
-		    if((selend != null) && (msg == selend.msg))
+		    if((selend != null) && (rm == selend.rm))
 			sel = false;
-		    y += msg.sz().y;
+		    y += rm.h();
 		}
 	    }
 	    sb.max = y - ih();
 	    super.draw(g);
 	    updurgency(0);
 	}
-	
+
 	public boolean mousewheel(Coord c, int amount) {
 	    sb.ch(amount * 15);
 	    return(true);
 	}
-	
+
 	public void resize(Coord sz) {
 	    super.resize(sz);
 	    if(sb != null) {
 		sb.move(new Coord(sz.x - (UI.scale(12) - marg.x), UI.scale(34) - marg.y));
 		sb.resize(ih() - sb.c.y);
 		int y = 0;
-		for(Message m : msgs)
-		    y += m.sz().y;
+		for(RenderedMessage rm : msgs)
+		    y += rm.h();
 		boolean b = sb.val >= sb.max;
 		sb.max = y - ih();
 		if(b)
@@ -267,112 +290,112 @@ public class ChatUI extends Widget {
 		cb.c = new Coord(sz.x + marg.x - cb.sz.x, -marg.y);
 	    }
 	}
-	
+
 	public void notify(Message msg, int urgency) {
 	    getparent(ChatUI.class).notify(this, msg);
 	    updurgency(Math.max(this.urgency, urgency));
 	}
-	
+
 	public static class CharPos {
-	    public final Message msg;
+	    public final RenderedMessage rm;
+	    public final int pn;
 	    public final RichText.TextPart part;
 	    public final TextHitInfo ch;
-	    
-	    public CharPos(Message msg, RichText.TextPart part, TextHitInfo ch) {
-		this.msg = msg;
+
+	    public CharPos(RenderedMessage rm, RichText.TextPart part, TextHitInfo ch) {
+		this.rm = rm;
+		this.pn = partnum((RichText)rm.text(), part);
 		this.part = part;
 		this.ch = ch;
 	    }
-	    
+
+	    private static int partnum(RichText text, RichText.TextPart part) {
+		int i = 0;
+		for(RichText.Part p = text.parts; p != null; p = p.next) {
+		    if(p == part)
+			return(i);
+		    i++;
+		}
+		throw(new IllegalArgumentException("Text part not part of text"));
+	    }
+
 	    public boolean equals(Object oo) {
 		if(!(oo instanceof CharPos)) return(false);
 		CharPos o = (CharPos)oo;
-		return((o.msg == this.msg) && (o.part == this.part) && o.ch.equals(this.ch));
+		return((o.rm == this.rm) && (o.part == this.part) && o.ch.equals(this.ch));
 	    }
 	}
 
 	public final Comparator<CharPos> poscmp = new Comparator<CharPos>() {
 	    public int compare(CharPos a, CharPos b) {
-		if(a.msg != b.msg) {
-		    synchronized(msgs) {
-			for(Message msg : msgs) {
-			    if(msg == a.msg)
-				return(-1);
-			    else if(msg == b.msg)
-				return(1);
-			}
-		    }
-		    throw(new IllegalStateException("CharPos message is no longer contained in the log"));
-		} else if(a.part != b.part) {
-		    for(RichText.Part part = ((RichText)a.msg.text()).parts; part != null; part = part.next) {
-			if(part == a.part)
-			    return(-1);
-			else
-			    return(1);
-		    }
-		    throw(new IllegalStateException("CharPos is no longer contained in the log"));
+		if(a.rm != b.rm) {
+		    return(a.rm.idx - b.rm.idx);
+		} else if(a.pn != b.pn) {
+		    return(a.pn - b.pn);
 		} else {
 		    return(a.ch.getInsertionIndex() - b.ch.getInsertionIndex());
 		}
 	    }
 	};
 
-	public Message messageat(Coord c, Coord hc) {
+	public RenderedMessage messageat(Coord c, Coord hc) {
 	    int y = -sb.val;
 	    synchronized(msgs) {
-		for(Message msg : msgs) {
-		    Coord sz = msg.sz();
+		for(RenderedMessage rm : msgs) {
+		    Coord sz = rm.text().sz();
 		    if((c.y >= y) && (c.y < y + sz.y)) {
 			if(hc != null) {
 			    hc.x = c.x;
 			    hc.y = c.y - y;
 			}
-			return(msg);
+			return(rm);
 		    }
 		    y += sz.y;
 		}
 	    }
 	    return(null);
 	}
-	
+
 	public CharPos charat(Coord c) {
 	    if(c.y < -sb.val) {
-		if(msgs.size() < 1)
-		    return(null);
-		Message msg = msgs.get(0);
-		if(!(msg.text() instanceof RichText))
-		    return(null);
-		RichText.TextPart fp = null;
-		for(RichText.Part part = ((RichText)msg.text()).parts; part != null; part = part.next) {
-		    if(part instanceof RichText.TextPart) {
-			fp = (RichText.TextPart)part;
-			break;
+		synchronized(msgs) {
+		    if(msgs.size() < 1)
+			return(null);
+		    RenderedMessage rm = msgs.get(0);
+		    if(!(rm.text() instanceof RichText))
+			return(null);
+		    RichText.TextPart fp = null;
+		    for(RichText.Part part = ((RichText)rm.text()).parts; part != null; part = part.next) {
+			if(part instanceof RichText.TextPart) {
+			    fp = (RichText.TextPart)part;
+			    break;
+			}
 		    }
+		    if(fp == null)
+			return(null);
+		    return(new CharPos(rm, fp, TextHitInfo.leading(0)));
 		}
-		if(fp == null)
-		    return(null);
-		return(new CharPos(msg, fp, TextHitInfo.leading(0)));
 	    }
 
 	    Coord hc = new Coord();
-	    Message msg = messageat(c, hc);
-	    if((msg == null) || !(msg.text() instanceof RichText))
+	    RenderedMessage rm = messageat(c, hc);
+	    if((rm == null) || !(rm.text() instanceof RichText))
 		return(null);
-	    RichText rt = (RichText)msg.text();
+	    RichText rt = (RichText)rm.text();
 	    RichText.Part p = rt.partat(hc);
 	    if(p == null) {
 		RichText.TextPart lp = null;
-		for(RichText.Part part = ((RichText)msg.text()).parts; part != null; part = part.next) {
+		for(RichText.Part part = rt.parts; part != null; part = part.next) {
 		    if(part instanceof RichText.TextPart)
 			lp = (RichText.TextPart)part;
 		}
 		if(lp == null) return(null);
-		return(new CharPos(msg, lp, TextHitInfo.trailing(lp.end - lp.start - 1)));
+		return(new CharPos(rm, lp, TextHitInfo.trailing(lp.end - lp.start - 1)));
 	    }
 	    if(!(p instanceof RichText.TextPart))
 		return(null);
 	    RichText.TextPart tp = (RichText.TextPart)p;
-	    return(new CharPos(msg, tp, tp.charat(hc)));
+	    return(new CharPos(rm, tp, tp.charat(hc)));
 	}
 
 	private CharPos selorig, lasthit, selstart, selend;
@@ -393,7 +416,7 @@ public class ChatUI extends Widget {
 	    }
 	    return(false);
 	}
-	
+
 	public void mousemove(Coord c) {
 	    if(selorig != null) {
 		CharPos ch = charat(c);
@@ -414,19 +437,19 @@ public class ChatUI extends Widget {
 		super.mousemove(c);
 	    }
 	}
-	
+
 	protected void selected(CharPos start, CharPos end) {
 	    StringBuilder buf = new StringBuilder();
 	    synchronized(msgs) {
 		boolean sel = false;
-		for(Message msg : msgs) {
-		    if(!(msg.text() instanceof RichText))
+		for(RenderedMessage rm : msgs) {
+		    if(!(rm.text() instanceof RichText))
 			continue;
-		    RichText rt = (RichText)msg.text();
+		    RichText rt = (RichText)rm.text();
 		    RichText.Part part = null;
 		    if(sel) {
 			part = rt.parts;
-		    } else if(msg == start.msg) {
+		    } else if(rm == start.rm) {
 			sel = true;
 			for(part = rt.parts; part != null; part = part.next) {
 			    if(part == start.part)
@@ -460,7 +483,7 @@ public class ChatUI extends Widget {
 			if(sel)
 			    buf.append('\n');
 		    }
-		    if(msg == end.msg)
+		    if(rm == end.rm)
 			break;
 		}
 	    }
@@ -518,9 +541,9 @@ public class ChatUI extends Widget {
 	    chat.parent.setfocus(chat);
 	}
 
-	private void drawsel(GOut g, Message msg, int y) {
-	    RichText rt = (RichText)msg.text();
-	    boolean sel = msg != selstart.msg;
+	private void drawsel(GOut g, RenderedMessage rm, int y) {
+	    RichText rt = (RichText)rm.text();
+	    boolean sel = rm != selstart.rm;
 	    for(RichText.Part part = rt.parts; part != null; part = part.next) {
 		if(!(part instanceof RichText.TextPart))
 		    continue;
@@ -578,7 +601,7 @@ public class ChatUI extends Widget {
 	    return((iconres == null) ? null : iconres.get().layer(Resource.imgc));
 	}
     }
-    
+
     public static class Log extends Channel {
 	private final String name;
 	
@@ -589,13 +612,13 @@ public class ChatUI extends Widget {
 	
 	public String name() {return(name);}
     }
-    
+
     public static abstract class EntryChannel extends Channel {
 	private final TextEntry in;
 	private List<String> history = new ArrayList<String>();
 	private int hpos = 0;
 	private String hcurrent;
-	
+
 	public EntryChannel(boolean closable) {
 	    super(closable);
 	    setfocusctl(true);
@@ -630,11 +653,11 @@ public class ChatUI extends Widget {
 		};
 	    add(this.in);
 	}
-	
+
 	public int ih() {
 	    return(sz.y - in.sz.y);
 	}
-	
+
 	public void resize(Coord sz) {
 	    super.resize(sz);
 	    if(in != null) {
@@ -642,13 +665,13 @@ public class ChatUI extends Widget {
 		in.resize(this.sz.x);
 	    }
 	}
-	
+
 	public void send(String text) {
 	    history.add(text);
 	    wdgmsg("msg", text);
 	}
     }
-    
+
     public static class SimpleChat extends EntryChannel {
 	public final String name;
 
@@ -664,7 +687,7 @@ public class ChatUI extends Widget {
 		if(args.length > 1) col = (Color)args[1];
 		if(col == null) col = Color.WHITE;
 		int urgency = (args.length > 2)?(Integer)args[2]:0;
-		Message cmsg = new SimpleMessage(line, col, iw());
+		Message cmsg = new SimpleMessage(line, col);
 		append(cmsg);
 		if(urgency > 0)
 		    notify(cmsg, urgency);
@@ -682,47 +705,30 @@ public class ChatUI extends Widget {
 	public final int urgency;
 	private final String name;
 	private final Map<Integer, Color> pc = new HashMap<Integer, Color>();
-	
+
 	public class NamedMessage extends Message {
 	    public final int from;
 	    public final String text;
-	    public final int w;
 	    public final Color col;
-	    private String cn;
-	    private Text r = null;
-	    
-	    public NamedMessage(int from, String text, Color col, int w) {
+
+	    public NamedMessage(int from, String text, Color col) {
 		this.from = from;
 		this.text = text;
-		this.w = w;
 		this.col = col;
 	    }
 
-	    public Text text() {
+	    public Indir<Text> render(int w) {
 		BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(from);
-		String nm = (b == null)?"???":(b.name);
-		if((r == null) || !nm.equals(cn)) {
-		    r = fnd.render(RichText.Parser.quote(String.format("%s: %s", nm, text)), w, TextAttribute.FOREGROUND, col);
-		    cn = nm;
-		}
-		return(r);
-	    }
-
-	    public Tex tex() {
-		return(text().tex());
-	    }
-
-	    public Coord sz() {
-		if(r == null)
-		    return(text().sz());
-		else
-		    return(r.sz());
+		String nm = (b == null) ? "???" : b.name;
+		return(() -> fnd.render(RichText.Parser.quote(String.format("%s: %s", nm, text)), w, TextAttribute.FOREGROUND, col));
 	    }
 	}
 
-	public class MyMessage extends SimpleMessage {
-	    public MyMessage(String text, int w) {
-		super(text, new Color(192, 192, 255), w);
+	public static class MyMessage extends SimpleMessage {
+	    public static final Color col = new Color(192, 192, 255);
+
+	    public MyMessage(String text) {
+		super(text, col);
 	    }
 	}
 
@@ -731,7 +737,7 @@ public class ChatUI extends Widget {
 	    this.name = name;
 	    this.urgency = urgency;
 	}
-	
+
 	private float colseq = 0;
 	private Color nextcol() {
 	    return(new Color(Color.HSBtoRGB(colseq = ((colseq + (float)Math.sqrt(2)) % 1.0f), 0.5f, 1.0f)));
@@ -751,9 +757,9 @@ public class ChatUI extends Widget {
 		Integer from = (Integer)args[0];
 		String line = (String)args[1];
 		if(from == null) {
-		    append(new MyMessage(line, iw()));
+		    append(new MyMessage(line));
 		} else {
-		    Message cmsg = new NamedMessage(from, line, fromcolor(from), iw());
+		    Message cmsg = new NamedMessage(from, line, fromcolor(from));
 		    append(cmsg);
 		    if(urgency > 0)
 			notify(cmsg, urgency);
@@ -762,7 +768,7 @@ public class ChatUI extends Widget {
 		super.uimsg(msg, args);
 	    }
 	}
-	
+
 	public String name() {
 	    return(name);
 	}
@@ -785,9 +791,9 @@ public class ChatUI extends Widget {
 			col = pm.col;
 		}
 		if(from == null) {
-		    append(new MyMessage(line, iw()));
+		    append(new MyMessage(line));
 		} else {
-		    Message cmsg = new NamedMessage(from, line, Utils.blendcol(col, Color.WHITE, 0.5), iw());
+		    Message cmsg = new NamedMessage(from, line, Utils.blendcol(col, Color.WHITE, 0.5));
 		    append(cmsg);
 		    if(urgency > 0)
 			notify(cmsg, urgency);
@@ -801,15 +807,19 @@ public class ChatUI extends Widget {
     public static class PrivChat extends EntryChannel {
 	private final int other;
 	
-	public class InMessage extends SimpleMessage {
-	    public InMessage(String text, int w) {
-		super(text, new Color(255, 128, 128, 255), w);
+	public static class InMessage extends SimpleMessage {
+	    public static final Color col = new Color(255, 128, 128, 255);
+
+	    public InMessage(String text) {
+		super(text, col);
 	    }
 	}
 
-	public class OutMessage extends SimpleMessage {
-	    public OutMessage(String text, int w) {
-		super(text, new Color(128, 128, 255, 255), w);
+	public static class OutMessage extends SimpleMessage {
+	    public static final Color col = new Color(128, 128, 255, 255);
+
+	    public OutMessage(String text) {
+		super(text, col);
 	    }
 	}
 
@@ -823,15 +833,15 @@ public class ChatUI extends Widget {
 		String t = (String)args[0];
 		String line = (String)args[1];
 		if(t.equals("in")) {
-		    Message cmsg = new InMessage(line, iw());
+		    Message cmsg = new InMessage(line);
 		    append(cmsg);
 		    notify(cmsg, 3);
 		} else if(t.equals("out")) {
-		    append(new OutMessage(line, iw()));
+		    append(new OutMessage(line));
 		}
 	    } else if(msg == "err") {
 		String err = (String)args[0];
-		Message cmsg = new SimpleMessage(err, Color.RED, iw());
+		Message cmsg = new SimpleMessage(err, Color.RED);
 		append(cmsg);
 		notify(cmsg, 3);
 	    } else {
@@ -1116,12 +1126,12 @@ public class ChatUI extends Widget {
     private class Notification {
 	public final Channel chan;
 	public final Text chnm;
-	public final Channel.Message msg;
+	public final Channel.RenderedMessage rm;
 	public final double time = Utils.ntime();
 	
-	private Notification(Channel chan, Channel.Message msg) {
+	private Notification(Channel chan, Channel.RenderedMessage rm) {
 	    this.chan = chan;
-	    this.msg = msg;
+	    this.rm = rm;
 	    this.chnm = chansel.nmrender(chan.name(), Color.BLACK);
 	}
     }
@@ -1159,10 +1169,10 @@ public class ChatUI extends Widget {
 		    i.remove();
 		    continue;
 		}
-		if((c.y -= n.msg.sz().y) < br.y - h)
+		if((c.y -= n.rm.h()) < br.y - h)
 		    break;
 		g.image(n.chnm.tex(), c, br.sub(0, h), br.add(selw - UI.scale(10), 0));
-		g.image(n.msg.tex(), c.add(selw, 0));
+		g.image(n.rm.text().tex(), c.add(selw, 0));
 	    }
 	}
     }
@@ -1190,7 +1200,7 @@ public class ChatUI extends Widget {
     private static final Resource notifsfx = Resource.local().loadwait("sfx/hud/chat");
     public void notify(Channel chan, Channel.Message msg) {
 	synchronized(notifs) {
-	    notifs.addFirst(new Notification(chan, msg));
+	    // notifs.addFirst(new Notification(chan, msg));
 	}
 	ui.sfx(notifsfx);
     }
