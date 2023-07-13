@@ -1036,7 +1036,7 @@ public class ChatUI extends Widget {
 	private final int iconsz = UI.scale(16), ellw = tf.strsize("...").x, maxnmw = selw - iconsz;
 	private int ts = 0;
 	private double ds = 0;
-	
+
 	private Text namedeco(String name, BufferedImage img, Color col) {
 	    PUtils.tilemod(img.getRaster(), ctex.getRaster(), Coord.z);
 	    img = PUtils.rasterimg(PUtils.blurmask2(img.getRaster(), 1, 1, col));
@@ -1053,7 +1053,7 @@ public class ChatUI extends Widget {
 	    public Tex ricon;
 	    private int urgency = 0;
 	    private Resource.Image icon;
-	    
+
 	    private DarkChannel(Channel chan) {
 		this.chan = chan;
 	    }
@@ -1089,17 +1089,17 @@ public class ChatUI extends Widget {
 		return(ricon);
 	    }
 	}
-	
+
 	public Selector(Coord sz) {
 	    super(sz);
 	}
-	
+
 	private void add(Channel chan) {
 	    synchronized(chls) {
 		chls.add(new DarkChannel(chan));
 	    }
 	}
-	
+
 	private void rm(Channel chan) {
 	    synchronized(chls) {
 		for(Iterator<DarkChannel> i = chls.iterator(); i.hasNext();) {
@@ -1109,7 +1109,7 @@ public class ChatUI extends Widget {
 		}
 	    }
 	}
-	
+
 	public void draw(GOut g) {
 	    int ds = (int)Math.round(this.ds);
 	    synchronized(chls) {
@@ -1137,7 +1137,7 @@ public class ChatUI extends Widget {
 		}
 	    }
 	}
-	
+
 	public void tick(double dt) {
 	    ds = ts + (Math.pow(2, -dt * 20) * (ds - ts));
 	}
@@ -1157,7 +1157,7 @@ public class ChatUI extends Widget {
 	    }
 	    return(false);
 	}
-	
+
 	public boolean down() {
 	    for(Iterator<DarkChannel> i = chls.iterator(); i.hasNext();) {
 		DarkChannel ch = i.next();
@@ -1172,7 +1172,7 @@ public class ChatUI extends Widget {
 	    }
 	    return(false);
 	}
-	
+
 	private Channel bypos(Coord c) {
 	    int ds = (int)Math.round(this.ds);
 	    int i = (c.y + ds) / offset;
@@ -1189,7 +1189,7 @@ public class ChatUI extends Widget {
 	    }
 	    return(true);
 	}
-	
+
 	private int clips(int s) {
 	    int maxh = (chls.size() * offset) - sz.y - chandiv.sz().y;
 	    return(Math.max(Math.min(s, maxh), 0));
@@ -1207,7 +1207,7 @@ public class ChatUI extends Widget {
 	    return(true);
 	}
     }
-    
+
     public void select(Channel chan, boolean focus) {
 	Channel prev = sel;
 	sel = chan;
@@ -1228,7 +1228,7 @@ public class ChatUI extends Widget {
 	public final Channel.Message msg;
 	public final Text chnm, rmsg;
 	public final double time = Utils.ntime();
-	
+
 	private Notification(Channel chan, Channel.Message msg) {
 	    this.chan = chan;
 	    this.msg = msg;
@@ -1357,7 +1357,7 @@ public class ChatUI extends Widget {
     public void resize(int w) {
 	resize(new Coord(Math.max(w, selw + marg.x + UI.scale(10) + marg.x), sz.y));
     }
-    
+
     public void move(Coord base) {
 	this.c = (this.base = base).add(0, visible ? -sz.y : 0);
     }
