@@ -45,7 +45,6 @@ public class ChatUI extends Widget {
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
     public static final int selw = UI.scale(130);
     public static final Coord marg = UI.scale(new Coord(9, 9));
-    public static final int offset = UI.scale(28);
     public static final Color[] urgcols = new Color[] {
 	null,
 	new Color(0, 128, 255),
@@ -1004,8 +1003,8 @@ public class ChatUI extends Widget {
 	    chan.c = chansel.c.add(chansel.sz.x, 0);
 	    chan.resize(sz.x - marg.x - chan.c.x, sz.y - chan.c.y);
 	    super.add(w);
-	    select(chan, false);
 	    chansel.add(chan);
+	    select(chan, false);
 	    return(w);
 	} else {
 	    return(super.add(w));
@@ -1034,6 +1033,7 @@ public class ChatUI extends Widget {
 	};
 	private final List<DarkChannel> chls = new ArrayList<DarkChannel>();
 	private final int iconsz = UI.scale(16), ellw = tf.strsize("...").x, maxnmw = selw - iconsz;
+	private final int offset = chandiv.sz().y + chanseld.sz().y;
 	private int ts = 0;
 	private double ds = 0;
 
@@ -1045,6 +1045,24 @@ public class ChatUI extends Widget {
 
 	public Text nmrender(String name, Color col) {
 	    return(namedeco(name, tf.render(name).img, col));
+	}
+
+	public int chidx(Channel chan) {
+	    for(int i = 0; i < chls.size(); i++) {
+		if(chls.get(i).chan == chan)
+		    return(i);
+	    }
+	    return(-1);
+	}
+
+	public void resize(Coord sz) {
+	    int si = chidx(sel);
+	    boolean fit = (((si * offset) - ts) >= 0) && (((si * offset) - ts + chanseld.sz().y) <= this.sz.y);
+	    super.resize(sz);
+	    ds = clips((int)Math.round(ds));
+	    ts = clips(ts);
+	    if(fit)
+		show(si);
 	}
 
 	private class DarkChannel {
@@ -1124,7 +1142,7 @@ public class ChatUI extends Widget {
 		    try {
 			icon = ch.ricon();
 		    } catch(Loading l) {}
-		    int my = y + UI.scale(8);
+		    int my = y + (chanseld.sz().y / 2) - UI.scale(1);
 		    if(icon == null) {
 			g.aimage(name, Coord.of(sz.x / 2, my), 0.5, 0.5);
 		    } else {
@@ -1133,13 +1151,27 @@ public class ChatUI extends Widget {
 			g.aimage(icon, Coord.of(x, my), 0.0, 0.5); x += icon.sz().x;
 			g.aimage(name, Coord.of(x, my), 0.0, 0.5);
 		    }
-		    g.image(chandiv, Coord.of(0, y + UI.scale(18)));
+		    g.image(chandiv, Coord.of(0, y + chanseld.sz().y));
 		}
 	    }
 	}
 
 	public void tick(double dt) {
 	    ds = ts + (Math.pow(2, -dt * 20) * (ds - ts));
+	}
+
+	public void show(int si) {
+	    int ty = si * offset;
+	    if(ty - ts + chanseld.sz().y > sz.y)
+		ts = ty + chanseld.sz().y - sz.y;
+	    else if(ty - ts < 0)
+		ts = ty;
+	}
+
+	public void show(Channel chan) {
+	    int si = chidx(chan);
+	    if(si >= 0)
+		show(si);
 	}
 
 	public boolean up() {
@@ -1214,6 +1246,7 @@ public class ChatUI extends Widget {
 	if(prev != null)
 	    prev.hide();
 	sel.show();
+	chansel.show(chan);
 	resize(sz);
 	if(focus || hasfocus)
 	    setfocus(chan);
