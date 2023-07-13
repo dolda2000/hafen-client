@@ -695,6 +695,10 @@ public class ChatUI extends Widget {
 
 	public abstract String name();
 
+	public boolean selmousedown(Coord c, int btn) {return(false);}
+	public boolean selmouseup(Coord c, int btn) {return(false);}
+	public boolean selclicked(Coord c, int btn) {return(false);}
+
 	private Indir<Resource> iconres = null;
 	public Channel icon(Indir<Resource> res) {iconres = res; return(this);}
 	public Resource.Image icon() {
@@ -1052,6 +1056,7 @@ public class ChatUI extends Widget {
 	private final int offset = chandiv.sz().y + chanseld.sz().y;
 	private int ts = 0;
 	private double ds = 0;
+	private Channel cstart;
 
 	private Text namedeco(String name, BufferedImage img, Color col) {
 	    PUtils.tilemod(img.getRaster(), ctex.getRaster(), Coord.z);
@@ -1230,11 +1235,28 @@ public class ChatUI extends Widget {
 	}
 
 	public boolean mousedown(Coord c, int button) {
-	    if(button == 1) {
-		Channel chan = bypos(c);
-		if(chan != null)
+	    Channel chan = bypos(c);
+	    cstart = chan;
+	    if(chan != null) {
+		if(button == 1) {
 		    select(chan);
+		} else {
+		    chan.selmousedown(c, button);
+		}
 	    }
+	    return(true);
+	}
+
+	public boolean mouseup(Coord c, int button) {
+	    Channel chan = bypos(c);
+	    if(chan != null) {
+		if(button != 1) {
+		    chan.selmouseup(c, button);
+		    if(cstart == chan)
+			chan.selclicked(c, button);
+		}
+	    }
+	    cstart = null;
 	    return(true);
 	}
 
