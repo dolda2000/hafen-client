@@ -1110,10 +1110,11 @@ public class ChatUI extends Widget {
 	}
 	
 	public void draw(GOut g) {
-	    int i = s;
-	    int y = 0;
 	    synchronized(chls) {
-		while(i < chls.size()) {
+		for(int i = s / offset; i < chls.size(); i++) {
+		    int y = i * offset - s;
+		    if(y >= sz.y)
+			break;
 		    DarkChannel ch = chls.get(i);
 		    if(ch.chan == sel)
 			g.image(chanseld, Coord.of(0, y));
@@ -1131,10 +1132,6 @@ public class ChatUI extends Widget {
 			g.aimage(name, Coord.of(x, my), 0.0, 0.5);
 		    }
 		    g.image(chandiv, Coord.of(0, y + UI.scale(18)));
-		    y += offset;
-		    if(y >= sz.y)
-			break;
-		    i++;
 		}
 	    }
 	}
@@ -1171,7 +1168,7 @@ public class ChatUI extends Widget {
 	}
 	
 	private Channel bypos(Coord c) {
-	    int i = (c.y / offset) + s;
+	    int i = (c.y + s) / offset;
 	    if((i >= 0) && (i < chls.size()))
 		return(chls.get(i).chan);
 	    return(null);
@@ -1186,13 +1183,14 @@ public class ChatUI extends Widget {
 	    return(true);
 	}
 	
+	private int clips(int s) {
+	    int maxh = (chls.size() * offset) - sz.y - chandiv.sz().y;
+	    return(Math.max(Math.min(s, maxh), 0));
+	}
+
 	public boolean mousewheel(Coord c, int amount) {
 	    if(!ui.modshift) {
-		s += amount;
-		if(s >= chls.size() - (sz.y / offset))
-		    s = chls.size() - (sz.y / offset);
-		if(s < 0)
-		    s = 0;
+		s = clips(s + (amount * UI.scale(40)));
 	    } else {
 		if(amount < 0)
 		    up();
