@@ -1229,7 +1229,7 @@ public class ChatUI extends Widget {
 	private Notification(Channel chan, Channel.Message msg) {
 	    this.chan = chan;
 	    this.msg = msg;
-	    this.chnm = chansel.nmrender(chan.name(), Color.BLACK);
+	    this.chnm = fnd.render(chan.name(), 0, TextAttribute.FOREGROUND, Color.WHITE);
 	    this.rmsg = msg.render(sz.x - selw).get();
 	}
     }
@@ -1267,10 +1267,19 @@ public class ChatUI extends Widget {
 		    i.remove();
 		    continue;
 		}
-		if((c.y -= n.rmsg.sz().y) < br.y - h)
+		int mh = Math.max(n.chnm.sz().y, n.rmsg.sz().y);
+		if((c.y -= mh) < br.y - h)
 		    break;
-		g.image(n.chnm.tex(), c, br.sub(0, h), br.add(selw - UI.scale(10), 0));
-		g.image(n.rmsg.tex(), c.add(selw, 0));
+		g.chcolor(0, 0, 0, 192);
+		g.frect2(c.add(selw - UI.scale(12) - n.chnm.sz().x, 0),
+			 c.add(selw + n.rmsg.sz().x + UI.scale(2), mh));
+		g.chcolor(192, 192, 192, 255);
+		g.line(c.add(selw - UI.scale(5), 1), c.add(selw - UI.scale(5), mh - 1), 1);
+		g.chcolor();
+		g.image(n.chnm.tex(),
+			c.add(selw - UI.scale(10) - n.chnm.sz().x, (mh - n.chnm.sz().y) / 2),
+			br.sub(0, h), br.add(selw - UI.scale(10), 0));
+		g.image(n.rmsg.tex(), c.add(selw, (mh - n.rmsg.sz().y) / 2));
 	    }
 	}
     }
