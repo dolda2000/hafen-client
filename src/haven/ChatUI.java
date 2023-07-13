@@ -242,7 +242,7 @@ public class ChatUI extends Widget {
 		cb = null;
 	}
 
-	public void append(Message msg) {
+	public void append(Message msg, int urgency) {
 	    synchronized(rmsgs) {
 		RenderedMessage rm = new RenderedMessage(msg, rmsgs.size(), iw());
 		if(rmsgs.isEmpty()) {
@@ -257,6 +257,12 @@ public class ChatUI extends Widget {
 		if(b)
 		    sb.val = sb.max;
 	    }
+	    getparent(ChatUI.class).notify(this, msg, urgency);
+	    updurgency(Math.max(this.urgency, urgency));
+	}
+
+	public void append(Message msg) {
+	    append(msg, 0);
 	}
 
 	public void append(String line, Color col) {
@@ -392,9 +398,8 @@ public class ChatUI extends Widget {
 	    }
 	}
 
+	@Deprecated
 	public void notify(Message msg, int urgency) {
-	    getparent(ChatUI.class).notify(this, msg);
-	    updurgency(Math.max(this.urgency, urgency));
 	}
 
 	public static class CharPos {
@@ -762,11 +767,9 @@ public class ChatUI extends Widget {
 		Color col = null;
 		if(args.length > 1) col = (Color)args[1];
 		if(col == null) col = Color.WHITE;
-		int urgency = (args.length > 2)?(Integer)args[2]:0;
+		int urgency = (args.length > 2) ? (Integer)args[2] : 0;
 		Message cmsg = new SimpleMessage(line, col);
-		append(cmsg);
-		if(urgency > 0)
-		    notify(cmsg, urgency);
+		append(cmsg, urgency);
 	    } else {
 		super.uimsg(msg, args);
 	    }
@@ -857,12 +860,10 @@ public class ChatUI extends Widget {
 		Integer from = (Integer)args[0];
 		String line = (String)args[1];
 		if(from == null) {
-		    append(new MyMessage(line));
+		    append(new MyMessage(line), -1);
 		} else {
 		    Message cmsg = new NamedMessage(from, line, fromcolor(from));
-		    append(cmsg);
-		    if(urgency > 0)
-			notify(cmsg, urgency);
+		    append(cmsg, urgency);
 		}
 	    } else {
 		super.uimsg(msg, args);
@@ -891,12 +892,10 @@ public class ChatUI extends Widget {
 			col = pm.col;
 		}
 		if(from == null) {
-		    append(new MyMessage(line));
+		    append(new MyMessage(line), -1);
 		} else {
 		    Message cmsg = new NamedMessage(from, line, Utils.blendcol(col, Color.WHITE, 0.5));
-		    append(cmsg);
-		    if(urgency > 0)
-			notify(cmsg, urgency);
+		    append(cmsg, urgency);
 		}
 	    } else {
 		super.uimsg(msg, args);
@@ -934,16 +933,14 @@ public class ChatUI extends Widget {
 		String line = (String)args[1];
 		if(t.equals("in")) {
 		    Message cmsg = new InMessage(line);
-		    append(cmsg);
-		    notify(cmsg, 3);
+		    append(cmsg, 3);
 		} else if(t.equals("out")) {
-		    append(new OutMessage(line));
+		    append(new OutMessage(line), -1);
 		}
 	    } else if(msg == "err") {
 		String err = (String)args[0];
 		Message cmsg = new SimpleMessage(err, Color.RED);
-		append(cmsg);
-		notify(cmsg, 3);
+		append(cmsg, 3);
 	    } else {
 		super.uimsg(msg, args);
 	    }
@@ -1225,14 +1222,15 @@ public class ChatUI extends Widget {
 
     private class Notification {
 	public final Channel chan;
-	public final Text chnm;
-	public final Channel.RenderedMessage rm;
+	public final Channel.Message msg;
+	public final Text chnm, rmsg;
 	public final double time = Utils.ntime();
 	
-	private Notification(Channel chan, Channel.RenderedMessage rm) {
+	private Notification(Channel chan, Channel.Message msg) {
 	    this.chan = chan;
-	    this.rm = rm;
+	    this.msg = msg;
 	    this.chnm = chansel.nmrender(chan.name(), Color.BLACK);
+	    this.rmsg = msg.render(sz.x - selw).get();
 	}
     }
 
@@ -1269,10 +1267,10 @@ public class ChatUI extends Widget {
 		    i.remove();
 		    continue;
 		}
-		if((c.y -= n.rm.h()) < br.y - h)
+		if((c.y -= n.rmsg.sz().y) < br.y - h)
 		    break;
 		g.image(n.chnm.tex(), c, br.sub(0, h), br.add(selw - UI.scale(10), 0));
-		g.image(n.rm.text().tex(), c.add(selw, 0));
+		g.image(n.rmsg.tex(), c.add(selw, 0));
 	    }
 	}
     }
@@ -1298,11 +1296,13 @@ public class ChatUI extends Widget {
     }
 
     private static final Resource notifsfx = Resource.local().loadwait("sfx/hud/chat");
-    public void notify(Channel chan, Channel.Message msg) {
-	synchronized(notifs) {
-	    // notifs.addFirst(new Notification(chan, msg));
+    public void notify(Channel chan, Channel.Message msg, int urgency) {
+	if(urgency > 0) {
+	    synchronized(notifs) {
+		notifs.addFirst(new Notification(chan, msg));
+	    }
+	    ui.sfx(notifsfx);
 	}
-	ui.sfx(notifsfx);
     }
 
     private class Spring extends NormAnim {
