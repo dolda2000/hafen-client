@@ -816,7 +816,7 @@ public class ChatUI extends Widget {
 		return(new Rendered(w, nm()));
 	    }
 
-	    @Override public boolean valid(Indir<Text> data) {
+	    public boolean valid(Indir<Text> data) {
 		return(((Rendered)data).nm.equals(nm()));
 	    }
 	}
