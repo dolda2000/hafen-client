@@ -821,11 +821,9 @@ public class ChatUI extends Widget {
 	    }
 	}
 
-	public static class MyMessage extends SimpleMessage {
-	    public static final Color col = new Color(192, 192, 255);
-
+	public class MyMessage extends SimpleMessage {
 	    public MyMessage(String text) {
-		super(text, col);
+		super(text, new Color(192, 192, 255));
 	    }
 
 	    @Deprecated
@@ -903,19 +901,15 @@ public class ChatUI extends Widget {
     public static class PrivChat extends EntryChannel {
 	private final int other;
 	
-	public static class InMessage extends SimpleMessage {
-	    public static final Color col = new Color(255, 128, 128, 255);
-
+	public class InMessage extends SimpleMessage {
 	    public InMessage(String text) {
-		super(text, col);
+		super(text, new Color(255, 128, 128, 255));
 	    }
 	}
 
-	public static class OutMessage extends SimpleMessage {
-	    public static final Color col = new Color(128, 128, 255, 255);
-
+	public class OutMessage extends SimpleMessage {
 	    public OutMessage(String text) {
-		super(text, col);
+		super(text, new Color(128, 128, 255, 255));
 	    }
 	}
 
