@@ -1034,7 +1034,8 @@ public class ChatUI extends Widget {
 	};
 	private final List<DarkChannel> chls = new ArrayList<DarkChannel>();
 	private final int iconsz = UI.scale(16), ellw = tf.strsize("...").x, maxnmw = selw - iconsz;
-	private int s = 0;
+	private int ts = 0;
+	private double ds = 0;
 	
 	private Text namedeco(String name, BufferedImage img, Color col) {
 	    PUtils.tilemod(img.getRaster(), ctex.getRaster(), Coord.z);
@@ -1110,9 +1111,10 @@ public class ChatUI extends Widget {
 	}
 	
 	public void draw(GOut g) {
+	    int ds = (int)Math.round(this.ds);
 	    synchronized(chls) {
-		for(int i = s / offset; i < chls.size(); i++) {
-		    int y = i * offset - s;
+		for(int i = ds / offset; i < chls.size(); i++) {
+		    int y = i * offset - ds;
 		    if(y >= sz.y)
 			break;
 		    DarkChannel ch = chls.get(i);
@@ -1136,6 +1138,10 @@ public class ChatUI extends Widget {
 	    }
 	}
 	
+	public void tick(double dt) {
+	    ds = ts + (Math.pow(2, -dt * 20) * (ds - ts));
+	}
+
 	public boolean up() {
 	    Channel prev = null;
 	    for(DarkChannel ch : chls) {
@@ -1168,7 +1174,8 @@ public class ChatUI extends Widget {
 	}
 	
 	private Channel bypos(Coord c) {
-	    int i = (c.y + s) / offset;
+	    int ds = (int)Math.round(this.ds);
+	    int i = (c.y + ds) / offset;
 	    if((i >= 0) && (i < chls.size()))
 		return(chls.get(i).chan);
 	    return(null);
@@ -1190,7 +1197,7 @@ public class ChatUI extends Widget {
 
 	public boolean mousewheel(Coord c, int amount) {
 	    if(!ui.modshift) {
-		s = clips(s + (amount * UI.scale(40)));
+		ts = clips(ts + (amount * UI.scale(40)));
 	    } else {
 		if(amount < 0)
 		    up();
