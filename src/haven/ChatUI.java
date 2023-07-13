@@ -60,13 +60,11 @@ public class ChatUI extends Widget {
     private final LinkedList<Notification> notifs = new LinkedList<Notification>();
     private UI.Grab qgrab;
 
-    public ChatUI(int w, int h) {
-	super(new Coord(w, h));
+    public ChatUI() {
+	super(Coord.of(0, UI.scale(Math.max(minh, Utils.getprefi("chatsize", minh)))));
 	chansel = add(new Selector(new Coord(selw, sz.y - marg.y)), marg);
 	setfocusctl(true);
 	setcanfocus(true);
-	if(h < 1)
-	    hide();
     }
 
     protected void added() {
@@ -1315,17 +1313,17 @@ public class ChatUI extends Widget {
     }
 
     private class Spring extends NormAnim {
-	final int oh = sz.y, nh;
-	Spring(int nh) {
+	final int oy = base.y - c.y, ny;
+	Spring(int ny) {
 	    super(0.15);
-	    this.nh = nh;
+	    this.ny = ny;
 	    show();
 	}
 
 	public void ntick(double a) {
 	    double b = Math.cos(Math.PI * 2.5 * a) * Math.exp(-5 * a);
-	    resize(sz.x, nh + (int)((nh - oh) * b));
-	    if((a == 1.0) && (nh == 0)) {
+	    c = Coord.of(c.x, base.y + ny + (int)((ny - oy) * b));
+	    if((a == 1.0) && (ny >= 0)) {
 		hide();
 	    }
 	}
@@ -1333,21 +1331,22 @@ public class ChatUI extends Widget {
 
     public void resize(Coord sz) {
 	super.resize(sz);
-	this.c = base.add(0, -this.sz.y);
+	if(visible)
+	    this.c = base.add(0, -this.sz.y);
 	chansel.resize(new Coord(selw, this.sz.y - marg.y));
 	if(sel != null)
 	    sel.resize(new Coord(this.sz.x - marg.x - sel.c.x, this.sz.y - sel.c.y));
     }
 
-    public int targeth = sz.y;
-    public void sresize(int h) {
+    public boolean targetshow = false;
+    public void sshow(boolean show) {
 	clearanims(Spring.class);
-	new Spring(targeth = h);
+	new Spring(show ? -sz.y : 0);
+	targetshow = show;
     }
 
     public void hresize(int h) {
 	clearanims(Spring.class);
-	resize(sz.x, targeth = h);
     }
 
     public void resize(int w) {
@@ -1355,12 +1354,22 @@ public class ChatUI extends Widget {
     }
     
     public void move(Coord base) {
-	this.c = (this.base = base).add(0, -sz.y);
+	this.c = (this.base = base).add(0, visible ? -sz.y : 0);
     }
 
     public void expand() {
 	if(!visible)
-	    sresize(savedh);
+	    sshow(true);
+    }
+
+    public void show() {
+	super.show();
+	targetshow = true;
+    }
+
+    public void hide() {
+	super.hide();
+	targetshow = false;
     }
 
     private class QuickLine implements ReadLine.Owner {
@@ -1396,7 +1405,6 @@ public class ChatUI extends Widget {
     private UI.Grab dm = null;
     private Coord doff;
     private static final int minh = 111;
-    public int savedh = UI.scale(Math.max(minh, Utils.getprefi("chatsize", minh)));
     public boolean mousedown(Coord c, int button) {
 	int bmfx = (sz.x - bmf.sz().x) / 2;
 	if((button == 1) && (c.y < bmf.sz().y) && (c.x >= bmfx) && (c.x <= (bmfx + bmf.sz().x))) {
@@ -1410,7 +1418,7 @@ public class ChatUI extends Widget {
 
     public void mousemove(Coord c) {
 	if(dm != null) {
-	    resize(sz.x, savedh = Math.max(UI.scale(minh), sz.y + doff.y - c.y));
+	    resize(sz.x, Math.max(UI.scale(minh), sz.y + doff.y - c.y));
 	} else {
 	    super.mousemove(c);
 	}
@@ -1420,7 +1428,7 @@ public class ChatUI extends Widget {
 	if(dm != null) {
 	    dm.remove();
 	    dm = null;
-	    Utils.setprefi("chatsize", UI.unscale(savedh));
+	    Utils.setprefi("chatsize", UI.unscale(sz.y));
 	    return(true);
 	} else {
 	    return(super.mouseup(c, button));
