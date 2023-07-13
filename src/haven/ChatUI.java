@@ -153,11 +153,15 @@ public class ChatUI extends Widget {
 	    public final double time = Utils.ntime();
 
 	    public abstract Indir<Text> render(int w);
+	    public boolean valid(Indir<Text> prev) {
+		return(true);
+	    }
 	}
 
 	public static class RenderedMessage {
 	    public final Message msg;
 	    public final int idx;
+	    private Indir<Text> data;
 	    private Text text;
 	    int w, y;
 
@@ -167,9 +171,15 @@ public class ChatUI extends Widget {
 		this.w = iw;
 	    }
 
+	    public Indir<Text> data() {
+		if(data == null)
+		    data = msg.render(w);
+		return(data);
+	    }
+
 	    public Text text() {
 		if(text == null)
-		    text = msg.render(w).get();
+		    text = data().get();
 		return(text);
 	    }
 
@@ -177,14 +187,30 @@ public class ChatUI extends Widget {
 		return(text().sz().y);
 	    }
 
-	    public void resize(int w) {
-		if(this.w == w)
-		    return;
-		this.w = w;
+	    public void invalidate() {
 		if(text != null) {
 		    text.dispose();
 		    text = null;
 		}
+		if(data != null) {
+		    if(data instanceof Disposable)
+			((Disposable)data).dispose();
+		    data = null;
+		}
+	    }
+
+	    public void resize(int w) {
+		if(this.w != w) {
+		    this.w = w;
+		    invalidate();
+		}
+	    }
+
+	    public boolean update() {
+		if((data == null) || msg.valid(data))
+		    return(false);
+		invalidate();
+		return(true);
 	    }
 	}
 
@@ -326,6 +352,8 @@ public class ChatUI extends Widget {
 			    rm.resize(w);
 			    upd = true;
 			}
+			if(rm.update())
+			    upd = true;
 			if((selstart != null) && (selend != null)) {
 			    if((rm.idx >= selstart.rm.idx) && (rm.idx <= selend.rm.idx))
 				drawsel(g, rm, rm.y - sy);
@@ -765,10 +793,31 @@ public class ChatUI extends Widget {
 		this.col = col;
 	    }
 
-	    public Indir<Text> render(int w) {
+	    public class Rendered implements Indir<Text> {
+		public final int w;
+		public final String nm;
+
+		public Rendered(int w, String nm) {
+		    this.w = w;
+		    this.nm = nm;
+		}
+
+		public Text get() {
+		    return(fnd.render(RichText.Parser.quote(String.format("%s: %s", nm, text)), w, TextAttribute.FOREGROUND, col));
+		}
+	    }
+
+	    private String nm() {
 		BuddyWnd.Buddy b = getparent(GameUI.class).buddies.find(from);
-		String nm = (b == null) ? "???" : b.name;
-		return(() -> fnd.render(RichText.Parser.quote(String.format("%s: %s", nm, text)), w, TextAttribute.FOREGROUND, col));
+		return((b == null) ? "???" : b.name);
+	    }
+
+	    public Indir<Text> render(int w) {
+		return(new Rendered(w, nm()));
+	    }
+
+	    @Override public boolean valid(Indir<Text> data) {
+		return(((Rendered)data).nm.equals(nm()));
 	    }
 	}
 
