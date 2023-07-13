@@ -153,6 +153,9 @@ public class ChatUI extends Widget {
 	    public boolean valid(Indir<Text> prev) {
 		return(true);
 	    }
+	    public boolean mousedown(Channel chan, CharPos pos, Coord c, int btn) {return(false);}
+	    public boolean mouseup(Channel chan, CharPos pos, Coord c, int btn) {return(false);}
+	    public boolean clicked(Channel chan, CharPos pos, Coord c, int btn) {return(false);}
 	}
 
 	public static class RenderedMessage {
@@ -427,6 +430,10 @@ public class ChatUI extends Widget {
 		CharPos o = (CharPos)oo;
 		return((o.rm == this.rm) && (o.part == this.part) && o.ch.equals(this.ch));
 	    }
+
+	    public String toString() {
+		return(String.format("#<charpos %s(%s) %s %s>", rm.msg, rm.idx, part, ch));
+	    }
 	}
 
 	public final Comparator<CharPos> poscmp = new Comparator<CharPos>() {
@@ -489,21 +496,27 @@ public class ChatUI extends Widget {
 	public boolean mousedown(Coord c, int btn) {
 	    if(super.mousedown(c, btn))
 		return(true);
+	    if(grab != null)
+		return(true);
+	    CharPos ch = charat(c);
+	    selorig = ch;
 	    if(btn == 1) {
 		selstart = selend = null;
-		CharPos ch = charat(c);
 		if(ch != null) {
-		    selorig = lasthit = ch;
+		    lasthit = ch;
 		    dragging = false;
 		    grab = ui.grabmouse(this);
 		}
 		return(true);
+	    } else {
+		if(ch != null)
+		    ch.rm.msg.mousedown(this, ch, c, btn);
 	    }
-	    return(false);
+	    return(true);
 	}
 
 	public void mousemove(Coord c) {
-	    if(selorig != null) {
+	    if(grab != null) {
 		CharPos ch = charat(c);
 		if((ch != null) && !ch.equals(lasthit)) {
 		    lasthit = ch;
@@ -594,18 +607,27 @@ public class ChatUI extends Widget {
 	}
 
 	public boolean mouseup(Coord c, int btn) {
+	    if(super.mouseup(c, btn))
+		return(true);
 	    if(btn == 1) {
-		if(selorig != null) {
+		if(grab != null) {
 		    if(selstart != null)
 			selected(selstart, selend);
 		    else
 			clicked(selorig);
 		    grab.remove();
-		    selorig = null;
+		    grab = null;
 		    dragging = false;
 		}
+	    } else {
+		CharPos ch = charat(c);
+		if(ch != null) {
+		    ch.rm.msg.mouseup(this, ch, c, btn);
+		    if((selorig != null) && ch.equals(selorig))
+			ch.rm.msg.clicked(this, ch, c, btn);
+		}
 	    }
-	    return(super.mouseup(c, btn));
+	    return(true);
 	}
 
 	public void select() {
