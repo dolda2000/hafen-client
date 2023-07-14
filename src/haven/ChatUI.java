@@ -158,11 +158,14 @@ public class ChatUI extends Widget {
 	    public boolean clicked(Channel chan, CharPos pos, Coord c, int btn) {return(false);}
 	}
 
-	public static class RenderedMessage {
+	private RenderedMessage soldest = null, snewest = null;
+	public class RenderedMessage {
 	    public final Message msg;
 	    public final int idx;
 	    private Indir<Text> data;
 	    private Text text;
+	    RenderedMessage snext = null, sprev = null;
+	    double lseen = 0;
 	    int w, y;
 
 	    public RenderedMessage(Message msg, int idx, int iw) {
@@ -177,26 +180,65 @@ public class ChatUI extends Widget {
 		return(data);
 	    }
 
+	    private void slink() {
+		synchronized(Channel.this) {
+		    sprev = null;
+		    snext = snewest;
+		    if(soldest == null)
+			soldest = this;
+		    if(snewest != null)
+			snewest.sprev = this;
+		    snewest = this;
+		}
+	    }
+
+	    private void sunlink() {
+		synchronized(Channel.this) {
+		    if(sprev != null)
+			sprev.snext = snext;
+		    if(snext != null)
+			snext.sprev = sprev;
+		    if(snewest == this)
+			snewest = snext;
+		    if(soldest == this)
+			soldest = sprev;
+		}
+	    }
+
 	    public Text text() {
-		if(text == null)
+		lseen = ui.lasttick;
+		if(text == null) {
 		    text = data().get();
+		} else {
+		    sunlink();
+		}
+		slink();
 		return(text);
 	    }
 
+	    private Coord sz = null;
 	    public int h() {
-		return(text().sz().y);
+		if(sz == null)
+		    sz = text().sz();
+		return(sz.y);
 	    }
 
-	    public void invalidate() {
+	    public void clear() {
 		if(text != null) {
 		    text.dispose();
 		    text = null;
+		    sunlink();
 		}
+	    }
+
+	    public void invalidate() {
+		clear();
 		if(data != null) {
 		    if(data instanceof Disposable)
 			((Disposable)data).dispose();
 		    data = null;
 		}
+		sz = null;
 	    }
 
 	    public void resize(int w) {
@@ -211,6 +253,16 @@ public class ChatUI extends Widget {
 		    return(false);
 		invalidate();
 		return(true);
+	    }
+	}
+
+	private void trimunseen() {
+	    double now = ui.lasttick;
+	    while(true) {
+		RenderedMessage rm = soldest;
+		if((rm == null) || (now - rm.lseen < 10))
+		    break;
+		rm.clear();
 	    }
 	}
 
@@ -373,6 +425,7 @@ public class ChatUI extends Widget {
 	    }
 	    super.draw(g);
 	    updurgency(0);
+	    trimunseen();
 	}
 
 	public boolean mousewheel(Coord c, int amount) {
