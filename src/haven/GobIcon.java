@@ -538,7 +538,7 @@ public class GobIcon extends GAttrib {
 
     @OCache.DeltaType(OCache.OD_ICON)
     public static class $icon implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    int resid = msg.uint16();
 	    Indir<Resource> res;
 	    if(resid == 65535) {

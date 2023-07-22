@@ -39,7 +39,7 @@ public class Lumin extends GAttrib {
 
     @OCache.DeltaType(OCache.OD_LUMIN)
     public static class $lumin implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    Coord off = msg.coord();
 	    int sz = msg.uint16();
 	    int str = msg.uint8();

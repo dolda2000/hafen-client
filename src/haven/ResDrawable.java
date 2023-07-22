@@ -90,7 +90,7 @@ public class ResDrawable extends Drawable implements EquipTarget {
 
     @OCache.DeltaType(OCache.OD_RES)
     public static class $cres implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    int resid = msg.uint16();
 	    MessageBuf sdt = MessageBuf.nil;
 	    if((resid & 0x8000) != 0) {

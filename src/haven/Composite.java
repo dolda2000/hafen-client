@@ -172,7 +172,7 @@ public class Composite extends Drawable implements EquipTarget {
 
     @OCache.DeltaType(OCache.OD_COMPOSE)
     public static class $composite implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    Indir<Resource> base = OCache.Delta.getres(g, msg.uint16());
 	    Drawable dr = g.getattr(Drawable.class);
 	    Composite cmp = (dr instanceof Composite)?(Composite)dr:null;
@@ -185,7 +185,7 @@ public class Composite extends Drawable implements EquipTarget {
 
     @OCache.DeltaType(OCache.OD_CMPPOSE)
     public static class $cmppose implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    List<ResData> poses = null, tposes = null;
 	    int pfl = msg.uint8();
 	    int pseq = msg.uint8();
@@ -237,7 +237,7 @@ public class Composite extends Drawable implements EquipTarget {
 
     @OCache.DeltaType(OCache.OD_CMPMOD)
     public static class $cmpmod implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    List<Composited.MD> mod = new LinkedList<Composited.MD>();
 	    int mseq = 0;
 	    while(true) {
@@ -270,7 +270,7 @@ public class Composite extends Drawable implements EquipTarget {
 
     @OCache.DeltaType(OCache.OD_CMPEQU)
     public static class $cmpequ implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    List<Composited.ED> equ = new LinkedList<Composited.ED>();
 	    int eseq = 0;
 	    while(true) {
