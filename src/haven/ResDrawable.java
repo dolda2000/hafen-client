@@ -32,6 +32,7 @@ import haven.render.*;
 
 public class ResDrawable extends Drawable implements EquipTarget {
     public final Indir<Resource> res;
+    public final Resource rres;
     public final Sprite spr;
     MessageBuf sdt;
     // private double delay = 0; XXXRENDER
@@ -40,7 +41,8 @@ public class ResDrawable extends Drawable implements EquipTarget {
 	super(gob);
 	this.res = res;
 	this.sdt = new MessageBuf(sdt);
-	spr = Sprite.create(gob, res.get(), this.sdt.clone());
+	this.rres = res.get();
+	spr = Sprite.create(gob, rres, this.sdt.clone());
     }
 
     public ResDrawable(Gob gob, Resource res) {
@@ -66,7 +68,7 @@ public class ResDrawable extends Drawable implements EquipTarget {
     }
 
     public Resource getres() {
-	return(res.get());
+	return(rres);
     }
 
     public Skeleton.Pose getpose() {
@@ -83,8 +85,14 @@ public class ResDrawable extends Drawable implements EquipTarget {
     }
 
     public Supplier<? extends Pipe.Op> eqpoint(String nm, Message dat) {
-	if(spr instanceof EquipTarget)
-	    return(((EquipTarget)spr).eqpoint(nm, dat));
+	if(spr instanceof EquipTarget) {
+	    Supplier<? extends Pipe.Op> ret = ((EquipTarget)spr).eqpoint(nm, dat);
+	    if(ret != null)
+		return(ret);
+	}
+	Skeleton.BoneOffset bo = rres.layer(Skeleton.BoneOffset.class, nm);
+	if(bo != null)
+	    return(bo.from(null));
 	return(null);
     }
 

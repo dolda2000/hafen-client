@@ -300,6 +300,9 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
     }
 
     public Supplier<Pipe.Op> eqpoint(String nm, Message dat) {
+	Skeleton.BoneOffset bo = res.layer(Skeleton.BoneOffset.class, nm);
+	if(bo != null)
+	    return(bo.from(pose));
 	return(pose.eqpoint(nm, dat));
     }
 
