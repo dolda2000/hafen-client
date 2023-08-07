@@ -254,7 +254,7 @@ public class Session implements Resource.Resolver {
 			    len = msg.uint16();
 			}
 		    }
-		    PMessage attr = new PMessage(type, msg, len);
+		    OCache.AttrDelta attr = new OCache.AttrDelta(delta, type, msg, len);
 		    if(type == OCache.OD_REM)
 			delta.rem = true;
 		    else

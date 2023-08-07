@@ -67,7 +67,7 @@ public class Homing extends Moving {
 
     @OCache.DeltaType(OCache.OD_HOMING)
     public static class $homing implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    long oid = msg.uint32();
 	    if(oid == 0xffffffffl) {
 		g.delattr(Homing.class);

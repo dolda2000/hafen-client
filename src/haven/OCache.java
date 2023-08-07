@@ -231,7 +231,7 @@ public class OCache implements Iterable<Gob> {
     }
 
     public interface Delta {
-	public void apply(Gob gob, Message msg);
+	public void apply(Gob gob, AttrDelta msg);
 
 	public static Indir<Resource> getres(Gob gob, int id) {
 	    return(gob.glob.sess.getres(id));
@@ -261,7 +261,7 @@ public class OCache implements Iterable<Gob> {
 
     @DeltaType(OD_MOVE)
     public static class $move implements Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, AttrDelta msg) {
 	    Coord2d c = msg.coord().mul(posres);
 	    double a = (msg.uint16() / 65536.0) * Math.PI * 2;
 	    g.move(c, a);
@@ -270,7 +270,7 @@ public class OCache implements Iterable<Gob> {
 
     @DeltaType(OD_OVERLAY)
     public static class $overlay implements Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, AttrDelta msg) {
 	    int olidf = msg.int32();
 	    boolean prs = (olidf & 1) != 0;
 	    int olid = olidf >>> 1;
@@ -320,7 +320,7 @@ public class OCache implements Iterable<Gob> {
 
     @DeltaType(OD_RESATTR)
     public static class $resattr implements Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, AttrDelta msg) {
 	    Indir<Resource> resid = Delta.getres(g, msg.uint16());
 	    int len = msg.uint8();
 	    Message dat = (len > 0) ? new MessageBuf(msg.bytes(len)) : null;
@@ -330,7 +330,7 @@ public class OCache implements Iterable<Gob> {
 
     public class GobInfo {
 	public final long id;
-	public final LinkedList<PMessage> pending = new LinkedList<>();
+	public final LinkedList<AttrDelta> pending = new LinkedList<>();
 	public int frame;
 	public boolean nremoved, added, gremoved, virtual;
 	public Gob gob;
@@ -359,7 +359,7 @@ public class OCache implements Iterable<Gob> {
 		    }
 		}
 		while(true) {
-		    PMessage d;
+		    AttrDelta d;
 		    synchronized(this) {
 			if((d = pending.peek()) == null)
 			    break;
@@ -436,7 +436,7 @@ public class OCache implements Iterable<Gob> {
     public static class ObjDelta {
 	public int fl, frame;
 	public long id;
-	public final List<PMessage> attrs = new LinkedList<>();
+	public final List<AttrDelta> attrs = new LinkedList<>();
 	public boolean rem = false;
 
 	public ObjDelta(int fl, long id, int frame) {
@@ -445,6 +445,24 @@ public class OCache implements Iterable<Gob> {
 	    this.frame = frame;
 	}
 	public ObjDelta() {}
+    }
+
+    public static class AttrDelta extends PMessage {
+	public boolean old;
+
+	public AttrDelta(ObjDelta od, int type, Message blob, int len) {
+	    super(type, blob, len);
+	    this.old = ((od.fl & 4) != 0);
+	}
+
+	public AttrDelta(AttrDelta from) {
+	    super(from);
+	    this.old = from.old;
+	}
+
+	public AttrDelta clone() {
+	    return(new AttrDelta(this));
+	}
     }
 
     public GobInfo receive(ObjDelta delta) {

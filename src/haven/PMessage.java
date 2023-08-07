@@ -50,4 +50,8 @@ public class PMessage extends MessageBuf {
     public PMessage(PMessage msg) {
 	this(msg.type, msg);
     }
+
+    public PMessage clone() {
+	return(new PMessage(this));
+    }
 }
