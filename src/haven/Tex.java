@@ -58,29 +58,32 @@ public interface Tex extends Disposable {
 	Coord dul = new Coord(c);
 	Coord dbr = new Coord(c.add(dsz));
 	Coord tsz = sz();
-	Coord tul = new Coord(0, 0);
-	Coord tbr = new Coord(tsz);
+	float tl = 0, tu = 0, tr = tsz.x, tb = tsz.y;
 	if(dul.x < cul.x) {
-	    int pd = cul.x - dul.x;
+	    tl = ((float)(cul.x - dul.x) / dsz.x) * tsz.x;
 	    dul.x = cul.x;
-	    tul.x = (pd * tsz.x) / dsz.x;
 	}
 	if(dul.y < cul.y) {
-	    int pd = cul.y - dul.y;
+	    tu = ((float)(cul.y - dul.y) / dsz.y) * tsz.y;
 	    dul.y = cul.y;
-	    tul.y = (pd * tsz.y) / dsz.y;
 	}
 	if(dbr.x > cbr.x) {
-	    int pd = dbr.x - cbr.x;
+	    tr -= ((float)(dbr.x - cbr.x) / dsz.x) * tsz.x;
 	    dbr.x = cbr.x;
-	    tbr.x -= (pd * tsz.x) / dsz.x;
 	}
 	if(dbr.y > cbr.y) {
-	    int pd = dbr.y - cbr.y;
+	    tb -= ((float)(dbr.y - cbr.y) / dsz.y) * tsz.y;
 	    dbr.y = cbr.y;
-	    tbr.y -= (pd * tsz.y) / dsz.y;
 	}
-	render(g, dul, dbr, tul, tbr);
+	float[] gc = {
+	    dul.x, dul.y, dbr.x, dul.y,
+	    dbr.x, dbr.y, dul.x, dbr.y,
+	};
+	float[] tc = {
+	    tl, tu, tr, tu,
+	    tr, tb, tl, tb,
+	};
+	render(g, gc, tc);
     }
 
     /* Render texture at c at normal size, clipping everything outside [ul, br). */

@@ -40,11 +40,15 @@ import javax.imageio.*;
 import java.awt.image.BufferedImage;
 
 public class Resource implements Serializable {
+    public static final Config.Variable<URL> resurl = Config.Variable.propu("haven.resurl", "");
+    public static final Config.Variable<Path> resdir = Config.Variable.propp("haven.resdir", System.getenv("HAFEN_RESDIR"));
     private static ResCache prscache;
     public static ThreadGroup loadergroup = null;
     private static Map<String, LayerFactory<?>> ltypes = new TreeMap<String, LayerFactory<?>>();
     public static Class<Image> imgc = Image.class;
     public static Class<Neg> negc = Neg.class;
+    public static Class<Props> props = Props.class;
+    public static Class<Obstacle> obst = Obstacle.class;
     public static Class<Anim> animc = Anim.class;
     public static Class<Pagina> pagina = Pagina.class;
     public static Class<AButton> action = AButton.class;
@@ -243,7 +247,20 @@ public class Resource implements Serializable {
 					"lpt0", "lpt1", "lpt2", "lpt3", "lpt4",
 					"lpt5", "lpt6", "lpt7", "lpt8", "lpt9"));
 	public static final boolean windows = System.getProperty("os.name", "").startsWith("Windows");
+	private static final boolean[] winsafe;
 	public final Path base;
+
+	static {
+	    boolean[] buf = new boolean[128];
+	    String safe = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_@";
+	    for(int i = 0; i < safe.length(); i++)
+		buf[safe.charAt(i)] = true;
+	    winsafe = buf;
+	}
+
+	public static boolean winsafechar(char c) {
+	    return((c >= winsafe.length) || winsafe[c]);
+	}
 
 	public FileSource(Path base) {
 	    this.base = base;
@@ -384,19 +401,66 @@ public class Resource implements Serializable {
 	    }
 	}
 
-	public void boostprio(int prio) {
+	public boolean boostprio(int prio) {
 	    res.boostprio(prio);
+	    return(true);
 	}
     }
 
-    public static class LoadFailedException extends RuntimeException {
+    public static class BadResourceException extends RuntimeException {
 	public final String name;
 	public final int ver;
 
-	public LoadFailedException(String name, int ver, LoadException cause) {
-	    super("Failed to load resource " + name + " (v" + ver + ")", cause);
+	public BadResourceException(String name, int ver, String message, Throwable cause) {
+	    super(message, cause);
 	    this.name = name;
 	    this.ver = ver;
+	}
+
+	public BadResourceException(String name, int ver, String message) {
+	    this(name, ver, message, null);
+	}
+
+	public BadResourceException(String name, int ver, Throwable cause) {
+	    this(name, ver, null, cause);
+	}
+
+	public BadResourceException(String name, int ver) {
+	    this(name, ver, null, null);
+	}
+    }
+
+    public static class LoadFailedException extends BadResourceException {
+	public LoadFailedException(String name, int ver, LoadException cause) {
+	    super(name, ver, cause);
+	}
+
+	public String getMessage() {
+	    return(String.format("Failed to load resource %s (v%d)", name, ver));
+	}
+    }
+
+    public static class NoSuchResourceException extends LoadFailedException {
+	public NoSuchResourceException(String name, int ver, LoadException cause) {
+	    super(name, ver, cause);
+	}
+    }
+
+    public static class BadVersionException extends BadResourceException {
+	public final int curver;
+	public final String cursrc;
+
+	public BadVersionException(String name, int ver, int curver, ResSource cursrc) {
+	    super(name, ver);
+	    this.curver = curver;
+	    this.cursrc = (cursrc == null) ? null : String.valueOf(cursrc);
+	}
+
+	public String getMessage() {
+	    if(cursrc == null)
+		return(String.format("Obsolete version %d of %s requested, loaded version is %d", ver, name, curver));
+	    else
+		return(String.format("Obsolete version %d of %s requested, loaded version is %d, from %s", ver, name, curver, cursrc));
 	}
     }
 
@@ -431,6 +495,7 @@ public class Resource implements Serializable {
 	    volatile boolean done = false;
 	    Resource res;
 	    LoadException error;
+	    boolean found = false;
 
 	    Queued(String name, int ver, int prio) {
 		super(name, ver);
@@ -450,12 +515,13 @@ public class Resource implements Serializable {
 	    }
 
 	    public Resource get() {
-		if(!done) {
-		    boostprio(1);
+		if(!done)
 		    throw(new Loading(this));
-		}
-		if(error != null)
+		if(error != null) {
+		    if(!found)
+			throw(new NoSuchResourceException(name, ver, error));
 		    throw(new LoadFailedException(name, ver, error));
+		}
 		return(res);
 	    }
 
@@ -499,19 +565,17 @@ public class Resource implements Serializable {
 
 	private void handle(Queued res) {
 	    for(ResSource src : sources) {
-		try {
-		    InputStream in = src.get(res.name);
-		    try {
-			Resource ret = new Resource(this, res.name, res.ver);
-			ret.source = src;
-			ret.load(in);
-			res.res = ret;
-			res.error = null;
-			break;
-		    } finally {
-			in.close();
-		    }
+		try(InputStream in = src.get(res.name)) {
+		    res.found = true;
+		    Resource ret = new Resource(this, res.name, res.ver);
+		    ret.source = src;
+		    ret.load(in);
+		    res.res = ret;
+		    res.error = null;
+		    break;
 		} catch(Throwable t) {
+		    if(!(t instanceof FileNotFoundException))
+			res.found = true;
 		    LoadException error;
 		    if(t instanceof LoadException)
 			error = (LoadException)t;
@@ -536,13 +600,7 @@ public class Resource implements Serializable {
 		    if((ver == -1) || (cur.ver == ver)) {
 			return(cur.indir());
 		    } else if(ver < cur.ver) {
-			/* Throw LoadException rather than
-			 * RuntimeException here, to make sure
-			 * obsolete resources doing nested loading get
-			 * properly handled. This could be the wrong
-			 * way of going about it, however; I'm not
-			 * sure. */
-			throw(new LoadException(String.format("Weird version number on %s (%d > %d), loaded from %s", cur.name, cur.ver, ver, cur.source), cur));
+			throw(new BadVersionException(name, ver, cur.ver, cur.source));
 		    }
 		}
 		synchronized(queue) {
@@ -550,7 +608,7 @@ public class Resource implements Serializable {
 		    if(cq != null) {
 			if(ver != -1) {
 			    if(ver < cq.ver) {
-				throw(new LoadException(String.format("Weird version number on %s (%d > %d)", cq.name, cq.ver, ver), null));
+				throw(new BadVersionException(name, ver, cq.ver, null));
 			    } else if(ver == cq.ver) {
 				cq.boostprio(prio);
 				return(cq);
@@ -596,7 +654,7 @@ public class Resource implements Serializable {
 	    return(ret);
 	}
 
-	public Named load(String name, int ver) {return(load(name, ver, -5));}
+	public Named load(String name, int ver) {return(load(name, ver, 0));}
 	public Named load(String name) {return(load(name, -1));}
 
 	public Indir<Resource> dynres(long id) {
@@ -745,8 +803,8 @@ public class Resource implements Serializable {
 		if(_local == null) {
 		    Pool local = new Pool(new JarSource("res"));
 		    try {
-			if(Config.resdir != null)
-			    local.add(new FileSource(Config.resdir));
+			if(resdir.get() != null)
+			    local.add(new FileSource(resdir.get()));
 		    } catch(Exception e) {
 			/* Ignore these. We don't want to be crashing the client
 			 * for users just because of errors in development
@@ -788,16 +846,6 @@ public class Resource implements Serializable {
 	    src = new Caching(src, prscache);
 	}
 	remote().add(src);
-    }
-
-    @Deprecated
-    public static Resource load(String name, int ver) {
-	return(remote().loadwait(name, ver));
-    }
-
-    @Deprecated
-    public Resource loadwait() {
-	return(this);
     }
 
     public static class LoadException extends RuntimeException {
@@ -1106,6 +1154,52 @@ public class Resource implements Serializable {
 	public void init() {}
     }
 
+    @LayerName("props")
+    public class Props extends Layer {
+	public final Map<String, Object> props = new HashMap<>();
+
+	public Props(Message buf) {
+	    int ver = buf.uint8();
+	    if(ver != 1)
+		throw(new LoadException("Unknown property layer version: " + ver, getres()));
+	    Object[] raw = buf.list();
+	    for(int a = 0; a < raw.length - 1; a += 2)
+		props.put((String)raw[a], raw[a + 1]);
+	}
+
+	public Object get(String nm) {
+	    return(props.get(nm));
+	}
+
+	public void init() {}
+    }
+
+    @LayerName("obst")
+    public class Obstacle extends Layer implements IDLayer<String> {
+	public final String id;
+	public final Coord2d[][] p;
+
+	public Obstacle(Message buf) {
+	    int ver = buf.uint8();
+	    if((ver >= 1) && (ver <= 2)) {
+		this.id = (ver >= 2) ? buf.string() : "";
+		p = new Coord2d[buf.uint8()][];
+		for(int i = 0; i < p.length; i++)
+		    p[i] = new Coord2d[buf.uint8()];
+		for(int i = 0; i < p.length; i++) {
+		    for(int o = 0; o < p[i].length; o++)
+			p[i][o] = Coord2d.of(buf.float16(), buf.float16()).mul(MCache.tilesz);
+		}
+	    } else {
+		this.id = "#";
+		this.p = new Coord2d[0][];
+	    }
+	}
+
+	public void init() {}
+	public String layerid() {return(id);}
+    }
+
     @LayerName("anim")
     public class Anim extends Layer {
 	private int[] ids;
@@ -1301,11 +1395,7 @@ public class Resource implements Serializable {
 	    }
 
 	    public static final Instancer<Object> simple = (cl, res, args) -> {
-		try {
-		    Constructor<?> cons = cl.getConstructor(Object[].class);
-		    return(Utils.construct(cons, args));
-		} catch(NoSuchMethodException e) {}
-		return(Utils.construct(cl));
+		return(stdmake(Object.class, cl, res, args));
 	    };
 	}
 	public static final Map<PublishedCode, Instancer> instancers = new WeakHashMap<>();
@@ -1492,7 +1582,7 @@ public class Resource implements Serializable {
 				if(classpath.size() > 0) {
 				    Collection<ClassLoader> loaders = new LinkedList<ClassLoader>();
 				    for(Indir<Resource> res : classpath) {
-					loaders.add(res.get().layer(CodeEntry.class).loader());
+					loaders.add(res.get().flayer(CodeEntry.class).loader());
 				    }
 				    ret = new LibClassLoader(ret, loaders);
 				}
@@ -1589,6 +1679,14 @@ public class Resource implements Serializable {
 			ClassLoader l = cl.getClassLoader();
 			if(l instanceof ResClassLoader)
 			    return(((ResClassLoader)l).getres());
+			FromResource src = ResClassLoader.getsource(cl);
+			if(src != null) {
+			    /* XXX? This feels like a hack, but I can't think of
+			     * any better way to let resource code that has been
+			     * downloaded with `get-code' reference data in its
+			     * originating resource. */
+			    return(remote().loadwait(src.name(), src.version()));
+			}
 			throw(new RuntimeException("Cannot fetch resource of non-resloaded class " + cl));
 		    }
 		}));
@@ -1784,7 +1882,9 @@ public class Resource implements Serializable {
 		continue;
 	    }
 	    Message buf = new LimitMessage(in, len);
-	    layers.add(lc.cons(this, buf));
+	    Layer l = lc.cons(this, buf);
+	    if(l != null)
+		layers.add(l);
 	    buf.skip();
 	}
 	this.layers = layers;
@@ -1951,7 +2051,7 @@ public class Resource implements Serializable {
 	    System.exit(1);
 	}
 	if(url == null) {
-	    if((url = Config.resurl) == null) {
+	    if((url = resurl.get()) == null) {
 		System.err.println("get-code: no resource URL configured");
 		System.exit(1);
 	    }
@@ -2059,7 +2159,7 @@ public class Resource implements Serializable {
 	    System.exit(1);
 	}
 	if(url == null) {
-	    if((url = Config.resurl) == null) {
+	    if((url = resurl.get()) == null) {
 		System.err.println("get-code: no resource URL configured");
 		System.exit(1);
 	    }

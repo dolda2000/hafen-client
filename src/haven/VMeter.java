@@ -45,11 +45,6 @@ public class VMeter extends LayerMeter {
 	set(meters);
     }
 
-    @Deprecated
-    public VMeter(int amount, Color color) {
-	this(Collections.singletonList(new Meter(amount * 0.01, color)));
-    }
-
     public void draw(GOut g) {
 	g.image(bg, Coord.z);
 	int h = (sz.y - UI.scale(6));

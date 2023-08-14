@@ -38,7 +38,7 @@ public class Homo3D {
     public static final Slot<Camera> cam = new Slot<>(Slot.Type.SYS, Camera.class);
     public static final Slot<Location.Chain> loc = new Slot<>(Slot.Type.GEOM, Location.Chain.class)
 	.instanced(st -> Location.Chain.instancer);
-    public static final Attribute vertex = new Attribute(VEC3, "vertex");
+    public static final Attribute vertex = new Attribute(VEC3, "vertex").primary();
     public static final Attribute normal = new Attribute(VEC3, "normal");
     static final Uniform u_prj = new Uniform(MAT4, "proj", Homo3D::prjxf, prj);
     static final Uniform u_cam = new Uniform(MAT4, "cam", Homo3D::camxf, cam);
@@ -131,6 +131,11 @@ public class Homo3D {
 	};
 
     /* Optional derived values */
+    public static final AutoVarying fragvert = new AutoVarying(VEC3, "s_vert") {
+	    protected Expression root(VertexContext vctx) {
+		return(pick(vertex.ref(), "xyz"));
+	    }
+	};
     public static final AutoVarying fragobjv = new AutoVarying(VEC3, "s_objv") {
 	    protected Expression root(VertexContext vctx) {
 		return(pick(get(vctx.prog).objv.depref(), "xyz"));
@@ -183,7 +188,7 @@ public class Homo3D {
     }
 
     public static HomoCoord4f obj2clip(Coord3f objc, Pipe state) {
-	HomoCoord4f c = new HomoCoord4f(objc);
+	HomoCoord4f c = HomoCoord4f.of(objc);
 	Location.Chain s_loc = state.get(loc);
 	if(s_loc != null) c = s_loc.fin(Matrix4f.id).mul4(c);
 	Camera s_cam = state.get(cam);

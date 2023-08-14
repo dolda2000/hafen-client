@@ -29,7 +29,6 @@ package haven.render.gl;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.io.*;
-import com.jogamp.opengl.*;
 import haven.Disposable;
 import haven.Utils;
 import haven.render.*;
@@ -115,7 +114,13 @@ public class GLProgram implements Disposable {
 	}
 	{
 	    this.attribs = ctx.attribs.toArray(new Attribute[0]);
-	    Arrays.sort(this.attribs, Utils.idcmp);
+	    Arrays.sort(this.attribs, (a, b) -> {
+		    if(a.primary && !b.primary)
+			return(-1);
+		    if(!a.primary && b.primary)
+			return(1);
+		    return(Utils.idcmp.compare(a, b));
+		});
 	    Map<Attribute, AttrID> amap = new IdentityHashMap<>();
 	    for(int i = 0, loc = 0; i < this.attribs.length; i++) {
 		Attribute attr = this.attribs[i];
@@ -153,12 +158,14 @@ public class GLProgram implements Disposable {
     }
 
     public static class ShaderException extends RuntimeException {
-	public final ShaderOb shader;
+	public final int type;
+	public final String text;
 	public final String info;
 	
 	public ShaderException(String msg, ShaderOb shader, String info) {
 	    super(msg);
-	    this.shader = shader;
+	    this.type = shader.type;
+	    this.text = shader.text;
 	    this.info = info;
 	}
 	
@@ -182,7 +189,7 @@ public class GLProgram implements Disposable {
 	    env.prepare(this);
 	}
 
-	public void create(GL3 gl) {
+	public void create(GL gl) {
 	    /* Does JOGL use the byte or char length or the supplied
 	     * String, and in case of the former, how does one know
 	     * the coding it encodes the String as so as to supply the
@@ -191,23 +198,23 @@ public class GLProgram implements Disposable {
 	     * interesting to know, so to speak. */
 	    this.id = gl.glCreateShader(type);
 	    GLException.checkfor(gl, env);
-	    gl.glShaderSource(this.id, 1, new String[] {text}, new int[] {text.length()}, 0);
+	    gl.glShaderSource(this.id, 1, new String[] {text}, new int[] {text.length()});
 	    gl.glCompileShader(this.id);
 	    int[] buf = {0};
-	    gl.glGetShaderiv(this.id, GL3.GL_COMPILE_STATUS, buf, 0);
+	    gl.glGetShaderiv(this.id, GL.GL_COMPILE_STATUS, buf);
 	    if(buf[0] != 1) {
 		String info = null;
-		gl.glGetShaderiv(this.id, GL3.GL_INFO_LOG_LENGTH, buf, 0);
+		gl.glGetShaderiv(this.id, GL.GL_INFO_LOG_LENGTH, buf);
 		if(buf[0] > 0) {
 		    byte[] logbuf = new byte[buf[0]];
-		    gl.glGetShaderInfoLog(this.id, logbuf.length, buf, 0, logbuf, 0);
+		    gl.glGetShaderInfoLog(this.id, logbuf.length, buf, logbuf);
 		    info = new String(logbuf, 0, buf[0]);
 		}
 		throw(new ShaderException("Failed to compile shader", this, info));
 	    }
 	}
 
-	protected void delete(GL3 gl) {
+	protected void delete(GL gl) {
 	    gl.glDeleteShader(id);
 	}
 
@@ -217,11 +224,11 @@ public class GLProgram implements Disposable {
     }
 
     public static class ProgramException extends RuntimeException {
-	public final GLProgram program;
+	public final Dump program;
 
 	public ProgramException(String msg, GLProgram program) {
 	    super(msg);
-	    this.program = program;
+	    this.program = program.dump();
 	}
     }
 
@@ -322,7 +329,7 @@ public class GLProgram implements Disposable {
 	    return(ret);
 	}
 
-	public void create(GL3 gl) {
+	public void create(GL gl) {
 	    this.id = gl.glCreateProgram();
 	    for(ShaderOb sh : shaders)
 		gl.glAttachShader(this.id, sh.glid());
@@ -332,21 +339,27 @@ public class GLProgram implements Disposable {
 		gl.glBindFragDataLocation(this.id, i, fragnms[i]);
 	    gl.glLinkProgram(this.id);
 	    int[] buf = {0};
-	    gl.glGetProgramiv(this.id, GL3.GL_LINK_STATUS, buf, 0);
+	    gl.glGetProgramiv(this.id, GL.GL_LINK_STATUS, buf);
 	    if(buf[0] != 1) {
 		String info = null;
-		gl.glGetProgramiv(this.id, GL3.GL_INFO_LOG_LENGTH, buf, 0);
+		gl.glGetProgramiv(this.id, GL.GL_INFO_LOG_LENGTH, buf);
 		if(buf[0] > 0) {
 		    byte[] logbuf = new byte[buf[0]];
-		    gl.glGetProgramInfoLog(this.id, logbuf.length, buf, 0, logbuf, 0);
+		    gl.glGetProgramInfoLog(this.id, logbuf.length, buf, logbuf);
 		    info = new String(logbuf, 0, buf[0]);
 		}
 		throw(new LinkException("Failed to link GL program", GLProgram.this, info));
 	    }
 	}
 
-	protected void delete(GL3 gl) {
+	protected void delete(GL gl) {
 	    gl.glDeleteProgram(id);
+	}
+
+	public void dispose() {
+	    super.dispose();
+	    for(ShaderOb sh : shaders)
+		sh.dispose();
 	}
 
 	public int glid() {
@@ -359,7 +372,7 @@ public class GLProgram implements Disposable {
 
 	    private UniformID(String name) {super(name);}
 
-	    public void run(GL3 gl) {
+	    public void run(GL gl) {
 		this.id = gl.glGetUniformLocation(ProgOb.this.id, name);
 	    }
 
@@ -388,8 +401,8 @@ public class GLProgram implements Disposable {
 		    throw(new RuntimeException("reusing disposed program"));
 		if((glp = this.glp) == null) {
 		    glp = new ProgOb(env,
-				     new ShaderOb(env, GL3.GL_VERTEX_SHADER, vsrc),
-				     new ShaderOb(env, GL3.GL_FRAGMENT_SHADER, fsrc));
+				     new ShaderOb(env, GL.GL_VERTEX_SHADER, vsrc),
+				     new ShaderOb(env, GL.GL_FRAGMENT_SHADER, fsrc));
 		    this.glp = glp;
 		}
 	    }
@@ -469,11 +482,22 @@ public class GLProgram implements Disposable {
     public static class Dump implements Serializable {
 	public final String vsrc, fsrc;
 	public final int id;
+	public final String[] fragnms, attrnms;
+	public final int[] attrlocs;
 
 	public Dump(GLProgram prog) {
 	    this.vsrc = prog.vsrc;
 	    this.fsrc = prog.fsrc;
 	    this.id = System.identityHashCode(prog);
+	    this.fragnms = Arrays.copyOf(prog.fragnms, prog.fragnms.length);
+	    AttrID[] aorder = prog.amap.values().toArray(new AttrID[0]);
+	    Arrays.sort(aorder, (a, b) -> a.id - b.id);
+	    this.attrnms = new String[aorder.length];
+	    this.attrlocs = new int[aorder.length];
+	    for(int i = 0; i < aorder.length; i++) {
+		attrnms[i] = aorder[i].name;
+		attrlocs[i] = aorder[i].id;
+	    }
 	}
     }
 

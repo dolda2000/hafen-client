@@ -51,6 +51,7 @@ public class Coord3f {
 
     public static Coord3f of(float x, float y, float z) {return(new Coord3f(x, y, z));}
     public static Coord3f of(Coord3f c) {return(of(c.x, c.y, c.z));}
+    public static Coord3f of(HomoCoord4f c) {return(of(c.x, c.y, c.z));}
     
     public boolean equals(Coord3f o) {
 	return((o.x == x) && (o.y == y) && (o.z == z));
@@ -99,9 +100,21 @@ public class Coord3f {
     public Coord3f div(float f) {
 	return(of(x / f, y / f, z / f));
     }
+
+    public Coord3f div(float X, float Y, float Z) {
+	return(of(x / X, y / Y, z / Z));
+    }
+
+    public Coord3f div(Coord3f b) {
+	return(div(b.x, b.y, b.z));
+    }
     
     public Coord3f inv() {
 	return(of(-x, -y, -z));
+    }
+
+    public Coord3f invy() {
+	return(of(x, -y, z));
     }
     
     public float dmul(float X, float Y, float Z) {

@@ -46,41 +46,6 @@ public class Avaview extends PView {
     private List<Composited.ED> cequ = null;
     private final String camnm;
 
-    public static class ProxyFrame<T extends Widget> extends Frame {
-	public final T ch;
-	public Color color = Color.WHITE;
-
-	public ProxyFrame(T child, boolean resize) {
-	    super(child.sz, !resize);
-	    this.ch = child;
-	    if(resize)
-		ch.resize(inner());
-	    add(child, Coord.z);
-	}
-
-	public void drawframe(GOut g) {
-	    if(color != null) {
-		g.chcolor(color);
-		box.draw(g, Coord.z, sz);
-	    }
-	}
-
-	public void uimsg(String msg, Object... args) {
-	    if(msg == "col") {
-		color = (Color)args[0];
-	    } else {
-		ch.uimsg(msg, args);
-	    }
-	}
-
-	public void wdgmsg(Widget sender, String msg, Object... args) {
-	    if(sender == ch)
-		wdgmsg(msg, args);
-	    else
-		super.wdgmsg(sender, msg, args);
-	}
-    }
-
     @RName("av")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
@@ -154,6 +119,7 @@ public class Avaview extends PView {
     }
 
     private static final OwnerContext.ClassResolver<Avaview> ctxr = new OwnerContext.ClassResolver<Avaview>()
+	.add(Avaview.class, v -> v)
 	.add(Glob.class, v -> v.ui.sess.glob)
 	.add(Session.class, v -> v.ui.sess)
 	.add(Resource.Resolver.class, v -> (v.resmap == null ? v.ui.sess : v.resmap));
@@ -161,9 +127,8 @@ public class Avaview extends PView {
 	public Random mkrandoom() {return(new Random());}
 	public Resource getres() {return(null);}
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, Avaview.this));}
-	@Deprecated public Glob glob() {return(context(Glob.class));}
 
-	public Coord3f getc() {return(Coord3f.o);}
+	public Collection<Location.Chain> getloc() {return(Collections.emptyList());}
 	public double getv() {return(0);}
     }
     private final AvaOwner avaowner = new AvaOwner();
@@ -185,8 +150,8 @@ public class Avaview extends PView {
 	if(bo == null)
 	    throw(new Loading());
 	Pipe buf = new BufPipe();
-	buf.prep(bo.forpose(comp.pose).get());
-	return(new LocationCam(buf.get(Homo3D.loc)));
+	buf.prep(bo.from(comp.pose).get());
+	return(Camera.placed(buf.get(Homo3D.loc)));
     }
 
     private Composite getgcomp() {

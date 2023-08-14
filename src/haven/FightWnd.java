@@ -53,6 +53,7 @@ public class FightWnd extends Widget {
     }
 
     private static final OwnerContext.ClassResolver<FightWnd> actxr = new OwnerContext.ClassResolver<FightWnd>()
+	.add(FightWnd.class, wdg -> wdg)
 	.add(Glob.class, wdg -> wdg.ui.sess.glob)
 	.add(Session.class, wdg -> wdg.ui.sess);
     public static final Text.Foundry namef = new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD), 16).aa(true);

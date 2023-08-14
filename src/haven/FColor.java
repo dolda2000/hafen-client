@@ -75,6 +75,10 @@ public class FColor {
 	return(new FColor(this.r * that.r, this.g * that.g, this.b * that.b, this.a * that.a));
     }
 
+    public FColor mul(float v) {
+	return(new FColor(r * v, g * v, b * v, a));
+    }
+
     public FColor blend(FColor that) {
 	float B = that.a, A = 1.0f - B;
 	return(new FColor((this.r * A) + (that.r * B),

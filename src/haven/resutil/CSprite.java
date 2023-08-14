@@ -43,16 +43,23 @@ public class CSprite extends Sprite {
     }
 
     public void addpart(Location loc, Pipe.Op mat, RenderTree.Node part) {
-	/* XXX: Using unnecessarily many slots? Could potentially
-	 * intern base slots on material for memory savings. */
-	parts.add(loc.apply(mat.apply(part), false));
+	if((mat != null) && (mat != Pipe.Op.nil)) {
+	    /* XXX: Using unnecessarily many slots? Could potentially
+	     * intern base slots on material for memory savings. */
+	    part = mat.apply(part);
+	}
+	parts.add(loc.apply(part, false));
+    }
+
+    public void addpart(float xo, float yo, float a, Pipe.Op mat, RenderTree.Node part) {
+	Coord3f pc = new Coord3f(xo, -yo, owner.context(Glob.class).map.getcz(cc.x + xo, cc.y + yo) - cc.z);
+	Location loc = new Location(Transform.makexlate(new Matrix4f(), pc)
+				    .mul1(Transform.makerot(new Matrix4f(), Coord3f.zu, a)));
+	addpart(loc, mat, part);
     }
 
     public void addpart(float xo, float yo, Pipe.Op mat, RenderTree.Node part) {
-	Coord3f pc = new Coord3f(xo, -yo, owner.context(Glob.class).map.getcz(cc.x + xo, cc.y + yo) - cc.z);
-	Location loc = new Location(Transform.makexlate(new Matrix4f(), pc)
-				    .mul1(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)(rnd.nextFloat() * Math.PI * 2))));
-	addpart(loc, mat, part);
+	addpart(xo, yo, (float)(rnd.nextFloat() * Math.PI * 2), mat, part);
     }
 
     public void added(RenderTree.Slot slot) {

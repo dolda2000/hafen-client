@@ -39,7 +39,7 @@ import haven.render.Rendered.Order;
 public class MapMesh implements RenderTree.Node, Disposable {
     public final Coord ul, sz;
     public final MCache map;
-    public FastMesh flat;
+    public RenderTree.Node flat;
     private final long rnd;
     private Map<DataID, Object> data = new LinkedHashMap<DataID, Object>();
     private List<RenderTree.Node> extras = new ArrayList<RenderTree.Node>();
@@ -70,17 +70,10 @@ public class MapMesh implements RenderTree.Node, Disposable {
     }
 
     public static interface ConsHooks {
-	public void sfin();
-	public void calcnrm();
-	public void postcalcnrm(Random rnd);
-	public boolean clean();
-    }
-
-    public static class Hooks implements ConsHooks {
-	public void sfin() {};
-	public void calcnrm() {}
-	public void postcalcnrm(Random rnd) {}
-	public boolean clean() {return(false);}
+	public default void sfin() {};
+	public default void calcnrm() {};
+	public default void postcalcnrm(Random rnd) {};
+	public default boolean clean() {return(false);}
     }
 
     @SuppressWarnings("unchecked")
@@ -431,6 +424,17 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	return(gmmat.apply(buf.mkmesh()));
     }
 
+    private Map<Pair<MCache.SurfaceID, Tiler>, MCache.ZSurface> zsurfaces = new HashMap<>();
+    public MCache.ZSurface getsurf(MCache.SurfaceID id, Tiler tile) {
+	MCache.ZSurface ret = zsurfaces.get(new Pair<>(id, tile));
+	if(ret == null) {
+	    Map<Pair<MCache.SurfaceID, Tiler>, MCache.ZSurface> n = new HashMap<>(zsurfaces);
+	    n.put(new Pair<>(id, tile), ret = tile.getsurf(this, id));
+	    zsurfaces = n;
+	}
+	return(ret);
+    }
+
     public static class OLOrder extends Order<OLOrder> {
 	public final MCache.OverlayInfo id;
 
@@ -616,16 +620,21 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	}
     }
 
-    public void draw(GOut g) {
-    }
+    public static Order clickmain = Rendered.deflt;
+    public static Order clickpost = new Order.Default(100);
 
     private void consflat() {
 	class Buf implements Tiler.MCons {
 	    final float tpx = 1.0f / sz.x, tpy = 1.0f / sz.y;
+	    final Pipe.Op state;
 	    int vn = 0, in = 0, vl = sz.x * sz.y * 4;
 	    float[] pos = new float[vl * 3];
 	    float[] col = new float[vl * 2];
 	    short[] ind = new short[sz.x * sz.y * 6];
+
+	    Buf(Pipe.Op state) {
+		this.state = state;
+	    }
 
 	    public void faces(MapMesh m, Tiler.MPart d) {
 		if(vn + d.v.length > vl) {
@@ -645,24 +654,29 @@ public class MapMesh implements RenderTree.Node, Disposable {
 		    ind[in++] = (short)(vn + fi);
 		vn += d.v.length;
 	    }
+
+	    FastMesh mesh() {
+		float[] pos = this.pos, col = this.col;
+		short[] ind = this.ind;
+		if(pos.length != this.vn * 3) pos = Utils.extend(pos, this.vn * 3);
+		if(col.length != this.vn * 2) col = Utils.extend(col, this.vn * 2);
+		if(ind.length != this.in) ind = Utils.extend(ind, this.in);
+		VertexBuf.VertexData posa = new VertexBuf.VertexData(FloatBuffer.wrap(pos));
+		ClickLocation.LocData loca = new ClickLocation.LocData(FloatBuffer.wrap(col));
+		ShortBuffer indb = ShortBuffer.wrap(ind);
+		return(new FastMesh(new VertexBuf(posa, loca), indb));
+	    }
 	}
-	Buf buf = new Buf();
+	Map<Pipe.Op, Buf> parts = new HashMap<>();
 	Coord c = new Coord();
 	for(c.y = 0; c.y < sz.y; c.y++) {
 	    for(c.x = 0; c.x < sz.x; c.x++) {
 		Coord gc = c.add(ul);
-		map.tiler(map.gettile(gc)).lay(this, c, gc, buf, true);
+		Tiler t = map.tiler(map.gettile(gc));
+		t.lay(this, c, gc, parts.computeIfAbsent(t.clickstate(), k -> new Buf(k)), true);
 	    }
 	}
-	float[] pos = buf.pos, col = buf.col;
-	short[] ind = buf.ind;
-	if(pos.length != buf.vn * 3) pos = Utils.extend(pos, buf.vn * 3);
-	if(col.length != buf.vn * 2) col = Utils.extend(col, buf.vn * 2);
-	if(ind.length != buf.in) ind = Utils.extend(ind, buf.in);
-	VertexBuf.VertexData posa = new VertexBuf.VertexData(FloatBuffer.wrap(pos));
-	ClickLocation.LocData loca = new ClickLocation.LocData(FloatBuffer.wrap(col));
-	ShortBuffer indb = ShortBuffer.wrap(ind);
-	flat = new FastMesh(new VertexBuf(posa, loca), indb);
+	flat = RUtils.compose(parts.values().stream().map(buf -> buf.state.apply(buf.mesh())).collect(java.util.stream.Collectors.toList()));
     }
 
     private static final VertexArray.Layout gridfmt = new VertexArray.Layout(new VertexArray.Layout.Input(Homo3D.vertex, new VectorFormat(3, NumberFormat.FLOAT32), 0, 0, 12));

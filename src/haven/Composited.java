@@ -32,7 +32,7 @@ import haven.render.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 
-public class Composited implements RenderTree.Node {
+public class Composited implements RenderTree.Node, EquipTarget {
     public final Skeleton skel;
     public final Pose pose;
     public Collection<Model> mod = new ArrayList<Model>();
@@ -162,12 +162,7 @@ public class Composited implements RenderTree.Node {
 	    }
 
 	    public void added(RenderTree.Slot slot) {
-		float z = Model.this.z;
-		/* XXX: The depth-bias should not be necessary, but
-		 * without it Z-fighting between meshes appears to
-		 * occur for unclear reasons. GLSL variance due to
-		 * different... bone indices? */
-		slot.ostate(Pipe.Op.compose(mat, new States.DepthBias(-z, -z), order, (order.z2 == 0) ? null : (p -> p.put(Clickable.slot, null))));
+		slot.ostate(Pipe.Op.compose(mat, order, (order.z2 == 0) ? null : (p -> p.put(Clickable.slot, null))));
 		slot.lockstate();
 		slot.add(m);
 	    }
@@ -203,7 +198,10 @@ public class Composited implements RenderTree.Node {
 	}
     }
 
-    public class SpriteEqu extends Equ<Sprite> {
+    private static final OwnerContext.ClassResolver<SpriteEqu> eqctxr = new OwnerContext.ClassResolver<SpriteEqu>()
+	.add(SpriteEqu.class, eq -> eq)
+	.add(Composited.class, eq -> eq.comp());
+    public class SpriteEqu extends Equ<Sprite> implements Sprite.Owner, Skeleton.HasPose {
 	private SpriteEqu(ED ed) {
 	    super(Sprite.create(eqowner, ed.res.res.get(), ed.res.sdt.clone()), ed);
 	}
@@ -216,6 +214,26 @@ public class Composited implements RenderTree.Node {
 	public void gtick(Render g) {
 	    super.gtick(g);
 	    r.gtick(g);
+	}
+
+	public <T> T context(Class<T> cl) {
+	    return(OwnerContext.orparent(cl, eqctxr.context(cl, this, false), eqowner));
+	}
+
+	public Resource getres() {
+	    return(r.res);
+	}
+
+	public Random mkrandoom() {
+	    return((eqowner != null) ? eqowner.mkrandoom() : new Random());
+	}
+
+	public Pose getpose() {
+	    return(Skeleton.getpose(r));
+	}
+
+	public Composited comp() {
+	    return(Composited.this);
 	}
     }
 
@@ -238,12 +256,12 @@ public class Composited implements RenderTree.Node {
 	    if(bt == null) {
 		Skeleton.BoneOffset bo = ed.res.res.get().layer(Skeleton.BoneOffset.class, ed.at);
 		if(bo != null)
-		    bt = bo.forpose(pose);
+		    bt = bo.from(Composited.this);
 	    }
 	    if((bt == null) && (skel instanceof Skeleton.ResourceSkeleton)) {
 		Skeleton.BoneOffset bo = ((Skeleton.ResourceSkeleton)skel).res.layer(Skeleton.BoneOffset.class, ed.at);
 		if(bo != null)
-		    bt = bo.forpose(pose);
+		    bt = bo.from(Composited.this);
 	    }
 	    if(bt == null) {
 		Skeleton.Bone bone = skel.bones.get(ed.at);
@@ -252,11 +270,11 @@ public class Composited implements RenderTree.Node {
 	    }
 	    if((bt == null) && !ed.at.equals(""))
 		throw(new RuntimeException("Transformation " + ed.at + " for equipment " + ed.res + " on skeleton " + skel + " could not be resolved"));
-	    Supplier<Pipe.Op> dbt = bt;
+	    Supplier<Pipe.Op> dbt = (bt != null) ? bt : () -> null;
 	    if((ed.off.x != 0.0f) || (ed.off.y != 0.0f) || (ed.off.z != 0.0f))
 		this.et = () -> Pipe.Op.compose(dbt.get(), Location.xlate(ed.off));
 	    else
-		this.et = bt;
+		this.et = dbt;
 	}
 
 	public void tick(double dt) {
@@ -520,6 +538,7 @@ public class Composited implements RenderTree.Node {
 	    slot.add(mod);
 	for(Equ equ : this.equ)
 	    slot.add(equ);
+	// slot.add(pose.new Debug());
     }
 
     public void added(RenderTree.Slot slot) {
@@ -532,6 +551,10 @@ public class Composited implements RenderTree.Node {
 	slots.remove(slot);
     }
     
+    public Supplier<Pipe.Op> eqpoint(String nm, Message dat) {
+	return(pose.eqpoint(nm, dat));
+    }
+
     public void draw(GOut g) {
     }
     

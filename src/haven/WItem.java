@@ -50,42 +50,28 @@ public class WItem extends Widget implements DTarget {
 	spr.draw(g);
     }
 
-    public static BufferedImage shorttip(List<ItemInfo> info) {
-	return(ItemInfo.shorttip(info));
-    }
-
-    public static BufferedImage longtip(GItem item, List<ItemInfo> info) {
-	BufferedImage img = ItemInfo.longtip(info);
-	Resource.Pagina pg = item.res.get().layer(Resource.pagina);
-	if(pg != null)
-	    img = ItemInfo.catimgs(0, img, RichText.render("\n" + pg.text, UI.scale(200)).img);
-	return(img);
-    }
-
-    public BufferedImage longtip(List<ItemInfo> info) {
-	return(longtip(item, info));
-    }
-
     public class ItemTip implements Indir<Tex>, ItemInfo.InfoTip {
+	private final List<ItemInfo> info;
 	private final TexI tex;
 
-	public ItemTip(BufferedImage img) {
+	public ItemTip(List<ItemInfo> info, BufferedImage img) {
+	    this.info = info;
 	    if(img == null)
 		throw(new Loading());
 	    tex = new TexI(img);
 	}
 
 	public GItem item() {return(item);}
-	public List<ItemInfo> info() {return(item.info());}
+	public List<ItemInfo> info() {return(info);}
 	public Tex get() {return(tex);}
     }
 
     public class ShortTip extends ItemTip {
-	public ShortTip(List<ItemInfo> info) {super(shorttip(info));}
+	public ShortTip(List<ItemInfo> info) {super(info, ItemInfo.shorttip(info));}
     }
 
     public class LongTip extends ItemTip {
-	public LongTip(List<ItemInfo> info) {super(longtip(info));}
+	public LongTip(List<ItemInfo> info) {super(info, ItemInfo.longtip(info));}
     }
 
     private double hoverstart;
@@ -158,7 +144,14 @@ public class WItem extends Widget implements DTarget {
 	});
     public final AttrCache<Double> itemmeter = new AttrCache<>(this::info, AttrCache.map1(GItem.MeterInfo.class, minf -> minf::meter));
 
+    private Widget contparent() {
+	/* XXX: This is a bit weird, but I'm not sure what the alternative is... */
+	Widget cont = getparent(GameUI.class);
+	return((cont == null) ? cont = ui.root : cont);
+    }
+
     private GSprite lspr = null;
+    private Widget lcont = null;
     public void tick(double dt) {
 	/* XXX: This is ugly and there should be a better way to
 	 * ensure the resizing happens as it should, but I can't think
@@ -227,5 +220,14 @@ public class WItem extends Widget implements DTarget {
     public boolean iteminteract(Coord cc, Coord ul) {
 	item.wdgmsg("itemact", ui.modflags());
 	return(true);
+    }
+
+    public boolean mousehover(Coord c, boolean on) {
+	boolean ret = super.mousehover(c, on);
+	if(on && (item.contents != null)) {
+	    item.hovering(this);
+	    return(true);
+	}
+	return(ret);
     }
 }

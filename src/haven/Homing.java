@@ -50,7 +50,7 @@ public class Homing extends Moving {
 	    rc = tc;
 	else if(e > 0.00001)
 	    rc = rc.add(d.mul(dist / e));
-	return(gob.glob.map.getzp(rc));
+	return(gob.placer().getc(rc, gob.a));
     }
     
     public double getv() {
@@ -67,7 +67,7 @@ public class Homing extends Moving {
 
     @OCache.DeltaType(OCache.OD_HOMING)
     public static class $homing implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    long oid = msg.uint32();
 	    if(oid == 0xffffffffl) {
 		g.delattr(Homing.class);

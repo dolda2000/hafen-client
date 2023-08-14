@@ -38,6 +38,7 @@ import haven.Defer.Future;
 import static haven.MCache.cmaps;
 
 public class MapFile {
+    public static final Config.Variable<java.net.URL> mapbase = Config.Variable.propu("haven.mapbase", "");
     public static boolean debug = false;
     public final ResCache store;
     public final String filename;
@@ -46,6 +47,7 @@ public class MapFile {
     public final Map<Long, SMarker> smarkers = new HashMap<>();
     public int markerseq = 0;
     public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Random rnd = new Random();
 
     public MapFile(ResCache store, String filename) {
 	this.store = store;
@@ -402,12 +404,12 @@ public class MapFile {
 
     public static class DataGrid {
 	public final TileInfo[] tilesets;
-	public final byte[] tiles;
+	public final int[] tiles;
 	public final float[] zmap;
 	public final Collection<Overlay> ols = new ArrayList<>();
 	public final long mtime;
 
-	public DataGrid(TileInfo[] tilesets, byte[] tiles, float[] zmap, long mtime) {
+	public DataGrid(TileInfo[] tilesets, int[] tiles, float[] zmap, long mtime) {
 	    this.tilesets = tilesets;
 	    this.tiles = tiles;
 	    this.zmap = zmap;
@@ -415,7 +417,7 @@ public class MapFile {
 	}
 
 	public int gettile(Coord c) {
-	    return(tiles[c.x + (c.y * cmaps.x)] & 0xff);
+	    return(tiles[c.x + (c.y * cmaps.x)]);
 	}
 
 	public double getfz(Coord c) {
@@ -444,8 +446,8 @@ public class MapFile {
 	}
 
 	public BufferedImage render(Coord off) {
-	    BufferedImage[] texes = new BufferedImage[256];
-	    boolean[] cached = new boolean[256];
+	    BufferedImage[] texes = new BufferedImage[tilesets.length];
+	    boolean[] cached = new boolean[tilesets.length];
 	    WritableRaster buf = PUtils.imgraster(cmaps);
 	    Coord c = new Coord();
 	    for(c.y = 0; c.y < cmaps.y; c.y++) {
@@ -515,6 +517,37 @@ public class MapFile {
 		}
 	    }
 	    return(PUtils.rasterimg(buf));
+	}
+
+	public static void savetiles(Message fp, TileInfo[] tilesets, int[] tiles) {
+	    fp.adduint16(tilesets.length);
+	    for(int i = 0; i < tilesets.length; i++) {
+		fp.addstring(tilesets[i].res.name);
+		fp.adduint16(tilesets[i].res.ver);
+		fp.adduint8(tilesets[i].prio);
+	    }
+	    if(tilesets.length <= 256) {
+		for(int tn : tiles)
+		    fp.adduint8(tn);
+	    } else {
+		for(int tn : tiles)
+		    fp.adduint16(tn);
+	    }
+	}
+
+	public static Pair<TileInfo[], int[]> loadtiles(Message fp, int ver) {
+	    TileInfo[] tilesets = new TileInfo[(ver >= 2) ? fp.uint16() : fp.uint8()];
+	    for(int i = 0; i < tilesets.length; i++)
+		tilesets[i] = new TileInfo(new Resource.Spec(Resource.remote(), fp.string(), fp.uint16()), fp.uint8());
+	    int[] tiles = new int[cmaps.x * cmaps.y];
+	    if(tilesets.length <= 256) {
+		for(int i = 0; i < cmaps.x * cmaps.y; i++)
+		    tiles[i] = fp.uint8();
+	    } else {
+		for(int i = 0; i < cmaps.x * cmaps.y; i++)
+		    tiles[i] = fp.uint16();
+	    }
+	    return(new Pair<>(tilesets, tiles));
 	}
 
 	public static void savez(Message fp, float[] zmap) {
@@ -621,7 +654,7 @@ public class MapFile {
 	public static final Resource.Spec notile = new Resource.Spec(Resource.remote(), "gfx/tiles/notile", -1);
 	public static final DataGrid nogrid;
 	static {
-	    nogrid = new DataGrid(new TileInfo[] {new TileInfo(notile, 0)}, new byte[cmaps.x * cmaps.y], new float[cmaps.x * cmaps.y], 0);
+	    nogrid = new DataGrid(new TileInfo[] {new TileInfo(notile, 0)}, new int[cmaps.x * cmaps.y], new float[cmaps.x * cmaps.y], 0);
 	}
     }
 
@@ -630,7 +663,7 @@ public class MapFile {
 	private boolean[] norepl;
 	private int useq = -1;
 
-	public Grid(long id, TileInfo[] tilesets, byte[] tiles, float[] zmap, long mtime) {
+	public Grid(long id, TileInfo[] tilesets, int[] tiles, float[] zmap, long mtime) {
 	    super(tilesets, tiles, zmap, mtime);
 	    this.id = id;
 	}
@@ -638,38 +671,38 @@ public class MapFile {
 	public static Grid from(MCache map, MCache.Grid cg) {
 	    int oseq = cg.seq;
 	    int nt = 0;
-	    Resource.Spec[] sets = new Resource.Spec[256];
-	    int[] tmap = new int[256];
-	    int[] rmap = new int[256];
-	    boolean[] norepl = new boolean[256];
+	    int[] tmap = new int[16];
+	    int[] rmap = new int[16];
 	    Arrays.fill(tmap, -1);
 	    for(int tn : cg.tiles) {
+		if(tn >= tmap.length) {
+		    int pl = tmap.length;
+		    tmap = Utils.extend(tmap, Integer.highestOneBit(tn) * 2);
+		    Arrays.fill(tmap, pl, tmap.length, -1);
+		}
 		if(tmap[tn] == -1) {
 		    tmap[tn] = nt;
-		    rmap[nt] = tn;
-		    sets[nt] = map.nsets[tn];
-		    try {
-			for(String tag : map.tileset(tn).tags) {
-			    if(tag.equals("norepl"))
-				norepl[nt] = true;
-			}
-		    } catch(Loading l) {
-		    }
-		    nt++;
+		    if(nt >= rmap.length)
+			rmap = Utils.extend(rmap, rmap.length * 2);
+		    rmap[nt++] = tn;
 		}
 	    }
+	    TileInfo[] infos = new TileInfo[nt];
+	    boolean[] norepl = new boolean[nt];
 	    int[] prios = new int[nt];
-	    for(int i = 0, tn = 0; i < 256; i++) {
+	    for(int i = 0; i < nt; i++) {
+		int tn = rmap[i];
+		infos[i] = new TileInfo(map.tilesetn(tn), prios[i]);
+		norepl[i] = (Utils.index(Loading.waitfor(() -> map.tileset(tn)).tags, "norepl") >= 0);
+	    }
+	    for(int i = 0, tn = 0; i < tmap.length; i++) {
 		if(tmap[i] != -1)
 		    prios[tmap[i]] = tn++;
 	    }
-	    TileInfo[] infos = new TileInfo[nt];
-	    for(int i = 0; i < nt; i++)
-		infos[i] = new TileInfo(sets[i], prios[i]);
-	    byte[] tiles = new byte[cmaps.x * cmaps.y];
+	    int[] tiles = new int[cmaps.x * cmaps.y];
 	    float[] zmap = new float[cmaps.x * cmaps.y];
 	    for(int i = 0; i < cg.tiles.length; i++) {
-		tiles[i] = (byte)tmap[cg.tiles[i]];
+		tiles[i] = tmap[cg.tiles[i]];
 		zmap[i] = cg.z[i];
 	    }
 	    Grid g = new Grid(cg.id, infos, tiles, zmap, System.currentTimeMillis());
@@ -715,10 +748,10 @@ public class MapFile {
 		    }
 		}
 	    }
-	    byte[] ntiles = new byte[this.tiles.length];
+	    int[] ntiles = new int[this.tiles.length];
 	    for(int i = 0; i < this.tiles.length; i++) {
 		if(norepl[this.tiles[i]])
-		    ntiles[i] = (byte)tmap[prev.tiles[i]];
+		    ntiles[i] = tmap[prev.tiles[i]];
 		else
 		    ntiles[i] = this.tiles[i];
 	    }
@@ -729,17 +762,11 @@ public class MapFile {
 	}
 
 	public void save(Message fp) {
-	    fp.adduint8(4);
+	    fp.adduint8(5);
 	    ZMessage z = new ZMessage(fp);
 	    z.addint64(id);
 	    z.addint64(mtime);
-	    z.adduint8(tilesets.length);
-	    for(int i = 0; i < tilesets.length; i++) {
-		z.addstring(tilesets[i].res.name);
-		z.adduint16(tilesets[i].res.ver);
-		z.adduint8(tilesets[i].prio);
-	    }
-	    z.addbytes(tiles);
+	    savetiles(z, tilesets, tiles);
 	    savez(z, zmap);
 	    saveols(z, ols);
 	    z.finish();
@@ -767,22 +794,19 @@ public class MapFile {
 	    }
 	    try(StreamMessage data = new StreamMessage(fp)) {
 		int ver = data.uint8();
-		if((ver >= 1) && (ver <= 4)) {
+		if((ver >= 1) && (ver <= 5)) {
 		    ZMessage z = new ZMessage(data);
 		    long storedid = z.int64();
 		    if(storedid != id)
 			throw(new Message.FormatError(String.format("Grid ID mismatch: expected %s, got %s", id, storedid)));
 		    long mtime = (ver >= 2) ? z.int64() : System.currentTimeMillis();
-		    List<TileInfo> tilesets = new ArrayList<TileInfo>();
-		    for(int i = 0, no = z.uint8(); i < no; i++)
-			tilesets.add(new TileInfo(new Resource.Spec(Resource.remote(), z.string(), z.uint16()), z.uint8()));
-		    byte[] tiles = z.bytes(cmaps.x * cmaps.y);
+		    Pair<TileInfo[], int[]> tiles = loadtiles(z, (ver >= 5) ? 2 : 1);
 		    float[] zmap;
 		    if(ver >= 3)
 			zmap = loadz(z, String.format("%x", id));
 		    else
 			zmap = new float[cmaps.x * cmaps.y];
-		    Grid g = new Grid(id, tilesets.toArray(new TileInfo[0]), tiles, zmap, mtime);
+		    Grid g = new Grid(id, tiles.a, tiles.b, zmap, mtime);
 		    if(ver >= 4)
 			loadols(g.ols, z, String.format("%x", id));
 		    return(g);
@@ -801,7 +825,7 @@ public class MapFile {
 	public final int lvl;
 	public final Coord sc;
 
-	public ZoomGrid(long seg, int lvl, Coord sc, TileInfo[] tilesets, byte[] tiles, float[] zmap, long mtime) {
+	public ZoomGrid(long seg, int lvl, Coord sc, TileInfo[] tilesets, int[] tiles, float[] zmap, long mtime) {
 	    super(tilesets, tiles, zmap, mtime);
 	    this.seg = seg;
 	    this.lvl = lvl;
@@ -853,7 +877,7 @@ public class MapFile {
 	    Map<String, Integer> rinfos;
 	    {
 		Resource.Pool pool = null;
-		String[] sets = new String[256];
+		String[] sets = new String[16];
 		Set<String> hassets = new HashSet<>();
 		Map<String, Integer> vers = new HashMap<>();
 		for(int i = 0; i < 4; i++) {
@@ -865,13 +889,13 @@ public class MapFile {
 			    pool = set.pool;
 			vers.put(set.name, Math.max(vers.getOrDefault(set.name, 0), set.ver));
 			if(!hassets.contains(set.name)) {
+			    while(nt >= sets.length)
+				sets = Utils.extend(sets, sets.length * 2);
 			    sets[nt++] = set.name;
 			    hassets.add(set.name);
 			}
 		    }
 		}
-		if(nt >= 256)
-		    throw(new IllegalArgumentException(Integer.toString(nt)));
 		infos = new TileInfo[nt];
 		rinfos = new HashMap<>();
 		for(int i = 0; i < nt; i++) {
@@ -880,19 +904,19 @@ public class MapFile {
 		}
 	    }
 
-	    byte[] tiles = new byte[cmaps.x * cmaps.y];
+	    int[] tiles = new int[cmaps.x * cmaps.y];
 	    float[] zmap = new float[cmaps.x * cmaps.y];
 	    for(int gn = 0; gn < 4; gn++) {
 		int gx = gn % 2, gy = gn / 2;
 		DataGrid cg = lower[gn];
 		if(cg == null)
 		    continue;
-		byte[] tmap = new byte[256];
+		int[] tmap = new int[cg.tilesets.length];
 		Arrays.fill(tmap, (byte)-1);
 		for(int i = 0; i < cg.tilesets.length; i++)
-		    tmap[i] = rinfos.get(cg.tilesets[i].res.name).byteValue();
+		    tmap[i] = rinfos.get(cg.tilesets[i].res.name);
 		Coord off = cmaps.div(2).mul(gx, gy);
-		byte[] tc = new byte[4];
+		int[] tc = new int[4];
 		byte[] tcn = new byte[4];
 		for(int y = 0; y < cmaps.y / 2; y++) {
 		    for(int x = 0; x < cmaps.x / 2; x++) {
@@ -901,7 +925,7 @@ public class MapFile {
 			for(int sy = 0; sy < 2; sy++) {
 			    for(int sx = 0; sx < 2; sx++) {
 				Coord sgc = new Coord((x * 2) + sx, (y * 2) + sy);
-				byte st = tmap[cg.gettile(sgc)];
+				int st = tmap[cg.gettile(sgc)];
 				minz = Math.min(minz, (float)cg.getfz(sgc));
 				st: {
 				    for(int i = 0; i < nd; i++) {
@@ -969,19 +993,13 @@ public class MapFile {
 	}
 
 	public void save(Message fp) {
-	    fp.adduint8(3);
+	    fp.adduint8(4);
 	    ZMessage z = new ZMessage(fp);
 	    z.addint64(seg);
 	    z.addint32(lvl);
 	    z.addcoord(sc);
 	    z.addint64(mtime);
-	    z.adduint8(tilesets.length);
-	    for(int i = 0; i < tilesets.length; i++) {
-		z.addstring(tilesets[i].res.name);
-		z.adduint16(tilesets[i].res.ver);
-		z.adduint8(tilesets[i].prio);
-	    }
-	    z.addbytes(tiles);
+	    savetiles(z, tilesets, tiles);
 	    savez(z, zmap);
 	    saveols(z, ols);
 	    z.finish();
@@ -1013,7 +1031,7 @@ public class MapFile {
 		if(data.eom())
 		    return(null);
 		int ver = data.uint8();
-		if((ver >= 1) && (ver <= 3)) {
+		if((ver >= 1) && (ver <= 4)) {
 		    ZMessage z = new ZMessage(data);
 		    long storedseg = z.int64();
 		    if(storedseg != seg)
@@ -1026,16 +1044,13 @@ public class MapFile {
 			throw(new Message.FormatError(String.format("Zoomgrid coord mismatch: expected %s, got %s", sc, storedsc)));
 
 		    long mtime = z.int64();
-		    List<TileInfo> tilesets = new ArrayList<TileInfo>();
-		    for(int i = 0, no = z.uint8(); i < no; i++)
-			tilesets.add(new TileInfo(new Resource.Spec(Resource.remote(), z.string(), z.uint16()), z.uint8()));
-		    byte[] tiles = z.bytes(cmaps.x * cmaps.y);
+		    Pair<TileInfo[], int[]> tiles = loadtiles(z, (ver >= 4) ? 2 : 1);
 		    float[] zmap;
 		    if(ver >= 2)
 			zmap = loadz(z, String.format("(%d, %d) in %x@d", sc.x, sc.y, seg, lvl));
 		    else
 			zmap = new float[cmaps.x * cmaps.y];
-		    ZoomGrid g = new ZoomGrid(seg, lvl, sc, tilesets.toArray(new TileInfo[0]), tiles, zmap, mtime);
+		    ZoomGrid g = new ZoomGrid(seg, lvl, sc, tiles.a, tiles.b, zmap, mtime);
 		    if(ver >= 3)
 			loadols(g.ols, z, String.format("(%d, %d) in %x@d", sc.x, sc.y, seg, lvl));
 		    return(g);
@@ -1388,6 +1403,8 @@ public class MapFile {
 		return(null);
 	    }
 	    try(StreamMessage data = new StreamMessage(fp)) {
+		if(data.eom())
+		    return(null);
 		int ver = data.uint8();
 		if(ver == 1) {
 		    Segment seg = new Segment(id);
@@ -1407,23 +1424,32 @@ public class MapFile {
 	    }
 	}, (id, seg) -> {
 	    checklock();
-	    OutputStream fp;
-	    try {
-		fp = sstore("seg-%x", seg.id);
-	    } catch(IOException e) {
-		throw(new StreamMessage.IOError(e));
+	    if(seg == null) {
+		try(OutputStream fp = sstore("seg-%x", id)) {
+		} catch(IOException e) {
+		    throw(new StreamMessage.IOError(e));
+		}
+		if(knownsegs.remove(id))
+		    defersave();
+	    } else {
+		OutputStream fp;
+		try {
+		    fp = sstore("seg-%x", seg.id);
+		} catch(IOException e) {
+		    throw(new StreamMessage.IOError(e));
+		}
+		try(StreamMessage out = new StreamMessage(fp)) {
+		    out.adduint8(1);
+		    ZMessage z = new ZMessage(out);
+		    z.addint64(seg.id);
+		    z.addint32(seg.map.size());
+		    for(Map.Entry<Coord, Long> e : seg.map.entrySet())
+			z.addcoord(e.getKey()).addint64(e.getValue());
+		    z.finish();
+		}
+		if(knownsegs.add(id))
+		    defersave();
 	    }
-	    try(StreamMessage out = new StreamMessage(fp)) {
-		out.adduint8(1);
-		ZMessage z = new ZMessage(out);
-		z.addint64(seg.id);
-		z.addint32(seg.map.size());
-		for(Map.Entry<Coord, Long> e : seg.map.entrySet())
-		    z.addcoord(e.getKey()).addint64(e.getValue());
-		z.finish();
-	    }
-	    if(knownsegs.add(id))
-		defersave();
 	});
 
     private void merge(Segment dst, Segment src, Coord soff) {
@@ -1506,7 +1532,7 @@ public class MapFile {
 	    if(!missing.isEmpty()) {
 		Segment seg;
 		if(mseg == -1) {
-		    seg = new Segment(Utils.el(missing).id);
+		    seg = new Segment(rnd.nextLong());
 		    moff = Coord.z;
 		    if(debug) Debug.log.printf("mapfile: creating new segment %x\n", seg.id);
 		} else {
@@ -1627,19 +1653,13 @@ public class MapFile {
 		    continue;
 		}
 		MessageBuf buf = new MessageBuf();
-		buf.adduint8(3);
+		buf.adduint8(4);
 		buf.addint64(gd.b);
 		buf.addint64(seg.id);
 		buf.addint64(grid.mtime);
 		buf.addcoord(gd.a);
-		buf.adduint8(grid.tilesets.length);
-		for(TileInfo tinf : grid.tilesets) {
-		    buf.addstring(tinf.res.name);
-		    buf.adduint16(tinf.res.ver);
-		    buf.adduint8(tinf.prio);
-		}
 		buf.addint32(cmaps.x * cmaps.y);
-		buf.addbytes(grid.tiles);
+		DataGrid.savetiles(buf, grid.tilesets, grid.tiles);
 		DataGrid.savez(buf, grid.zmap);
 		DataGrid.saveols(buf, grid.ols);
 		byte[] od = buf.fin();
@@ -1677,37 +1697,52 @@ public class MapFile {
 	public long gid, segid, mtime;
 	public Coord sc;
 	public TileInfo[] tilesets;
-	public byte[] tiles;
+	public int[] tiles;
 	public float[] zmap;
 	public Collection<Overlay> ols = new ArrayList<>();
 
 	ImportedGrid(Message data) {
 	    int ver = data.uint8();
-	    if((ver < 1) || (ver > 3))
+	    if((ver < 1) || (ver > 4))
 		throw(new Message.FormatError("Unknown grid data version: " + ver));
 	    gid = data.int64();
 	    segid = data.int64();
 	    mtime = data.int64();
 	    sc = data.coord();
-	    tilesets = new TileInfo[data.uint8()];
-	    for(int i = 0; i < tilesets.length; i++)
-		tilesets[i] = new TileInfo(new Resource.Spec(Resource.remote(), data.string(), data.uint16()), data.uint8());
-	    if(ver >= 2) {
+	    if(ver >= 4) {
 		int len = data.int32();
 		if(len != (cmaps.x * cmaps.y))
 		    throw(new Message.FormatError("Bad grid data dimensions: " + len));
-		tiles = data.bytes(len);
+		Pair<TileInfo[], int[]> tileinfo = DataGrid.loadtiles(data, 2);
+		tilesets = tileinfo.a;
+		tiles = tileinfo.b;
 		zmap = DataGrid.loadz(data, String.format("%x", gid));
 	    } else {
-		tiles = data.bytes();
-		if(tiles.length != (cmaps.x * cmaps.y))
-		    throw(new Message.FormatError("Bad grid data dimensions: " + tiles.length));
-		zmap = new float[cmaps.x * cmaps.y];
+		tilesets = new TileInfo[data.uint8()];
+		for(int i = 0; i < tilesets.length; i++)
+		    tilesets[i] = new TileInfo(new Resource.Spec(Resource.remote(), data.string(), data.uint16()), data.uint8());
+		if(ver >= 2) {
+		    int len = data.int32();
+		    if(len != (cmaps.x * cmaps.y))
+			throw(new Message.FormatError("Bad grid data dimensions: " + len));
+		    tiles = new int[len];
+		    for(int i = 0; i < len; i++)
+			tiles[i] = data.uint8();
+		    zmap = DataGrid.loadz(data, String.format("%x", gid));
+		} else {
+		    byte[] raw = data.bytes();
+		    if(raw.length != (cmaps.x * cmaps.y))
+			throw(new Message.FormatError("Bad grid data dimensions: " + tiles.length));
+		    tiles = new int[raw.length];
+		    for(int i = 0; i < raw.length; i++)
+			tiles[i] = raw[i] & 0xff;
+		    zmap = new float[cmaps.x * cmaps.y];
+		}
 	    }
 	    if(ver >= 3)
 		DataGrid.loadols(ols, data, String.format("%x", gid));
-	    for(byte td : tiles) {
-		if((td & 0xff) >= tiles.length)
+	    for(int td : tiles) {
+		if(td >= tiles.length)
 		    throw(new Message.FormatError(String.format("Bad grid data contents: Tileset ID %d does not exist among 0-%d", (td & 0xff), tiles.length - 1)));
 	    }
 	}

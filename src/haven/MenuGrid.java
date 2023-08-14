@@ -98,9 +98,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	public KeyBinding binding() {
 	    return(KeyBinding.get("scm/" + res.name, hotkey()));
 	}
-	@Deprecated public void use() {
-	    pag.scm.wdgmsg("act", (Object[])res.flayer(Resource.action).ad);
-	}
 	public void use(Interaction iact) {
 	    Object[] args = Utils.extend(new Object[0], res.flayer(Resource.action).ad);
 	    args = Utils.extend(args, Integer.valueOf(pag.scm.ui.modflags()));
@@ -150,6 +147,8 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    return(info);
 	}
 	private static final OwnerContext.ClassResolver<PagButton> ctxr = new OwnerContext.ClassResolver<PagButton>()
+	    .add(PagButton.class, p -> p)
+	    .add(MenuGrid.class, p -> p.pag.scm)
 	    .add(Glob.class, p -> p.pag.scm.ui.sess.glob)
 	    .add(Session.class, p -> p.pag.scm.ui.sess);
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
@@ -534,7 +533,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		int a = 0;
 		while(a < args.length) {
 		    int fl = (Integer)args[a++];
-		    Pagina pag = paginafor(ui.sess.getres((Integer)args[a++]));
+		    Pagina pag = paginafor(ui.sess.getres((Integer)args[a++], -2));
 		    if((fl & 1) != 0) {
 			pag.state(Pagina.State.ENABLED);
 			pag.meter = 0;

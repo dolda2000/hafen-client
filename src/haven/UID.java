@@ -26,29 +26,30 @@
 
 package haven;
 
-import haven.render.*;
+public class UID extends Number {
+    public final long bits;
 
-public class LocationCam extends Camera {
-    private final static Matrix4f base = makerot(new Matrix4f(), new Coord3f(0.0f, 0.0f, 1.0f), (float)(Math.PI / 2))
-	.mul1(makerot(new Matrix4f(), new Coord3f(0.0f, 1.0f, 0.0f), (float)(Math.PI / 2)));
-    public final Location.Chain loc;
-    private Matrix4f ll;
-    
-    /* Oh, Java. <3 */
-    private LocationCam(Location.Chain loc, Matrix4f lm) {
-	super(base.mul(rxinvert(lm)));
-	this.ll = lm;
-	this.loc = loc;
+    private UID(long bits) {
+	this.bits = bits;
+    }
+    public static UID of(long bits) {return(new UID(bits));}
+
+    public long longValue() {return(bits);}
+
+    public byte byteValue() {return((byte)bits);}
+    public short shortValue() {return((short)bits);}
+    public int intValue() {return((int)bits);}
+    public float floatValue() {return((float)bits);}
+    public double doubleValue() {return((double)bits);}
+
+    public int hashCode() {
+	return(Long.hashCode(bits));
+    }
+    public boolean equals(Object x) {
+	return((x instanceof UID) && (((UID)x).bits == bits));
     }
 
-    public LocationCam(Location.Chain loc) {
-	this(loc, loc.fin(Matrix4f.id));
-    }
-    
-    public Matrix4f fin(Matrix4f p) {
-	Matrix4f lm = loc.fin(Matrix4f.id);
-	if(lm != ll)
-	    update(base.mul(rxinvert(ll = lm)));
-	return(super.fin(p));
+    public String toString() {
+	return(Long.toUnsignedString(bits, 16));
     }
 }

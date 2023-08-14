@@ -28,8 +28,8 @@ package haven.render.gl;
 
 import java.util.*;
 import java.nio.*;
-import com.jogamp.opengl.*;
 import haven.render.*;
+import haven.Finalizer;
 
 /*
  * This buffer exist only to conserve allocation bandwidth, by keeping
@@ -45,7 +45,7 @@ import haven.render.*;
 public class StreamBuffer implements haven.Disposable {
     public final GLBuffer rbuf;
     public final int size;
-    private ByteBuffer[] xfbufs = {};
+    private SysBuffer[] xfbufs = {};
     private boolean[] used = {};
 
     public StreamBuffer(GLEnvironment env, int size) {
@@ -53,8 +53,8 @@ public class StreamBuffer implements haven.Disposable {
 	this.size = size;
     }
 
-    private ByteBuffer mkbuf() {
-	return(ByteBuffer.allocate(size).order(ByteOrder.nativeOrder()));
+    private SysBuffer mkbuf() {
+	return(rbuf.env.malloc(size));
     }
 
     public ByteBuffer get() {
@@ -63,9 +63,10 @@ public class StreamBuffer implements haven.Disposable {
 		if(!used[i]) {
 		    if(xfbufs[i] == null)
 			xfbufs[i] = mkbuf();
-		    xfbufs[i].rewind();
+		    ByteBuffer ret = xfbufs[i].data();
+		    ret.rewind();
 		    used[i] = true;
-		    return(xfbufs[i]);
+		    return(ret);
 		}
 	    }
 	    int n = xfbufs.length;
@@ -73,7 +74,7 @@ public class StreamBuffer implements haven.Disposable {
 	    used = Arrays.copyOf(used, Math.max(1, n * 2));
 	    xfbufs[n] = mkbuf();
 	    used[n] = true;
-	    return(xfbufs[n]);
+	    return(xfbufs[n].data());
 	}
     }
 
@@ -81,7 +82,7 @@ public class StreamBuffer implements haven.Disposable {
 	if(buf == null) throw(new NullPointerException());
 	synchronized(this) {
 	    for(int i = 0; i < xfbufs.length; i++) {
-		if(xfbufs[i] == buf) {
+		if((xfbufs[i] != null) && (xfbufs[i].data() == buf)) {
 		    if(!used[i])
 			throw(new RuntimeException());
 		    used[i] = false;
@@ -93,16 +94,28 @@ public class StreamBuffer implements haven.Disposable {
     public void put(BGL gl, ByteBuffer buf) {
 	if(buf == null) throw(new NullPointerException());
 	gl.bglSubmit(new BGL.Request() {
-		public void run(GL3 gl) {put(buf);}
+		public void run(GL gl) {put(buf);}
 		public void abort() {put(buf);}
 	    });
     }
 
     public class Fill implements FillBuffer {
-	public ByteBuffer data;
+	public final ByteBuffer data;
+	private final boolean[] clear;
+	private final Runnable clean;
 
 	public Fill() {
-	    data = StreamBuffer.this.get();
+	    boolean[] clear = this.clear = new boolean[] {false};
+	    StreamBuffer bref = StreamBuffer.this;
+	    ByteBuffer data = this.data = bref.get();
+	    clean = Finalizer.finalize(this, () -> {
+		    synchronized(clear) {
+			if(!clear[0]) {
+			    bref.put(data);
+			    clear[0] = true;
+			}
+		    }
+		});
 	}
 
 	public int size() {return(size);}
@@ -117,27 +130,24 @@ public class StreamBuffer implements haven.Disposable {
 	}
 
 	ByteBuffer get() {
-	    synchronized(this) {
+	    synchronized(clear) {
 		ByteBuffer ret = this.data;
-		this.data = null;
+		clear[0] = true;
 		ret.rewind();
 		return(ret);
 	    }
 	}
 
 	public void dispose() {
-	    synchronized(this) {
-		if(data != null) {
-		    put(data);
-		    data = null;
-		}
-	    }
+	    clean.run();
 	}
-
-	protected void finalize() {dispose();}
     }
 
     public void dispose() {
 	rbuf.dispose();
+	for(int i = 0; i < xfbufs.length; i++) {
+	    if(xfbufs[i] != null)
+		xfbufs[i].dispose();
+	}
     }
 }

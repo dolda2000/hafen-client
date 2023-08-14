@@ -30,7 +30,7 @@ import java.awt.RenderingHints;
 import java.io.*;
 import java.nio.*;
 import java.nio.file.*;
-import java.net.URL;
+import java.net.*;
 import java.lang.ref.*;
 import java.lang.reflect.*;
 import java.util.prefs.*;
@@ -234,12 +234,46 @@ public class Utils {
 	return((raw - 186) * (1.0 / 31.0));
     }
 
-    public static synchronized Preferences prefs() {
+    private static Map<Object, Object> sysprefs() {
+	try {
+	    Properties buf = new Properties();
+	    Optional<Path> pfile = Optional.ofNullable(System.getProperty("haven.prefs", null)).map(Utils::path);
+	    if(pfile.isPresent() && Files.exists(pfile.get())) {
+		try(InputStream fp = Files.newInputStream(pfile.get())) {
+		    buf.load(fp);
+		} catch(IOException e) {
+		    new Warning(e, "could not read preferences file").level(Warning.ERROR).issue();
+		}
+	    }
+	    for(Map.Entry<?, ?> ent : System.getProperties().entrySet()) {
+		if((ent.getKey() instanceof String) && (ent.getValue() instanceof String) &&
+		   ((String)ent.getKey()).startsWith("haven.prefs."))
+		{
+		    buf.put(((String)ent.getKey()).substring(12), (String)ent.getValue());
+		}
+	    }
+	    return(buf);
+	} catch(SecurityException e) {
+	    return(Collections.emptyMap());
+	}
+    }
+
+    public static final Config.Variable<String> prefspec = Config.Variable.prop("haven.prefspec", "hafen");
+    public static Preferences prefs() {
 	if(prefs == null) {
-	    Preferences node = Preferences.userNodeForPackage(Utils.class);
-	    if(Config.prefspec != null)
-		node = node.node(Config.prefspec);
-	    prefs = node;
+	    synchronized(Utils.class) {
+		if(prefs == null) {
+		    Map<Object, Object> sysprefs = sysprefs();
+		    if(!sysprefs.isEmpty()) {
+			prefs = new MapPrefs("haven", sysprefs);
+		    } else {
+			Preferences node = Preferences.userNodeForPackage(Utils.class);
+			if(prefspec.get() != null)
+			    node = node.node(prefspec.get());
+			prefs = node;
+		    }
+		}
+	    }
 	}
 	return(prefs);
     }
@@ -254,7 +288,10 @@ public class Utils {
 
     public static void setpref(String prefname, String val) {
 	try {
-	    prefs().put(prefname, val);
+	    if(val == null)
+		prefs().remove(prefname);
+	    else
+		prefs().put(prefname, val);
 	} catch(SecurityException e) {
 	}
     }
@@ -320,7 +357,8 @@ public class Utils {
 
     public static void setprefc(String prefname, Coord val) {
 	try {
-	    prefs().put(prefname, val.x + "x" + val.y);
+	    String enc = (val == null) ? "" : val.x + "x" + val.y;
+	    prefs().put(prefname, enc);
 	} catch(SecurityException e) {
 	}
     }
@@ -382,6 +420,18 @@ public class Utils {
 	} catch(SecurityException e) {
 	    return(def);
 	}
+    }
+
+    public static int iv(Object arg) {
+	return(((Number)arg).intValue());
+    }
+
+    public static float fv(Object arg) {
+	return(((Number)arg).floatValue());
+    }
+
+    public static double dv(Object arg) {
+	return(((Number)arg).doubleValue());
     }
 
     public static int sb(int n, int b) {
@@ -530,101 +580,10 @@ public class Utils {
 	if(ze == 8) ret[2] = 0; else ret[2] = Float.intBitsToFloat((zs << 31) | ((me - ze + 127) << 23) | ((zb << (ze + 16)) & 0x007fffff));
     }
 
-    public static float hfdec(short bits) {
-	int b = ((int)bits) & 0xffff;
-	int e = (b & 0x7c00) >> 10;
-	int m = b & 0x03ff;
-	int ee;
-	if(e == 0) {
-	    if(m == 0) {
-		ee = 0;
-	    } else {
-		int n = Integer.numberOfLeadingZeros(m) - 22;
-		ee = (-15 - n) + 127;
-		m = (m << (n + 1)) & 0x03ff;
-	    }
-	} else if(e == 0x1f) {
-	    ee = 0xff;
-	} else {
-	    ee = e - 15 + 127;
-	}
-	int f32 = ((b & 0x8000) << 16) |
-	    (ee << 23) |
-	    (m << 13);
-	return(Float.intBitsToFloat(f32));
-    }
-
-    public static short hfenc(float f) {
-	int b = Float.floatToIntBits(f);
-	int e = (b & 0x7f800000) >> 23;
-	int m = b & 0x007fffff;
-	int ee;
-	if(e == 0) {
-	    ee = 0;
-	    m = 0;
-	} else if(e == 0xff) {
-	    ee = 0x1f;
-	} else if(e < 127 - 14) {
-	    ee = 0;
-	    m = (m | 0x00800000) >> ((127 - 14) - e);
-	} else if(e > 127 + 15) {
-	    return(((b & 0x80000000) == 0)?((short)0x7c00):((short)0xfc00));
-	} else {
-	    ee = e - 127 + 15;
-	}
-	int f16 = ((b >> 16) & 0x8000) |
-	    (ee << 10) |
-	    (m >> 13);
-	return((short)f16);
-    }
-
-    public static float mfdec(byte bits) {
-	int b = ((int)bits) & 0xff;
-	int e = (b & 0x78) >> 3;
-	int m = b & 0x07;
-	int ee;
-	if(e == 0) {
-	    if(m == 0) {
-		ee = 0;
-	    } else {
-		int n = Integer.numberOfLeadingZeros(m) - 29;
-		ee = (-7 - n) + 127;
-		m = (m << (n + 1)) & 0x07;
-	    }
-	} else if(e == 0x0f) {
-	    ee = 0xff;
-	} else {
-	    ee = e - 7 + 127;
-	}
-	int f32 = ((b & 0x80) << 24) |
-	    (ee << 23) |
-	    (m << 20);
-	return(Float.intBitsToFloat(f32));
-    }
-
-    public static byte mfenc(float f) {
-	int b = Float.floatToIntBits(f);
-	int e = (b & 0x7f800000) >> 23;
-	int m = b & 0x007fffff;
-	int ee;
-	if(e == 0) {
-	    ee = 0;
-	    m = 0;
-	} else if(e == 0xff) {
-	    ee = 0x0f;
-	} else if(e < 127 - 6) {
-	    ee = 0;
-	    m = (m | 0x00800000) >> ((127 - 6) - e);
-	} else if(e > 127 + 7) {
-	    return(((b & 0x80000000) == 0)?((byte)0x78):((byte)0xf8));
-	} else {
-	    ee = e - 127 + 7;
-	}
-	int f8 = ((b >> 24) & 0x80) |
-	    (ee << 3) |
-	    (m >> 20);
-	return((byte)f8);
-    }
+    public static float hfdec(short bits) {return(HalfFloat.bits(bits));}
+    public static short hfenc(float f)    {return(HalfFloat.bits(f));}
+    public static float mfdec(byte bits)  {return(MiniFloat.bits(bits));}
+    public static byte  mfenc(float f)    {return(MiniFloat.bits(f));}
 
     public static void uvec2oct(float[] buf, float x, float y, float z) {
 	float m = 1.0f / (Math.abs(x) + Math.abs(y) + Math.abs(z));
@@ -649,6 +608,12 @@ public class Utils {
 	buf[0] = x * f;
 	buf[1] = y * f;
 	buf[2] = z * f;
+    }
+
+    public static Coord3f oct2uvec(float x, float y) {
+	float[] buf = new float[3];
+	oct2uvec(buf, x, y);
+	return(Coord3f.of(buf[0], buf[1], buf[2]));
     }
 
     static char num2hex(int num) {
@@ -848,10 +813,17 @@ public class Utils {
     }
 
     public static interface IOFunction<T> {
-	/* Check exceptions banzai :P */
+	/* Checked exceptions banzai :P */
 	public T run() throws IOException;
     }
 
+    /* XXX: Sometimes, the client is getting strange and weird OS
+     * errors on Windows. For example, file sharing violations are
+     * sometimes returned even though Java always opens
+     * RandomAccessFiles in non-exclusive mode, and other times,
+     * permission is spuriously denied. I've had zero luck in trying
+     * to find a root cause for these errors, so just assume the error
+     * is transient and retry. :P */
     public static <T> T ioretry(IOFunction<? extends T> task) throws IOException {
 	double[] retimes = {0.01, 0.1, 0.5, 1.0, 5.0};
 	Throwable last = null;
@@ -928,6 +900,21 @@ public class Utils {
 	if(term) out.println();
     }
 
+    public static void dumparr(double[] arr, PrintStream out, boolean term) {
+	if(arr == null) {
+	    out.print("null");
+	} else {
+	    out.print('[');
+	    boolean f = true;
+	    for(double v : arr) {
+		if(!f) out.print(", "); f = false;
+		out.print(v);
+	    }
+	    out.print(']');
+	}
+	if(term) out.println();
+    }
+
     public static void dumparr(float[] arr, PrintStream out, boolean term) {
 	if(arr == null) {
 	    out.print("null");
@@ -937,6 +924,21 @@ public class Utils {
 	    for(float v : arr) {
 		if(!f) out.print(", "); f = false;
 		out.print(v);
+	    }
+	    out.print(']');
+	}
+	if(term) out.println();
+    }
+
+    public static void dumparr(long[] arr, PrintStream out, boolean term) {
+	if(arr == null) {
+	    out.print("null");
+	} else {
+	    out.print('[');
+	    boolean f = true;
+	    for(long i : arr) {
+		if(!f) out.print(", "); f = false;
+		out.print(i);
 	    }
 	    out.print(']');
 	}
@@ -1108,27 +1110,22 @@ public class Utils {
 	return(r);
     }
 
-    /* XXX: These are not actually correct, since an exact integer
-     * will round downwards, but I don't actually expect that to be a
-     * problem given how I use these, and it turns out that
-     * java.lang.Math.floor is actually surprisingly slow (it
-     * delegates to StrictMath.floor for some reason). */
+    /* Note: Math.floor has historically been surprisingly slow to the
+     * extent that it has required a floordiv implementation that
+     * avoids using it. That doesn't seem to be the case any longer,
+     * but maybe keep an eye open... */
     public static int floordiv(float a, float b) {
-	float q = a / b;
-	return((q < 0)?(((int)q) - 1):((int)q));
+	return((int)Math.floor(a / b));
     }
     public static int floordiv(double a, double b) {
-	double q = a / b;
-	return((q < 0)?(((int)q) - 1):((int)q));
+	return((int)Math.floor(a / b));
     }
 
     public static float floormod(float a, float b) {
-	float r = a % b;
-	return((a < 0)?(r + b):r);
+	return(a - (floordiv(a, b) * b));
     }
     public static double floormod(double a, double b) {
-	double r = a % b;
-	return((a < 0)?(r + b):r);
+	return(a - (floordiv(a, b) * b));
     }
 
     public static double cangle(double a) {
@@ -1370,7 +1367,7 @@ public class Utils {
     }
     */
     public static ByteBuffer wbbuf(int n) {
-	return(ByteBuffer.wrap(new byte[n]));
+	return(ByteBuffer.wrap(new byte[n]).order(ByteOrder.nativeOrder()));
     }
     public static IntBuffer wibuf(int n) {
 	return(IntBuffer.wrap(new int[n]));
@@ -1913,6 +1910,197 @@ public class Utils {
 	else if(ah > bh)
 	    return(1);
 	return(0);
+    }
+
+    public static final Object formatter(String fmt, Object... args) {
+	return(new Object() {
+		public String toString() {
+		    return(String.format(fmt, args));
+		}
+	    });
+    }
+
+    public static class AddressFormatException extends IllegalArgumentException {
+	public final String addr, type;
+
+	public AddressFormatException(String message, CharSequence addr, String type) {
+	    super(message);
+	    this.addr = addr.toString();
+	    this.type = type;
+	}
+
+	public AddressFormatException(String message, CharSequence addr, String type, Throwable cause) {
+	    super(message, cause);
+	    this.addr = addr.toString();
+	    this.type = type;
+	}
+
+	public String getMessage() {
+	    return(super.getMessage() + ": " + addr + " (" + type + ")");
+	}
+    }
+
+    public static Inet4Address in4_pton(CharSequence as) {
+	int dbuf = -1, o = 0;
+	byte[] abuf = new byte[4];
+	for(int i = 0; i < as.length(); i++) {
+	    char c = as.charAt(i);
+	    if((c >= '0') && (c <= '9')) {
+		dbuf = (((dbuf < 0) ? 0 : dbuf) * 10) + (c - '0');
+		if(dbuf >= 256)
+		    throw(new AddressFormatException("illegal octet", as, "in4"));
+	    } else if(c == '.') {
+		if(dbuf < 0)
+		    throw(new AddressFormatException("dot without preceding octet", as, "in4"));
+		if(o >= 3)
+		    throw(new AddressFormatException("too many address octets", as, "in4"));
+		abuf[o++] = (byte)dbuf;
+		dbuf = -1;
+	    } else {
+		throw(new AddressFormatException("illegal address character", as, "in4"));
+	    }
+	}
+	if(dbuf < 0)
+	    throw(new AddressFormatException("end without preceding octet", as, "in4"));
+	if(o != 3)
+	    throw(new AddressFormatException("too few address octets", as, "in4"));
+	abuf[o++] = (byte)dbuf;
+	try {
+	    return((Inet4Address)InetAddress.getByAddress(abuf));
+	} catch(UnknownHostException e) {
+	    throw(new RuntimeException(e));
+	}
+    }
+
+    public static InetAddress in6_pton(CharSequence as) {
+	int hbuf = -1, dbuf = -1, p = 0, v4map = -1;
+	int[] o = {0, 0};
+	byte[][] abuf = {new byte[16], new byte[16]};
+	String scope = null;
+	for(int i = 0; i < as.length(); i++) {
+	    char c = as.charAt(i);
+	    int dv = -1;
+	    if((c >= '0') && (c <= '9'))
+		dv = c - '0';
+	    else if((c >= 'A') && (c <= 'F'))
+		dv = c + 10 - 'A';
+	    else if((c >= 'a') && (c <= 'f'))
+		dv = c + 10 - 'a';
+	    if(dv >= 0) {
+		if(hbuf < 0)
+		    hbuf = dbuf = 0;
+		hbuf = (hbuf * 16) + dv;
+		if(hbuf >= 65536)
+		    throw(new AddressFormatException("illegal address number", as, "in6"));
+		if(dbuf >= 0)
+		    dbuf = (dv >= 10) ? -1 : ((dbuf * 10) + dv);
+		if(dbuf >= 256)
+		    dbuf = -1;
+	    } else if(c == ':') {
+		if(v4map >= 0)
+		    throw(new AddressFormatException("illegal embedded v4 address", as, "in6"));
+		if(hbuf < 0) {
+		    if(p == 0) {
+			if(o[p] == 0) {
+			    if((i < as.length() - 1) && (as.charAt(i + 1) == ':')) {
+				p = 1;
+				i++;
+			    } else {
+				throw(new AddressFormatException("colon without preceeding address number", as, "in6"));
+			    }
+			} else {
+			    p = 1;
+			}
+		    } else {
+			throw(new AddressFormatException("duplicate zero-string", as, "in6"));
+		    }
+		} else {
+		    if(o[p] >= 14)
+			throw(new AddressFormatException("too many address numbers", as, "in6"));
+		    abuf[p][o[p]++] = (byte)((hbuf & 0xff00) >> 8);
+		    abuf[p][o[p]++] = (byte) (hbuf & 0x00ff);
+		    hbuf = -1;
+		}
+	    } else if(c == '.') {
+		if((hbuf < 0) || (dbuf < 0))
+		    throw(new AddressFormatException("illegal embedded v4 octet", as, "in6"));
+		if((p == 0) && (o[p] == 0))
+		    throw(new AddressFormatException("embedded v4 at start of address", as, "in6"));
+		if(v4map++ >= 2)
+		    throw(new AddressFormatException("too many embedded v4 octets", as, "in6"));
+		if(o[p] >= 15)
+		    throw(new AddressFormatException("too many address numbers", as, "in6"));
+		abuf[p][o[p]++] = (byte)dbuf;
+		hbuf = -1;
+	    } else if(c == '%') {
+		scope = as.subSequence(i + 1, as.length()).toString();
+		break;
+	    } else {
+		throw(new AddressFormatException("illegal address character", as, "in6"));
+	    }
+	}
+	if(hbuf < 0) {
+	    if((p < 1) || (o[p] > 0))
+		throw(new AddressFormatException("unterminated address", as, "in6"));
+	} else {
+	    if(v4map < 0) {
+		if(o[p] >= 15)
+		    throw(new AddressFormatException("too many address numbers", as, "in6"));
+		abuf[p][o[p]++] = (byte)((hbuf & 0xff00) >> 8);
+		abuf[p][o[p]++] = (byte) (hbuf & 0x00ff);
+	    } else {
+		if(dbuf < 0)
+		    throw(new AddressFormatException("illegal embedded v4 octet", as, "in6"));
+		if(v4map != 2)
+		    throw(new AddressFormatException("too few embedded v4 octets", as, "in6"));
+		if(o[p] >= 16)
+		    throw(new AddressFormatException("too many address numbers", as, "in6"));
+		abuf[p][o[p]++] = (byte)dbuf;
+	    }
+	}
+	byte[] fbuf;
+	if(p == 0) {
+	    if(o[0] != 16)
+		throw(new AddressFormatException("too few address numbers", as, "in6"));
+	    fbuf = abuf[0];
+	} else {
+	    if((o[0] + o[1]) >= 16)
+		throw(new AddressFormatException("illegal zero-string", as, "in6"));
+	    fbuf = new byte[16];
+	    System.arraycopy(abuf[0], 0, fbuf, 0, o[0]);
+	    System.arraycopy(abuf[1], 0, fbuf, 16 - o[1], o[1]);
+	}
+	try {
+	    if(scope == null)
+		return(InetAddress.getByAddress(fbuf));
+	    try {
+		return(Inet6Address.getByAddress(null, fbuf, Integer.parseInt(scope)));
+	    } catch(NumberFormatException e) {
+		try {
+		    NetworkInterface iface = NetworkInterface.getByName(scope);
+		    if(iface == null)
+			throw(new AddressFormatException("could not resolve scoped interface: " + scope, as, "in6"));
+		    return(Inet6Address.getByAddress(null, fbuf, iface));
+		} catch(SocketException e2) {
+		    throw(new AddressFormatException("could not resolve scoped interface: " + scope, as, "in6", e));
+		}
+	    }
+	} catch(UnknownHostException e) {
+	    throw(new RuntimeException(e));
+	}
+    }
+
+    public static InetAddress inet_pton(CharSequence as) {
+	try {
+	    return(in4_pton(as));
+	} catch(IllegalArgumentException e) {
+	    try {
+		return(in6_pton(as));
+	    } catch(IllegalArgumentException e2) {
+		e2.addSuppressed(e);
+		throw(e2);
+	    }
+	}
     }
 
     public static final Comparator<Object> idcmp = new Comparator<Object>() {

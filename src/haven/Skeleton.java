@@ -194,7 +194,7 @@ public class Skeleton {
 	return(p);
     }
 	
-    public class Pose {
+    public class Pose implements EquipTarget {
 	public float[][] lpos, gpos;
 	public float[][] lrot, grot;
 	private Pose from = null;
@@ -278,6 +278,13 @@ public class Skeleton {
 		});
 	}
 
+	public Supplier<Pipe.Op> eqpoint(String name, Message dat) {
+	    Bone bone = bones.get(name);
+	    if(bone == null)
+		return(null);
+	    return(bonetrans(bone.idx));
+	}
+
 	public Supplier<Pipe.Op> bonetrans2(int bone) {
 	    return(new Supplier<Pipe.Op>() {
 		    int cseq = -1;
@@ -301,35 +308,31 @@ public class Skeleton {
 		});
 	}
 
-	/* XXXRENDER
-	public class BoneAlign extends Location {
+	public class BoneAlign implements Supplier<Pipe.Op> {
 	    private final Coord3f ref;
 	    private final int orig, tgt;
+	    private Location cur;
 	    private int cseq = -1;
 	    
 	    public BoneAlign(Coord3f ref, Bone orig, Bone tgt) {
-		super(Matrix4f.identity());
 		this.ref = ref;
 		this.orig = orig.idx;
 		this.tgt = tgt.idx;
 	    }
 		
-	    public Matrix4f fin(Matrix4f p) {
+	    public Location get() {
 		if(cseq != seq) {
 		    Coord3f cur = new Coord3f(gpos[tgt][0] - gpos[orig][0], gpos[tgt][1] - gpos[orig][1], gpos[tgt][2] - gpos[orig][2]).norm();
 		    Coord3f axis = cur.cmul(ref).norm();
 		    float ang = (float)Math.acos(cur.dmul(ref));
-		    /-
-		    System.err.println(cur + ", " + ref + ", " + axis + ", " + ang);
-		    -/
-		    update(Transform.makexlate(new Matrix4f(), new Coord3f(gpos[orig][0], gpos[orig][1], gpos[orig][2]))
-			   .mul1(Transform.makerot(new Matrix4f(), axis, -ang)));
+		    // Debug.dump(cur, ref, axis, ang);
+		    this.cur = new Location(Transform.makexlate(new Matrix4f(), new Coord3f(gpos[orig][0], gpos[orig][1], gpos[orig][2]))
+				       .mul1(Transform.makerot(new Matrix4f(), axis, -ang)));
 		    cseq = seq;
 		}
-		return(super.fin(p));
+		return(cur);
 	    }
 	}
-	*/
 
 	public void boneoff(int bone, float[] offtrans) {
 	    /* It would be nice if these "new float"s get
@@ -356,33 +359,58 @@ public class Skeleton {
 	    offtrans[ 9] = yz + xw;
 	}
 	
-	/* XXXRENDER
-	public final Rendered debug = new Rendered() {
-		public void draw(GOut g) {
-		    BGL gl = g.gl;
-		    g.st.put(Light.lighting, null);
-		    g.state(States.xray);
-		    g.apply();
-		    gl.glBegin(GL2.GL_LINES);
-		    for(int i = 0; i < blist.length; i++) {
-			if(blist[i].parent != null) {
-			    int pi = blist[i].parent.idx;
-			    gl.glColor3f(1.0f, 0.0f, 0.0f);
-			    gl.glVertex3f(gpos[pi][0], gpos[pi][1], gpos[pi][2]);
-			    gl.glColor3f(0.0f, 1.0f, 0.0f);
-			    gl.glVertex3f(gpos[i][0], gpos[i][1], gpos[i][2]);
+	public class Debug implements RenderTree.Node, Rendered, TickList.Ticking, TickList.TickNode {
+	    private final VertexArray.Layout fmt = new VertexArray.Layout(new VertexArray.Layout.Input(Homo3D.vertex,     new VectorFormat(3, NumberFormat.FLOAT32), 0,  0, 16),
+									  new VertexArray.Layout.Input(VertexColor.color, new VectorFormat(4, NumberFormat.UNORM8),  0, 12, 16));
+	    private final VertexArray.Buffer data;
+	    private final Model model;
+	    private final int[] bperm;
+
+	    public Debug() {
+		int[] bperm = new int[blist.length];
+		int n = 0;
+		for(int i = 0; i < blist.length; i++) {
+		    if(blist[i].parent != null)
+			bperm[n++] = i;
+		}
+		this.bperm = Arrays.copyOf(bperm, n);
+		if(n > 0) {
+		    data = new VertexArray.Buffer(fmt.inputs[0].stride * n * 2, DataBuffer.Usage.STREAM, null);
+		    model = new Model(Model.Mode.LINES, new VertexArray(fmt, data), null);
+		} else {
+		    data = null;
+		    model = null;
+		}
+	    }
+
+	    public void draw(Pipe state, Render g) {
+		if(model != null)
+		    g.draw(state, model);
+	    }
+
+	    public void autogtick(Render g) {
+		if(data == null)
+		    return;
+		g.update(data, (tgt, env) -> {
+			FillBuffer ret = env.fillbuf(tgt);
+			java.nio.ByteBuffer buf = ret.push();
+			for(int i = 0; i < bperm.length; i++) {
+			    int bi = bperm[i], pi = blist[bi].parent.idx;
+			    buf.putFloat(gpos[pi][0]).putFloat(gpos[pi][1]).putFloat(gpos[pi][2]);
+			    buf.put((byte)255).put((byte)0).put((byte)0).put((byte)255);
+			    buf.putFloat(gpos[bi][0]).putFloat(gpos[bi][1]).putFloat(gpos[bi][2]);
+			    buf.put((byte)0).put((byte)255).put((byte)0).put((byte)255);
 			}
-		    }
-		    gl.glEnd();
-		}
-	    
-		public boolean setup(RenderList rl) {
-		    rl.prepo(States.vertexcolor);
-		    rl.prepo(States.xray);
-		    return(true);
-		}
-	    };
-	*/
+			return(ret);
+		    });
+	    }
+
+	    public TickList.Ticking ticker() {return(this);}
+
+	    public void added(RenderTree.Slot slot) {
+		slot.ostate(Pipe.Op.compose(VertexColor.instance, States.Depthtest.none, Rendered.last));
+	    }
+	}
     }
 
     public interface HasPose {
@@ -396,13 +424,11 @@ public class Skeleton {
     
     public interface ModOwner extends OwnerContext {
 	public double getv();
-	public Coord3f getc();
-	@Deprecated
-	public default Glob glob() {return(context(Glob.class));}
+	public Collection<Location.Chain> getloc();
 
 	public static final ModOwner nil = new ModOwner() {
 		public double getv() {return(0);}
-		public Coord3f getc() {return(Coord3f.o);}
+		public Collection<Location.Chain> getloc() {return(Collections.emptyList());}
 		public <T> T context(Class<T> cl) {throw(new NoContext(cl));}
 	    };
     }
@@ -418,11 +444,6 @@ public class Skeleton {
 	    lrot = new float[nb][4];
 	    for(int i = 0; i < nb; i++)
 		lrot[i][0] = 1;
-	}
-
-	@Deprecated
-	public PoseMod() {
-	    this(ModOwner.nil);
 	}
 
 	public Skeleton skel() {return(Skeleton.this);}
@@ -638,10 +659,6 @@ public class Skeleton {
 	    aupdate(0.0f);
 	}
 
-	@Deprecated
-	public TrackMod(Track[] tracks, float len, WrapMode mode) {
-	    this(ModOwner.nil, tracks, new FxTrack[0], len, mode);
-	}
 	
 	public void aupdate(float time) {
 	    if(time > len)
@@ -694,9 +711,6 @@ public class Skeleton {
 	}
 
 	private void playfx(float ot, float nt) {
-	    if(!(owner instanceof Gob))
-		return;
-	    Gob gob = (Gob)owner;
 	    if(ot > nt) {
 		playfx(Math.min(ot, len), len);
 		playfx(0, Math.max(0, nt));
@@ -706,7 +720,7 @@ public class Skeleton {
 			if((ev.time >= ot) && (ev.time < nt)) {
 			    for(FxTrack.EventListener l : cbl)
 				l.event(ev);
-			    ev.trigger(gob);
+			    ev.trigger(owner);
 			}
 		    }
 		}
@@ -825,7 +839,7 @@ public class Skeleton {
 		this.time = time;
 	    }
 
-	    public abstract void trigger(Gob gob);
+	    public abstract void trigger(ModOwner owner);
 	}
 
 	public FxTrack(Event[] events) {
@@ -835,38 +849,36 @@ public class Skeleton {
 	public static class SpawnSprite extends Event {
 	    public final Indir<Resource> res;
 	    public final byte[] sdt;
-	    public final Location loc;
+	    public final Function<ModOwner, Pipe.Op> loc;
 
-	    public SpawnSprite(float time, Indir<Resource> res, byte[] sdt, Location loc) {
+	    public SpawnSprite(float time, Indir<Resource> res, byte[] sdt, Function<ModOwner, Pipe.Op> loc) {
 		super(time);
 		this.res = res;
 		this.sdt = (sdt == null)?new byte[0]:sdt;
 		this.loc = loc;
 	    }
 
-	    public void trigger(Gob gob) {
-		final Coord3f fc;
-		try {
-		    fc = gob.getc();
-		} catch(Loading e) {
-		    return;
-		}
-		gob.glob.loader.defer(() -> {
-			Gob n = gob.glob.oc.new Virtual(gob.rc, gob.a) {
-				public Coord3f getc() {
-				    return(new Coord3f(fc));
-				}
-
-				/* XXXRENDER
-				   public boolean setup(RenderList rl) {
-				   if(SpawnSprite.this.loc != null)
-				   rl.prepc(SpawnSprite.this.loc);
-				   return(super.setup(rl));
-				   }
-				*/
-			    };
-			n.addol(new Gob.Overlay(n, -1, res, new MessageBuf(sdt)), false);
-			gob.glob.oc.add(n);
+	    public void trigger(ModOwner owner) {
+		Glob glob = owner.context(Glob.class);
+		Collection<Location.Chain> locs = owner.getloc();
+		Loader l = glob.loader;
+		l.defer(() -> {
+			Pipe.Op ploc = (this.loc != null) ? this.loc.apply(owner) : null;
+			for(Location.Chain loc : locs) {
+			    Coord3f o = loc.fin(Matrix4f.id).mul4(Coord3f.o);
+			    Location lxf = new Location(loc.fin(Location.makexlate(new Matrix4f(), o.inv())));
+			    l.defer(() -> {
+				    Gob n = glob.oc.new FixedPlace(o.invy(), 0) {
+					    protected void obstate(Pipe buf) {
+						buf.prep(lxf);
+						if(ploc != null)
+						    buf.prep(ploc);
+					    }
+					};
+				    n.addol(new Gob.Overlay(n, -1, res, new MessageBuf(sdt)), false);
+				    glob.oc.add(n);
+				}, null);
+			}
 		    }, null);
 	    }
 	}
@@ -879,7 +891,7 @@ public class Skeleton {
 		this.id = id.intern();
 	    }
 
-	    public void trigger(Gob gob) {}
+	    public void trigger(ModOwner owner) {}
 	}
     }
 
@@ -926,18 +938,40 @@ public class Skeleton {
 	    for(int i = 0; i < events.length; i++) {
 		float tm = (fmt == 0) ? (float)buf.cpfloat() : (buf.unorm16() * len);
 		int t = buf.uint8();
+		Message sub = buf;
+		if((t & 0x80) != 0) {
+		    sub = new MessageBuf(buf.bytes(buf.uint16()));
+		    t &= 0x7f;
+		}
 		switch(t) {
-		case 0:
+		case 0: case 2: {
 		    String resnm = buf.string();
 		    int resver = buf.uint16();
 		    byte[] sdt = buf.bytes(buf.uint8());
+		    int fl = (t == 2) ? buf.uint8() : 0;
 		    Indir<Resource> res = getres().pool.load(resnm, resver);
-		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt, null);
+		    Function<ModOwner, Pipe.Op> ploc = null;
+		    if((fl & 1) != 0) {
+			String eqnm = buf.string();
+			Indir<Resource> src = ((fl & 2) == 0) ? getres().indir() : res;
+			ploc = new Function<ModOwner, Pipe.Op>() {
+				BoneOffset eqp = null;
+
+				public Pipe.Op apply(ModOwner owner) {
+				    if(eqp == null)
+					eqp = src.get().flayer(BoneOffset.class, eqnm);
+				    return(eqp.from(getpose(owner)).get());
+				}
+			    };
+		    }
+		    events[i] = new FxTrack.SpawnSprite(tm, res, sdt, ploc);
 		    break;
-		case 1:
+		}
+		case 1: {
 		    String id = buf.string();
 		    events[i] = new FxTrack.Trigger(tm, id);
 		    break;
+		}
 		default:
 		    throw(new Resource.LoadException("Illegal control event: " + t, getres()));
 		}
@@ -1020,44 +1054,34 @@ public class Skeleton {
 	    return(new ResMod(owner, skel, mode));
 	}
 
-	@Deprecated
-	public TrackMod forskel(Skeleton skel, WrapMode mode) {
-	    return(forskel(ModOwner.nil, skel, mode));
-	}
-
-	@Deprecated
-	public TrackMod forgob(Skeleton skel, WrapMode mode, Gob gob) {
-	    return(forskel(gob, skel, mode));
-	}
-	
 	public Integer layerid() {
 	    return(id);
 	}
-	
+
 	public void init() {}
     }
 
     @Resource.LayerName("boneoff")
     public static class BoneOffset extends Resource.Layer implements Resource.IDLayer<String> {
 	public final String nm;
-	public final transient Function<Pose, Supplier<Pipe.Op>>[] prog;
+	public final transient Function<EquipTarget, Supplier<Pipe.Op>>[] prog;
 
 	@SuppressWarnings("unchecked")
-	private static final Function<Message, Function<Pose, Supplier<Pipe.Op>>>[] opcodes = new Function[256];
+	private static final Function<Message, Function<EquipTarget, Supplier<? extends Pipe.Op>>>[] opcodes = new Function[256];
 	static {
 	    opcodes[0] = buf -> {
 		float x = (float)buf.cpfloat();
 		float y = (float)buf.cpfloat();
 		float z = (float)buf.cpfloat();
 		Location loc = Location.xlate(new Coord3f(x, y, z));
-		return(pose -> () -> loc);
+		return(equ -> () -> loc);
 	    };
 	    opcodes[16] = buf -> {
 		float x = buf.float32();
 		float y = buf.float32();
 		float z = buf.float32();
 		Location loc = Location.xlate(new Coord3f(x, y, z));
-		return(pose -> () -> loc);
+		return(equ -> () -> loc);
 	    };
 	    opcodes[1] = buf -> {
 		final float ang = (float)buf.cpfloat();
@@ -1065,49 +1089,45 @@ public class Skeleton {
 		final float ay = (float)buf.cpfloat();
 		final float az = (float)buf.cpfloat();
 		Location loc = Location.rot(new Coord3f(ax, ay, az), ang);
-		return(pose -> () -> loc);
+		return(equ -> () -> loc);
 	    };
 	    opcodes[17] = buf -> {
 		final float ang = buf.unorm16() * 2 * (float)Math.PI;
 		float[] ax = new float[3];
 		Utils.oct2uvec(ax, buf.snorm16(), buf.snorm16());
 		Location loc = Location.rot(new Coord3f(ax[0], ax[1], ax[2]), ang);
-		return(pose -> () -> loc);
+		return(equ -> () -> loc);
 	    };
 	    opcodes[2] = buf -> {
 		final String bonenm = buf.string();
-		return(pose -> {
-			Bone bone = pose.skel().bones.get(bonenm);
-			return(pose.bonetrans(bone.idx));
+		return(equ -> equ.eqpoint(bonenm, Message.nil));
+	    };
+	    opcodes[3] = buf -> {
+		Coord3f ref = Coord3f.of((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat()).norm();
+		final String orignm = buf.string();
+		final String tgtnm = buf.string();
+		return(equ -> {
+			Pose pose = (Pose)equ;
+			Bone orig = pose.skel().bones.get(orignm);
+			Bone tgt = pose.skel().bones.get(tgtnm);
+			return(pose.new BoneAlign(ref, orig, tgt));
 		    });
 	    };
-	    /* XXXRENDER
-	    opcodes[3] = new HatingJava() {
-		    public Command make(Message buf) {
-			float rx1 = (float)buf.cpfloat();
-			float ry1 = (float)buf.cpfloat();
-			float rz1 = (float)buf.cpfloat();
-			float l = (float)Math.sqrt((rx1 * rx1) + (ry1 * ry1) + (rz1 * rz1));
-			final Coord3f ref = new Coord3f(rx1 / l, ry1 / l, rz1 / l);
-			final String orignm = buf.string();
-			final String tgtnm = buf.string();
-			return(new Command() {
-				public GLState make(Pose pose) {
-				    Bone orig = pose.skel().bones.get(orignm);
-				    Bone tgt = pose.skel().bones.get(tgtnm);
-				    return(pose.new BoneAlign(ref, orig, tgt));
-				}
-			    });
-		    }
-		};
-	    */
+	    opcodes[4] = buf -> {
+		return(equ -> () -> Location.nullrot);
+	    };
+	    opcodes[5] = buf -> {
+		final float scale = buf.float32();
+		Location loc = Location.scale(scale);
+		return(post -> () -> loc);
+	    };
 	}
 
 	@SuppressWarnings("unchecked")
 	public BoneOffset(Resource res, Message buf) {
 	    res.super();
 	    this.nm = buf.string();
-	    List<Function<Pose, Supplier<Pipe.Op>>> cbuf = new LinkedList<>();
+	    List<Function<EquipTarget, Supplier<? extends Pipe.Op>>> cbuf = new LinkedList<>();
 	    while(!buf.eom())
 		cbuf.add(opcodes[buf.uint8()].apply(buf));
 	    this.prog = cbuf.toArray(new Function[0]);
@@ -1121,18 +1141,23 @@ public class Skeleton {
 	}
 
 	@SuppressWarnings("unchecked")
-	public Supplier<Pipe.Op> forpose(Pose pose) {
+	public Supplier<Pipe.Op> from(EquipTarget equ) {
 	    if(prog.length == 1)
-		return(prog[0].apply(pose));
+		return(prog[0].apply(equ));
 	    Supplier<Pipe.Op>[] ls = new Supplier[prog.length];
 	    for(int i = 0; i < prog.length; i++)
-		ls[i] = prog[i].apply(pose);
+		ls[i] = prog[i].apply(equ);
 	    return(() -> {
 		    Pipe.Op[] buf = new Pipe.Op[ls.length];
 		    for(int i = 0; i < ls.length; i++)
 			buf[i] = ls[i].get();
 		    return(Pipe.Op.compose(buf));
 		});
+	}
+
+	@Deprecated
+	public Supplier<Pipe.Op> forpose(Pose pose) {
+	    return(from(pose));
 	}
     }
 }

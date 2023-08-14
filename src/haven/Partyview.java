@@ -115,7 +115,7 @@ public class Partyview extends Widget {
 	    if(avs == null)
 		avs = Collections.emptyMap();
 	    List<Member> order = new ArrayList<>(avs.keySet());
-	    Collections.sort(order, Comparator.comparing(m -> m.gobid));
+	    Collections.sort(order, Comparator.comparing(m -> m.seq));
 	    int i = 0;
 	    for(Member m : order) {
 		avs.get(m).move(leave.pos("bl").add((i % 2) * (sz.x - asz), (i / 2) * (asz + marg) + marg));
@@ -149,7 +149,7 @@ public class Partyview extends Widget {
 
     public void uimsg(String msg, Object... args) {
 	if(msg == "list") {
-	    Map<Long, Member> nmemb = new TreeMap<>(), cmemb = party.memb;
+	    Map<Long, Member> nmemb = new HashMap<>(), cmemb = party.memb;
 	    for(int a = 0; a < args.length; a++) {
 		long id = Utils.uint32((Integer)args[a]);
 		Member m = cmemb.get(id);
@@ -174,5 +174,13 @@ public class Partyview extends Widget {
 	} else {
 	    super.uimsg(msg, args);
 	}
+    }
+
+    public void dispose() {
+	/* XXX: Arguably, glob.party should be removed entirely, but
+	 * until then, at least clear it when logging out. */
+	party.memb = Collections.emptyMap();
+	party.leader = null;
+	super.dispose();
     }
 }

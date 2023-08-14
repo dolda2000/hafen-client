@@ -37,6 +37,7 @@ public class Widget {
     public Coord c, sz;
     public int z;
     public Widget next, prev, child, lchild, parent;
+    public int childseq;
     public boolean focustab = false, focusctl = false, hasfocus = false, visible = true;
     private boolean attached = false;
     private boolean canfocus = false, autofocus = false;
@@ -175,13 +176,7 @@ public class Widget {
 		name = name.substring(0, p);
 	    }
 	    Indir<Resource> res = Resource.remote().load(name, ver, 10);
-	    while(true) {
-		try {
-		    return(res.get().getcode(Factory.class, true));
-		} catch(Loading l) {
-		    l.waitfor();
-		}
-	    }
+	    return(Loading.waitforint(() -> res.get().getcode(Factory.class, true)));
 	}
     }
 
@@ -234,6 +229,7 @@ public class Widget {
 	child.parent = this;
 	child.link();
 	child.added();
+	childseq++;
 	if(attached)
 	    child.attached();
 	if(((Widget)child).canfocus && child.visible)
@@ -527,6 +523,7 @@ public class Widget {
 	if(parent != null) {
 	    unlink();
 	    parent.cdestroy(this);
+	    parent = null;
 	}
 	if(ui != null)
 	    ui.removed(this);
@@ -543,6 +540,7 @@ public class Widget {
 
     /* XXX: Should be renamed to cremove at this point. */
     public void cdestroy(Widget w) {
+	childseq++;
     }
 
     public int wdgid() {
@@ -670,6 +668,8 @@ public class Widget {
 	    pack();
 	} else if(msg == "z") {
 	    z((Integer)args[0]);
+	} else if(msg == "show") {
+	    show((Integer)args[0] != 0);
 	} else if(msg == "curs") {
 	    if(args.length == 0)
 		cursor = null;
@@ -809,6 +809,22 @@ public class Widget {
 	    Coord cc = xlate(wdg.c, true);
 	    wdg.mousemove(c.add(cc.inv()));
 	}
+    }
+
+    public boolean mousehover(Coord c, boolean hovering) {
+	boolean ret = false;
+	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
+	    boolean ch = hovering;
+	    if(!wdg.visible)
+		ch = false;
+	    Coord cc = xlate(wdg.c, true);
+	    boolean inside = c.isect(cc, wdg.sz);
+	    if(wdg.mousehover(c.add(cc.inv()), ch && inside)) {
+		hovering = false;
+		ret = true;
+	    }
+	}
+	return(ret);
     }
 
     private static final Map<Integer, Integer> gkeys = Utils.<Integer, Integer>map().
@@ -969,6 +985,8 @@ public class Widget {
     }
 
     public void resize(Coord sz) {
+	if(Utils.eq(this.sz, sz))
+	    return;
 	this.sz = sz;
 	for(Widget ch = child; ch != null; ch = ch.next)
 	    ch.presize();
@@ -991,9 +1009,9 @@ public class Widget {
 	resize(a.sz());
     }
 
-    public void resize(int x, int y) {
-	resize(Coord.of(x, y));
-    }
+    public void resize(int x, int y) {resize(Coord.of(x, y));}
+    public void resizew(int w) {resize(w, sz.y);}
+    public void resizeh(int h) {resize(sz.x, h);}
 
     public void cresize(Widget ch) {
     }
@@ -1375,11 +1393,6 @@ public class Widget {
 	}
     }
 
-    @Deprecated
-    public Object tooltip(Coord c, boolean again) {
-	return(null);
-    }
-
     public Object tooltip(Coord c, Widget prev) {
 	if(prev != this)
 	    prevtt = null;
@@ -1400,7 +1413,7 @@ public class Widget {
 	    }
 	}
 	prevtt = null;
-	return(tooltip(c, prev == this));
+	return(null);
     }
 
     public Widget settip(String text, boolean rich) {
@@ -1469,13 +1482,13 @@ public class Widget {
 
     public abstract class Anim {
 	public Anim() {
-	    synchronized(ui) {
+	    synchronized((ui == null) ? this : ui) {
 		nanims.add(this);
 	    }
 	}
 
 	public void clear() {
-	    synchronized(ui) {
+	    synchronized((ui == null) ? this : ui) {
 		nanims.remove(this);
 		anims.remove(this);
 	    }

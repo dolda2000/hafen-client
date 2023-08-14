@@ -26,8 +26,6 @@
 
 package haven.render.gl;
 
-import com.jogamp.opengl.*;
-
 public class Vao0State extends VaoState {
     public final GLEnvironment env;
     public final BGL.ID[] enable;

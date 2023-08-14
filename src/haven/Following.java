@@ -81,7 +81,7 @@ public class Following extends Moving {
 	    if(tgt != null) {
 		Skeleton.Pose cpose = getpose(tgt);
 		if(!hlpose || (cpose != lpose)) {
-		    bxf = xfres.get().flayer(Skeleton.BoneOffset.class, xfname).forpose(lpose = cpose);
+		    bxf = xfres.get().flayer(Skeleton.BoneOffset.class, xfname).from(lpose = cpose);
 		    hlpose = true;
 		}
 	    } else {
@@ -102,7 +102,7 @@ public class Following extends Moving {
 
     @OCache.DeltaType(OCache.OD_FOLLOW)
     public static class $follow implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    long oid = msg.uint32();
 	    if(oid != 0xffffffffl) {
 		Indir<Resource> xfres = OCache.Delta.getres(g, msg.uint16());

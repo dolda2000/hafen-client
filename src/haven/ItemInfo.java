@@ -34,13 +34,11 @@ import java.awt.Graphics;
 
 public abstract class ItemInfo {
     public final Owner owner;
-    
+
     public interface Owner extends OwnerContext {
-	@Deprecated
-	public default Glob glob() {return(context(Glob.class));}
 	public List<ItemInfo> info();
     }
-    
+
     public interface ResOwner extends Owner {
 	public Resource resource();
     }
@@ -48,7 +46,7 @@ public abstract class ItemInfo {
     public interface SpriteOwner extends ResOwner {
 	public GSprite sprite();
     }
-    
+
     public static class Raw {
 	public final Object[] data;
 	public final double time;
@@ -65,13 +63,7 @@ public abstract class ItemInfo {
 
     @Resource.PublishedCode(name = "tt", instancer = FactMaker.class)
     public static interface InfoFactory {
-	public default ItemInfo build(Owner owner, Raw raw, Object... args) {
-	    return(build(owner, args));
-	}
-	@Deprecated
-	public default ItemInfo build(Owner owner, Object... args) {
-	    throw(new AbstractMethodError("info factory missing either build bmethod"));
-	}
+	public ItemInfo build(Owner owner, Raw raw, Object... args);
     }
 
     public static class FactMaker extends Resource.PublishedCode.Instancer.Chain<InfoFactory> {
@@ -104,11 +96,11 @@ public abstract class ItemInfo {
 				    }));
 	}
     }
-    
+
     public ItemInfo(Owner owner) {
 	this.owner = owner;
     }
-    
+
     public static class Layout {
 	private final List<Tip> tips = new ArrayList<Tip>();
 	private final Map<ID, Tip> itab = new HashMap<ID, Tip>();
@@ -162,15 +154,15 @@ public abstract class ItemInfo {
 	}
 	public int order() {return(100);}
     }
-    
+
     public static class AdHoc extends Tip {
 	public final Text str;
-	
+
 	public AdHoc(Owner owner, String str) {
 	    super(owner);
 	    this.str = Text.render(str);
 	}
-	
+
 	public BufferedImage tipimg() {
 	    return(str.img);
 	}
@@ -178,16 +170,16 @@ public abstract class ItemInfo {
 
     public static class Name extends Tip {
 	public final Text str;
-	
+
 	public Name(Owner owner, Text str) {
 	    super(owner);
 	    this.str = str;
 	}
-	
+
 	public Name(Owner owner, String str) {
 	    this(owner, Text.render(str));
 	}
-	
+
 	public BufferedImage tipimg() {
 	    return(str.img);
 	}
@@ -199,6 +191,32 @@ public abstract class ItemInfo {
 		    public BufferedImage tipimg() {return(str.img);}
 		    public int order() {return(0);}
 		});
+	}
+
+	public static interface Dynamic {
+	    public String name();
+	}
+
+	public static class Default implements InfoFactory {
+	    public static String get(Owner owner) {
+		if(owner instanceof SpriteOwner) {
+		    GSprite spr = ((SpriteOwner)owner).sprite();
+		    if(spr instanceof Dynamic)
+			return(((Dynamic)spr).name());
+		}
+		if(!(owner instanceof ResOwner))
+		    return(null);
+		Resource res = ((ResOwner)owner).resource();
+		Resource.Tooltip tt = res.layer(Resource.tooltip);
+		if(tt == null)
+		    throw(new RuntimeException("Item resource " + res + " is missing default tooltip"));
+		return(tt.t);
+	    }
+
+	    public ItemInfo build(Owner owner, Raw raw, Object... args) {
+		String nm = get(owner);
+		return((nm == null) ? null : new Name(owner, nm));
+	    }
 	}
     }
 
@@ -331,21 +349,27 @@ public abstract class ItemInfo {
 
     public static List<ItemInfo> buildinfo(Owner owner, Raw raw) {
 	List<ItemInfo> ret = new ArrayList<ItemInfo>();
+	Resource.Resolver rr = owner.context(Resource.Resolver.class);
 	for(Object o : raw.data) {
 	    if(o instanceof Object[]) {
 		Object[] a = (Object[])o;
-		Resource ttres;
-		if(a[0] instanceof Integer) {
-		    ttres = owner.glob().sess.getres((Integer)a[0]).get();
-		} else if(a[0] instanceof Resource) {
-		    ttres = (Resource)a[0];
-		} else if(a[0] instanceof Indir) {
-		    ttres = (Resource)((Indir)a[0]).get();
+		ItemInfo inf;
+		if(a[0] instanceof InfoFactory) {
+		    inf = ((InfoFactory)a[0]).build(owner, raw, a);
 		} else {
-		    throw(new ClassCastException("Unexpected info specification " + a[0].getClass()));
+		    Resource ttres;
+		    if(a[0] instanceof Integer) {
+			ttres = rr.getres((Integer)a[0]).get();
+		    } else if(a[0] instanceof Resource) {
+			ttres = (Resource)a[0];
+		    } else if(a[0] instanceof Indir) {
+			ttres = (Resource)((Indir)a[0]).get();
+		    } else {
+			throw(new ClassCastException("Unexpected info specification " + a[0].getClass()));
+		    }
+		    InfoFactory f = ttres.getcode(InfoFactory.class, true);
+		    inf = f.build(owner, raw, a);
 		}
-		InfoFactory f = ttres.getcode(InfoFactory.class, true);
-		ItemInfo inf = f.build(owner, raw, a);
 		if(inf != null)
 		    ret.add(inf);
 	    } else if(o instanceof String) {

@@ -93,6 +93,11 @@ public class Session implements Resource.Resolver {
 		}
 	    }
 	}
+
+	public boolean boostprio(int prio) {
+	    res.boostprio(prio);
+	    return(true);
+	}
     }
 
     private static class CachedRes {
@@ -101,6 +106,7 @@ public class Session implements Resource.Resolver {
 	private String resnm = null;
 	private int resver;
 	private Reference<Ref> ind;
+	private int prio = -6;
 
 	private CachedRes(int id) {
 	    resid = id;
@@ -110,10 +116,15 @@ public class Session implements Resource.Resolver {
 	    private Resource res;
 
 	    public Resource get() {
-		if(resnm == null)
-		    throw(new LoadingIndir(CachedRes.this));
-		if(res == null)
-		    res = Resource.remote().load(resnm, resver, 0).get();
+		if(res == null) {
+		    synchronized(CachedRes.this) {
+			if(res == null) {
+			    if(resnm == null)
+				throw(new LoadingIndir(CachedRes.this));
+			    res = Resource.remote().load(resnm, resver, prio).get();
+			}
+		    }
+		}
 		return(res);
 	    }
 
@@ -131,14 +142,19 @@ public class Session implements Resource.Resolver {
 	}
 
 	private Ref get() {
-	    Ref ind = (this.ind == null)?null:(this.ind.get());
+	    Ref ind = (this.ind == null) ? null : (this.ind.get());
 	    if(ind == null)
 		this.ind = new WeakReference<Ref>(ind = new Ref());
 	    return(ind);
 	}
 
+	public void boostprio(int prio) {
+	    if(this.prio < prio)
+		this.prio = prio;
+	}
+
 	public void set(String nm, int ver) {
-	    Resource.remote().load(nm, ver, -5);
+	    Resource.remote().load(nm, ver, -10);
 	    synchronized(this) {
 		this.resnm = nm;
 		this.resver = ver;
@@ -159,8 +175,14 @@ public class Session implements Resource.Resolver {
 	}
     }
 
+    public Indir<Resource> getres(int id, int prio) {
+	CachedRes res = cachedres(id);
+	res.boostprio(prio);
+	return(res.get());
+    }
+
     public Indir<Resource> getres(int id) {
-	return(cachedres(id).get());
+	return(getres(id, 0));
     }
 
     private void handlerel(PMessage msg) {
@@ -182,8 +204,6 @@ public class Session implements Resource.Resolver {
 	    String resname = msg.string();
 	    int resver = msg.uint16();
 	    cachedres(resid).set(resname, resver);
-	} else if(msg.type == RMessage.RMSG_PARTY) {
-	    glob.party.msg(msg);
 	} else if(msg.type == RMessage.RMSG_SFX) {
 	    Indir<Resource> resid = getres(msg.uint16());
 	    double vol = ((double)msg.uint16()) / 256.0;
@@ -196,8 +216,6 @@ public class Session implements Resource.Resolver {
 			clip = new Audio.VolAdjust(clip, vol);
 		    Audio.play(clip);
 		}, null);
-	} else if(msg.type == RMessage.RMSG_CATTR) {
-	    glob.cattr(msg);
 	} else if(msg.type == RMessage.RMSG_MUSIC) {
 	    String resnm = msg.string();
 	    int resver = msg.uint16();

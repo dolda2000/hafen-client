@@ -29,7 +29,6 @@ package haven.render.gl;
 import haven.Coord;
 import haven.render.*;
 import java.util.*;
-import com.jogamp.opengl.*;
 
 public class GLFrameBuffer extends GLObject implements BGL.ID {
     public final Attachment[] color;
@@ -71,16 +70,16 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 	register();
     }
 	
-    public void create(GL3 gl) {
+    public void create(GL gl) {
 	int[] buf = new int[1];
-	gl.glGenFramebuffers(1, buf, 0);
+	gl.glGenFramebuffers(1, buf);
 	GLException.checkfor(gl, env);
 	this.id = buf[0];
 	setmem(GLEnvironment.MemStats.FBOS, 0);
     }
 	
-    protected void delete(GL3 gl) {
-	gl.glDeleteFramebuffers(1, new int[] {id}, 0);
+    protected void delete(GL gl) {
+	gl.glDeleteFramebuffers(1, new int[] {id});
 	setmem(null, 0);
     }
 	
@@ -127,13 +126,17 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 	    cfmt = new VectorFormat[fbo.color.length];
 	    for(int i = 0; i < cfmt.length; i++) {
 		if(fbo.color[i] instanceof Attach2D) {
-		    cfmt[i] = ((Attach2D)fbo.color[i]).img.tex.ifmt;
+		    Texture desc = fbo.color[i].tex.desc();
+		    if(desc != null)
+			cfmt[i] = desc.ifmt;
 		}
 	    }
-	    if(fbo.depth instanceof Attach2D)
-		dfmt = ((Attach2D)fbo.depth).img.tex.ifmt;
-	    else
+	    if(fbo.depth instanceof Attach2D) {
+		Texture desc = fbo.depth.tex.desc();
+		dfmt = (desc == null) ? null : desc.ifmt;
+	    } else {
 		dfmt = null;
+	    }
 	}
     }
 
@@ -147,24 +150,29 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
     }
 
     public static class Attach2D extends Attachment {
-	public final Texture.Image<Texture2D> img;
+	public final int level, w, h;
 
-	public Attach2D(GLTexture.Tex2D tex, Texture.Image<Texture2D> img) {super(tex); this.img = img;}
+	public Attach2D(GLTexture.Tex2D tex, Texture.Image<Texture2D> img) {
+	    super(tex);
+	    this.level = img.level;
+	    this.w = img.w;
+	    this.h = img.h;
+	}
 
 	public void attach(BGL gl, GLFrameBuffer fbo, int point) {
-	    gl.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, point, GL.GL_TEXTURE_2D, tex, img.level);
+	    gl.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, point, GL.GL_TEXTURE_2D, tex, level);
 	}
 	public Coord sz() {
-	    return(new Coord(img.w, img.h));
+	    return(new Coord(w, h));
 	}
 
 	public int hashCode() {
-	    return((System.identityHashCode(tex) * 31) + img.level);
+	    return((System.identityHashCode(tex) * 31) + level);
 	}
 	public boolean equals(Object o) {
 	    if(!(o instanceof Attach2D)) return(false);
 	    Attach2D that = (Attach2D)o;
-	    return((this.tex == that.tex) && (this.img.level == that.img.level));
+	    return((this.tex == that.tex) && (this.level == that.level));
 	}
     }
 

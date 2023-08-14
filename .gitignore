@@ -1,4 +1,5 @@
 /build
 /bin
 /local-config.properties
+/local-boot.properties
 *~

@@ -65,7 +65,6 @@ public class Polity extends Widget {
 	    super(sz, UI.scale(20));
 	}
 
-	@Deprecated
 	public MemberList(int w, int h) {
 	    this(Coord.of(w, h * UI.scale(20)));
 	}
@@ -134,7 +133,7 @@ public class Polity extends Widget {
 		g.chcolor(0, 0, 0, 255);
 		g.frect(new Coord(0, 0), new Coord(sz.x, sz.y));
 		g.chcolor(128, 0, 0, 255);
-		int mw = (int)((sz.x - 2) * (long)auth) / ((acap == 0) ? 1 : acap);
+		int mw = (int)(((sz.x - 2) * (long)auth) / ((acap == 0) ? 1 : acap));
 		g.frect(new Coord(1, 1), new Coord(mw, sz.y - UI.scale(2)));
 		g.chcolor();
 		if((rauth != null) && (aseq != Polity.this.aseq)) {

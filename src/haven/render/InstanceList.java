@@ -37,6 +37,7 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
     private final List<RenderList<Rendered>> clients = new ArrayList<>();
     private final Adapter master;
     private final Map<InstKey, Object> instreg = new HashMap<>();
+    private final Map<Slot<? extends Rendered>, Object> bypassed = new IdentityHashMap<>(), invalid = new IdentityHashMap<>();
     private final Map<Slot<? extends Rendered>, InstKey> uslotmap = new IdentityHashMap<>();
     private final Map<Slot<? extends Rendered>, InstancedSlot.Instance> islotmap = new IdentityHashMap<>();
     private final Map<Pipe, Object> pipemap = new IdentityHashMap<>();
@@ -571,24 +572,28 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
     public void add(Slot<? extends Rendered> slot) {
 	if(!(slot.obj() instanceof Instancable)) {
 	    cladd(slot);
+	    synchronized(bypassed) {
+		bypassed.put(slot, Boolean.TRUE);
+	    }
 	    nbypass++;
 	    return;
 	}
 	InstKey key = new InstKey(slot);
-	if(!key.valid()) {
-	    /* XXX: Slots excluded in this manner aren't registered
-	     * for in-pipe updates which might bring them back into
-	     * instantiation. I don't really foresee that happening,
-	     * but it is also perhaps not so purely theoretical as to
-	     * be of purely academic interest. It shouldn't
-	     * technically break anything, however; it should just
-	     * mean that they can't be re-instantiated if their instid
-	     * only changes in-pipe. */
-	    cladd(slot);
-	    ninvalid++;
-	    return;
-	}
 	synchronized(this) {
+	    if(!key.valid()) {
+		/* XXX: Slots excluded in this manner aren't registered
+		 * for in-pipe updates which might bring them back into
+		 * instantiation. I don't really foresee that happening,
+		 * but it is also perhaps not so purely theoretical as to
+		 * be of purely academic interest. It shouldn't
+		 * technically break anything, however; it should just
+		 * mean that they can't be re-instantiated if their instid
+		 * only changes in-pipe. */
+		cladd(slot);
+		invalid.put(slot, Boolean.TRUE);
+		ninvalid++;
+		return;
+	    }
 	    add0(slot, key, false, null);
 	}
     }
@@ -613,15 +618,18 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
     public void remove(Slot<? extends Rendered> slot) {
 	if(!(slot.obj() instanceof Instancable)) {
 	    clremove(slot);
+	    synchronized(bypassed) {
+		if(bypassed.remove(slot) != Boolean.TRUE)
+		    throw(new IllegalStateException("removing non-present slot"));
+	    }
 	    nbypass--;
 	    return;
 	}
 	synchronized(this) {
 	    InstKey key = uslotmap.get(slot);
 	    if(key == null) {
-		/* throw(new IllegalStateException("removing non-present slot")); */
-		/* XXX: Register a marker object in uslotmap and bring
-		 * back the above assertion? */
+		if(invalid.remove(slot) != Boolean.TRUE)
+		    throw(new IllegalStateException("removing non-present slot"));
 		ninvalid--;
 		clremove(slot);
 		if(new InstKey(slot).valid())
@@ -656,8 +664,10 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 	synchronized(this) {
 	    InstKey prevkey = uslotmap.get(slot);
 	    if(prevkey == null) {
-		/* throw(new IllegalStateException("updating non-present slot")); */
+		if(invalid.get(slot) != Boolean.TRUE)
+		    throw(new IllegalStateException("updating non-present slot"));
 		if(key.valid()) {
+		    invalid.remove(slot);
 		    add0(slot, key, true, null);
 		    ninvalid--;
 		} else {
@@ -676,6 +686,7 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 		    cladd(slot);
 		    remove0(b, islotmap.get(slot), true);
 		    uslotmap.remove(slot);
+		    invalid.put(slot, Boolean.TRUE);
 		    ninvalid++;
 		} else {
 		    add0(slot, key, false, b);
@@ -689,6 +700,7 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 		    clupdate(slot);
 		    instreg.remove(prevkey);
 		    uslotmap.remove(slot);
+		    invalid.put(slot, Boolean.TRUE);
 		    nuinst--;
 		    ninvalid++;
 		} else {

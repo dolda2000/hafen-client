@@ -24,31 +24,31 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.render.sl;
 
-import haven.render.*;
+public class UVec4Cons extends Expression {
+    public static final UVec4Cons z = new UVec4Cons(IntLiteral.z, IntLiteral.z, IntLiteral.z, IntLiteral.z);
+    public static final UVec4Cons u = new UVec4Cons(IntLiteral.u, IntLiteral.u, IntLiteral.u, IntLiteral.u);
+    public final Expression[] els;
 
-public class DirCam extends Camera {
-    static final Coord3f defdir = new Coord3f(0, 0, -1);
-    Matrix4f mat = compute(Coord3f.o, defdir);
-
-    public DirCam() {
-	super(Matrix4f.identity());
+    public UVec4Cons(Expression... els) {
+	if((els.length < 1) || (els.length > 4))
+	    throw(new RuntimeException("Invalid number of arguments for uvec4: " + els.length));
+	this.els = els;
     }
 
-    public void update(Coord3f base, Coord3f dir) {
-	mat = compute(base, dir);
+    public void walk(Walker w) {
+	for(Expression el : els)
+	    w.el(el);
     }
 
-    public Matrix4f fin(Matrix4f p) {
-	update(mat);
-	return(super.fin(p));
-    }
-    
-    public static Matrix4f compute(Coord3f base, Coord3f dir) {
-	Coord3f diff = defdir.cmul(dir);
-	float a = (float)Math.asin(diff.abs());
-	return(makerot(new Matrix4f(), diff, -a)
-	       .mul1(makexlate(new Matrix4f(), base.inv())));
+    public void output(Output out) {
+	out.write("uvec4(");
+	els[0].output(out);
+	for(int i = 1; i < els.length; i++) {
+	    out.write(", ");
+	    els[i].output(out);
+	}
+	out.write(")");
     }
 }

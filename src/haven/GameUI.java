@@ -33,8 +33,8 @@ import java.awt.event.KeyEvent;
 import java.awt.image.WritableRaster;
 import static haven.Inventory.invsq;
 
-public class GameUI extends ConsoleHost implements Console.Directory {
-    public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
+public class GameUI extends ConsoleHost implements Console.Directory, UI.MessageWidget {
+    public static final Text.Foundry msgfoundry = RootWidget.msgfoundry;
     private static final int blpw = UI.scale(142), brpw = UI.scale(142);
     public final String chrid, genus;
     public final long plid;
@@ -71,6 +71,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     public Bufflist buffs;
 
     private static final OwnerContext.ClassResolver<BeltSlot> beltctxr = new OwnerContext.ClassResolver<BeltSlot>()
+	.add(GameUI.class, slot -> slot.wdg())
 	.add(Glob.class, slot -> slot.wdg().ui.sess.glob)
 	.add(Session.class, slot -> slot.wdg().ui.sess);
     public class BeltSlot implements GSprite.Owner {
@@ -121,7 +122,12 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	    if(local && (menu != null)) {
 		if(res != null) {
-		    MenuGrid.Pagina pag = menu.paginafor(slot.res);
+		    MenuGrid.Pagina pag;
+		    /* XXX: This is a hack. The pagina system needs to be remade. */
+		    if(res != null)
+			pag = menu.paginafor(res.indir());
+		    else
+			pag = menu.paginafor(slot.res);
 		    try {
 			MenuGrid.PagButton btn = pag.button();
 			menu.use(btn, iact, false);
@@ -218,11 +224,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	this.genus = genus;
 	setcanfocus(true);
 	setfocusctl(true);
-	chat = add(new ChatUI(0, 0));
-	if(Utils.getprefb("chatvis", true)) {
-	    chat.hresize(chat.savedh);
-	    chat.show();
-	}
+	chat = add(new ChatUI());
+	chat.show(Utils.getprefb("chatvis", true));
 	beltwdg.raise();
 	blpanel = add(new Hidepanel("gui-bl", null, new Coord(-1,  1)) {
 		public void move(double a) {
@@ -712,7 +715,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		if(tarea.contains(plc))
 		    score -= 100;
 		else
-		    score -= (1 - Math.pow(tarea.closest(plc).dist(plc) / sz.dist(Coord.z), 2)) * 1.5;
+		    score -= (1 - Math.pow(tarea.closest(plc).dist(plc) / sz.dist(Coord.z), 0.5)) * 1.5;
 	    }
 	    score -= (cur.dist(org) / sz.dist(Coord.z)) * 0.75;
 	    if(score > optscore) {
@@ -734,7 +737,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    Utils.setprefc("wndc-zerg", zerg.c);
 	if(mapfile != null) {
 	    Utils.setprefc("wndc-map", mapfile.c);
-	    Utils.setprefc("wndsz-map", mapfile.asz);
+	    Utils.setprefc("wndsz-map", mapfile.csz());
 	}
     }
 
@@ -753,9 +756,9 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		mapfile = null;
 	    }
 	    ResCache mapstore = ResCache.global;
-	    if(Config.mapbase != null) {
+	    if(MapFile.mapbase.get() != null) {
 		try {
-		    mapstore = HashDirCache.get(Config.mapbase.toURI());
+		    mapstore = HashDirCache.get(MapFile.mapbase.get().toURI());
 		} catch(java.net.URISyntaxException e) {
 		}
 	    }
@@ -996,7 +999,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    }
 	}
 	if(!chat.visible()) {
-	    chat.drawsmall(g, new Coord(blpw + UI.scale(10), by), UI.scale(50));
+	    chat.drawsmall(g, new Coord(blpw + UI.scale(10), by), UI.scale(100));
 	}
     }
     
@@ -1037,7 +1040,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	}
     }
 
-    public class CornerMap extends MiniMap {
+    public class CornerMap extends MiniMap implements Console.Directory {
 	public CornerMap(Coord sz, MapFile file) {
 	    super(sz, file);
 	    follow(new MapLocator(map));
@@ -1089,6 +1092,22 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    if(zoomlevel >= 5)
 		return(false);
 	    return(super.allowzoomout());
+	}
+	private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
+	{
+	    cmdmap.put("rmseg", new Console.Command() {
+		    public void run(Console cons, String[] args) {
+			MiniMap.Location loc = curloc;
+			if(loc != null) {
+			    try(Locked lk = new Locked(file.lock.writeLock())) {
+				file.segments.remove(loc.seg.id);
+			    }
+			}
+		    }
+		});
+	}
+	public Map<String, Console.Command> findcmds() {
+	    return(cmdmap);
 	}
     }
 
@@ -1191,7 +1210,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		help.res = res;
 	} else if(msg == "map-mark") {
 	    long gobid = Utils.uint32((Integer)args[0]);
-	    long oid = (Long)args[1];
+	    long oid = ((Number)args[1]).longValue();
 	    Indir<Resource> res = ui.sess.getres((Integer)args[2]);
 	    String nm = (String)args[3];
 	    if(mapfile != null)
@@ -1350,7 +1369,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    super(mapmenubg.sz());
 	    add(new MenuCheckBox("lbtn-claim", kb_claim, "Display personal claims"), 0, 0).changed(a -> toggleol("cplot", a));
 	    add(new MenuCheckBox("lbtn-vil", kb_vil, "Display village claims"), 0, 0).changed(a -> toggleol("vlg", a));
-	    add(new MenuCheckBox("lbtn-rlm", kb_rlm, "Display realms"), 0, 0).changed(a -> toggleol("realm", a));
+	    add(new MenuCheckBox("lbtn-rlm", kb_rlm, "Display provinces"), 0, 0).changed(a -> toggleol("prov", a));
 	    add(new MenuCheckBox("lbtn-map", kb_map, "Map")).state(() -> wndstate(mapfile)).click(() -> {
 		    togglewnd(mapfile);
 		    if(mapfile != null)
@@ -1384,8 +1403,8 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(key == ':') {
 	    entercmd();
 	    return(true);
-	} else if((Config.screenurl != null) && kb_shoot.key().match(ev)) {
-	    Screenshooter.take(this, Config.screenurl);
+	} else if((Screenshooter.screenurl.get() != null) && kb_shoot.key().match(ev)) {
+	    Screenshooter.take(this, Screenshooter.screenurl.get());
 	    return(true);
 	} else if(kb_hide.key().match(ev)) {
 	    toggleui();
@@ -1400,14 +1419,14 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	    if(chat.visible() && !chat.hasfocus) {
 		setfocus(chat);
 	    } else {
-		if(chat.targeth == 0) {
-		    chat.sresize(chat.savedh);
-		    setfocus(chat);
+		if(chat.targetshow) {
+		    chat.sshow(false);
 		} else {
-		    chat.sresize(0);
+		    chat.sshow(true);
+		    setfocus(chat);
 		}
 	    }
-	    Utils.setprefb("chatvis", chat.targeth != 0);
+	    Utils.setprefb("chatvis", chat.targetshow);
 	    return(true);
 	} else if((key == 27) && (map != null) && !map.hasfocus) {
 	    setfocus(map);
@@ -1451,7 +1470,7 @@ public class GameUI extends ConsoleHost implements Console.Directory {
     }
 
     public void resize(Coord sz) {
-	this.sz = sz;
+	super.resize(sz);
 	chat.resize(sz.x - blpw - brpw);
 	chat.move(new Coord(blpw, sz.y));
 	if(map != null)
@@ -1459,7 +1478,6 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	if(prog != null)
 	    prog.move(sz.sub(prog.sz).mul(0.5, 0.35));
 	beltwdg.c = new Coord(blpw + UI.scale(10), sz.y - beltwdg.sz.y - UI.scale(5));
-	super.resize(sz);
     }
     
     public void presize() {
@@ -1476,24 +1494,22 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 	msg(msg, color, color);
     }
 
-    private static final Resource errsfx = Resource.local().loadwait("sfx/error");
     private double lasterrsfx = 0;
     public void error(String msg) {
 	msg(msg, new Color(192, 0, 0), new Color(255, 0, 0));
 	double now = Utils.rtime();
 	if(now - lasterrsfx > 0.1) {
-	    ui.sfx(errsfx);
+	    ui.sfx(RootWidget.errsfx);
 	    lasterrsfx = now;
 	}
     }
 
-    private static final Resource msgsfx = Resource.local().loadwait("sfx/msg");
     private double lastmsgsfx = 0;
     public void msg(String msg) {
 	msg(msg, Color.WHITE, Color.WHITE);
 	double now = Utils.rtime();
 	if(now - lastmsgsfx > 0.1) {
-	    ui.sfx(msgsfx);
+	    ui.sfx(RootWidget.msgsfx);
 	    lastmsgsfx = now;
 	}
     }
@@ -1584,26 +1600,26 @@ public class GameUI extends ConsoleHost implements Console.Directory {
 		    Tex glow;
 		    {
 			this.tooltip = RichText.render("Chat ($col[255,255,0]{Ctrl+C})", 0);
-			glow = new TexI(PUtils.rasterimg(PUtils.blurmask(up.getRaster(), 2, 2, Color.WHITE)));
+			glow = new TexI(PUtils.rasterimg(PUtils.blurmask(up.getRaster(), UI.scale(2), UI.scale(2), Color.WHITE)));
 		    }
 
 		    public void click() {
-			if(chat.targeth == 0) {
-			    chat.sresize(chat.savedh);
-			    setfocus(chat);
+			if(chat.targetshow) {
+			    chat.sshow(false);
 			} else {
-			    chat.sresize(0);
+			    chat.sshow(true);
+			    setfocus(chat);
 			}
-			Utils.setprefb("chatvis", chat.targeth != 0);
+			Utils.setprefb("chatvis", chat.targetshow);
 		    }
 
 		    public void draw(GOut g) {
 			super.draw(g);
 			Color urg = chat.urgcols[chat.urgency];
 			if(urg != null) {
-			    GOut g2 = g.reclipl(new Coord(-2, -2), g.sz().add(4, 4));
+			    GOut g2 = g.reclipl2(UI.scale(-4, -4), g.sz().add(UI.scale(4, 4)));
 			    g2.chcolor(urg.getRed(), urg.getGreen(), urg.getBlue(), 128);
-			    g2.image(glow, Coord.z, UI.scale(glow.sz()));
+			    g2.image(glow, Coord.z);
 			}
 		    }
 		}, sz, 1, 1);

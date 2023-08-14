@@ -31,4 +31,8 @@ public class AWidget extends Widget {
 	super(Coord.z);
 	hide();
     }
+
+    public void addchild(Widget child, Object... args) {
+	new UI.UIWarning("unknown abstract widget child " + child + " added to " + this, null, args).issue();
+    }
 }

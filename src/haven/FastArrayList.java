@@ -44,7 +44,7 @@ public class FastArrayList<E> extends AbstractList<E> {
 	    int ns = (bk == null) ? 8 : bk.length;
 	    while(ns < sz)
 		ns <<= 1;
-	    bk = Arrays.copyOf(bk, ns);
+	    bk = (bk == null) ? new Object[ns] : Arrays.copyOf(bk, ns);
 	}
 	return(bk);
     }

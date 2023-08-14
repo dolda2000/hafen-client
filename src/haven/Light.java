@@ -77,24 +77,11 @@ public abstract class Light implements RenderTree.Node {
 
     public abstract Object[] params(GroupPipe state);
 
-    public static final State.Slot<Lights> clights = new State.Slot<>(State.Slot.Type.SYS, Lights.class);
-    public static final class Lights extends State {
-	private final Object[][] lights;
-
-	public Lights(Object[][] lights) {
-	    this.lights = lights;
-	}
-
-	public ShaderMacro shader() {return(null);}
-
-	public void apply(Pipe p) {p.put(clights, this);}
-    }
-
     public static final State.Slot<LightList> lights = new State.Slot<>(State.Slot.Type.SYS, LightList.class);
     public static final class LightList extends State {
 	public final List<RenderList.Slot<Light>> ll = new ArrayList<>();
 
-	public Lights compile() {
+	public Object[][] params() {
 	    Object[][] cl;
 	    synchronized(ll) {
 		cl = new Object[ll.size()][];
@@ -102,7 +89,11 @@ public abstract class Light implements RenderTree.Node {
 		    cl[i] = ll.get(i).obj().params(ll.get(i).state());
 		}
 	    }
-	    return(new Lights(cl));
+	    return(cl);
+	}
+
+	public State compile() {
+	    return(new Lighting.SimpleLights(params()));
 	}
 
 	public void add(RenderList.Slot<Light> light) {
@@ -153,14 +144,8 @@ public abstract class Light implements RenderTree.Node {
 
     @Material.ResName("col")
     public static class PhongLight extends State {
-	private static final Uniform.Data<Object[]> getlights = new Uniform.Data<Object[]>(p -> {
-		Lights l = p.get(clights);
-		return((l == null) ? new Object[0][] : l.lights);
-	    }, clights);
-	public static final ShaderMacro vlight = prog -> new Phong(prog.vctx, getlights,
-								   new Uniform.Data<>(p -> p.get(lighting).material, lighting));
-	public static final ShaderMacro flight = prog -> new Phong(prog.fctx, getlights,
-								   new Uniform.Data<>(p -> p.get(lighting).material, lighting));
+	public static final ShaderMacro vlight = prog -> new Phong(prog.vctx, new Uniform.Data<>(p -> p.get(lighting).material, lighting));
+	public static final ShaderMacro flight = prog -> new Phong(prog.fctx, new Uniform.Data<>(p -> p.get(lighting).material, lighting));
 	private final ShaderMacro shader;
 	private final Object[] material;
 
@@ -187,7 +172,7 @@ public abstract class Light implements RenderTree.Node {
 	}
 
 	public PhongLight(Resource res, Object... args) {
-	    this(true, (Color)args[0], (Color)args[1], (Color)args[2], (Color)args[3], (Float)args[4]);
+	    this(true, (Color)args[0], (Color)args[1], (Color)args[2], (Color)args[3], Utils.fv(args[4]));
 	}
 
 	public ShaderMacro shader() {return(shader);}
@@ -235,7 +220,7 @@ public abstract class Light implements RenderTree.Node {
     }
     
     @Resource.LayerName("light")
-    public static class Res extends Resource.Layer {
+    public static class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public final int id;
 	public final Color amb, dif, spc;
 	public boolean hatt, hexp;
@@ -326,7 +311,7 @@ public abstract class Light implements RenderTree.Node {
 	    }
 	}
 	
-	public void init() {
-	}
+	public void init() {}
+	public Integer layerid() {return(id);}
     }
 }

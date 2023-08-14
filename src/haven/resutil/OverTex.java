@@ -44,17 +44,27 @@ public class OverTex extends State {
     private final ShaderMacro shader;
     public final Sampler2D tex;
 
+    public static final AutoVarying rtexcoord = new AutoVarying(VEC2, "s_otexc") {
+	    protected Expression root(VertexContext vctx) {
+		return(otexc.ref());
+	    }
+	};
+
+    public static ValBlock.Value texcoord(FragmentContext fctx) {
+	return(fctx.uniform.ext(rtexcoord, () -> fctx.uniform.new Value(VEC2) {
+		public Expression root() {
+		    return(rtexcoord.ref());
+		}
+	    }));
+    }
+
     private static ShaderMacro shfor(final Function blend) {
 	return(new ShaderMacro() {
-		final AutoVarying otexcv = new AutoVarying(VEC2, "otexc") {
-			protected Expression root(VertexContext vctx) {
-			    return(otexc.ref());
-			}
-		    };
 		public void modify(final ProgramContext prog) {
+		    texcoord(prog.fctx);
 		    final ValBlock.Value color = prog.fctx.uniform.new Value(VEC4) {
 			    public Expression root() {
-				return(texture2D(ctex.ref(), otexcv.ref()));
+				return(texture2D(ctex.ref(), texcoord(prog.fctx).depref()));
 			    }
 			};
 		    color.force();

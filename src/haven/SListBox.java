@@ -37,6 +37,7 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> im
     private I[] curi;
     private int n = -1, h, curo = 0, itemw = 0;
     private int maxy = 0, cury = 0;
+    private boolean reset = false;
 
     public SListBox(Coord sz, int itemh, int marg) {
 	super(sz);
@@ -58,7 +59,8 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> im
 
     @SuppressWarnings("unchecked")
     public void tick(double dt) {
-	boolean reset = false;
+	boolean reset = this.reset;
+	this.reset = false;
 	List<? extends I> items = items();
 	if(items.size() != n) {
 	    n = items.size();
@@ -130,6 +132,14 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> im
 	    }
 	}
 	super.tick(dt);
+    }
+
+    public void reset() {
+	this.reset = true;
+    }
+
+    public W getcur(I item) {
+	return(curw.get(item));
     }
 
     protected void drawbg(GOut g) {

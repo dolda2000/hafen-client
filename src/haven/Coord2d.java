@@ -26,6 +26,7 @@
 
 package haven;
 
+import java.util.Iterator;
 import static java.lang.Math.PI;
 
 public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
@@ -126,9 +127,15 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
     public Coord round() {
 	return(Coord.of((int)Math.round(x), (int)Math.round(y)));
     }
+    public Coord2d roundf() {
+	return(Coord2d.of(Math.round(x), Math.round(y)));
+    }
 
     public Coord floor() {
 	return(Coord.of((int)Math.floor(x), (int)Math.floor(y)));
+    }
+    public Coord2d floorf() {
+	return(Coord2d.of(Math.floor(x), Math.floor(y)));
     }
 
     public Coord floor(double X, double Y) {
@@ -169,6 +176,11 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
 
     public Coord2d norm() {
 	return(norm(1.0));
+    }
+
+    public Coord2d rot(double a) {
+	double s = Math.sin(a), c = Math.cos(a);
+	return(of((x * c) - (y * s), (y * c) + (x * s)));
     }
 
     public static Coord2d sc(double a, double r) {

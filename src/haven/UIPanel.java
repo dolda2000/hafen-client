@@ -35,6 +35,9 @@ import java.awt.image.BufferedImage;
 import java.awt.event.*;
 
 public interface UIPanel extends Runnable {
+    public static final Config.Variable<Boolean> dbtext = Config.Variable.propb("haven.dbtext", false);
+    public static final Config.Variable<Boolean> profile = Config.Variable.propb("haven.profile", false);
+    public static final Config.Variable<Boolean> profilegpu = Config.Variable.propb("haven.profilegpu", false);
     public static final Cursor emptycurs = Toolkit.getDefaultToolkit().createCustomCursor(TexI.mkbuf(new Coord(1, 1)), new java.awt.Point(), "");
 
     public UI newui(UI.Runner fun);
@@ -44,6 +47,8 @@ public interface UIPanel extends Runnable {
      * be declared since Java is stupid. */
     public void setSize(int w, int h);
     public Dimension getSize();
+    public void setCursor(Cursor c);
+    public Component getParent();
 
     public static class Dispatcher implements KeyListener, MouseListener, MouseWheelListener, MouseMotionListener {
 	public final Queue<InputEvent> events = new LinkedList<>();

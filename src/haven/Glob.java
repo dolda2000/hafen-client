@@ -36,7 +36,7 @@ public class Glob {
     public final MCache map;
     public final Session sess;
     public final Loader loader = new Loader();
-    public double time, epoch = Utils.rtime();
+    public double gtime, sgtime, epoch = Utils.rtime();
     public Astronomy ast;
     public Party party;
     public Color lightamb = null, lightdif = null, lightspc = null;
@@ -129,6 +129,7 @@ public class Glob {
 	    }
 	}
 
+	tickgtime(now, dt);
 	oc.ctick(dt);
 	map.ctick(dt);
 
@@ -140,21 +141,41 @@ public class Glob {
 	map.gtick(g);
     }
 
-    private final double timefac = 3.0;
-    private double lastrep = 0, rgtime = 0;
-    public double globtime() {
+    private static final double itimefac = 3.0;
+    private double stimefac = itimefac, ctimefac = itimefac;
+    private void tickgtime(double now, double dt) {
+	double sgtime = this.sgtime + ((now - epoch) * stimefac);
+	gtime += dt * ctimefac;
+	if((sgtime > gtime) && (ctimefac / stimefac < 1.1))
+	    ctimefac += Math.min((sgtime - gtime) * 0.001, 0.02) * dt;
+	else if((sgtime < gtime) && (stimefac / ctimefac < 1.1))
+	    ctimefac -= Math.min((gtime - sgtime) * 0.001, 0.02) * dt;
+	ctimefac += Math.signum(stimefac - ctimefac) *0.002 * dt;
+    }
+
+    private void updgtime(double sgtime, boolean inc) {
 	double now = Utils.rtime();
-	double raw = ((now - epoch) * timefac) + time;
-	if(lastrep == 0) {
-	    rgtime = raw;
-	} else {
-	    double gd = (now - lastrep) * timefac;
-	    rgtime += gd;
-	    if(Math.abs(rgtime + gd - raw) > 1.0)
-		rgtime = rgtime + ((raw - rgtime) * (1.0 - Math.pow(10.0, -(now - lastrep))));
+	double delta = now - epoch;
+	epoch = now;
+	if((this.sgtime == 0) || !inc || (Math.abs(sgtime - this.sgtime) > 500)) {
+	    this.gtime = this.sgtime = sgtime;
+	    return;
 	}
-	lastrep = now;
-	return(rgtime);
+	if((sgtime - this.sgtime) > 1) {
+	    double utimefac = (sgtime - this.sgtime) / delta;
+	    double f = Math.min(delta * 0.01, 0.5);
+	    stimefac = (stimefac * (1 - f)) + (utimefac * f);
+	}
+	this.sgtime = sgtime;
+    }
+
+    public String gtimestats() {
+	double sgtime = this.sgtime + ((Utils.rtime() - epoch) * stimefac);
+	return(String.format("%.2f %.2f %.2f %.2f %.2f %.2f %.2f", gtime, this.sgtime, epoch, sgtime, sgtime - gtime, ctimefac, stimefac));
+    }
+
+    public double globtime() {
+	return(gtime);
     }
 
     public void blob(Message msg) {
@@ -164,10 +185,7 @@ public class Glob {
 	    Object[] a = msg.list();
 	    int n = 0;
 	    if(t == "tm") {
-		time = ((Number)a[n++]).doubleValue();
-		epoch = Utils.rtime();
-		if(!inc)
-		    lastrep = 0;
+		updgtime(((Number)a[n++]).doubleValue(), inc);
 	    } else if(t == "astro") {
 		double dt = ((Number)a[n++]).doubleValue();
 		double mp = ((Number)a[n++]).doubleValue();
@@ -296,17 +314,6 @@ public class Glob {
 		cattr.put(nm, a);
 	    } else {
 		a.update(base, comp);
-	    }
-	}
-    }
-
-    public void cattr(Message msg) {
-	synchronized(cattr) {
-	    while(!msg.eom()) {
-		String nm = msg.string();
-		int base = msg.int32();
-		int comp = msg.int32();
-		cattr(nm, base, comp);
 	    }
 	}
     }

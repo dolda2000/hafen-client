@@ -32,7 +32,7 @@ import haven.render.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 
-public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose {
+public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skeleton.HasPose, Skeleton.ModOwner {
     public static final Pipe.Op
 	rigid = new BaseColor(FColor.GREEN),
 	morphed = new BaseColor(FColor.RED),
@@ -88,7 +88,23 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
     private void parts(RenderTree.Slot slot) {
 	for(RenderTree.Node p : parts)
 	    slot.add(p);
-	// slot.add(pose.debug); XXXRENDER
+	// if(pose != null)
+	//     slot.add(pose.new Debug());
+    }
+
+    public <T> T context(Class<T> cl) {
+	if(owner == null)
+	    throw(new NoContext(cl));
+	return(owner.context(cl));
+    }
+    public Collection<Location.Chain> getloc() {
+	Collection<Location.Chain> ret = new ArrayList<>(slots.size());
+	for(RenderTree.Slot slot : slots)
+	    ret.add(slot.state().get(Homo3D.loc));
+	return(ret);
+    }
+    public double getv() {
+	return((owner instanceof Skeleton.ModOwner) ? ((Skeleton.ModOwner)owner).getv() : 0);
     }
 
     /* XXX: It's ugly to snoop inside a wrapping, but I can't think of
@@ -198,13 +214,12 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 	}
 	Collection<PoseMod> poses = new LinkedList<PoseMod>();
 	stat = true;
-	Skeleton.ModOwner mo = (owner instanceof Skeleton.ModOwner)?(Skeleton.ModOwner)owner:Skeleton.ModOwner.nil;
 	Map<Skeleton.ResPose, PoseMod> newids = new HashMap<Skeleton.ResPose, PoseMod>();
 	for(Skeleton.ResPose p : res.layers(Skeleton.ResPose.class)) {
 	    if((p.id < 0) || ((mask & (1 << p.id)) != 0)) {
 		Skeleton.PoseMod mod;
 		if((mod = modids.get(p)) == null) {
-		    mod = p.forskel(mo, skel, p.defmode);
+		    mod = p.forskel(this, skel, p.defmode);
 		    if(old)
 			mod.age();
 		}
@@ -282,6 +297,13 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, Skeleton.HasPose 
 
     public Pose getpose() {
 	return(pose);
+    }
+
+    public Supplier<Pipe.Op> eqpoint(String nm, Message dat) {
+	Skeleton.BoneOffset bo = res.layer(Skeleton.BoneOffset.class, nm);
+	if(bo != null)
+	    return(bo.from(pose));
+	return(pose.eqpoint(nm, dat));
     }
 
     static {

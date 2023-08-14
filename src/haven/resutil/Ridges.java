@@ -38,7 +38,7 @@ import haven.Tiler.VertFactory;
 import haven.Surface.MeshVertex;
 import static haven.Utils.clip;
 
-public class Ridges extends MapMesh.Hooks {
+public class Ridges implements MapMesh.ConsHooks {
     private static final float EPSILON = 0.01f;
     public static final MapMesh.DataID<Ridges> id = MapMesh.makeid(Ridges.class);
     public static final double segh = 8;

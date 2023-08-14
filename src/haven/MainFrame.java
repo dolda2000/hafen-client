@@ -34,10 +34,15 @@ import java.util.*;
 import java.lang.reflect.*;
 
 public class MainFrame extends java.awt.Frame implements Console.Directory {
+    public static final Config.Variable<Boolean> initfullscreen = Config.Variable.propb("haven.fullscreen", false);
+    public static final Config.Variable<String> renderer = Config.Variable.prop("haven.renderer", "jogl");
+    public static final Config.Variable<Boolean> status = Config.Variable.propb("haven.status", false);
     final UIPanel p;
     private final ThreadGroup g;
     private Thread mt;
+    boolean fullscreen;
     DisplayMode fsmode = null, prefs = null;
+    Coord prefssz = null;
 	
     static {
 	try {
@@ -62,16 +67,20 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	
     public void setfs() {
 	GraphicsDevice dev = getGraphicsConfiguration().getDevice();
-	if(prefs != null)
+	if(fullscreen)
 	    return;
-	prefs = dev.getDisplayMode();
+	fullscreen = true;
+	prefssz = new Coord(getSize());
 	try {
 	    setVisible(false);
 	    dispose();
 	    setUndecorated(true);
 	    setVisible(true);
 	    dev.setFullScreenWindow(this);
-	    dev.setDisplayMode(fsmode);
+	    if(fsmode != null) {
+		prefs = dev.getDisplayMode();
+		dev.setDisplayMode(fsmode);
+	    }
 	    pack();
 	} catch(Exception e) {
 	    throw(new RuntimeException(e));
@@ -80,23 +89,22 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	
     public void setwnd() {
 	GraphicsDevice dev = getGraphicsConfiguration().getDevice();
-	if(prefs == null)
+	if(!fullscreen)
 	    return;
 	try {
-	    dev.setDisplayMode(prefs);
+	    if(prefs != null)
+		dev.setDisplayMode(prefs);
 	    dev.setFullScreenWindow(null);
 	    setVisible(false);
 	    dispose();
 	    setUndecorated(false);
+	    if(prefssz != null)
+		setSize(prefssz.x, prefssz.y);
 	    setVisible(true);
 	} catch(Exception e) {
 	    throw(new RuntimeException(e));
 	}
-	prefs = null;
-    }
-
-    public boolean hasfs() {
-	return(prefs != null);
+	fullscreen = false;
     }
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
@@ -122,7 +130,10 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    });
 	cmdmap.put("fsmode", new Console.Command() {
 		public void run(Console cons, String[] args) throws Exception {
-		    if(args.length == 3) {
+		    if((args.length < 2) || args[1].equals("none")) {
+			fsmode = null;
+			Utils.setprefc("fsmode", Coord.z);
+		    } else if(args.length == 3) {
 			DisplayMode mode = findmode(Integer.parseInt(args[1]), Integer.parseInt(args[2]));
 			if(mode == null)
 			    throw(new Exception("No such mode is available"));
@@ -158,6 +169,18 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	setIconImage(icon);
     }
 
+    private UIPanel renderer() {
+	String id = renderer.get();
+	switch(id) {
+	case "jogl":
+	    return(new JOGLPanel());
+	case "lwjgl":
+	    return(new LWJGLPanel());
+	default:
+	    throw(new RuntimeException("invalid renderer specified in haven.renderer: " + id));
+	}
+    }
+
     public MainFrame(Coord isz) {
 	super("Haven & Hearth");
 	Coord sz;
@@ -169,19 +192,14 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    sz = isz;
 	}
 	this.g = new ThreadGroup(HackThread.tg(), "Haven client");
-	Component pp = (Component)(this.p = new JOGLPanel(sz));
+	Component pp = (Component)(this.p = renderer());
 	if(fsmode == null) {
 	    Coord pfm = Utils.getprefc("fsmode", null);
-	    if(pfm != null)
+	    if((pfm != null) && !pfm.equals(Coord.z))
 		fsmode = findmode(pfm.x, pfm.y);
 	}
-	if(fsmode == null) {
-	    DisplayMode cm = getGraphicsConfiguration().getDevice().getDisplayMode();
-	    fsmode = findmode(cm.getWidth(), cm.getHeight());
-	}
-	if(fsmode == null)
-	    fsmode = findmode(800, 600);
 	add(pp);
+	pp.setSize(sz.x, sz.y);
 	pack();
 	setResizable(!Utils.getprefb("wndlock", false));
 	pp.requestFocus();
@@ -205,7 +223,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
     }
 	
     private void savewndstate() {
-	if(prefs == null) {
+	if(!fullscreen) {
 	    if(getExtendedState() == NORMAL)
 		/* Apparent, getSize attempts to return the "outer
 		 * size" of the window, including WM decorations, even
@@ -220,23 +238,33 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
     }
 
+    public static class ConnectionError extends RuntimeException {
+	public ConnectionError(String mesg) {
+	    super(mesg);
+	}
+    }
+
     public static Session connect(Object[] args) {
 	String username;
 	byte[] cookie;
-	if((Config.authuser != null) && (Config.authck != null)) {
-	    username = Config.authuser;
-	    cookie = Config.authck;
+	if((Bootstrap.authuser.get() != null) && (Bootstrap.authck.get() != null)) {
+	    username = Bootstrap.authuser.get();
+	    cookie = Bootstrap.authck.get();
 	} else {
-	    if((username = Utils.getpref("tokenname@" + Config.defserv, null)) == null)
-		throw(new RuntimeException("No explicit or saved username"));
-	    String token = Utils.getpref("savedtoken@" + Config.defserv, null);
+	    if(Bootstrap.authuser.get() != null) {
+		username = Bootstrap.authuser.get();
+	    } else {
+		if((username = Utils.getpref("tokenname@" + Bootstrap.defserv.get(), null)) == null)
+		    throw(new ConnectionError("no explicit or saved username for host: " + Bootstrap.defserv.get()));
+	    }
+	    String token = Utils.getpref("savedtoken-" + username + "@" + Bootstrap.defserv.get(), null);
 	    if(token == null)
-		throw(new RuntimeException("No saved token"));
+		throw(new ConnectionError("no saved token for user: " + username));
 	    try {
-		AuthClient cl = new AuthClient((Config.authserv == null) ? Config.defserv : Config.authserv, Config.authport);
+		AuthClient cl = new AuthClient((Bootstrap.authserv.get() == null) ? Bootstrap.defserv.get() : Bootstrap.authserv.get(), Bootstrap.authport.get());
 		try {
 		    if((username = cl.trytoken(username, Utils.hex2byte(token))) == null)
-			throw(new RuntimeException("Authentication with saved token failed"));
+			throw(new ConnectionError("authentication with saved token failed"));
 		    cookie = cl.getcookie();
 		} finally {
 		    cl.close();
@@ -246,7 +274,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    }
 	}
 	try {
-	    return(new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(Config.defserv), Config.mainport), username, cookie, args));
+	    return(new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(Bootstrap.defserv.get()), Bootstrap.mainport.get()), username, cookie, args));
 	} catch(InterruptedException exc) {
 	    throw(new RuntimeException(exc));
 	} catch(IOException e) {
@@ -306,11 +334,12 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
     }
     
+    public static final Config.Variable<Boolean> nopreload = Config.Variable.propb("haven.nopreload", false);
     public static void setupres() {
 	if(ResCache.global != null)
 	    Resource.setcache(ResCache.global);
-	if(Config.resurl != null)
-	    Resource.addurl(Config.resurl);
+	if(Resource.resurl.get() != null)
+	    Resource.addurl(Resource.resurl.get());
 	if(ResCache.global != null) {
 	    /*
 	    try {
@@ -318,7 +347,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    } catch(IOException e) {}
 	    */
 	}
-	if(!Config.nopreload) {
+	if(!nopreload.get()) {
 	    try {
 		InputStream pls;
 		pls = Resource.class.getResourceAsStream("res-preload");
@@ -332,7 +361,24 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    }
 	}
     }
-    
+
+    public static final Config.Variable<Path> loadwaited = Config.Variable.propp("haven.loadwaited", "");
+    public static final Config.Variable<Path> allused = Config.Variable.propp("haven.allused", "");
+    public static void resdump() {
+	dumplist(Resource.remote().loadwaited(), loadwaited.get());
+	dumplist(Resource.remote().cached(), allused.get());
+	if(ResCache.global != null) {
+	    try {
+		Writer w = new OutputStreamWriter(ResCache.global.store("tmp/allused"), "UTF-8");
+		try {
+		    Resource.dumplist(Resource.remote().used(), w);
+		} finally {
+		    w.close();
+		}
+	    } catch(IOException e) {}
+	}
+    }
+
     static {
 	WebBrowser.self = DesktopBrowser.create();
     }
@@ -355,8 +401,14 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	javax.imageio.spi.IIORegistry.getDefaultInstance();
     }
 
+    public static void status(String state) {
+	if(status.get())
+	    System.out.println("hafen:status:" + state);
+    }
+
     private static void main2(String[] args) {
 	Config.cmdline(args);
+	status("start");
 	try {
 	    javabughack();
 	} catch(InterruptedException e) {
@@ -364,24 +416,21 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
 	setupres();
 	UI.Runner fun = null;
-	if(Config.servargs != null)
-	    fun = new RemoteUI(connect(Config.servargs));
+	if(Bootstrap.servargs.get() != null) {
+	    try {
+		fun = new RemoteUI(connect(Bootstrap.servargs.get()));
+	    } catch(ConnectionError e) {
+		System.err.println("hafen: " + e.getMessage());
+		System.exit(1);
+	    }
+	}
 	MainFrame f = new MainFrame(null);
-	if(Utils.getprefb("fullscreen", false))
+	status("visible");
+	if(initfullscreen.get())
 	    f.setfs();
 	f.run(fun);
-	dumplist(Resource.remote().loadwaited(), Config.loadwaited);
-	dumplist(Resource.remote().cached(), Config.allused);
-	if(ResCache.global != null) {
-	    try {
-		Writer w = new OutputStreamWriter(ResCache.global.store("tmp/allused"), "UTF-8");
-		try {
-		    Resource.dumplist(Resource.remote().used(), w);
-		} finally {
-		    w.close();
-		}
-	    } catch(IOException e) {}
-	}
+	resdump();
+	status("exit");
 	System.exit(0);
     }
     
