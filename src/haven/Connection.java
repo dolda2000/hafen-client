@@ -104,10 +104,16 @@ public class Connection {
 		    task = task.run();
 	    } finally {
 		try {
-		    sk.close();
-		    sel.close();
-		} catch(IOException e) {
-		    throw(new RuntimeException(e));
+		    alive = false;
+		    for(Callback cb : cbs)
+			cb.closed();
+		} finally {
+		    try {
+			sk.close();
+			sel.close();
+		    } catch(IOException e) {
+			throw(new RuntimeException(e));
+		    }
 		}
 	    }
 	}
@@ -525,22 +531,14 @@ public class Connection {
 	    this.sawclose = sawclose;
 	}
 
-	private void closed() {
-	    alive = false;
-	    for(Callback cb : cbs)
-		cb.closed();
-	}
-
 	public Task run() {
 	    int retries = 0;
 	    double last = 0;
 	    while(true) {
 		double now = Utils.rtime();
 		if(now - last > 0.5) {
-		    if(++retries > 5) {
-			closed();
+		    if(++retries > 5)
 			return(null);
-		    }
 		    send(new PMessage(Session.MSG_CLOSE));
 		    last = now;
 		}
@@ -555,10 +553,8 @@ public class Connection {
 		} catch(IOException e) {
 		    throw(new RuntimeException(e));
 		}
-		if(sawclose) {
-		    closed();
+		if(sawclose)
 		    return(null);
-		}
 	    }
 	}
     }
