@@ -241,13 +241,21 @@ public class Session implements Resource.Resolver {
 	    public void handle(PMessage msg) {
 		handlerel(msg);
 	    }
+
+	    public void handle(OCache.ObjDelta delta) {
+		glob.oc.receive(delta);
+	    }
+
+	    public void mapdata(Message msg) {
+		glob.map.mapdata(msg);
+	    }
 	};
 
     public Session(SocketAddress server, String username, byte[] cookie, Object... args) throws InterruptedException {
 	this.conn = new Connection(server, username);
 	this.username = username;
 	this.glob = new Glob(this);
-	conn.add(conncb).glob(this.glob);
+	conn.add(conncb);
 	conn.connect(cookie, args);
     }
 

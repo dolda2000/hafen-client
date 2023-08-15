@@ -37,7 +37,6 @@ public class Connection {
     private static final double OBJACK_HOLD = 0.08, OBJACK_HOLD_MAX = 0.5;
     public final SocketAddress server;
     public final String username;
-    private Glob glob;
     private final Collection<Callback> cbs = new ArrayList<>();
     private final DatagramChannel sk;
     private final Selector sel;
@@ -64,6 +63,8 @@ public class Connection {
     public static interface Callback {
 	public default void closed() {};
 	public default void handle(PMessage msg) {};
+	public default void handle(OCache.ObjDelta delta) {};
+	public default void mapdata(Message msg) {};
 
 	public static final Callback dump = new Callback() {
 		public void closed() {
@@ -78,11 +79,6 @@ public class Connection {
 
     public Connection add(Callback cb) {
 	cbs.add(cb);
-	return(this);
-    }
-
-    public Connection glob(Glob glob) {
-	this.glob = glob;
 	return(this);
     }
 
@@ -338,8 +334,8 @@ public class Connection {
 	}
 
 	private void gotmapdata(Message msg) {
-	    if(glob != null)
-		glob.map.mapdata(msg);
+	    for(Callback cb : cbs)
+		cb.mapdata(msg);
 	}
 
 	private void gotobjdata(Message msg) {
@@ -372,8 +368,8 @@ public class Connection {
 		    else
 			delta.attrs.add(attr);
 		}
-		if(glob != null)
-		    glob.oc.receive(delta);
+		for(Callback cb : cbs)
+		    cb.handle(delta);
 		ObjAck ack = objacks.get(id);
 		if(ack == null) {
 		    objacks.put(id, ack = new ObjAck(id, fr, now));
