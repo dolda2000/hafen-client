@@ -275,6 +275,8 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
 	try {
 	    return(new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(Bootstrap.defserv.get()), Bootstrap.mainport.get()), username, cookie, args));
+	} catch(Connection.SessionError e) {
+	    throw(new ConnectionError(e.getMessage()));
 	} catch(InterruptedException exc) {
 	    throw(new RuntimeException(exc));
 	} catch(IOException e) {
