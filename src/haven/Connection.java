@@ -188,6 +188,7 @@ public class Connection {
     private class Connect implements Task {
 	private final PMessage msg;
 	private int result = -1;
+	private Throwable cause;
 	private String message;
 
 	private Connect(byte[] cookie, Object... args) {
@@ -234,7 +235,9 @@ public class Connection {
 		    } catch(ClosedByInterruptException e) {
 			return(null);
 		    } catch(IOException e) {
-			throw(new RuntimeException(e));
+			result = Session.SESSERR_CONN;
+			cause = e;
+			return(null);
 		    }
 		}
 	    } finally {
@@ -503,7 +506,8 @@ public class Connection {
 		} catch(ClosedByInterruptException | InterruptedException e) {
 		    return(new Close(false));
 		} catch(IOException e) {
-		    throw(new RuntimeException(e));
+		    new Warning(e, "connection error").issue();
+		    return(null);
 		}
 
 		pendto = min2(sendpending(), sendobjacks());
@@ -547,7 +551,7 @@ public class Connection {
 		} catch(ClosedByInterruptException e) {
 		    continue;
 		} catch(IOException e) {
-		    throw(new RuntimeException(e));
+		    return(null);
 		}
 		if(sawclose)
 		    return(null);
