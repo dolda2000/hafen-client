@@ -27,6 +27,8 @@
 package haven.render.sl;
 
 public class Attribute extends Variable.Global {
+    public boolean primary = false;
+
     public Attribute(Type type, Symbol name) {
 	super(type, name);
     }
@@ -37,6 +39,25 @@ public class Attribute extends Variable.Global {
 
     public Attribute(Type type) {
 	this(type, new Symbol.Shared());
+    }
+
+    /* Ths "primary" thing is mostly just OCD. There apparently do
+     * exist some old (buggy, I can only presume) drivers, Intel
+     * observed (with OpenGL 3.1) that require a "position-like"
+     * attribute in location 0. The error message from the driver when
+     * such is not the case makes it kind of obvious that it's
+     * probably buggy:
+     *   "A matrix is bound to generic attribute 0. Position can not be a matrix."
+     * -So is it "generic" or "position"? one might ask.
+     * -Not really my problem. one might also conclude.
+     *
+     * That being said, the vertex position being in the first
+     * location also makes programs like RenderDoc able to autodetect
+     * the position, so I don't utterly hate having this anyway.
+     */
+    public Attribute primary() {
+	this.primary = true;
+	return(this);
     }
 
     private class Def extends Definition {

@@ -26,32 +26,110 @@
 
 package haven;
 
+import java.io.PrintWriter;
+
 public class Chatwindow extends Window {
-    TextEntry in;
-    Textlog out;
-	
+    private static final PrintWriter stdout = new PrintWriter(System.out);
+    public final TextEntry in;
+    public final Textlog out;
+    private boolean stdio;
+    private Thread reader;
+    private final StringBuilder readbuf = new StringBuilder();
+
     @RName("chat")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    return(new Chatwindow(UI.scale((Coord)args[0])));
 	}
     }
-	
+
     public Chatwindow(Coord sz) {
 	super(sz, "Chat");
-	in = adda(new TextEntry(sz.x, ""), 0, asz.y, 0.0, 1.0);
+	in = adda(new TextEntry(sz.x, ""), 0, sz.y, 0.0, 1.0);
 	in.canactivate = true;
-	out = add(new Textlog(new Coord(asz.x, in.c.y)), Coord.z);
+	out = add(new Textlog(new Coord(sz.x, in.c.y)), Coord.z);
     }
-	
+
+    private void stdin() {
+	System.out.print("> "); System.out.flush();
+	while(true) {
+	    synchronized(this) {
+		if(!stdio) {
+		    this.reader = null;
+		    this.notifyAll();
+		    return;
+		}
+	    }
+	    try {
+		int c = System.in.read();
+		if(c == '\n') {
+		    String cmd = readbuf.toString();
+		    readbuf.setLength(0);
+		    if((cmd.length() > 0) && (cmd.charAt(0) == ':')) {
+			PrintWriter prev = ui.cons.out;
+			try {
+			    ui.cons.out = stdout;
+			    ui.cons.run(cmd.substring(1));
+			    stdout.flush();
+			} catch(Exception e) {
+			    String msg = e.getMessage();
+			    if(msg == null)
+				msg = e.toString();
+			    System.out.println(msg);
+			} finally {
+			    ui.cons.out = prev;
+			}
+		    } else {
+			wdgmsg("msg", cmd);
+		    }
+		    System.out.print("> "); System.out.flush();
+		} else if(c > 0) {
+		    readbuf.append((char)c);
+		}
+	    } catch(java.io.IOException e) {
+		e.printStackTrace();
+	    }
+	}
+    }
+
+    public void stdio(boolean on) {
+	synchronized(this) {
+	    this.stdio = on;
+	    if(stdio && (reader == null)) {
+		reader = new HackThread(this::stdin, "stdin reader");
+		reader.start();
+	    } else if(!stdio && (reader != null)) {
+		reader.interrupt();
+		synchronized(this) {
+		    try {
+			while(reader != null)
+			    this.wait();
+		    } catch(InterruptedException e) {
+			Thread.currentThread().interrupt();
+		    }
+		}
+	    }
+	}
+    }
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "log") {
+	    if(stdio) {
+		StringBuilder buf = new StringBuilder();
+		buf.append("\r\033[K");
+		buf.append((String)args[0]);
+		buf.append("\n> ");
+		System.out.print(buf); System.out.flush();
+	    }
 	    out.append((String)args[0]);
+	} else if(msg == "show") {
+	    super.uimsg(msg, args);
+	    stdio(!visible);
 	} else {
 	    super.uimsg(msg, args);
 	}
     }
-	
+
     public void wdgmsg(Widget sender, String msg, Object... args) {
 	if(sender == in) {
 	    if(msg == "activate") {

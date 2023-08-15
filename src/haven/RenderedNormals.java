@@ -89,6 +89,11 @@ public class RenderedNormals extends State {
 	    if(state != null)
 		out.clear(new BufPipe().prep(new FragColor<>(tex.image(0))), FragColor.fragcol, new FColor(0, 0, -1));
 	}
+
+	public void postrender(Render out) {
+	    if(false && Debug.ff)
+		GOut.debugimage(out, tex.image(0), true, Debug::dumpimage);
+	}
     }
 
     public static Canon get(Pipe state) {

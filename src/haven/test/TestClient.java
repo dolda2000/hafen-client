@@ -64,13 +64,6 @@ public class TestClient implements Runnable, UI.Context {
     
     public void connect() throws InterruptedException {
 	sess = new Session(addr, user, cookie);
-	synchronized(sess) {
-	    while(sess.state != "") {
-		if(sess.connfailed != 0)
-		    throw(new RuntimeException("Connection failure for " + user + " (" + sess.connfailed + ")"));
-		sess.wait();
-	    }
-	}
     }
     
     public void addbot(Robot bot) {

@@ -40,7 +40,7 @@ import haven.render.Environment;
 import haven.render.Render;
 
 public class UI {
-    public static int MOD_SHIFT = 1, MOD_CTRL = 2, MOD_META = 4, MOD_SUPER = 8;
+    public static int MOD_SHIFT = KeyMatch.S, MOD_CTRL = KeyMatch.C, MOD_META = KeyMatch.M, MOD_SUPER = KeyMatch.SUPER;
     public RootWidget root;
     private final LinkedList<Grab> keygrab = new LinkedList<Grab>(), mousegrab = new LinkedList<Grab>();
     private final Map<Integer, Widget> widgets = new TreeMap<Integer, Widget>();
@@ -152,11 +152,10 @@ public class UI {
 	}
     }
 
-    @SuppressWarnings("serial")
     public static class UIException extends RuntimeException {
 	public String mname;
 	public Object[] args;
-		
+
 	public UIException(String message, String mname, Object... args) {
 	    super(message);
 	    this.mname = mname;
@@ -168,7 +167,18 @@ public class UI {
 	    out.printf("Message: %s; Arguments: %s\n", mname, Arrays.asList(args));
 	}
     }
-	
+
+    public static class UIWarning extends Warning {
+	public String mname;
+	public Object[] args;
+
+	public UIWarning(String message, String mname, Object... args) {
+	    super(message);
+	    this.mname = mname;
+	    this.args = args;
+	}
+    }
+
     public UI(Context uictx, Coord sz, Runner fun) {
 	this.uictx = uictx;
 	root = new RootWidget(this, sz);
@@ -290,7 +300,7 @@ public class UI {
 		execute(next);
 	}
     }
-	
+
     public void setreceiver(Receiver rcvr) {
 	this.rcvr = rcvr;
     }
@@ -575,11 +585,32 @@ public class UI {
 	submitcmd(new Command(act).dep(id, true));
     }
 	
+    public static interface MessageWidget {
+	public void msg(String msg);
+	public void error(String msg);
+
+	public static MessageWidget find(Widget w) {
+	    for(Widget ch = w.child; ch != null; ch = ch.next) {
+		MessageWidget ret = find(ch);
+		if(ret != null)
+		    return(ret);
+	    }
+	    if(w instanceof MessageWidget)
+		return((MessageWidget)w);
+	    return(null);
+	}
+    }
+
     public void error(String msg) {
-	/* XXX: This should be generalized. */
-	GameUI gui = root.findchild(GameUI.class);
-	if(gui != null)
-	    gui.error(msg);
+	MessageWidget h = MessageWidget.find(root);
+	if(h != null)
+	    h.error(msg);
+    }
+
+    public void msg(String msg) {
+	MessageWidget h = MessageWidget.find(root);
+	if(h != null)
+	    h.msg(msg);
     }
 
     private void setmods(InputEvent ev) {
@@ -660,6 +691,10 @@ public class UI {
 	setmods(ev);
 	mc = c;
 	root.mousemove(c);
+    }
+
+    public void mousehover(Coord c) {
+	root.mousehover(c, true);
     }
 
     public void setmousepos(Coord c) {
@@ -797,9 +832,10 @@ public class UI {
 	}
     }
 
+    public static final Config.Variable<Double> uiscale = Config.Variable.propf("haven.uiscale", null);
     private static double loadscale() {
-	if(Config.uiscale != null)
-	    return(Config.uiscale);
+	if(uiscale.get() != null)
+	    return(uiscale.get());
 	double scale = Utils.getprefd("uiscale", 1.0);
 	scale = Math.max(Math.min(scale, maxscale()), 1.0);
 	return(scale);

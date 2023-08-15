@@ -46,6 +46,27 @@ public interface DataBuffer {
 		    return(buf);
 		});
 	}
+	public static Filler<DataBuffer> of(ShortBuffer data) {
+	    return((tgt, env) -> {
+		    FillBuffer buf = env.fillbuf(tgt);
+		    buf.push().asShortBuffer().put(data.slice());
+		    return(buf);
+		});
+	}
+	public static Filler<DataBuffer> of(IntBuffer data) {
+	    return((tgt, env) -> {
+		    FillBuffer buf = env.fillbuf(tgt);
+		    buf.push().asIntBuffer().put(data.slice());
+		    return(buf);
+		});
+	}
+	public static Filler<DataBuffer> of(FloatBuffer data) {
+	    return((tgt, env) -> {
+		    FillBuffer buf = env.fillbuf(tgt);
+		    buf.push().asFloatBuffer().put(data.slice());
+		    return(buf);
+		});
+	}
 	public static Filler<DataBuffer> of(byte[] data) {
 	    return(of(ByteBuffer.wrap(data)));
 	}

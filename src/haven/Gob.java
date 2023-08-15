@@ -30,19 +30,21 @@ import java.util.*;
 import java.util.function.*;
 import haven.render.*;
 
-public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Skeleton.HasPose {
+public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, EquipTarget, Skeleton.HasPose {
     public Coord2d rc;
     public double a;
     public boolean virtual = false;
     int clprio = 0;
     public long id;
+    public boolean removed = false;
     public final Glob glob;
     Map<Class<? extends GAttrib>, GAttrib> attr = new HashMap<Class<? extends GAttrib>, GAttrib>();
     public final Collection<Overlay> ols = new ArrayList<Overlay>();
     public final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
+    public int updateseq = 0;
     private final Collection<SetupMod> setupmods = new ArrayList<>();
-    private final Collection<ResAttr.Cell<?>> rdata = new LinkedList<ResAttr.Cell<?>>();
-    private final Collection<ResAttr.Load> lrdata = new LinkedList<ResAttr.Load>();
+    private final LinkedList<Runnable> deferred = new LinkedList<>();
+    private Loader.Future<?> deferral = null;
 
     public static class Overlay implements RenderTree.Node {
 	public final int id;
@@ -100,9 +102,17 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	    added = false;
 	}
 
-	public void remove() {
+	public void remove(boolean async) {
+	    if(async) {
+		gob.defer(() -> remove(false));
+		return;
+	    }
 	    remove0();
 	    gob.ols.remove(this);
+	}
+
+	public void remove() {
+	    remove(true);
 	}
 
 	public void added(RenderTree.Slot slot) {
@@ -123,68 +133,278 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	public default Pipe.Op placestate() {return(null);}
     }
 
-    /* XXX: This whole thing didn't turn out quite as nice as I had
-     * hoped, but hopefully it can at least serve as a source of
-     * inspiration to redo attributes properly in the future. There
-     * have already long been arguments for remaking GAttribs as
-     * well. */
-    public static class ResAttr {
-	public boolean update(Message dat) {
-	    return(false);
+    public static interface Placer {
+	/* XXX: *Quite* arguably, the distinction between getc and
+	 * getr should be abolished and a single transform matrix
+	 * should be used instead, but that requires first abolishing
+	 * the distinction between the gob/gobx location IDs. */
+	public Coord3f getc(Coord2d rc, double ra);
+	public Matrix4f getr(Coord2d rc, double ra);
+    }
+
+    public static interface Placing {
+	public Placer placer();
+    }
+
+    public static class DefaultPlace implements Placer {
+	public final MCache map;
+	public final MCache.SurfaceID surf;
+
+	public DefaultPlace(MCache map, MCache.SurfaceID surf) {
+	    this.map = map;
+	    this.surf = surf;
 	}
 
-	public void dispose() {
+	public Coord3f getc(Coord2d rc, double ra) {
+	    return(map.getzp(surf, rc));
 	}
 
-	public static class Cell<T extends ResAttr> {
-	    final Class<T> clsid;
-	    Indir<Resource> resid = null;
-	    MessageBuf odat;
-	    public T attr = null;
+	public Matrix4f getr(Coord2d rc, double ra) {
+	    return(Transform.makerot(new Matrix4f(), Coord3f.zu, -(float)ra));
+	}
+    }
 
-	    public Cell(Class<T> clsid) {
-		this.clsid = clsid;
+    public static class InclinePlace extends DefaultPlace {
+	public InclinePlace(MCache map, MCache.SurfaceID surf) {
+	    super(map, surf);
+	}
+
+	public Matrix4f getr(Coord2d rc, double ra) {
+	    Matrix4f ret = super.getr(rc, ra);
+	    Coord3f norm = map.getnorm(surf, rc);
+	    norm.y = -norm.y;
+	    Coord3f rot = Coord3f.zu.cmul(norm);
+	    float sin = rot.abs();
+	    if(sin > 0) {
+		Matrix4f incl = Transform.makerot(new Matrix4f(), rot.mul(1 / sin), sin, (float)Math.sqrt(1 - (sin * sin)));
+		ret = incl.mul(ret);
 	    }
+	    return(ret);
+	}
+    }
 
-	    public void set(ResAttr attr) {
-		if(this.attr != null)
-		    this.attr.dispose();
-		this.attr = clsid.cast(attr);
+    public static class BasePlace extends DefaultPlace {
+	public final Coord2d[][] obst;
+	private Coord2d cc;
+	private double ca;
+	private int seq = -1;
+	private float z;
+
+	public BasePlace(MCache map, MCache.SurfaceID surf, Coord2d[][] obst) {
+	    super(map, surf);
+	    this.obst = obst;
+	}
+
+	public BasePlace(MCache map, MCache.SurfaceID surf, Resource res, String id) {
+	    this(map, surf, res.flayer(Resource.obst, id).p);
+	}
+
+	public BasePlace(MCache map, MCache.SurfaceID surf, Resource res) {
+	    this(map, surf, res, "");
+	}
+
+	private float getz(Coord2d rc, double ra) {
+	    Coord2d[][] no = this.obst, ro = new Coord2d[no.length][];
+	    {
+		double s = Math.sin(ra), c = Math.cos(ra);
+		for(int i = 0; i < no.length; i++) {
+		    ro[i] = new Coord2d[no[i].length];
+		    for(int o = 0; o < ro[i].length; o++)
+			ro[i][o] = Coord2d.of((no[i][o].x * c) - (no[i][o].y * s), (no[i][o].y * c) + (no[i][o].x * s)).add(rc);
+		}
 	    }
-	}
-
-	private static class Load {
-	    final Indir<Resource> resid;
-	    final MessageBuf dat;
-
-	    Load(Indir<Resource> resid, Message dat) {
-		this.resid = resid;
-		this.dat = new MessageBuf(dat);
-	    }
-	}
-
-	@Resource.PublishedCode(name = "gattr", instancer = FactMaker.class)
-	public static interface Factory {
-	    public ResAttr mkattr(Gob gob, Message dat);
-	}
-
-	public static class FactMaker implements Resource.PublishedCode.Instancer<Factory> {
-	    public Factory make(Class<?> cl, Resource ires, Object... argv) {
-		if(Factory.class.isAssignableFrom(cl))
-		    return(Resource.PublishedCode.Instancer.stdmake(cl.asSubclass(Factory.class), ires, argv));
-		if(ResAttr.class.isAssignableFrom(cl)) {
-		    try {
-			final java.lang.reflect.Constructor<? extends ResAttr> cons = cl.asSubclass(ResAttr.class).getConstructor(Gob.class, Message.class);
-			return(new Factory() {
-				public ResAttr mkattr(Gob gob, Message dat) {
-				    return(Utils.construct(cons, gob, dat));
-				}
-			    });
-		    } catch(NoSuchMethodException e) {
+	    float ret = Float.NaN;
+	    for(int i = 0; i < no.length; i++) {
+		for(int o = 0; o < ro[i].length; o++) {
+		    Coord2d a = ro[i][o], b = ro[i][(o + 1) % ro[i].length];
+		    for(Coord2d c : new Line2d.GridIsect(a, b, MCache.tilesz, false)) {
+			double z = map.getz(surf, c);
+			if(Float.isNaN(ret) || (z < ret))
+			    ret = (float)z;
 		    }
 		}
-		return(null);
 	    }
+	    return(ret);
+	}
+
+	public Coord3f getc(Coord2d rc, double ra) {
+	    int mseq = map.chseq;
+	    if((mseq != this.seq) || !Utils.eq(rc, cc) || (ra != ca)) {
+		this.z = getz(rc, ra);
+		this.seq = mseq;
+		this.cc = rc;
+		this.ca = ra;
+	    }
+	    return(Coord3f.of((float)rc.x, (float)rc.y, this.z));
+	}
+    }
+
+    public static class LinePlace extends DefaultPlace {
+	public final double max, min;
+	public final Coord2d k;
+	private Coord3f c;
+	private Matrix4f r = Matrix4f.id;
+	private int seq = -1;
+	private Coord2d cc;
+	private double ca;
+
+	public LinePlace(MCache map, MCache.SurfaceID surf, Coord2d[][] points, Coord2d k) {
+	    super(map, surf);
+	    Line2d l = Line2d.from(Coord2d.z, k);
+	    double max = 0, min = 0;
+	    for(int i = 0; i < points.length; i++) {
+		for(int o = 0; o < points[i].length; o++) {
+		    int p = (o + 1) % points[i].length;
+		    Line2d edge = Line2d.twixt(points[i][o], points[i][p]);
+		    Coord2d t = l.cross(edge);
+		    if((t.y >= 0) && (t.y <= 1)) {
+			max = Math.max(t.x, max);
+			min = Math.min(t.x, min);
+		    }
+		}
+	    }
+	    if((max == 0) || (min == 0))
+		throw(new RuntimeException("illegal bounds for LinePlace"));
+	    this.k = k;
+	    this.max = max;
+	    this.min = min;
+	}
+
+	public LinePlace(MCache map, MCache.SurfaceID surf, Resource res, String id, Coord2d k) {
+	    this(map, surf, res.flayer(Resource.obst, id).p, k);
+	}
+
+	public LinePlace(MCache map, MCache.SurfaceID surf, Resource res, Coord2d k) {
+	    this(map, surf, res, "", k);
+	}
+
+	private void recalc(Coord2d rc, double ra) {
+	    Coord2d rk = k.rot(ra);
+	    double maxz = map.getz(surf, rc.add(rk.mul(max)));
+	    double minz = map.getz(surf, rc.add(rk.mul(min)));
+	    Coord3f rax = Coord3f.of((float)-rk.y, (float)-rk.x, 0);
+	    float dz = (float)(maxz - minz);
+	    float dx = (float)(max - min);
+	    float hyp = (float)Math.sqrt((dx * dx) + (dz * dz));
+	    float sin = dz / hyp, cos = dx / hyp;
+	    c = Coord3f.of((float)rc.x, (float)rc.y, (float)minz + (dz * (float)(-min / (max - min))));
+	    r = Transform.makerot(new Matrix4f(), rax, sin, cos).mul(super.getr(rc, ra));
+	}
+
+	private void check(Coord2d rc, double ra) {
+	    int mseq = map.chseq;
+	    if((mseq != this.seq) || !Utils.eq(rc, cc) || (ra != ca)) {
+		recalc(rc, ra);
+		this.seq = mseq;
+		this.cc = rc;
+		this.ca = ra;
+	    }
+	}
+
+	public Coord3f getc(Coord2d rc, double ra) {
+	    check(rc, ra);
+	    return(c);
+	}
+
+	public Matrix4f getr(Coord2d rc, double ra) {
+	    check(rc, ra);
+	    return(r);
+	}
+    }
+
+    public static class PlanePlace extends DefaultPlace {
+	public final Coord2d[] points;
+	private Coord3f c;
+	private Matrix4f r = Matrix4f.id;
+	private int seq = -1;
+	private Coord2d cc;
+	private double ca;
+
+	public static Coord2d[] flatten(Coord2d[][] points) {
+	    int n = 0;
+	    for(int i = 0; i < points.length; i++)
+		n += points[i].length;
+	    Coord2d[] ret = new Coord2d[n];
+	    for(int i = 0, o = 0; i < points.length; o += points[i++].length)
+		System.arraycopy(points[i], 0, ret, o, points[i].length);
+	    return(ret);
+	}
+
+	public PlanePlace(MCache map, MCache.SurfaceID surf, Coord2d[] points) {
+	    super(map, surf);
+	    this.points = points;
+	}
+
+	public PlanePlace(MCache map, MCache.SurfaceID surf, Coord2d[][] points) {
+	    this(map, surf, flatten(points));
+	}
+
+	public PlanePlace(MCache map, MCache.SurfaceID surf, Resource res, String id) {
+	    this(map, surf, res.flayer(Resource.obst, id).p);
+	}
+
+	public PlanePlace(MCache map, MCache.SurfaceID surf, Resource res) {
+	    this(map, surf, res, "");
+	}
+
+	private void recalc(Coord2d rc, double ra) {
+	    double s = Math.sin(ra), c = Math.cos(ra);
+	    Coord3f[] pp = new Coord3f[points.length];
+	    for(int i = 0; i < pp.length; i++) {
+		Coord2d rv = Coord2d.of((points[i].x * c) - (points[i].y * s), (points[i].y * c) + (points[i].x * s));
+		pp[i] = map.getzp(surf, rv.add(rc));
+	    }
+	    int I = 0, O = 1, U = 2;
+	    Coord3f mn = Coord3f.zu;
+	    double ma = 0;
+	    for(int i = 0; i < pp.length - 2; i++) {
+		for(int o = i + 1; o < pp.length - 1; o++) {
+		    plane: for(int u = o + 1; u < pp.length; u++) {
+			Coord3f n = pp[o].sub(pp[i]).cmul(pp[u].sub(pp[i])).norm();
+			for(int p = 0; p < pp.length; p++) {
+			    if((p == i) || (p == o) || (p == u))
+				continue;
+			    float pz = (((n.x * (pp[i].x - pp[p].x)) + (n.y * (pp[i].y - pp[p].y))) / n.z) + pp[i].z;
+			    if(pz < pp[p].z - 0.01)
+				continue plane;
+			}
+			double a = n.cmul(Coord3f.zu).abs();
+			if(a > ma) {
+			    mn = n;
+			    ma = a;
+			    I = i; O = o; U = u;
+			}
+		    }
+		}
+	    }
+	    this.c = Coord3f.of((float)rc.x, (float)rc.y, (((mn.x * (pp[I].x - (float)rc.x)) + (mn.y * (pp[I].y - (float)rc.y))) / mn.z) + pp[I].z);
+	    this.r = Transform.makerot(new Matrix4f(), Coord3f.zu, -(float)ra);
+	    mn.y = -mn.y;
+	    Coord3f rot = Coord3f.zu.cmul(mn);
+	    float sin = rot.abs();
+	    if(sin > 0) {
+		Matrix4f incl = Transform.makerot(new Matrix4f(), rot.mul(1 / sin), sin, (float)Math.sqrt(1 - (sin * sin)));
+		this.r = incl.mul(this.r);
+	    }
+	}
+
+	private void check(Coord2d rc, double ra) {
+	    int mseq = map.chseq;
+	    if((mseq != this.seq) || !Utils.eq(rc, cc) || (ra != ca)) {
+		recalc(rc, ra);
+		this.seq = mseq;
+		this.cc = rc;
+		this.ca = ra;
+	    }
+	}
+
+	public Coord3f getc(Coord2d rc, double ra) {
+	    check(rc, ra);
+	    return(this.c);
+	}
+
+	public Matrix4f getr(Coord2d rc, double ra) {
+	    return(this.r);
 	}
     }
 
@@ -203,7 +423,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
     public void ctick(double dt) {
 	for(GAttrib a : attr.values())
 	    a.ctick(dt);
-	loadrattr();
 	for(Iterator<Overlay> i = ols.iterator(); i.hasNext();) {
 	    Overlay ol = i.next();
 	    if(ol.slots == null) {
@@ -233,9 +452,47 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	}
     }
 
+    void removed() {
+	removed = true;
+    }
+
+    private void deferred() {
+	while(true) {
+	    Runnable task;
+	    synchronized(deferred) {
+		task = deferred.peek();
+		if(task == null) {
+		    deferral = null;
+		    return;
+		}
+	    }
+	    synchronized(this) {
+		if(!removed)
+		    task.run();
+	    }
+	    if(task instanceof Disposable)
+		((Disposable)task).dispose();
+	    synchronized(deferred) {
+		if(deferred.poll() != task)
+		    throw(new RuntimeException());
+	    }
+	}
+    }
+
+    public void defer(Runnable task) {
+	synchronized(deferred) {
+	    deferred.add(task);
+	    if(deferral == null)
+		deferral = glob.loader.defer(this::deferred, null);
+	}
+    }
+
     public void addol(Overlay ol, boolean async) {
-	if(!async)
-	    ol.init();
+	if(async) {
+	    defer(() -> addol(ol, false));
+	    return;
+	}
+	ol.init();
 	ol.add0();
 	ols.add(ol);
     }
@@ -260,10 +517,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
     public void dispose() {
 	for(GAttrib a : attr.values())
 	    a.dispose();
-	for(ResAttr.Cell rd : rdata) {
-	    if(rd.attr != null)
-		rd.attr.dispose();
-	}
     }
 
     public void move(Coord2d c, double a) {
@@ -274,9 +527,19 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	this.a = a;
     }
 
+    public Placer placer() {
+	Drawable d = getattr(Drawable.class);
+	if(d != null) {
+	    Placer ret = d.placer();
+	    if(ret != null)
+		return(ret);
+	}
+	return(glob.map.mapplace);
+    }
+
     public Coord3f getc() {
 	Moving m = getattr(Moving.class);
-	Coord3f ret = (m != null)?m.getc():getrc();
+	Coord3f ret = (m != null) ? m.getc() : getrc();
 	DrawOffset df = getattr(DrawOffset.class);
 	if(df != null)
 	    ret = ret.add(df.off);
@@ -284,7 +547,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
     }
 
     public Coord3f getrc() {
-	return(glob.map.getzp(rc));
+	return(placer().getc(rc, a));
     }
 
     protected Pipe.Op getmapstate(Coord3f pc) {
@@ -346,95 +609,16 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	setattr(attrclass(c), null);
     }
 
-    private Class<? extends ResAttr> rattrclass(Class<? extends ResAttr> cl) {
-	while(true) {
-	    Class<?> p = cl.getSuperclass();
-	    if(p == ResAttr.class)
-		return(cl);
-	    cl = p.asSubclass(ResAttr.class);
-	}
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T extends ResAttr> ResAttr.Cell<T> getrattr(Class<T> c) {
-	for(ResAttr.Cell<?> rd : rdata) {
-	    if(rd.clsid == c)
-		return((ResAttr.Cell<T>)rd);
-	}
-	ResAttr.Cell<T> rd = new ResAttr.Cell<T>(c);
-	rdata.add(rd);
-	return(rd);
-    }
-
-    public static <T extends ResAttr> ResAttr.Cell<T> getrattr(Object obj, Class<T> c) {
-	if(!(obj instanceof Gob))
-	    return(new ResAttr.Cell<T>(c));
-	return(((Gob)obj).getrattr(c));
-    }
-
-    private void loadrattr() {
-	boolean upd = false;
-	for(Iterator<ResAttr.Load> i = lrdata.iterator(); i.hasNext();) {
-	    ResAttr.Load rd = i.next();
-	    ResAttr attr;
-	    try {
-		attr = rd.resid.get().getcode(ResAttr.Factory.class, true).mkattr(this, rd.dat.clone());
-	    } catch(Loading l) {
-		continue;
-	    }
-	    ResAttr.Cell<?> rc = getrattr(rattrclass(attr.getClass()));
-	    if(rc.resid == null)
-		rc.resid = rd.resid;
-	    else if(rc.resid != rd.resid)
-		throw(new RuntimeException("Conflicting resattr resource IDs on " + rc.clsid + ": " + rc.resid + " -> " + rd.resid));
-	    rc.odat = rd.dat;
-	    rc.set(attr);
-	    i.remove();
-	    upd = true;
-	}
-    }
-
-    public void setrattr(Indir<Resource> resid, Message dat) {
-	for(Iterator<ResAttr.Cell<?>> i = rdata.iterator(); i.hasNext();) {
-	    ResAttr.Cell<?> rd = i.next();
-	    if(rd.resid == resid) {
-		if(dat.equals(rd.odat))
-		    return;
-		if((rd.attr != null) && rd.attr.update(dat))
-		    return;
-		break;
+    public Supplier<? extends Pipe.Op> eqpoint(String nm, Message dat) {
+	for(GAttrib attr : this.attr.values()) {
+	    if(attr instanceof EquipTarget) {
+		Supplier<? extends Pipe.Op> ret = ((EquipTarget)attr).eqpoint(nm, dat);
+		if(ret != null)
+		    return(ret);
 	    }
 	}
-	for(Iterator<ResAttr.Load> i = lrdata.iterator(); i.hasNext();) {
-	    ResAttr.Load rd = i.next();
-	    if(rd.resid == resid) {
-		i.remove();
-		break;
-	    }
-	}
-	lrdata.add(new ResAttr.Load(resid, dat));
-	loadrattr();
+	return(null);
     }
-
-    public void delrattr(Indir<Resource> resid) {
-	for(Iterator<ResAttr.Cell<?>> i = rdata.iterator(); i.hasNext();) {
-	    ResAttr.Cell<?> rd = i.next();
-	    if(rd.resid == resid) {
-		i.remove();
-		rd.attr.dispose();
-		break;
-	    }
-	}
-	for(Iterator<ResAttr.Load> i = lrdata.iterator(); i.hasNext();) {
-	    ResAttr.Load rd = i.next();
-	    if(rd.resid == resid) {
-		i.remove();
-		break;
-	    }
-	}
-    }
-
-    public void draw(GOut g) {}
 
     public static class GobClick extends Clickable {
 	public final Gob gob;
@@ -461,6 +645,9 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	}
     }
 
+    protected void obstate(Pipe buf) {
+    }
+
     private class GobState implements Pipe.Op {
 	final Pipe.Op mods;
 
@@ -482,6 +669,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	    if(!virtual)
 		buf.prep(new GobClick(Gob.this));
 	    buf.prep(new TickList.Monitor(Gob.this));
+	    obstate(buf);
 	    if(mods != null)
 		buf.prep(mods);
 	}
@@ -532,7 +720,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
     }
 
     private Waitable.Queue updwait = null;
-    private int updateseq = 0;
     void updated() {
 	synchronized(this) {
 	    updateseq++;
@@ -594,12 +781,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
     }
 
     private static final ClassResolver<Gob> ctxr = new ClassResolver<Gob>()
+	.add(Gob.class, g -> g)
 	.add(Glob.class, g -> g.glob)
 	.add(Session.class, g -> g.glob.sess);
     public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
-
-    @Deprecated
-    public Glob glob() {return(context(Glob.class));}
 
     /* Because generic functions are too nice a thing for Java. */
     public double getv() {
@@ -609,8 +794,24 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	return(m.getv());
     }
 
+    public Collection<Location.Chain> getloc() {
+	Collection<Location.Chain> ret = new ArrayList<>(slots.size());
+	for(RenderTree.Slot slot : slots) {
+	    Location.Chain loc = slot.state().get(Homo3D.loc);
+	    if(loc != null)
+		ret.add(loc);
+	}
+	return(ret);
+    }
+
     public class Placed implements RenderTree.Node, TickList.Ticking, TickList.TickNode {
-	private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
+	/* XXX: Using a COW list is far from an ideal solution. It
+	 * should work for the specific case of flavobjs (which are
+	 * added asynchronously in a way that makes it difficult to
+	 * lock on each individually), but it's certainly not a
+	 * general solution, and it would be nice with something that
+	 * is in fact more general. */
+	private final Collection<RenderTree.Slot> slots = new java.util.concurrent.CopyOnWriteArrayList<>();
 	private Placement cur;
 
 	private Placed() {}
@@ -618,7 +819,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 	private class Placement implements Pipe.Op {
 	    final Pipe.Op flw, tilestate, mods;
 	    final Coord3f oc, rc;
-	    final double a;
+	    final Matrix4f rot;
 
 	    Placement() {
 		try {
@@ -632,12 +833,12 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 			this.flw = null;
 			this.oc = oc;
 			this.rc = rc;
-			this.a = Gob.this.a;
+			this.rot = Gob.this.placer().getr(Coord2d.of(oc), Gob.this.a);
 			tilestate = Gob.this.getmapstate(oc);
 		    } else {
 			this.flw = flwxf;
 			this.oc = this.rc = null;
-			this.a = Double.NaN;
+			this.rot = null;
 		    }
 		    this.tilestate = tilestate;
 		    if(setupmods.isEmpty()) {
@@ -667,7 +868,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 		    if(!Utils.eq(this.flw, that.flw))
 			return(false);
 		} else {
-		    if(!(Utils.eq(this.oc, that.oc) && (this.a == that.a)))
+		    if(!(Utils.eq(this.oc, that.oc) && Utils.eq(this.rot, that.rot)))
 			return(false);
 		}
 		if(!Utils.eq(this.tilestate, that.tilestate))
@@ -688,7 +889,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Sk
 		} else {
 		    if(gndst == null)
 			gndst = Pipe.Op.compose(new Location(Transform.makexlate(new Matrix4f(), this.rc), "gobx"),
-						new Location(Transform.makerot(new Matrix4f(), Coord3f.zu, (float)-this.a), "gob"));
+						new Location(rot, "gob"));
 		    gndst.apply(buf);
 		}
 		if(tilestate != null)

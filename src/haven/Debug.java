@@ -33,11 +33,12 @@ import java.awt.image.*;
 import com.jogamp.opengl.*;
 
 public class Debug {
-    public static final int FRAME_DEBUG_KEY = java.awt.event.KeyEvent.VK_F8;
+    public static final int FRAME_DEBUG_KEY = java.awt.event.KeyEvent.VK_PAUSE;
     public static boolean kf1, kf2, kf3, kf4;
     public static boolean pk1, pk2, pk3, pk4;
     public static boolean fdk, pfdk, ff;
     public static PrintWriter log = new PrintWriter(System.err);
+    public static List<Object> framestats = new ArrayList<>();
 
     public static void cycle(int modflags) {
 	pk1 = kf1; pk2 = kf2; pk3 = kf3; pk4 = kf4;
@@ -46,6 +47,9 @@ public class Debug {
 	kf3 = (modflags & 4) != 0;
 	kf4 = (modflags & 8) != 0;
 	ff = fdk && !pfdk; pfdk = fdk;
+	synchronized(framestats) {
+	    framestats.clear();
+	}
     }
 
     public static void dumpimage(BufferedImage img, Path path) {
@@ -93,12 +97,16 @@ public class Debug {
 			System.err.println();
 			Utils.hexdump(ba, System.err, 0);
 		    }
-		} else if(stuff[i] instanceof int[]) {
-		    Utils.dumparr((int[])stuff[i], System.err, false);
-		} else if(stuff[i] instanceof float[]) {
-		    Utils.dumparr((float[])stuff[i], System.err, false);
 		} else if(stuff[i] instanceof short[]) {
 		    Utils.dumparr((short[])stuff[i], System.err, false);
+		} else if(stuff[i] instanceof int[]) {
+		    Utils.dumparr((int[])stuff[i], System.err, false);
+		} else if(stuff[i] instanceof long[]) {
+		    Utils.dumparr((long[])stuff[i], System.err, false);
+		} else if(stuff[i] instanceof float[]) {
+		    Utils.dumparr((float[])stuff[i], System.err, false);
+		} else if(stuff[i] instanceof double[]) {
+		    Utils.dumparr((double[])stuff[i], System.err, false);
 		} else if(stuff[i] instanceof boolean[]) {
 		    boolean[] ba = (boolean[])stuff[i];
 		    System.err.print('[');
@@ -116,6 +124,29 @@ public class Debug {
 	synchronized(System.err) {
 	    dump_r(stuff);
 	    System.err.println();
+	}
+    }
+
+    public static <T> T dump1(T thing, boolean cond) {
+	if(cond)
+	    dump(thing);
+	return(thing);
+    }
+
+    public static <T> T statprint(T line, boolean cond) {
+	if(cond) {
+	    synchronized(framestats) {
+		framestats.add(line);
+	    }
+	}
+	return(line);
+    }
+
+    public static void sleep(double t) {
+	try {
+	    Thread.sleep((int)(t * 1000));
+	} catch(InterruptedException e) {
+	    Thread.currentThread().interrupt();
 	}
     }
 

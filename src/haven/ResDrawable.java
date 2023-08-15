@@ -27,10 +27,12 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import haven.render.*;
 
-public class ResDrawable extends Drawable {
+public class ResDrawable extends Drawable implements EquipTarget {
     public final Indir<Resource> res;
+    public final Resource rres;
     public final Sprite spr;
     MessageBuf sdt;
     // private double delay = 0; XXXRENDER
@@ -39,7 +41,8 @@ public class ResDrawable extends Drawable {
 	super(gob);
 	this.res = res;
 	this.sdt = new MessageBuf(sdt);
-	spr = Sprite.create(gob, res.get(), this.sdt.clone());
+	this.rres = res.get();
+	spr = Sprite.create(gob, rres, this.sdt.clone());
     }
 
     public ResDrawable(Gob gob, Resource res) {
@@ -65,16 +68,37 @@ public class ResDrawable extends Drawable {
     }
 
     public Resource getres() {
-	return(res.get());
+	return(rres);
     }
 
     public Skeleton.Pose getpose() {
 	return(Skeleton.getpose(spr));
     }
 
+    public Gob.Placer placer() {
+	if(spr instanceof Gob.Placing) {
+	    Gob.Placer ret = ((Gob.Placing)spr).placer();
+	    if(ret != null)
+		return(ret);
+	}
+	return(super.placer());
+    }
+
+    public Supplier<? extends Pipe.Op> eqpoint(String nm, Message dat) {
+	if(spr instanceof EquipTarget) {
+	    Supplier<? extends Pipe.Op> ret = ((EquipTarget)spr).eqpoint(nm, dat);
+	    if(ret != null)
+		return(ret);
+	}
+	Skeleton.BoneOffset bo = rres.layer(Skeleton.BoneOffset.class, nm);
+	if(bo != null)
+	    return(bo.from(null));
+	return(null);
+    }
+
     @OCache.DeltaType(OCache.OD_RES)
     public static class $cres implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    int resid = msg.uint16();
 	    MessageBuf sdt = MessageBuf.nil;
 	    if((resid & 0x8000) != 0) {

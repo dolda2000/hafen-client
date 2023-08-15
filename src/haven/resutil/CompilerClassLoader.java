@@ -4,10 +4,6 @@ import haven.*;
 
 public class CompilerClassLoader extends ClassLoader {
     private Indir<Resource>[] useres;
-
-    static {
-	Config.nopreload = true;
-    }
     
     @SuppressWarnings("unchecked")
     public CompilerClassLoader(ClassLoader parent) {

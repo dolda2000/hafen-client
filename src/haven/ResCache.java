@@ -29,6 +29,7 @@ package haven;
 import java.io.*;
 
 public interface ResCache {
+    public static final Config.Variable<java.net.URL> cachebase = Config.Variable.propu("haven.cachebase", "");
     public OutputStream store(String name) throws IOException;
     public InputStream fetch(String name) throws IOException;
     
@@ -52,6 +53,38 @@ public interface ResCache {
 	
 	public InputStream fetch(String name) throws IOException {
 	    throw(new FileNotFoundException());
+	}
+    }
+
+    public static class Fallback implements ResCache {
+	public final ResCache pri, sec[];
+
+	public Fallback(ResCache pri, ResCache... sec) {
+	    this.pri = pri;
+	    this.sec = sec;
+	}
+
+	public InputStream fetch(String name) throws IOException {
+	    try {
+		return(pri.fetch(name));
+	    } catch(FileNotFoundException e) {
+		for(ResCache c : sec) {
+		    try {
+			return(c.fetch(name));
+		    } catch(FileNotFoundException e2) {
+			e.addSuppressed(e2);
+		    }
+		}
+		throw(e);
+	    }
+	}
+
+	public OutputStream store(String name) throws IOException {
+	    return(pri.store(name));
+	}
+
+	public String toString() {
+	    return("Fllback(" + pri + " + " + java.util.Arrays.asList(sec) + ")");
 	}
     }
 }

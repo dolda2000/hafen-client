@@ -37,6 +37,8 @@ public class DepthBuffer<T> extends State {
     public final T image;
 
     public DepthBuffer(T image) {
+	if(image == null)
+	    throw(new NullPointerException());
 	this.image = image;
     }
 

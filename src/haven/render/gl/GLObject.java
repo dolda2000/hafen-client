@@ -26,11 +26,11 @@
 
 package haven.render.gl;
 
-import haven.Disposable;
+import haven.*;
 import java.util.*;
-import com.jogamp.opengl.*;
 
 public abstract class GLObject implements Disposable {
+    public static final boolean LEAK_CHECK = true;
     public final GLEnvironment env;
     private boolean del = false, disp = false;
     private GLEnvironment.MemStats pool = null;
@@ -42,11 +42,14 @@ public abstract class GLObject implements Disposable {
 	this.env = env;
     }
 
-    public abstract void create(GL3 gl);
+    public abstract void create(GL gl);
     public void abortcreate() {}
-    protected abstract void delete(GL3 gl);
+    protected abstract void delete(GL gl);
 
+    private final Disposable lck = LEAK_CHECK ? Finalizer.leakcheck(this) : null;
     protected void dispose0() {
+	if(lck != null)
+	    lck.dispose();
 	synchronized(env.disposed) {
 	    if(del)
 		return;
@@ -54,10 +57,6 @@ public abstract class GLObject implements Disposable {
 	    env.disposed.add(this);
 	    del = true;
 	}
-    }
-
-    protected void finalize() {
-	dispose0();
     }
 
     public Throwable disptrace = null;
@@ -80,7 +79,7 @@ public abstract class GLObject implements Disposable {
     private static final java.util.concurrent.atomic.AtomicInteger ar = new java.util.concurrent.atomic.AtomicInteger(0);
     void get() {
 	synchronized(this) {
-	    if(disp)
+	    if(del)
 		throw(new UseAfterFreeException(disptrace));
 	    rc++;
 	    int na = ar.incrementAndGet();

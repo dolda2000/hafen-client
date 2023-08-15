@@ -63,4 +63,6 @@ public abstract class BinOp extends Expression {
     public static class BitAnd extends BinOp {public String form() {return("&");} public BitAnd(Expression l, Expression r) {super(l, r);}}
     public static class Sub extends BinOp {public String form() {return("-");} public Sub(Expression l, Expression r) {super(l, r);}}
     public static class Div extends BinOp {public String form() {return("/");} public Div(Expression l, Expression r) {super(l, r);}}
+    public static class LShift extends BinOp {public String form() {return("<<");} public LShift(Expression l, Expression r) {super(l, r);}}
+    public static class RShift extends BinOp {public String form() {return(">>");} public RShift(Expression l, Expression r) {super(l, r);}}
 }

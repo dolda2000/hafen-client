@@ -36,13 +36,9 @@ public class Audio {
     public static boolean enabled = true;
     private static Player player;
     public static final AudioFormat fmt = new AudioFormat(44100, 16, 2, true, false);
-    private static int bufsize = 4096;
-    public static double volume = 1.0;
-    
-    static {
-	volume = Double.parseDouble(Utils.getpref("sfxvol", "1.0"));
-    }
-    
+    private static int bufsize = Utils.getprefi("audiobuf", 2048) * 4;
+    public static double volume = Double.parseDouble(Utils.getpref("sfxvol", "1.0"));
+
     public static void setvolume(double volume) {
 	Audio.volume = volume;
 	Utils.setpref("sfxvol", Double.toString(volume));
@@ -58,7 +54,7 @@ public class Audio {
 	public default double bvol() {return(1.0);}
     }
     public static final Class<Clip> clip = Clip.class;
-    
+
     public static class Mixer implements CS {
 	public final boolean cont;
 	private final Collection<CS> clips = new LinkedList<CS>();
@@ -551,14 +547,14 @@ public class Audio {
 	private final CS stream;
 	private final int nch;
 	private volatile boolean reopen = false;
-	
+
 	Player(CS stream) {
 	    super("Haven audio player");
 	    this.stream = stream;
 	    nch = fmt.getChannels();
 	    setDaemon(true);
 	}
-	
+
 	private int fillbuf(byte[] dst, int off, int len) {
 	    int ns = len / (2 * nch);
 	    double[][] val = new double[nch][ns];
@@ -658,7 +654,7 @@ public class Audio {
 	    }
 	}
     }
-    
+
     public static void play(CS clip) {
 	if(clip == null)
 	    throw(new NullPointerException());
@@ -672,7 +668,7 @@ public class Audio {
 	if(pl != null)
 	    ((Mixer)pl.stream).stop(clip);
     }
-    
+
     private static Map<Resource, Clip> reslastc = new HashMap<Resource, Clip>();
     public static CS fromres(Resource res) {
 	Collection<Clip> clips = res.layers(Audio.clip, null);
@@ -713,7 +709,7 @@ public class Audio {
 	for(Monitor c : clips)
 	    c.finwait();
     }
-    
+
     static {
 	Console.setscmd("sfx", new Console.Command() {
 		public void run(Console cons, String[] args) {
@@ -734,6 +730,7 @@ public class Audio {
 		    Player pl = ckpl(false);
 		    if(pl != null)
 			pl.reopen();
+		    Utils.setprefi("audiobuf", nsz);
 		}
 	    });
     }

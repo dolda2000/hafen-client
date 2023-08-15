@@ -29,7 +29,7 @@ package haven;
 import java.net.*;
 
 public class SessWidget extends AWidget {
-    private final Defer.Future<Connection> conn;
+    private final Defer.Future<Result> conn;
     private boolean rep = false;
 
     @RName("sess")
@@ -43,42 +43,29 @@ public class SessWidget extends AWidget {
 	}
     }
 
-    static class Connection {
+    static class Result {
 	final Session sess;
-	final int error;
+	final Connection.SessionError error;
 
-	Connection(Session sess, int error) {
+	Result(Session sess, Connection.SessionError error) {
 	    this.sess = sess;
 	    this.error = error;
 	}
     }
 
     public SessWidget(final String addr, final int port, final byte[] cookie, final Object... args) {
-	conn = Defer.later(new Defer.Callable<Connection>() {
-		public Connection call() throws InterruptedException {
+	conn = Defer.later(new Defer.Callable<Result>() {
+		public Result call() throws InterruptedException {
 		    InetAddress host;
 		    try {
 			host = InetAddress.getByName(addr);
 		    } catch(UnknownHostException e) {
-			return(new Connection(null, Session.SESSERR_CONN));
+			return(new Result(null, new Connection.SessionConnError()));
 		    }
-		    Session sess = new Session(new InetSocketAddress(host, port), ui.sess.username, cookie, args);
 		    try {
-			synchronized(sess) {
-			    while(true) {
-				if(sess.state == "") {
-				    Connection ret = new Connection(sess, 0);
-				    sess = null;
-				    return(ret);
-				} else if(sess.connfailed != 0) {
-				    return(new Connection(null, sess.connfailed));
-				}
-				sess.wait();
-			    }
-			}
-		    } finally {
-			if(sess != null)
-			    sess.close();
+			return(new Result(new Session(new InetSocketAddress(host, port), ui.sess.username, cookie, args), null));
+		    } catch(Connection.SessionError err) {
+			return(new Result(null, err));
 		    }
 		}
 	    });
@@ -87,7 +74,8 @@ public class SessWidget extends AWidget {
     public void tick(double dt) {
 	super.tick(dt);
 	if(!rep && conn.done()) {
-	    wdgmsg("res", conn.get().error);
+	    Result r = conn.get();
+	    wdgmsg("res", (r.error == null) ? 0 : r.error.code);
 	    rep = true;
 	}
     }

@@ -26,7 +26,6 @@
 
 package haven.render.gl;
 
-import com.jogamp.opengl.*;
 import java.nio.*;
 import java.util.*;
 import java.util.function.*;
@@ -136,7 +135,7 @@ public abstract class BGL {
     }
 
     protected static abstract class Command {
-	public abstract void run(GL3 gl);
+	public abstract void run(GL gl);
 	public void abort() {};
 
 	public String toString() {
@@ -145,17 +144,17 @@ public abstract class BGL {
     }
 
     private static class BufState {
-	Buffer buf;
+	ByteBuffer buf;
 	int position, limit;
 
-	BufState(Buffer buf, int position) {
+	BufState(ByteBuffer buf, int position) {
 	    if((this.buf = buf) != null) {
 		this.position = position;
 		limit = buf.limit();
 	    }
 	}
 
-	BufState(Buffer buf) {
+	BufState(ByteBuffer buf) {
 	    if((this.buf = buf) != null) {
 		position = buf.position();
 		limit = buf.limit();
@@ -175,7 +174,7 @@ public abstract class BGL {
     }
 
     public interface Request {
-	public void run(GL3 gl);
+	public void run(GL gl);
 	public default void abort() {};
     }
 
@@ -194,7 +193,7 @@ public abstract class BGL {
     public void bglCheckErr() {
 	final Throwable place = null;
 	add(new Command() {
-		public void run(GL3 gl) {
+		public void run(GL gl) {
 		    GLException.checkfor(gl, place, null);
 		}
 	    });
@@ -202,33 +201,33 @@ public abstract class BGL {
 
     public void bglCreate(final GLObject ob) {
 	add(new Command() {
-		public void run(GL3 gl) {ob.create(gl);}
+		public void run(GL gl) {ob.create(gl);}
 		public void abort() {ob.abortcreate();}
 	    });
     }
 
     public void bglDelete(final GLObject ob) {
 	add(new Command() {
-		public void run(GL3 gl) {ob.delete(gl);}
+		public void run(GL gl) {ob.delete(gl);}
 	    });
     }
 
     public void bglSubmit(final Request req) {
 	add(new Command() {
-		public void run(GL3 gl) {req.run(gl);}
+		public void run(GL gl) {req.run(gl);}
 		public void abort() {req.abort();}
 	    });
     }
 
     public void bglCallList(final BufferBGL list) {
 	add(new Command() {
-		public void run(GL3 gl) {list.run(gl);}
+		public void run(GL gl) {list.run(gl);}
 	    });
     }
 
     public void bglCopyBufferf(final FloatBuffer dst, final int doff, final FloatBuffer src, final int soff, final int len) {
 	add(new Command() {
-		public void run(GL3 gl) {
+		public void run(GL gl) {
 		    dst.position(doff);
 		    src.position(soff).limit(len);
 		    dst.put(src);
@@ -240,7 +239,7 @@ public abstract class BGL {
 
     public void bglCopyBufferf(final FloatBuffer dst, final int doff, final float[] src, final int soff, final int len) {
 	add(new Command() {
-		public void run(GL3 gl) {
+		public void run(GL gl) {
 		    dst.position(doff);
 		    dst.put(src, soff, len);
 		    dst.rewind();
@@ -250,376 +249,376 @@ public abstract class BGL {
 
     public void glActiveTexture(final int texture) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glActiveTexture(texture);}
+		public void run(GL gl) {gl.glActiveTexture(texture);}
 	    });
     }
 
     public void glAttachShader(final ID program, final ID shader) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glAttachShader(program.glid(), shader.glid());}
+		public void run(GL gl) {gl.glAttachShader(program.glid(), shader.glid());}
 	    });
     }
 
     public void glBindAttribLocation(final ID program, final ID index, final String name) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glBindAttribLocation(program.glid(), index.glid(), name);}
+		public void run(GL gl) {gl.glBindAttribLocation(program.glid(), index.glid(), name);}
 	    });
     }
 
     public void glBindBuffer(final int target, final ID buffer) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glBindBuffer(target, (buffer == null)?0:buffer.glid());}
+		public void run(GL gl) {gl.glBindBuffer(target, (buffer == null)?0:buffer.glid());}
 	    });
     }
 
     public void glBindFramebuffer(final int target, final ID buffer) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glBindFramebuffer(target, (buffer == null)?0:buffer.glid());}
+		public void run(GL gl) {gl.glBindFramebuffer(target, (buffer == null)?0:buffer.glid());}
 	    });
     }
 
     public void glBindRenderbuffer(final int target, final ID buffer) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glBindRenderbuffer(target, (buffer == null)?0:buffer.glid());}
+		public void run(GL gl) {gl.glBindRenderbuffer(target, (buffer == null)?0:buffer.glid());}
 	    });
     }
 
     public void glBindTexture(final int target, final ID texture) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glBindTexture(target, (texture == null)?0:texture.glid());}
+		public void run(GL gl) {gl.glBindTexture(target, (texture == null)?0:texture.glid());}
 	    });
     }
 
     public void glBindVertexArray(final ID array) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glBindVertexArray((array == null)?0:array.glid());}
+		public void run(GL gl) {gl.glBindVertexArray((array == null)?0:array.glid());}
 	    });
     }
 
     public void glBlendColor(final float red, final float green, final float blue, final float alpha) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glBlendColor(red, green, blue, alpha);}
+		public void run(GL gl) {gl.glBlendColor(red, green, blue, alpha);}
 	    });
     }
 
     public void glBlendEquation(final int mode) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glBlendEquation(mode);}
+		public void run(GL gl) {gl.glBlendEquation(mode);}
 	    });
     }
 
     public void glBlendEquationSeparate(final int cmode, final int amode) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glBlendEquationSeparate(cmode, amode);}
+		public void run(GL gl) {gl.glBlendEquationSeparate(cmode, amode);}
 	    });
     }
 
     public void glBlendFunc(final int sfac, final int dfac) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glBlendFunc(sfac, dfac);}
+		public void run(GL gl) {gl.glBlendFunc(sfac, dfac);}
 	    });
     }
 
     public void glBlendFuncSeparate(final int csfac, final int cdfac, final int asfac, final int adfac) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glBlendFuncSeparate(csfac, cdfac, asfac, adfac);}
+		public void run(GL gl) {gl.glBlendFuncSeparate(csfac, cdfac, asfac, adfac);}
 	    });
     }
 
-    public void glBufferData(final int target, final long size, Buffer data, final int usage) {
+    public void glBufferData(final int target, final long size, ByteBuffer data, final int usage) {
 	final BufState ds = new BufState(data);
 	add(new Command() {
-		public void run(GL3 gl) {ds.restore(); gl.glBufferData(target, size, ds.buf, usage);}
+		public void run(GL gl) {ds.restore(); gl.glBufferData(target, size, ds.buf, usage);}
 	    });
     }
 
-    public void glBufferSubData(final int target, final long offset, final long size, Buffer data) {
+    public void glBufferSubData(final int target, final long offset, final long size, ByteBuffer data) {
 	final BufState ds = new BufState(data);
 	add(new Command() {
-		public void run(GL3 gl) {ds.restore(); gl.glBufferSubData(target, offset, size, ds.buf);}
+		public void run(GL gl) {ds.restore(); gl.glBufferSubData(target, offset, size, ds.buf);}
 	    });
     }
 
     public void glClear(final int mask) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glClear(mask);}
+		public void run(GL gl) {gl.glClear(mask);}
 	    });
     }
 
     public void glClearBufferfv(final int buffer, final int drawbuffer, final float[] value) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glClearBufferfv(buffer, drawbuffer, value, 0);}
+		public void run(GL gl) {gl.glClearBufferfv(buffer, drawbuffer, value);}
 	    });
     }
 
     public void glClearBufferiv(final int buffer, final int drawbuffer, final int[] value) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glClearBufferiv(buffer, drawbuffer, value, 0);}
+		public void run(GL gl) {gl.glClearBufferiv(buffer, drawbuffer, value);}
 	    });
     }
 
     public void glClearBufferuiv(final int buffer, final int drawbuffer, final int[] value) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glClearBufferuiv(buffer, drawbuffer, value, 0);}
+		public void run(GL gl) {gl.glClearBufferuiv(buffer, drawbuffer, value);}
 	    });
     }
 
     public void glClearColor(final float r, final float g, final float b, final float a) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glClearColor(r, g, b, a);}
+		public void run(GL gl) {gl.glClearColor(r, g, b, a);}
 	    });
     }
 
     public void glClearDepth(final double d) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glClearDepth(d);}
+		public void run(GL gl) {gl.glClearDepth(d);}
 	    });
     }
 
     public void glColorMask(final boolean r, final boolean g, final boolean b, final boolean a) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glColorMask(r, g, b, a);}
+		public void run(GL gl) {gl.glColorMask(r, g, b, a);}
 	    });
     }
 
     public void glColorMaski(final int buf, final boolean r, final boolean g, final boolean b, final boolean a) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glColorMaski(buf, r, g, b, a);}
+		public void run(GL gl) {gl.glColorMaski(buf, r, g, b, a);}
 	    });
     }
 
     public void glDeleteBuffers(final int count, final ID[] buffers) {
 	add(new Command() {
-		public void run(GL3 gl) {
+		public void run(GL gl) {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteBuffers(count, buf, 0);
+		    gl.glDeleteBuffers(count, buf);
 		}
 	    });
     }
 
     public void glDeleteFramebuffers(final int count, final ID[] buffers) {
 	add(new Command() {
-		public void run(GL3 gl) {
+		public void run(GL gl) {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteFramebuffers(count, buf, 0);
+		    gl.glDeleteFramebuffers(count, buf);
 		}
 	    });
     }
 
     public void glDeleteShader(final ID id) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDeleteShader(id.glid());}
+		public void run(GL gl) {gl.glDeleteShader(id.glid());}
 	    });
     }
 
     public void glDeleteProgram(final ID id) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDeleteProgram(id.glid());}
+		public void run(GL gl) {gl.glDeleteProgram(id.glid());}
 	    });
     }
 
     public void glDeleteRenderbuffers(final int count, final ID[] buffers) {
 	add(new Command() {
-		public void run(GL3 gl) {
+		public void run(GL gl) {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteRenderbuffers(count, buf, 0);
+		    gl.glDeleteRenderbuffers(count, buf);
 		}
 	    });
     }
 
     public void glDeleteTextures(final int count, final ID[] buffers) {
 	add(new Command() {
-		public void run(GL3 gl) {
+		public void run(GL gl) {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteTextures(count, buf, 0);
+		    gl.glDeleteTextures(count, buf);
 		}
 	    });
     }
 
     public void glDeleteVertexArrays(final int count, final ID[] buffers) {
 	add(new Command() {
-		public void run(GL3 gl) {
+		public void run(GL gl) {
 		    int[] buf = new int[buffers.length];
 		    for(int i = 0; i < buf.length; i++)
 			buf[i] = buffers[i].glid();
-		    gl.glDeleteVertexArrays(count, buf, 0);
+		    gl.glDeleteVertexArrays(count, buf);
 		}
 	    });
     }
 
     public void glCullFace(final int mode) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glCullFace(mode);}
+		public void run(GL gl) {gl.glCullFace(mode);}
 	    });
     }
 
     public void glDepthFunc(final int func) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDepthFunc(func);}
+		public void run(GL gl) {gl.glDepthFunc(func);}
 	    });
     }
 
     public void glDepthMask(final boolean mask) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDepthMask(mask);}
+		public void run(GL gl) {gl.glDepthMask(mask);}
 	    });
     }
 
     public void glDisable(final int cap) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDisable(cap);}
+		public void run(GL gl) {gl.glDisable(cap);}
 	    });
     }
 
     public void glDisablei(final int cap, final int index) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDisablei(cap, index);}
+		public void run(GL gl) {gl.glDisablei(cap, index);}
 	    });
     }
 
     public void glDisableClientState(final int cap) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDisableClientState(cap);}
+		public void run(GL gl) {gl.glDisableClientState(cap);}
 	    });
     }
 
     public void glDisableVertexAttribArray(final ID location) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDisableVertexAttribArray(location.glid());}
+		public void run(GL gl) {gl.glDisableVertexAttribArray(location.glid());}
 	    });
     }
 
     public void glDisableVertexAttribArray(final ID location, final int offset) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDisableVertexAttribArray(location.glid() + offset);}
+		public void run(GL gl) {gl.glDisableVertexAttribArray(location.glid() + offset);}
 	    });
     }
 
     public void glDrawBuffer(final int buf) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDrawBuffer(buf);}
+		public void run(GL gl) {gl.glDrawBuffer(buf);}
 	    });
     }
 
     public void glDrawBuffers(final int n, final int[] bufs) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDrawBuffers(n, bufs, 0);}
+		public void run(GL gl) {gl.glDrawBuffers(n, bufs);}
 	    });
     }
 
     public void glDrawArraysInstanced(final int mode, final int first, final int count, final int primcount) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDrawArraysInstanced(mode, first, count, primcount);}
+		public void run(GL gl) {gl.glDrawArraysInstanced(mode, first, count, primcount);}
 	    });
     }
 
     public void glDrawArrays(final int mode, final int first, final int count) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDrawArrays(mode, first, count);}
+		public void run(GL gl) {gl.glDrawArrays(mode, first, count);}
 	    });
     }
 
     public void glDrawElementsInstanced(final int mode, final int count, final int type, final long indices, final int primcount) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDrawElementsInstanced(mode, count, type, indices, primcount);}
+		public void run(GL gl) {gl.glDrawElementsInstanced(mode, count, type, indices, primcount);}
 	    });
     }
 
     public void glDrawElements(final int mode, final int count, final int type, final long indices) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDrawElements(mode, count, type, indices);}
+		public void run(GL gl) {gl.glDrawElements(mode, count, type, indices);}
 	    });
     }
 
     public void glDrawRangeElements(final int mode, final int start, final int end, final int count, final int type, final long indices) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDrawRangeElements(mode, start, end, count, type, indices);}
+		public void run(GL gl) {gl.glDrawRangeElements(mode, start, end, count, type, indices);}
 	    });
     }
 
     public void glEnable(final int cap) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glEnable(cap);}
+		public void run(GL gl) {gl.glEnable(cap);}
 	    });
     }
 
     public void glEnablei(final int cap, final int index) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glEnablei(cap, index);}
+		public void run(GL gl) {gl.glEnablei(cap, index);}
 	    });
     }
 
     public void glEnableClientState(final int cap) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glEnableClientState(cap);}
+		public void run(GL gl) {gl.glEnableClientState(cap);}
 	    });
     }
 
     public void glEnableVertexAttribArray(final ID location) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glEnableVertexAttribArray(location.glid());}
+		public void run(GL gl) {gl.glEnableVertexAttribArray(location.glid());}
 	    });
     }
 
     public void glEnableVertexAttribArray(final ID location, final int offset) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glEnableVertexAttribArray(location.glid() + offset);}
+		public void run(GL gl) {gl.glEnableVertexAttribArray(location.glid() + offset);}
 	    });
     }
 
     public void glDeleteSync(final long id) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDeleteSync(id);}
+		public void run(GL gl) {gl.glDeleteSync(id);}
 	    });
     }
 
     public void glFramebufferTexture2D(final int target, final int attachment, final int textarget, final ID texture, final int level) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glFramebufferTexture2D(target, attachment, textarget, texture.glid(), level);}
+		public void run(GL gl) {gl.glFramebufferTexture2D(target, attachment, textarget, texture.glid(), level);}
 	    });
     }
 
     public void glFramebufferRenderbuffer(final int target, final int attachment, final int rbtarget, final ID renderbuffer) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glFramebufferRenderbuffer(target, attachment, rbtarget, renderbuffer.glid());}
+		public void run(GL gl) {gl.glFramebufferRenderbuffer(target, attachment, rbtarget, renderbuffer.glid());}
 	    });
     }
 
-    public void glGetTexImage(final int target, final int level, final int format, final int type, Buffer pixels) {
+    public void glGetTexImage(final int target, final int level, final int format, final int type, ByteBuffer pixels) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glGetTexImage(target, level, format, type, pixels);}
+		public void run(GL gl) {gl.glGetTexImage(target, level, format, type, pixels);}
 	    });
     }
 
     public void glGetTexImage(final int target, final int level, final int format, final int type, long offset) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glGetTexImage(target, level, format, type, offset);}
+		public void run(GL gl) {gl.glGetTexImage(target, level, format, type, offset);}
 	    });
     }
 
     public void glLineWidth(final float w) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glLineWidth(w);}
+		public void run(GL gl) {gl.glLineWidth(w);}
 	    });
     }
 
     public void glLinkProgram(final ID program) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glLinkProgram(program.glid());}
+		public void run(GL gl) {gl.glLinkProgram(program.glid());}
 	    });
     }
 
     public void glObjectLabel(final int identifier, final ID name, final int length, final byte[] label) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glObjectLabel(identifier, name.glid(), length, label, 0);}
+		public void run(GL gl) {gl.glObjectLabel(identifier, name.glid(), length, label);}
 	    });
     }
 
@@ -630,245 +629,239 @@ public abstract class BGL {
 
     public void glPixelStorei(final int pname, final int param) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glPixelStorei(pname, param);}
+		public void run(GL gl) {gl.glPixelStorei(pname, param);}
 	    });
     }
 
     public void glPointSize(final float size) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glPointSize(size);}
+		public void run(GL gl) {gl.glPointSize(size);}
 	    });
     }
 
     public void glPolygonMode(final int face, final int mode) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glPolygonMode(face, mode);}
+		public void run(GL gl) {gl.glPolygonMode(face, mode);}
 	    });
     }
 
     public void glPolygonOffset(final float factor, final float units) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glPolygonOffset(factor, units);}
+		public void run(GL gl) {gl.glPolygonOffset(factor, units);}
 	    });
     }
 
     public void glReadBuffer(final int buf) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glReadBuffer(buf);}
+		public void run(GL gl) {gl.glReadBuffer(buf);}
 	    });
     }
 
-    public void glReadPixels(final int x, final int y, final int width, final int height, final int format, final int type, Buffer data) {
+    public void glReadPixels(final int x, final int y, final int width, final int height, final int format, final int type, ByteBuffer data) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glReadPixels(x, y, width, height, format, type, data);}
+		public void run(GL gl) {gl.glReadPixels(x, y, width, height, format, type, data);}
 	    });
     }
 
     public void glReadPixels(final int x, final int y, final int width, final int height, final int format, final int type, long offset) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glReadPixels(x, y, width, height, format, type, offset);}
+		public void run(GL gl) {gl.glReadPixels(x, y, width, height, format, type, offset);}
 	    });
     }
 
     public void glRenderbufferStorage(final int target, final int format, final int width, final int height) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glRenderbufferStorage(target, format, width, height);}
+		public void run(GL gl) {gl.glRenderbufferStorage(target, format, width, height);}
 	    });
     }
 
     public void glRenderbufferStorageMultisample(final int target, final int samples, final int format, final int width, final int height) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glRenderbufferStorageMultisample(target, samples, format, width, height);}
+		public void run(GL gl) {gl.glRenderbufferStorageMultisample(target, samples, format, width, height);}
 	    });
     }
 
     public void glSampleCoverage(final float value, final boolean invert) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glSampleCoverage(value, invert);}
+		public void run(GL gl) {gl.glSampleCoverage(value, invert);}
 	    });
     }
 
     public void glScissor(final int x, final int y, final int w, final int h) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glScissor(x, y, w, h);}
+		public void run(GL gl) {gl.glScissor(x, y, w, h);}
 	    });
     }
 
-    public void glTexImage2D(final int target, final int level, final int internalformat, final int width, final int height, final int border, final int format, final int type, Buffer data) {
+    public void glTexImage2D(final int target, final int level, final int internalformat, final int width, final int height, final int border, final int format, final int type, ByteBuffer data) {
 	final BufState ds = new BufState(data);
 	add(new Command() {
-		public void run(GL3 gl) {ds.restore(); gl.glTexImage2D(target, level, internalformat, width, height, border, format, type, ds.buf);}
+		public void run(GL gl) {ds.restore(); gl.glTexImage2D(target, level, internalformat, width, height, border, format, type, ds.buf);}
 	    });
     }
 
-    public void glTexSubImage2D(final int target, final int level, final int xoff, final int yoff, final int width, final int height, final int format, final int type, Buffer data) {
+    public void glTexSubImage2D(final int target, final int level, final int xoff, final int yoff, final int width, final int height, final int format, final int type, ByteBuffer data) {
 	final BufState ds = new BufState(data);
 	add(new Command() {
-		public void run(GL3 gl) {ds.restore(); gl.glTexSubImage2D(target, level, xoff, yoff, width, height, format, type, ds.buf);}
+		public void run(GL gl) {ds.restore(); gl.glTexSubImage2D(target, level, xoff, yoff, width, height, format, type, ds.buf);}
 	    });
     }
 
     public void glTexImage2DMultisample(final int target, final int samples, final int internalformat, final int width, final int height, final boolean fixedsamplelocations) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glTexImage2DMultisample(target, samples, internalformat, width, height, fixedsamplelocations);}
+		public void run(GL gl) {gl.glTexImage2DMultisample(target, samples, internalformat, width, height, fixedsamplelocations);}
 	    });
     }
 
-    public void glTexImage3D(final int target, final int level, final int internalformat, final int width, final int height, final int depth, final int border, final int format, final int type, Buffer data) {
+    public void glTexImage3D(final int target, final int level, final int internalformat, final int width, final int height, final int depth, final int border, final int format, final int type, ByteBuffer data) {
 	final BufState ds = new BufState(data);
 	add(new Command() {
-		public void run(GL3 gl) {ds.restore(); gl.glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, ds.buf);}
+		public void run(GL gl) {ds.restore(); gl.glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, ds.buf);}
 	    });
     }
 
-    public void glTexSubImage3D(final int target, final int level, final int xoff, final int yoff, final int zoff, final int width, final int height, final int depth, final int format, final int type, Buffer data) {
+    public void glTexSubImage3D(final int target, final int level, final int xoff, final int yoff, final int zoff, final int width, final int height, final int depth, final int format, final int type, ByteBuffer data) {
 	final BufState ds = new BufState(data);
 	add(new Command() {
-		public void run(GL3 gl) {ds.restore(); gl.glTexSubImage3D(target, level, xoff, yoff, zoff, width, height, depth, format, type, ds.buf);}
+		public void run(GL gl) {ds.restore(); gl.glTexSubImage3D(target, level, xoff, yoff, zoff, width, height, depth, format, type, ds.buf);}
 	    });
     }
 
     public void glTexParameterf(final int target, final int pname, final float param) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glTexParameterf(target, pname, param);}
+		public void run(GL gl) {gl.glTexParameterf(target, pname, param);}
 	    });
     }
 
     public void glTexParameterfv(final int target, final int pname, final float[] param) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glTexParameterfv(target, pname, param, 0);}
+		public void run(GL gl) {gl.glTexParameterfv(target, pname, param);}
 	    });
     }
 
     public void glTexParameteri(final int target, final int pname, final int param) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glTexParameteri(target, pname, param);}
+		public void run(GL gl) {gl.glTexParameteri(target, pname, param);}
 	    });
     }
 
     public void glUniform1f(final ID location, final float v0) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniform1f(location.glid(), v0);}
+		public void run(GL gl) {gl.glUniform1f(location.glid(), v0);}
 	    });
     }
 
     public void glUniform2f(final ID location, final float v0, final float v1) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniform2f(location.glid(), v0, v1);}
+		public void run(GL gl) {gl.glUniform2f(location.glid(), v0, v1);}
 	    });
     }
 
     public void glUniform3f(final ID location, final float v0, final float v1, final float v2) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniform3f(location.glid(), v0, v1, v2);}
+		public void run(GL gl) {gl.glUniform3f(location.glid(), v0, v1, v2);}
 	    });
     }
 
     public void glUniform3fv(final ID location, final int count, final float[] val) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniform3fv(location.glid(), count, val, 0);}
+		public void run(GL gl) {gl.glUniform3fv(location.glid(), count, val);}
 	    });
     }
 
     public void glUniform4f(final ID location, final float v0, final float v1, final float v2, final float v3) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniform4f(location.glid(), v0, v1, v2, v3);}
+		public void run(GL gl) {gl.glUniform4f(location.glid(), v0, v1, v2, v3);}
 	    });
     }
 
     public void glUniform4fv(final ID location, final int count, final float[] val) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniform4fv(location.glid(), count, val, 0);}
+		public void run(GL gl) {gl.glUniform4fv(location.glid(), count, val);}
 	    });
     }
 
     public void glUniform1i(final ID location, final int v0) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniform1i(location.glid(), v0);}
+		public void run(GL gl) {gl.glUniform1i(location.glid(), v0);}
 	    });
     }
 
     public void glUniform2i(final ID location, final int v0, final int v1) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniform2i(location.glid(), v0, v1);}
+		public void run(GL gl) {gl.glUniform2i(location.glid(), v0, v1);}
 	    });
     }
 
     public void glUniform3i(final ID location, final int v0, final int v1, final int v2) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniform3i(location.glid(), v0, v1, v2);}
+		public void run(GL gl) {gl.glUniform3i(location.glid(), v0, v1, v2);}
 	    });
     }
 
     public void glUniform4i(final ID location, final int v0, final int v1, final int v2, final int v3) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniform4i(location.glid(), v0, v1, v2, v3);}
+		public void run(GL gl) {gl.glUniform4i(location.glid(), v0, v1, v2, v3);}
 	    });
     }
 
     public void glUniformMatrix3fv(final ID location, final int count, final boolean transpose, final float[] value) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniformMatrix3fv(location.glid(), count, transpose, value, 0);}
+		public void run(GL gl) {gl.glUniformMatrix3fv(location.glid(), count, transpose, value);}
 	    });
     }
 
     public void glUniformMatrix4fv(final ID location, final int count, final boolean transpose, final float[] value) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUniformMatrix4fv(location.glid(), count, transpose, value, 0);}
+		public void run(GL gl) {gl.glUniformMatrix4fv(location.glid(), count, transpose, value);}
 	    });
     }
 
     public void glUseProgram(final ID program) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glUseProgram((program == null)?0:program.glid());}
+		public void run(GL gl) {gl.glUseProgram((program == null)?0:program.glid());}
 	    });
     }
 
     public void glVertexAttribDivisor(final ID location, final int divisor) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glVertexAttribDivisor(location.glid(), divisor);}
+		public void run(GL gl) {gl.glVertexAttribDivisor(location.glid(), divisor);}
 	    });
     }
 
     public void glVertexAttribDivisor(final ID location, final int offset, final int divisor) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glVertexAttribDivisor(location.glid() + offset, divisor);}
+		public void run(GL gl) {gl.glVertexAttribDivisor(location.glid() + offset, divisor);}
 	    });
     }
 
     public void glVertexAttribPointer(final ID location, final int size, final int type, final boolean normalized, final int stride, final long pointer) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glVertexAttribPointer(location.glid(), size, type, normalized, stride, pointer);}
+		public void run(GL gl) {gl.glVertexAttribPointer(location.glid(), size, type, normalized, stride, pointer);}
 	    });
     }
 
     public void glVertexAttribPointer(final ID location, final int offset, final int size, final int type, final boolean normalized, final int stride, final long pointer) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glVertexAttribPointer(location.glid() + offset, size, type, normalized, stride, pointer);}
+		public void run(GL gl) {gl.glVertexAttribPointer(location.glid() + offset, size, type, normalized, stride, pointer);}
 	    });
     }
 
     public void glVertexAttribIPointer(final ID location, final int size, final int type, final int stride, final long pointer) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glVertexAttribIPointer(location.glid(), size, type, stride, pointer);}
+		public void run(GL gl) {gl.glVertexAttribIPointer(location.glid(), size, type, stride, pointer);}
 	    });
     }
 
     public void glVertexAttribIPointer(final ID location, final int offset, final int size, final int type, final int stride, final long pointer) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glVertexAttribIPointer(location.glid() + offset, size, type, stride, pointer);}
+		public void run(GL gl) {gl.glVertexAttribIPointer(location.glid() + offset, size, type, stride, pointer);}
 	    });
     }
 
     public void glViewport(final int x, final int y, final int w, final int h) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glViewport(x, y, w, h);}
-	    });
-    }
-
-    public void joglSetSwapInterval(final int swap) {
-	add(new Command() {
-		public void run(GL3 gl) {gl.setSwapInterval(swap);}
+		public void run(GL gl) {gl.glViewport(x, y, w, h);}
 	    });
     }
 
@@ -888,18 +881,18 @@ public abstract class BGL {
 
     public void glDebugMessageControl(final int source, final int type, final int severity, final int[] ids, final boolean enabled) {
 	add(new Command() {
-		public void run(GL3 gl) {gl.glDebugMessageControl(source, type, severity, (ids == null) ? 0 : ids.length, ids, 0, enabled);}
+		public void run(GL gl) {gl.glDebugMessageControl(source, type, severity, (ids == null) ? 0 : ids.length, ids, enabled);}
 	    });
     }
 
     public void bglGetDebugMessageLog(final Consumer<DebugMessage> cb) {
 	add(new Command() {
-		public void run(GL3 gl) {
+		public void run(GL gl) {
 		    while(true) {
 			int n = 64;
 			int[] sources = new int[n], types = new int[n], severities = new int[n], ids = new int[n], lengths = new int[n];
 			byte[] textbuf = new byte[65536];
-			int ret = gl.glGetDebugMessageLog(n, textbuf.length, sources, 0, types, 0, ids, 0, severities, 0, lengths, 0, textbuf, 0);
+			int ret = gl.glGetDebugMessageLog(n, textbuf.length, sources, types, ids, severities, lengths, textbuf);
 			for(int i = 0, off = 0; i < ret; i++) {
 			    if(textbuf[off + lengths[i] - 1] != 0)
 				throw(new AssertionError("Debug message not NUL-terminated"));

@@ -26,10 +26,11 @@
 
 package haven;
 
+import haven.render.*;
 import java.awt.event.KeyEvent;
 
 public class OptWnd extends Window {
-    public final Panel main, video, audio, keybind;
+    public final Panel main;
     public Panel current;
 
     public void chpanel(Panel p) {
@@ -118,7 +119,7 @@ public class OptWnd extends Window {
 		    Label dpy = new Label("");
 		    final int steps = 4;
 		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
-			   prev = new HSlider(UI.scale(160), -2 * steps, 2 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
+			   prev = new HSlider(UI.scale(160), -2 * steps, 1 * steps, (int)Math.round(steps * Math.log(prefs.rscale.val) / Math.log(2.0f))) {
 			       protected void added() {
 				   dpy();
 			       }
@@ -212,7 +213,77 @@ public class OptWnd extends Window {
 			   },
 			   dpy);
 		}
-		prev = add(new Label("Frame sync mode"), prev.pos("bl").adds(0, 5));
+		prev = add(new Label("Lighting mode"), prev.pos("bl").adds(0, 5));
+		{
+		    boolean[] done = {false};
+		    RadioGroup grp = new RadioGroup(this) {
+			    public void changed(int btn, String lbl) {
+				if(!done[0])
+				    return;
+				try {
+				    ui.setgprefs(prefs = prefs
+						 .update(null, prefs.lightmode, GSettings.LightMode.values()[btn])
+						 .update(null, prefs.maxlights, 0));
+				} catch(GSettings.SettingException e) {
+				    error(e.getMessage());
+				    return;
+				}
+				resetcf();
+			    }
+			};
+		    prev = grp.add("Global", prev.pos("bl").adds(5, 2));
+		    prev.settip("Global lighting supports fewer light sources, and scales worse in " +
+				"performance per additional light source, than zoned lighting, but " +
+				"has lower baseline performance requirements.", true);
+		    prev = grp.add("Zoned", prev.pos("bl").adds(0, 2));
+		    prev.settip("Zoned lighting supports far more light sources than global " +
+				"lighting with better performance, but may have higher performance " +
+				"requirements in cases with few light sources, and may also have " +
+				"issues on old graphics hardware.", true);
+		    grp.check(prefs.lightmode.val.ordinal());
+		    done[0] = true;
+		}
+		prev = add(new Label("Light-source limit"), prev.pos("bl").adds(0, 5).x(0));
+		{
+		    Label dpy = new Label("");
+		    int val = prefs.maxlights.val, max = 32;
+		    if(val == 0) {    /* XXX: This is just ugly. */
+			if(prefs.lightmode.val == GSettings.LightMode.ZONED)
+			    val = Lighting.LightGrid.defmax;
+			else
+			    val = Lighting.SimpleLights.defmax;
+		    }
+		    if(prefs.lightmode.val == GSettings.LightMode.SIMPLE)
+			max = 4;
+		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
+			   prev = new HSlider(UI.scale(160), 1, max, val / 4) {
+			       protected void added() {
+				   dpy();
+			       }
+			       void dpy() {
+				   dpy.settext(Integer.toString(this.val * 4));
+			       }
+			       public void changed() {dpy();}
+			       public void fchanged() {
+				   try {
+				       ui.setgprefs(prefs = prefs.update(null, prefs.maxlights, this.val * 4));
+				   } catch(GSettings.SettingException e) {
+				       error(e.getMessage());
+				       return;
+				   }
+				   dpy();
+			       }
+			       {
+				   settip("The light-source limit means different things depending on the " +
+					  "selected lighting mode. For Global lighting, it limits the total "+
+					  "number of light-sources globally. For Zoned lighting, it limits the " +
+					  "total number of overlapping light-sources at any point in space.",
+					  true);
+			       }
+			   },
+			   dpy);
+		}
+		prev = add(new Label("Frame sync mode"), prev.pos("bl").adds(0, 5).x(0));
 		{
 		    boolean[] done = {false};
 		    RadioGroup grp = new RadioGroup(this) {
@@ -282,13 +353,82 @@ public class OptWnd extends Window {
 		    );
 		}
 		*/
-		prev = add(new Label("UI scale (requires restart)"), prev.pos("bl").adds(0, 5).x(0));
-		{
-		    Label dpy = new Label("");
-		    final double smin = 1, smax = Math.floor(UI.maxscale() / 0.25) * 0.25;
-		    final int steps = (int)Math.round((smax - smin) / 0.25);
-		    addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
-			   prev = new HSlider(UI.scale(160), 0, steps, (int)Math.round(steps * (Utils.getprefd("uiscale", 1.0) - smin) / (smax - smin))) {
+		add(new Button(UI.scale(200), "Reset to defaults", false).action(() -> {
+			    ui.setgprefs(GSettings.defaults());
+			    curcf.destroy();
+			    curcf = null;
+		}), prev.pos("bl").adds(0, 5));
+		pack();
+	    }
+	}
+
+	public void draw(GOut g) {
+	    if((curcf == null) || (ui.gprefs != curcf.prefs))
+		resetcf();
+	    super.draw(g);
+	}
+
+	private void resetcf() {
+	    if(curcf != null)
+		curcf.destroy();
+	    curcf = add(new CPanel(ui.gprefs), 0, 0);
+	    back.move(curcf.pos("bl").adds(0, 15));
+	    pack();
+	}
+    }
+
+    public class AudioPanel extends Panel {
+	public AudioPanel(Panel back) {
+	    prev = add(new Label("Master audio volume"), 0, 0);
+	    prev = add(new HSlider(UI.scale(200), 0, 1000, (int)(Audio.volume * 1000)) {
+		    public void changed() {
+			Audio.setvolume(val / 1000.0);
+		    }
+		}, prev.pos("bl").adds(0, 2));
+	    prev = add(new Label("Interface sound volume"), prev.pos("bl").adds(0, 15));
+	    prev = add(new HSlider(UI.scale(200), 0, 1000, 0) {
+		    protected void attach(UI ui) {
+			super.attach(ui);
+			val = (int)(ui.audio.aui.volume * 1000);
+		    }
+		    public void changed() {
+			ui.audio.aui.setvolume(val / 1000.0);
+		    }
+		}, prev.pos("bl").adds(0, 2));
+	    prev = add(new Label("In-game event volume"), prev.pos("bl").adds(0, 5));
+	    prev = add(new HSlider(UI.scale(200), 0, 1000, 0) {
+		    protected void attach(UI ui) {
+			super.attach(ui);
+			val = (int)(ui.audio.pos.volume * 1000);
+		    }
+		    public void changed() {
+			ui.audio.pos.setvolume(val / 1000.0);
+		    }
+		}, prev.pos("bl").adds(0, 2));
+	    prev = add(new Label("Ambient volume"), prev.pos("bl").adds(0, 5));
+	    prev = add(new HSlider(UI.scale(200), 0, 1000, 0) {
+		    protected void attach(UI ui) {
+			super.attach(ui);
+			val = (int)(ui.audio.amb.volume * 1000);
+		    }
+		    public void changed() {
+			ui.audio.amb.setvolume(val / 1000.0);
+		    }
+		}, prev.pos("bl").adds(0, 2));
+	    add(new PButton(UI.scale(200), "Back", 27, back), prev.pos("bl").adds(0, 30));
+	    pack();
+	}
+    }
+
+    public class InterfacePanel extends Panel {
+	public InterfacePanel(Panel back) {
+	    Widget prev = add(new Label("Interface scale (requires restart)"), 0, 0);
+	    {
+		Label dpy = new Label("");
+		final double smin = 1, smax = Math.floor(UI.maxscale() / 0.25) * 0.25;
+		final int steps = (int)Math.round((smax - smin) / 0.25);
+		addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
+		       prev = new HSlider(UI.scale(160), 0, steps, (int)Math.round(steps * (Utils.getprefd("uiscale", 1.0) - smin) / (smax - smin))) {
 			       protected void added() {
 				   dpy();
 			       }
@@ -301,26 +441,61 @@ public class OptWnd extends Window {
 				   dpy();
 			       }
 			   },
+		       dpy);
+	    }
+	    prev = add(new Label("Object fine-placement granularity"), prev.pos("bl").adds(0, 5));
+	    {
+		Label pos = add(new Label("Position"), prev.pos("bl").adds(5, 2));
+		Label ang = add(new Label("Angle"), pos.pos("bl").adds(0, 2));
+		int x = Math.max(pos.pos("ur").x, ang.pos("ur").x);
+		{
+		    Label dpy = new Label("");
+		    final double smin = 1, smax = Math.floor(UI.maxscale() / 0.25) * 0.25;
+		    final int steps = (int)Math.round((smax - smin) / 0.25);
+		    int ival = (int)Math.round(MapView.plobpgran);
+		    addhlp(Coord.of(x + UI.scale(5), pos.c.y), UI.scale(5),
+			   prev = new HSlider(UI.scale(155 - x), 2, 17, (ival == 0) ? 17 : ival) {
+				   protected void added() {
+				       dpy();
+				   }
+				   void dpy() {
+				       dpy.settext((this.val == 17) ? "\u221e" : Integer.toString(this.val));
+				   }
+				   public void changed() {
+				       Utils.setprefd("plobpgran", MapView.plobpgran = ((this.val == 17) ? 0 : this.val));
+				       dpy();
+				   }
+			       },
 			   dpy);
 		}
-		add(new Button(UI.scale(200), "Reset to defaults", false).action(() -> {
-			    ui.setgprefs(GSettings.defaults());
-			    curcf.destroy();
-			    curcf = null;
-		}), prev.pos("bl").adds(0, 5));
-		pack();
+		{
+		    Label dpy = new Label("");
+		    final double smin = 1, smax = Math.floor(UI.maxscale() / 0.25) * 0.25;
+		    final int steps = (int)Math.round((smax - smin) / 0.25);
+		    int[] vals = {4, 5, 6, 8, 9, 10, 12, 15, 18, 20, 24, 30, 36, 40, 45, 60, 72, 90, 120, 180, 360};
+		    int ival = 0;
+		    for(int i = 0; i < vals.length; i++) {
+			if(Math.abs((MapView.plobagran * 2) - vals[i]) < Math.abs((MapView.plobagran * 2) - vals[ival]))
+			    ival = i;
+		    }
+		    addhlp(Coord.of(x + UI.scale(5), ang.c.y), UI.scale(5),
+			   prev = new HSlider(UI.scale(155 - x), 0, vals.length - 1, ival) {
+				   protected void added() {
+				       dpy();
+				   }
+				   void dpy() {
+				       dpy.settext(String.format("%d\u00b0", 360 / vals[this.val]));
+				   }
+				   public void changed() {
+				       Utils.setprefd("plobagran", MapView.plobagran = (vals[this.val] / 2.0));
+				       dpy();
+				   }
+			       },
+			   dpy);
+		}
 	    }
-	}
-
-	public void draw(GOut g) {
-	    if((curcf == null) || (ui.gprefs != curcf.prefs)) {
-		if(curcf != null)
-		    curcf.destroy();
-		curcf = add(new CPanel(ui.gprefs), 0, 0);
-		back.move(curcf.pos("bl").adds(0, 15));
-		pack();
-	    }
-	    super.draw(g);
+	    add(new PButton(UI.scale(200), "Back", 27, back), prev.pos("bl").adds(0, 30).x(0));
+	    pack();
 	}
     }
 
@@ -533,12 +708,14 @@ public class OptWnd extends Window {
     public OptWnd(boolean gopts) {
 	super(Coord.z, "Options", true);
 	main = add(new Panel());
-	video = add(new VideoPanel(main));
-	audio = add(new Panel());
-	keybind = add(new BindingPanel(main));
+	Panel video = add(new VideoPanel(main));
+	Panel audio = add(new AudioPanel(main));
+	Panel iface = add(new InterfacePanel(main));
+	Panel keybind = add(new BindingPanel(main));
 
 	int y = 0;
 	Widget prev;
+	y = main.add(new PButton(UI.scale(200), "Interface settings", 'v', iface), 0, y).pos("bl").adds(0, 5).y;
 	y = main.add(new PButton(UI.scale(200), "Video settings", 'v', video), 0, y).pos("bl").adds(0, 5).y;
 	y = main.add(new PButton(UI.scale(200), "Audio settings", 'a', audio), 0, y).pos("bl").adds(0, 5).y;
 	y = main.add(new PButton(UI.scale(200), "Keybindings", 'k', keybind), 0, y).pos("bl").adds(0, 5).y;
@@ -555,45 +732,6 @@ public class OptWnd extends Window {
 		    OptWnd.this.hide();
 	}), 0, y).pos("bl").adds(0, 5).y;
 	this.main.pack();
-
-	prev = audio.add(new Label("Master audio volume"), 0, 0);
-	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, (int)(Audio.volume * 1000)) {
-		public void changed() {
-		    Audio.setvolume(val / 1000.0);
-		}
-	    }, prev.pos("bl").adds(0, 2));
-	prev = audio.add(new Label("Interface sound volume"), prev.pos("bl").adds(0, 15));
-	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
-		protected void attach(UI ui) {
-		    super.attach(ui);
-		    val = (int)(ui.audio.aui.volume * 1000);
-		}
-		public void changed() {
-		    ui.audio.aui.setvolume(val / 1000.0);
-		}
-	    }, prev.pos("bl").adds(0, 2));
-	prev = audio.add(new Label("In-game event volume"), prev.pos("bl").adds(0, 5));
-	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
-		protected void attach(UI ui) {
-		    super.attach(ui);
-		    val = (int)(ui.audio.pos.volume * 1000);
-		}
-		public void changed() {
-		    ui.audio.pos.setvolume(val / 1000.0);
-		}
-	    }, prev.pos("bl").adds(0, 2));
-	prev = audio.add(new Label("Ambient volume"), prev.pos("bl").adds(0, 5));
-	prev = audio.add(new HSlider(UI.scale(200), 0, 1000, 0) {
-		protected void attach(UI ui) {
-		    super.attach(ui);
-		    val = (int)(ui.audio.amb.volume * 1000);
-		}
-		public void changed() {
-		    ui.audio.amb.setvolume(val / 1000.0);
-		}
-	    }, prev.pos("bl").adds(0, 2));
-	audio.add(new PButton(UI.scale(200), "Back", 27, this.main), prev.pos("bl").adds(0, 30));
-	audio.pack();
 
 	chpanel(this.main);
     }

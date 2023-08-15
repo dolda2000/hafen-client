@@ -26,8 +26,8 @@
 
 package haven.render.gl;
 
+import java.lang.ref.*;
 import java.util.*;
-import com.jogamp.opengl.*;
 import haven.Disposable;
 import haven.render.*;
 import haven.render.sl.Type;
@@ -42,18 +42,18 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	env.prepare(this);
     }
 
-    public void create(GL3 gl) {
+    public void create(GL gl) {
 	ckstate(state, 0);
 	int[] buf = new int[1];
-	gl.glGenVertexArrays(1, buf, 0);
+	gl.glGenVertexArrays(1, buf);
 	this.id = buf[0];
 	state = 1;
 	setmem(GLEnvironment.MemStats.VAOS, 0);
     }
 
-    protected void delete(GL3 gl) {
+    protected void delete(GL gl) {
 	ckstate(state, 1);
-	gl.glDeleteVertexArrays(1, new int[] {id}, 0);
+	gl.glDeleteVertexArrays(1, new int[] {id});
 	state = 2;
 	setmem(null, 0);
     }
@@ -157,19 +157,19 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 		    }
 		}
 		if(env.labels && (mod.desc != null))
-		    gl.glObjectLabel(GL2.GL_VERTEX_ARRAY, this, String.valueOf(mod.desc));
+		    gl.glObjectLabel(GL.GL_VERTEX_ARRAY, this, String.valueOf(mod.desc));
 	    });
     }
 
     static class ProgIndex implements Disposable {
-	final Model mod;
 	final GLEnvironment env;
+	final WeakReference<Model> desc;
 	Indexed[] vaos = new Indexed[2];
 	int n = 0;
 
-	ProgIndex(Model mod, GLEnvironment env) {
-	    this.mod = mod;
+	public ProgIndex(GLEnvironment env, Model desc) {
 	    this.env = env;
+	    this.desc = new WeakReference<>(desc);
 	}
 
 	class Indexed extends GLVertexArray {
@@ -222,7 +222,7 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	    clean();
 	}
 
-	GLVertexArray get(GLProgram prog) {
+	GLVertexArray get(GLProgram prog, Model mod) {
 	    Attribute[] attr = prog.attribs;
 	    for(int i = 0; i < n; i++) {
 		if(Arrays.equals(attr, vaos[i].attribs)) {
@@ -240,6 +240,10 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 	public void dispose() {
 	    for(int i = 0; (i < vaos.length) && (vaos[i] != null); i++)
 		vaos[i].dispose();
+	}
+
+	public String toString() {
+	    return(String.format("#<vao-idx %s n:%d>", desc.get(), n));
 	}
     }
 }

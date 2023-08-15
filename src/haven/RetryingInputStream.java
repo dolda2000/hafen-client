@@ -90,6 +90,17 @@ public abstract class RetryingInputStream extends InputStream {
 	}
     }
 
+    public void check() throws IOException {
+	while(true) {
+	    try {
+		get();
+		break;
+	    } catch(IOException e) {
+		failed(e);
+	    }
+	}
+    }
+
     public long skip(long len) throws IOException {
 	if(eof)
 	    return(0);

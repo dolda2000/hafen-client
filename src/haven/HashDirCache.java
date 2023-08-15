@@ -30,7 +30,7 @@ import java.util.*;
 import java.io.*;
 import java.nio.file.*;
 import java.nio.channels.*;
-import java.net.URI;
+import java.net.*;
 import static haven.Utils.pj;
 
 public class HashDirCache implements ResCache {
@@ -147,66 +147,8 @@ public class HashDirCache implements ResCache {
 	writehead(new DataOutputStream(Channels.newOutputStream(ch)), name);
     }
 
-    private static class LockedFile implements AutoCloseable {
-	FileChannel f;
-	FileLock l;
-	LockedFile(FileChannel f, FileLock l) {this.f = f; this.l = l;}
-
-	void release() throws IOException {
-	    if(l != null) {
-		l.release();
-		l = null;
-	    }
-	}
-
-	public void close() throws IOException {
-	    release();
-	    if(f != null) {
-		f.close();
-		f = null;
-	    }
-	}
-    }
-
     private static FileChannel open2(Path path, OpenOption... mode) throws IOException {
-	/* XXX: Sometimes, this is getting strange and weird OS errors
-	 * on Windows. For example, file sharing violations are
-	 * sometimes returned even though Java always opens
-	 * RandomAccessFiles in non-exclusive mode, and other times,
-	 * permission is spuriously denied. I've had zero luck in
-	 * trying to find a root cause for these errors, so just
-	 * assume the error is transient and retry. :P */
 	return(Utils.ioretry(() -> FileChannel.open(path, mode)));
-    }
-
-    /* These locks should never have to be waited for long at all, so
-     * blocking interruptions until complete should be perfectly
-     * okay. */
-    private static LockedFile lock2(Path path) throws IOException {
-        boolean intr = false;
-        try {
-            while(true) {
-                try {
-                    FileChannel fp = null;
-                    try {
-                        fp = open2(path, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-                        FileLock lk = fp.lock(0, 1, false);
-                        LockedFile ret = new LockedFile(fp, lk);
-                        fp = null;
-                        return(ret);
-                    } finally {
-                        if(fp != null)
-                            fp.close();
-                    }
-                } catch(FileLockInterruptionException e) {
-                    Thread.currentThread().interrupted();
-                    intr = true;
-                }
-            }
-        } finally {
-            if(intr)
-                Thread.currentThread().interrupt();
-        }
     }
 
     private static class CacheFile implements AutoCloseable {
@@ -258,7 +200,7 @@ public class HashDirCache implements ResCache {
 	}
 	try {
 	    synchronized(mon) {
-		try(LockedFile lf = lock2(lfn)) {
+		try(LockedFile lf = LockedFile.lock(lfn)) {
 		    for(int idx = 0; ; idx++) {
 			Path path = pj(base, String.format("%016x.%d", h, idx));
 			if(!Files.exists(path) && !creat)
@@ -408,10 +350,10 @@ public class HashDirCache implements ResCache {
     public static HashDirCache create() {
 	HashDirCache ret;
 	try {
-	    if(Config.cachebase != null)
-		return(get(Config.cachebase.toURI()));
-	    if(Config.resurl != null)
-		return(get(Config.resurl.toURI()));
+	    if(cachebase.get() != null)
+		return(get(cachebase.get().toURI()));
+	    if(Resource.resurl.get() != null)
+		return(get(Resource.resurl.get().toURI()));
 	    return(get("default"));
 	} catch(Exception e) {
 	    return(null);

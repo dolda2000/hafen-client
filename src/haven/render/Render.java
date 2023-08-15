@@ -41,8 +41,8 @@ public interface Render extends Disposable {
     public <T extends DataBuffer> void update(T buf, DataBuffer.PartFiller<? super T> data, int from, int to);
     public <T extends DataBuffer> void update(T buf, DataBuffer.Filler<? super T> data);
 
-    public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback);
-    public void pget(Texture.Image img, VectorFormat fmt, Consumer<ByteBuffer> callback);
+    public void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, ByteBuffer dstbuf, Consumer<ByteBuffer> callback);
+    public void pget(Texture.Image img, VectorFormat fmt, ByteBuffer dstbuf, Consumer<ByteBuffer> callback);
     public void timestamp(Consumer<Long> callback);
     public void fence(Runnable callback);
 
@@ -59,5 +59,12 @@ public interface Render extends Disposable {
 	Model model = new Model(mode, vao, indb, 0, n);
 	draw(pipe, model);
 	model.dispose();
+    }
+
+    public default void pget(Pipe pipe, FragData buf, Area area, VectorFormat fmt, Consumer<ByteBuffer> callback) {
+	pget(pipe, buf, area, fmt, Utils.mkbbuf(fmt.size() * area.area()).order(ByteOrder.nativeOrder()), callback);
+    }
+    public default void pget(Texture.Image img, VectorFormat fmt, Consumer<ByteBuffer> callback) {
+	pget(img, fmt, Utils.mkbbuf(fmt.size() * img.w * img.h * img.d).order(ByteOrder.nativeOrder()), callback);
     }
 }

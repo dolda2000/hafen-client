@@ -32,24 +32,13 @@ import static haven.render.sl.Cons.*;
 import static haven.render.sl.Function.PDir.*;
 import static haven.render.sl.Type.*;
 
-public class Phong extends ValBlock.Group {
-    public static final int maxlights = 4;
-    public static final Struct s_light = Struct.make(new Symbol.Shared("light"),
-						     VEC4, "amb",
-						     VEC4, "dif",
-						     VEC4, "spc",
-						     VEC4, "pos",
-						     FLOAT, "ac",
-						     FLOAT, "al",
-						     FLOAT, "aq");
+public class Phong extends ValBlock.Group implements Lighting{
     public static final Struct s_material = Struct.make(new Symbol.Shared("material"),
 							VEC4, "emi",
 							VEC4, "amb",
 							VEC4, "dif",
 							VEC4, "spc",
 							FLOAT, "shine");
-    private final Uniform nlights;
-    private final Uniform lights;
     private final Uniform material;
     public final GValue bcol = new GValue(VEC3), scol = new GValue(VEC3);
     public final boolean pfrag;
@@ -89,13 +78,13 @@ public class Phong extends ValBlock.Group {
     }
 
     public class DoLight extends Function.Def {
+	public final Expression ls = param(IN, s_light).ref();
 	public final Expression i = param(IN, INT).ref();
 	public final Expression vert = param(IN, VEC3).ref();
 	public final Expression edir = param(IN, VEC3).ref();
 	public final Expression norm = param(IN, VEC3).ref();
 	public final LValue diff = param(INOUT, VEC3).ref();
 	public final LValue spec = param(INOUT, VEC3).ref();
-	public final Expression ls = idx(lights.ref(), i);
 	public final Expression mat = material.ref();
 	public final Expression shine = fref(mat, "shine");
 	public final Value lvl, dir, dl, sl;
@@ -123,9 +112,13 @@ public class Phong extends ValBlock.Group {
 					new Block(rel.new Def(sub(pick(fref(ls, "pos"), "xyz"), vert)),
 						  stmt(ass(dir.tgt, normalize(rel.ref()))),
 						  dst.new Def(length(rel.ref())),
-						  stmt(ass(lvl.tgt, inv(add(fref(ls, "ac"),
-									    mul(fref(ls, "al"), dst.ref()),
-									    mul(fref(ls, "aq"), dst.ref(), dst.ref()))))))));
+						  stmt(ass(lvl.tgt, min(inv(add(fref(ls, "ac"),
+										mul(fref(ls, "al"), dst.ref()),
+										mul(fref(ls, "aq"), dst.ref(), dst.ref()))),
+									l(1.0)))),
+						  stmt(ass(lvl.tgt, mul(lvl.tgt,
+									clamp(mul(sub(lvl.tgt, fref(ls, "at")), l(1.0 / 0.05)),
+									      l(0.0), l(1.0))))))));
 		    }
 		};
 	    lvl = tdep.new GValue(FLOAT);
@@ -164,7 +157,7 @@ public class Phong extends ValBlock.Group {
 	    scalc.add(scurs = new Placeholder());
 	    scalc.add(aadd(spec, mul(pick(fref(mat, "spc"), "rgb"),
 				     pick(fref(ls,  "spc"), "rgb"),
-				     sl.ref())));
+				     sl.ref(), lvl.ref())));
 
 	    for(Runnable mod : mods)
 		mod.run();
@@ -182,20 +175,9 @@ public class Phong extends ValBlock.Group {
     public void cons2(Block blk) {
 	bcol.tgt = blk.local(VEC3, pick(fref(material.ref(), "emi"), "rgb")).ref();
 	scol.tgt = blk.local(VEC3, Vec3Cons.z).ref();
-	boolean unroll = true;
-	if(!unroll) {
-	    Variable i = blk.local(INT, "i", null);
-	    blk.add(new For(ass(i, l(0)), lt(i.ref(), nlights.ref()), linc(i.ref()),
-			    stmt(dolight.call(i.ref(), vert, edir, norm, bcol.tgt, scol.tgt))));
-	} else {
-	    for(int i = 0; i < 4; i++) {
-		/* No few drivers seem to be having trouble with the for
-		 * loop. It would be nice to be able to select this code
-		 * path only on those drivers. */
-		blk.add(new If(gt(nlights.ref(), l(i)),
-			       stmt(dolight.call(l(i), vert, edir, norm, bcol.tgt, scol.tgt))));
-	    }
-	}
+	LightList ls = prog.getmod(LightList.class);
+	if(ls != null)
+	    ls.construct(blk, par -> stmt(dolight.call(par.lpar, par.idx, vert, edir, norm, bcol.tgt, scol.tgt)));
 	bcol.addmods(blk); scol.addmods(blk);
     }
 
@@ -203,10 +185,8 @@ public class Phong extends ValBlock.Group {
 	FragColor.fragcol(fctx).mod(in -> add(mul(in, vec4(bcol, pick(fref(material.ref(), "dif"), "a"))), vec4(scol, l(0.0))), 500);
     }
 
-    public Phong(VertexContext vctx, Uniform.Data<Object[]> lights, Uniform.Data<?> material) {
+    public Phong(VertexContext vctx, Uniform.Data<?> material) {
 	vctx.mainvals.super();
-	this.nlights = new Uniform(INT, "nlights", p -> lights.value.apply(p).length, lights.deps);
-	this.lights = new Uniform(new Array(s_light, maxlights), "lights", p -> lights.value.apply(p), lights.deps);
 	this.material = new Uniform(s_material, "material", p -> material.value.apply(p), material.deps);
 	pfrag = false;
 	prog = vctx.prog;
@@ -228,10 +208,8 @@ public class Phong extends ValBlock.Group {
 	prog.module(this);
     }
 
-    public Phong(FragmentContext fctx, Uniform.Data<Object[]> lights, Uniform.Data<?> material) {
+    public Phong(FragmentContext fctx, Uniform.Data<?> material) {
 	fctx.mainvals.super();
-	this.nlights = new Uniform(INT, "nlights", p -> lights.value.apply(p).length, lights.deps);
-	this.lights = new Uniform(new Array(s_light, maxlights), "lights", p -> lights.value.apply(p), lights.deps);
 	this.material = new Uniform(s_material, "material", p -> material.value.apply(p), material.deps);
 	pfrag = true;
 	prog = fctx.prog;

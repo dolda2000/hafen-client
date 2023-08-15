@@ -29,9 +29,9 @@ package haven;
 import java.util.*;
 import java.awt.event.*;
 import java.awt.datatransfer.*;
+import static haven.KeyMatch.*;
 
 public interface ReadLine {
-    public static final int S = UI.MOD_SHIFT, C = UI.MOD_CTRL, M = UI.MOD_META;
     public char[] buffer();
     public int length();
     public int point();
@@ -555,6 +555,8 @@ public interface ReadLine {
 	    } else {
 		return(false);
 	    }
+	    if(mark > length)
+		mark = length;
 	    return(true);
 	}
     }

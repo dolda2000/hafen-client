@@ -37,6 +37,9 @@ import static haven.render.sl.Type.*;
 
 public class ShadowMap extends State {
     public final static Slot<ShadowMap> smap = new Slot<ShadowMap>(Slot.Type.DRAW, ShadowMap.class);
+    public final static State.StandAlone maskshadow = new State.StandAlone(Slot.Type.GEOM) {
+	    public ShaderMacro shader() {return(null);}
+	};
     public final Texture2D lbuf;
     public final Texture2D.Sampler2D lsamp;
     private final Projection lproj;
@@ -48,6 +51,11 @@ public class ShadowMap extends State {
 							 0.0f, 0.5f, 0.0f, 0.5f,
 							 0.0f, 0.0f, 0.5f, 0.5f,
 							 0.0f, 0.0f, 0.0f, 1.0f);
+
+    @Material.ResName("maskshadow")
+    public static class $maskshadow implements Material.ResCons {
+	public Pipe.Op cons(Resource res, Object... args) {return(maskshadow);}
+    }
 
     public ShadowMap(Coord res, float size, float depth, float dthr) {
 	lbuf = new Texture2D(res, DataBuffer.Usage.STATIC, Texture.DEPTH, new VectorFormat(1, NumberFormat.FLOAT32), null);
@@ -129,7 +137,7 @@ public class ShadowMap extends State {
 	}
 
 	public void add(Slot<? extends Rendered> slot) {
-	    if(slot.state().get(Light.lighting) == null)
+	    if((slot.state().get(Light.lighting) == null) || (slot.state().get(maskshadow.slot) != null))
 		return;
 	    Shadowslot ns = new Shadowslot(slot);
 	    if(back != null)
@@ -195,7 +203,7 @@ public class ShadowMap extends State {
 	    if((back == null) || !out.env().compatible(back)) {
 		if(back != null)
 		    back.dispose();
-		back = out.env().drawlist();
+		back = out.env().drawlist().desc("shadow-list: " + this);
 		back.asyncadd(this, Rendered.class);
 	    }
 	    back.draw(out);
@@ -220,8 +228,7 @@ public class ShadowMap extends State {
     }
 
     public ShadowMap setpos(Coord3f base, Coord3f dir) {
-	DirCam lcam = new DirCam();
-	lcam.update(base, dir);
+	Camera lcam = Camera.dir(base, dir);
 	if(Utils.eq(this.lcam, lcam))
 	    return(this);
 	ShadowMap ret = new ShadowMap(this);
@@ -239,7 +246,7 @@ public class ShadowMap extends State {
 	data.basic(basic);
 	data.draw(out);
 	if(false)
-	    GOut.getimage(out, lbuf.image(0), Debug::dumpimage);
+	    GOut.debugimage(out, lbuf.image(0), new VectorFormat(1, NumberFormat.DEPTH), false, Debug::dumpimage);
     }
 
     public void apply(Pipe buf) {

@@ -72,7 +72,7 @@ public class Texture2D extends Texture {
 	return(new AbstractCollection<Image<Texture2D>>() {
 		public int size() {
 		    if((w == 0) || (h == 0)) {
-			return(0);
+			return(1);
 		    } else if(pot) {
 			return(Math.max(Integer.numberOfTrailingZeros(w),
 					Integer.numberOfTrailingZeros(h)) +

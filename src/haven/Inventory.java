@@ -34,6 +34,7 @@ public class Inventory extends Widget implements DTarget {
     public static final Tex invsq;
     public boolean dropul = true;
     public Coord isz;
+    public boolean[] sqmask = null;
     Map<GItem, WItem> wmap = new HashMap<GItem, WItem>();
 
     static {
@@ -64,8 +65,11 @@ public class Inventory extends Widget implements DTarget {
 
     public void draw(GOut g) {
 	Coord c = new Coord();
+	int mo = 0;
 	for(c.y = 0; c.y < isz.y; c.y++) {
 	    for(c.x = 0; c.x < isz.x; c.x++) {
+		if((sqmask != null) && sqmask[mo++])
+		    continue;
 		g.image(invsq, c.mul(sqsz));
 	    }
 	}
@@ -125,6 +129,18 @@ public class Inventory extends Widget implements DTarget {
 	if(msg == "sz") {
 	    isz = (Coord)args[0];
 	    resize(invsq.sz().add(UI.scale(new Coord(-1, -1))).mul(isz).add(UI.scale(new Coord(1, 1))));
+	    sqmask = null;
+	} else if(msg == "mask") {
+	    boolean[] nmask;
+	    if(args[0] == null) {
+		nmask = null;
+	    } else {
+		nmask = new boolean[isz.x * isz.y];
+		byte[] raw = (byte[])args[0];
+		for(int i = 0; i < isz.x * isz.y; i++)
+		    nmask[i] = (raw[i >> 3] & (1 << (i & 7))) != 0;
+	    }
+	    this.sqmask = nmask;
 	} else if(msg == "mode") {
 	    dropul = (((Integer)args[0]) == 0);
 	} else {

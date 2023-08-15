@@ -117,6 +117,7 @@ public abstract class Function {
 		if((tl instanceof Definition) && (((Definition)tl).fun() == Def.this))
 		    return;
 	    }
+	    type.use(ctx);
 	    new Walker() {
 		public void el(Element el) {
 		    if(el instanceof Call) {

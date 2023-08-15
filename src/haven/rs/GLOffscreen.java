@@ -29,13 +29,15 @@ package haven.rs;
 import haven.*;
 import haven.render.*;
 import haven.render.gl.*;
+import haven.render.jogl.*;
 import com.jogamp.opengl.*;
+import haven.render.gl.GL;
 
 public class GLOffscreen implements Context {
     public final GLProfile prof;
     public final GLAutoDrawable buf;
     private final Object dmon = new Object();
-    private GLEnvironment benv = null;
+    private JOGLEnvironment benv = null;
     private final Environment penv;
 
     public GLOffscreen() {
@@ -87,11 +89,16 @@ public class GLOffscreen implements Context {
 	// gl = new TraceGL3(gl, System.err);
 	GLContext ctx = gl.getContext();
 	if(benv == null)
-	    benv = new GLEnvironment(gl, ctx, Area.sized(Coord.z, new Coord(1, 1)));
+	    benv = new JOGLEnvironment(gl, ctx, Area.sized(Coord.z, new Coord(1, 1)));
 	if(benv.ctx != ctx)
 	    throw(new AssertionError());
-	benv.process(gl);
-	benv.finish(gl);
+	benv.process(new JOGLWrap(gl));
+	try {
+	    benv.finish(new JOGLWrap(gl));
+	} catch(InterruptedException e) {
+	    Thread.currentThread().interrupt();
+	    throw(new RuntimeException(e));
+	}
     }
 
     public Environment env() {

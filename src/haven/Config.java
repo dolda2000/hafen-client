@@ -29,36 +29,26 @@ package haven;
 import java.net.URL;
 import java.io.PrintStream;
 import java.util.Properties;
+import java.util.function.*;
 import java.io.*;
 import java.nio.file.*;
 
 public class Config {
     public static final Properties jarprops = getjarprops();
-    public static String authuser = getprop("haven.authuser", null);
-    public static String authserv = getprop("haven.authserv", null);
-    public static String defserv = getprop("haven.defserv", "localhost");
-    public static String[] servargs = null;
-    public static URL resurl = geturl("haven.resurl", "");
-    public static URL screenurl = geturl("haven.screenurl", "");
-    public static URL cachebase = geturl("haven.cachebase", "");
-    public static URL mapbase = geturl("haven.mapbase", "");
-    public static boolean dbtext = getbool("haven.dbtext", false);
-    public static boolean bounddb = getbool("haven.bounddb", false);
-    public static boolean profile = getbool("haven.profile", false);
-    public static boolean profilegpu = getbool("haven.profilegpu", false);
-    public static boolean par = true;
-    public static boolean fscache = getbool("haven.fscache", true);
-    public static Path resdir = getpath("haven.resdir", System.getenv("HAFEN_RESDIR"));
-    public static boolean nopreload = getbool("haven.nopreload", true);
-    public static Path loadwaited = getpath("haven.loadwaited", null);
-    public static Path allused = getpath("haven.allused", null);
-    public static int mainport = getint("haven.mainport", 1870);
-    public static int authport = getint("haven.authport", 1871);
-    public static boolean softres = getbool("haven.softres", true);
-    public static Double uiscale = getfloat("haven.uiscale", null);
-    public static byte[] authck = getbytes("haven.authck", null), inittoken = getbytes("haven.inittoken", null);
-    public static String prefspec = getprop("haven.prefspec", "hafen");
-    public static final String confid = "";
+    public static final String confid = jarprops.getProperty("config.client-id", "unknown");
+    public static final Variable<Boolean> par = Variable.def(() -> true);
+    public final Properties localprops = getlocalprops();
+
+    private static Config global = null;
+    public static Config get() {
+	if(global != null)
+	    return(global);
+	synchronized(Config.class) {
+	    if(global == null)
+		global = new Config();
+	    return(global);
+	}
+    }
 
     private static Properties getjarprops() {
 	Properties ret = new Properties();
@@ -70,6 +60,11 @@ public class Config {
 	     * potentially crash here for unforeseen reasons. */
 	    new Warning(exc, "unexpected error occurred when loading local properties").issue();
 	}
+	return(ret);
+    }
+
+    private static Properties getlocalprops() {
+	Properties ret = new Properties();
 	try {
 	    Path jar = Utils.srcpath(Config.class);
 	    if(jar != null) {
@@ -85,57 +80,123 @@ public class Config {
 	return(ret);
     }
 
-    private static String getprop(String name, String def) {
-	String ret = jarprops.getProperty(name);
-	if(ret != null)
+    public String getprop(String name, String def) {
+	String ret;
+	if((ret = jarprops.getProperty(name)) != null)
+	    return(ret);
+	if((ret = localprops.getProperty(name)) != null)
 	    return(ret);
 	return(Utils.getprop(name, def));
     }
 
-    private static int getint(String name, int def) {
-	String val = getprop(name, null);
-	if(val == null)
-	    return(def);
-	return(Integer.parseInt(val));
+    public static final Path parsepath(String p) {
+	if((p == null) || p.equals(""))
+	    return(null);
+	return(Utils.path(p));
     }
 
-    private static boolean getbool(String name, boolean def) {
-	String val = getprop(name, null);
-	if(val == null)
-	    return(def);
-	return(Utils.parsebool(val));
-    }
-
-    private static byte[] getbytes(String name, byte[] def) {
-	String val = getprop(name, null);
-	if(val == null)
-	    return(def);
-	return(Utils.hex2byte(val));
-    }
-
-    private static URL geturl(String name, String def) {
-	String val = getprop(name, def);
-	if(val.equals(""))
+    public static final URL parseurl(String url) {
+	if((url == null) || url.equals(""))
 	    return(null);
 	try {
-	    return(new URL(val));
+	    return(new URL(url));
 	} catch(java.net.MalformedURLException e) {
 	    throw(new RuntimeException(e));
 	}
     }
 
-    private static Path getpath(String name, String def) {
-	String val = getprop(name, def);
-	if((val == null) || val.equals(""))
-	    return(null);
-	return(Utils.path(val));
+    public static void parsesvcaddr(String spec, Consumer<String> host, Consumer<Integer> port) {
+	if((spec.length() > 0) && (spec.charAt(0) == '[')) {
+	    int p = spec.indexOf(']');
+	    if(p > 0) {
+		String hspec = spec.substring(1, p);
+		if(spec.length() == p + 1) {
+		    host.accept(hspec);
+		    return;
+		} else if((spec.length() > p + 1) && (spec.charAt(p + 1) == ':')) {
+		    host.accept(hspec);
+		    port.accept(Integer.parseInt(spec.substring(p + 2)));
+		    return;
+		}
+	    }
+	}
+	int p = spec.indexOf(':');
+	if(p >= 0) {
+	    host.accept(spec.substring(0, p));
+	    port.accept(Integer.parseInt(spec.substring(p + 1)));
+	    return;
+	} else {
+	    host.accept(spec);
+	    return;
+	}
     }
 
-    private static Double getfloat(String name, Double def) {
-	String val = getprop(name, null);
-	if(val == null)
-	    return(def);
-	return(Double.parseDouble(val));
+    public static class Variable<T> {
+	public final Function<Config, T> init;
+	private boolean inited = false;
+	private T val;
+
+	private Variable(Function<Config, T> init) {
+	    this.init = init;
+	}
+
+	public T get() {
+	    if(!inited) {
+		synchronized(this) {
+		    if(!inited) {
+			val = init.apply(Config.get());
+			inited = true;
+		    }
+		}
+	    }
+	    return(val);
+	}
+
+	public void set(T val) {
+	    synchronized(this) {
+		inited = true;
+		this.val = val;
+	    }
+	}
+
+	public static <V> Variable<V> def(Supplier<V> defval) {
+	    return(new Variable<>(cfg -> defval.get()));
+	}
+
+	public static <V> Variable<V> prop(String name, Function<String, V> parse, Supplier<V> defval) {
+	    return(new Variable<>(cfg -> {
+			String pv = cfg.getprop(name, null);
+			return((pv == null) ? defval.get() : parse.apply(pv));
+	    }));
+	}
+
+	public static Variable<String> prop(String name, String defval) {
+	    return(prop(name, Function.identity(), () -> defval));
+	}
+	public static Variable<Integer> propi(String name, int defval) {
+	    return(prop(name, Integer::parseInt, () -> defval));
+	}
+	public static Variable<Boolean> propb(String name, boolean defval) {
+	    return(prop(name, Utils::parsebool, () -> defval));
+	}
+	public static Variable<Double> propf(String name, Double defval) {
+	    return(prop(name, Double::parseDouble, () -> defval));
+	}
+	public static Variable<byte[]> propb(String name, byte[] defval) {
+	    return(prop(name, Utils::hex2byte, () -> defval));
+	}
+	public static Variable<URL> propu(String name, URL defval) {
+	    return(prop(name, Config::parseurl, () -> defval));
+	}
+	public static Variable<URL> propu(String name, String defval) {
+	    return(propu(name, parseurl(defval)));
+	}
+	public static Variable<Path> propp(String name, Path defval) {
+	    return(prop(name, Config::parsepath, () -> defval));
+	}
+	public static Variable<Path> propp(String name, String defval) {
+	    return(propp(name, parsepath(defval)));
+	}
     }
 
     private static void usage(PrintStream out) {
@@ -145,6 +206,7 @@ public class Config {
 	out.println("  -d                 Display debug text");
 	out.println("  -P                 Enable profiling");
 	out.println("  -G                 Enable GPU profiling");
+	out.println("  -f                 Fullscreen mode");
 	out.println("  -U URL             Use specified external resource URL");
 	out.println("  -r DIR             Use specified resource directory (or HAVEN_RESDIR)");
 	out.println("  -A AUTHSERV[:PORT] Use specified authentication server");
@@ -154,7 +216,7 @@ public class Config {
     }
 
     public static void cmdline(String[] args) {
-	PosixArgs opt = PosixArgs.getopt(args, "hdPGU:r:A:u:C:p:");
+	PosixArgs opt = PosixArgs.getopt(args, "hdPGfU:r:A:u:C:p:");
 	if(opt == null) {
 	    usage(System.err);
 	    System.exit(1);
@@ -166,80 +228,52 @@ public class Config {
 		System.exit(0);
 		break;
 	    case 'd':
-		dbtext = true;
+		UIPanel.dbtext.set(true);
 		break;
 	    case 'P':
-		profile = true;
+		UIPanel.profile.set(true);
 		break;
 	    case 'G':
-		profilegpu = true;
+		UIPanel.profilegpu.set(true);
+		break;
+	    case 'f':
+		MainFrame.initfullscreen.set(true);
 		break;
 	    case 'r':
-		resdir = Utils.path(opt.arg);
+		Resource.resdir.set(Utils.path(opt.arg));
 		break;
 	    case 'A':
-		int p = opt.arg.indexOf(':');
-		if(p >= 0) {
-		    authserv = opt.arg.substring(0, p);
-		    authport = Integer.parseInt(opt.arg.substring(p + 1));
-		} else {
-		    authserv = opt.arg;
-		}
+		parsesvcaddr(opt.arg, Bootstrap.authserv::set, Bootstrap.authport::set);
 		break;
 	    case 'U':
 		try {
-		    resurl = new URL(opt.arg);
+		    Resource.resurl.set(new URL(opt.arg));
 		} catch(java.net.MalformedURLException e) {
 		    System.err.println(e);
 		    System.exit(1);
 		}
 		break;
 	    case 'u':
-		authuser = opt.arg;
+		Bootstrap.authuser.set(opt.arg);
 		break;
 	    case 'C':
-		authck = Utils.hex2byte(opt.arg);
+		Bootstrap.authck.set(Utils.hex2byte(opt.arg));
 		break;
 	    case 'p':
-		prefspec = opt.arg;
+		Utils.prefspec.set(opt.arg);
 		break;
 	    }
 	}
-	if(opt.rest.length > 0) {
-	    int p = opt.rest[0].indexOf(':');
-	    if(p >= 0) {
-		defserv = opt.rest[0].substring(0, p);
-		mainport = Integer.parseInt(opt.rest[0].substring(p + 1));
-	    } else {
-		defserv = opt.rest[0];
-	    }
-	}
+	if(opt.rest.length > 0)
+	    parsesvcaddr(opt.rest[0], Bootstrap.defserv::set, Bootstrap.mainport::set);
 	if(opt.rest.length > 1)
-	    servargs = Utils.splice(opt.rest, 1);
+	    Bootstrap.servargs.set(Utils.splice(opt.rest, 1));
     }
 
     static {
-	Console.setscmd("stats", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    dbtext = Utils.parsebool(args[1]);
-		}
-	    });
 	Console.setscmd("par", new Console.Command() {
 		public void run(Console cons, String[] args) {
-		    par = Utils.parsebool(args[1]);
-		}
-	    });
-	Console.setscmd("profile", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    if(args[1].equals("none") || args[1].equals("off")) {
-			profile = profilegpu = false;
-		    } else if(args[1].equals("cpu")) {
-			profile = true;
-		    } else if(args[1].equals("gpu")) {
-			profilegpu = true;
-		    } else if(args[1].equals("all")) {
-			profile = profilegpu = true;
-		    }
+		    par.set(Utils.parsebool(args[1]));
 		}
 	    });
     }

@@ -26,14 +26,12 @@
 
 package haven.render.gl;
 
-import com.jogamp.opengl.*;
-
 public abstract class GLQuery extends GLObject {
     public GLQuery(GLEnvironment env) {
 	super(env);
     }
 
-    public abstract boolean check(GL3 gl);
+    public abstract boolean check(GL gl);
     public abstract void abort();
 
     public void abortcreate() {

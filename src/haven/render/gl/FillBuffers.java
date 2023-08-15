@@ -28,14 +28,17 @@ package haven.render.gl;
 
 import java.nio.*;
 import haven.render.*;
+import haven.Disposable;
 
 public class FillBuffers {
     public static class Array implements FillBuffer {
+	private final GLEnvironment env;
 	private final int sz;
 	private boolean pushed = false;
-	private ByteBuffer data = null;
+	private SysBuffer mem = null;
 
-	public Array(int sz) {
+	public Array(GLEnvironment env, int sz) {
+	    this.env = env;
 	    this.sz = sz;
 	}
 
@@ -43,33 +46,37 @@ public class FillBuffers {
 	public boolean compatible(Environment env) {return(env instanceof GLEnvironment);}
 
 	public ByteBuffer push() {
-	    if(data == null) {
-		data = ByteBuffer.allocate(sz).order(ByteOrder.nativeOrder());
+	    if(mem == null) {
+		mem = env.malloc(sz);
 		pushed = true;
 	    } else if(!pushed) {
 		throw(new IllegalStateException("already pulled"));
 	    }
-	    return(data);
+	    return(mem.data());
 	}
 
 	public void pull(ByteBuffer buf) {
-	    if(buf.remaining() < sz) {
-		String msg = buf.remaining() + " < " + sz;
-		throw(new BufferUnderflowException() {
-			public String getMessage() {return(msg);}
-		    });
-	    }
-	    data = buf.duplicate();
-	    buf.position(buf.position() + sz);
+	    if(mem != null)
+		throw(new IllegalStateException("already " + (pushed ? "pushed" : "pulled")));
+	    mem = env.subsume(buf, sz);
+	}
+
+	public SysBuffer mem() {
+	    if(mem == null)
+		push();
+	    return(mem);
 	}
 
 	public ByteBuffer data() {
+	    ByteBuffer data = mem().data();
 	    if(pushed)
 		data.rewind();
-	    return((data == null) ? ByteBuffer.allocate(sz) : data);
+	    return(data);
 	}
 
 	public void dispose() {
+	    if(mem != null)
+		mem.dispose();
 	}
     }
 }
