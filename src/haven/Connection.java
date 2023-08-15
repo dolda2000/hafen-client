@@ -38,7 +38,7 @@ public class Connection {
     public final SocketAddress server;
     public final String username;
     private Glob glob;
-    private final Collection<RMessageHandler> rcbs = new ArrayList<>();
+    private final Collection<Callback> cbs = new ArrayList<>();
     private final DatagramChannel sk;
     private final Selector sel;
     private final SelectionKey key;
@@ -61,17 +61,23 @@ public class Connection {
 	}
     }
 
-    public static interface RMessageHandler {
-	public void handle(PMessage msg);
+    public static interface Callback {
+	public default void closed() {};
+	public default void handle(PMessage msg) {};
 
-	public static final RMessageHandler dump = msg -> {
-	    System.err.println(msg.type);
-	    Utils.hexdump(msg.bytes(), System.err, -1);
-	};
+	public static final Callback dump = new Callback() {
+		public void closed() {
+		    System.err.println("closed");
+		}
+		public void handle(PMessage msg) {
+		    System.err.println(msg.type);
+		    Utils.hexdump(msg.bytes(), System.err, -1);
+		}
+	    };
     }
 
-    public Connection add(RMessageHandler cb) {
-	rcbs.add(cb);
+    public Connection add(Callback cb) {
+	cbs.add(cb);
 	return(this);
     }
 
@@ -286,7 +292,7 @@ public class Connection {
 		    }
 		}
 	    } else {
-		for(RMessageHandler cb : rcbs)
+		for(Callback cb : cbs)
 		    cb.handle(msg);
 	    }
 	}
@@ -519,15 +525,22 @@ public class Connection {
 	    this.sawclose = sawclose;
 	}
 
-	public Task run() {
+	private void closed() {
 	    alive = false;
+	    for(Callback cb : cbs)
+		cb.closed();
+	}
+
+	public Task run() {
 	    int retries = 0;
 	    double last = 0;
 	    while(true) {
 		double now = Utils.rtime();
 		if(now - last > 0.5) {
-		    if(++retries > 5)
+		    if(++retries > 5) {
+			closed();
 			return(null);
+		    }
 		    send(new PMessage(Session.MSG_CLOSE));
 		    last = now;
 		}
@@ -542,8 +555,10 @@ public class Connection {
 		} catch(IOException e) {
 		    throw(new RuntimeException(e));
 		}
-		if(sawclose)
+		if(sawclose) {
+		    closed();
 		    return(null);
+		}
 	    }
 	}
     }

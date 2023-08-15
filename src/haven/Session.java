@@ -54,7 +54,7 @@ public class Session implements Resource.Resolver {
 
     static final int ackthresh = 30;
 
-    Connection conn;
+    public final Connection conn;
     public int connfailed = 0;
     public String connerror = null;
     LinkedList<PMessage> uimsgs = new LinkedList<PMessage>();
@@ -62,6 +62,7 @@ public class Session implements Resource.Resolver {
     final Map<Integer, CachedRes> rescache = new TreeMap<Integer, CachedRes>();
     public final Glob glob;
     public byte[] sesskey;
+    private boolean closed = false;
 
     @SuppressWarnings("serial")
     public static class MessageException extends RuntimeException {
@@ -187,14 +188,10 @@ public class Session implements Resource.Resolver {
 
     private void handlerel(PMessage msg) {
 	if((msg.type == RMessage.RMSG_NEWWDG) || (msg.type == RMessage.RMSG_WDGMSG) ||
-		  (msg.type == RMessage.RMSG_DSTWDG) || (msg.type == RMessage.RMSG_ADDWDG) ||
-		  (msg.type == RMessage.RMSG_WDGBAR)) {
-	    synchronized(uimsgs) {
-		uimsgs.add(msg);
-	    }
-	    synchronized(this) {
-		notifyAll();
-	    }
+	   (msg.type == RMessage.RMSG_DSTWDG) || (msg.type == RMessage.RMSG_ADDWDG) ||
+	   (msg.type == RMessage.RMSG_WDGBAR))
+	{
+	    postuimsg(msg);
 	} else if(msg.type == RMessage.RMSG_MAPIV) {
 	    glob.map.invalblob(msg);
 	} else if(msg.type == RMessage.RMSG_GLOBLOB) {
@@ -233,11 +230,24 @@ public class Session implements Resource.Resolver {
 	}
     }
 
+    private final Connection.Callback conncb = new Connection.Callback() {
+	    public void closed() {
+		synchronized(uimsgs) {
+		    closed = true;
+		    uimsgs.notifyAll();
+		}
+	    }
+
+	    public void handle(PMessage msg) {
+		handlerel(msg);
+	    }
+	};
+
     public Session(SocketAddress server, String username, byte[] cookie, Object... args) throws InterruptedException {
 	this.conn = new Connection(server, username);
 	this.username = username;
 	this.glob = new Glob(this);
-	conn.add(this::handlerel).glob(this.glob);
+	conn.add(conncb).glob(this.glob);
 	conn.connect(cookie, args);
     }
 
@@ -245,19 +255,26 @@ public class Session implements Resource.Resolver {
 	conn.close();
     }
 
-    public synchronized boolean alive() {
-	return(conn.alive());
-    }
-
     public void queuemsg(PMessage pmsg) {
 	conn.queuemsg(pmsg);
     }
 
-    public PMessage getuimsg() {
+    public void postuimsg(PMessage msg) {
 	synchronized(uimsgs) {
-	    if(uimsgs.size() == 0)
-		return(null);
-	    return(uimsgs.remove());
+	    uimsgs.add(msg);
+	    uimsgs.notifyAll();
+	}
+    }
+
+    public PMessage getuimsg() throws InterruptedException {
+	synchronized(uimsgs) {
+	    while(true) {
+		if(!uimsgs.isEmpty())
+		    return(uimsgs.remove());
+		if(closed)
+		    return(null);
+		uimsgs.wait();
+	    }
 	}
     }
 
