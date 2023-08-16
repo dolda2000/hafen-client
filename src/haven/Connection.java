@@ -232,7 +232,7 @@ public class Connection {
 				}
 			    }
 			}
-		    } catch(ClosedByInterruptException e) {
+		    } catch(ClosedByInterruptException | CancelledKeyException e) {
 			return(null);
 		    } catch(IOException e) {
 			result = Session.SESSERR_CONN;
@@ -503,7 +503,7 @@ public class Connection {
 			    handlemsg(msg);
 			}
 		    }
-		} catch(ClosedByInterruptException | InterruptedException e) {
+		} catch(ClosedByInterruptException | CancelledKeyException | InterruptedException e) {
 		    return(new Close(false));
 		} catch(IOException e) {
 		    new Warning(e, "connection error").issue();
@@ -548,8 +548,15 @@ public class Connection {
 			if((msg != null) && (msg.type == Session.MSG_CLOSE))
 			    sawclose = true;
 		    }
-		} catch(ClosedByInterruptException e) {
-		    continue;
+		} catch(ClosedByInterruptException | CancelledKeyException e) {
+		    /* XXX: I'm not really sure what causes
+		     * CancelledKeyExceptions to occur here, but they
+		     * seem to be somewhat common in practice. As far
+		     * as my understanding goes, the channel should
+		     * not be closed by interrupts so long as it is
+		     * non-blocking, and interrupting a selecting
+		     * thread shouldn't cause any channel closure. */
+		    return(null);
 		} catch(IOException e) {
 		    return(null);
 		}
