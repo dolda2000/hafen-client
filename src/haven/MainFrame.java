@@ -273,33 +273,15 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 		throw(new RuntimeException(e));
 	    }
 	}
-	Session sess;
 	try {
-	    sess = new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(Bootstrap.defserv.get()), Bootstrap.mainport.get()), username, cookie, args);
+	    return(new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(Bootstrap.defserv.get()), Bootstrap.mainport.get()), username, cookie, args));
+	} catch(Connection.SessionError e) {
+	    throw(new ConnectionError(e.getMessage()));
+	} catch(InterruptedException exc) {
+	    throw(new RuntimeException(exc));
 	} catch(IOException e) {
 	    throw(new RuntimeException(e));
 	}
-	boolean irq = false;
-	try {
-	    synchronized(sess) {
-		while(sess.state != "") {
-		    if(sess.connfailed != 0) {
-			if(sess.connerror != null)
-			    throw(new ConnectionError(sess.connerror));
-			throw(new ConnectionError(String.format("connection failure: %d", sess.connfailed)));
-		    }
-		    try {
-			sess.wait();
-		    } catch(InterruptedException e) {
-			irq = true;
-		    }
-		}
-	    }
-	} finally {
-	    if(irq)
-		Thread.currentThread().interrupt();
-	}
-	return(sess);
     }
 
     private void uiloop() throws InterruptedException {
