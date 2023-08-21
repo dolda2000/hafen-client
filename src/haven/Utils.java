@@ -434,6 +434,10 @@ public class Utils {
 	return(((Number)arg).doubleValue());
     }
 
+    public static boolean bv(Object arg) {
+	return(iv(arg) != 0);
+    }
+
     public static int sb(int n, int b) {
 	return((n << (32 - b)) >> (32 - b));
     }
