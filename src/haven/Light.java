@@ -142,7 +142,6 @@ public abstract class Light implements RenderTree.Node {
 
     public static final State.Slot<PhongLight> lighting = new State.Slot<>(State.Slot.Type.DRAW, PhongLight.class);
 
-    @Material.ResName("col")
     public static class PhongLight extends State {
 	public static final ShaderMacro vlight = prog -> new Phong(prog.vctx, new Uniform.Data<>(p -> p.get(lighting).material, lighting));
 	public static final ShaderMacro flight = prog -> new Phong(prog.fctx, new Uniform.Data<>(p -> p.get(lighting).material, lighting));
@@ -171,13 +170,20 @@ public abstract class Light implements RenderTree.Node {
 	    this(frag, defamb, defdif, defspc, defemi, 0.0f);
 	}
 
-	public PhongLight(Resource res, Object... args) {
-	    this(true, (Color)args[0], (Color)args[1], (Color)args[2], (Color)args[3], Utils.fv(args[4]));
-	}
-
 	public ShaderMacro shader() {return(shader);}
 
 	public void apply(Pipe p) {p.put(lighting, this);}
+    }
+
+    @Material.ResName("col")
+    public static class $col implements Material.ResCons {
+	public Pipe.Op cons(Resource res, Object... args) {
+	    if(args[0] instanceof FColor) {
+		return(new PhongLight(true, (FColor)args[0], (FColor)args[1], (FColor)args[2], (FColor)args[3], Utils.fv(args[4])));
+	    } else {
+		return(new PhongLight(true, (Color)args[0], (Color)args[1], (Color)args[2], (Color)args[3], Utils.fv(args[4])));
+	    }
+	}
     }
 
     @Material.ResName("light")
