@@ -696,9 +696,12 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    return;
 	}
 	if(!Utils.eq(nst, curstate)) {
-	    for(RenderTree.Slot slot : slots)
-		slot.ostate(nst);
-	    this.curstate = nst;
+	    try {
+		for(RenderTree.Slot slot : slots)
+		    slot.ostate(nst);
+		this.curstate = nst;
+	    } catch(Loading l) {
+	    }
 	}
     }
 
