@@ -415,6 +415,25 @@ public class OptWnd extends Window {
 			ui.audio.amb.setvolume(val / 1000.0);
 		    }
 		}, prev.pos("bl").adds(0, 2));
+	    prev = add(new Label("Audio latency"), prev.pos("bl").adds(0, 15));
+	    {
+		Label dpy = new Label("");
+		addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
+		       prev = new HSlider(UI.scale(160), 128, Math.round(Audio.fmt.getSampleRate() / 4), Audio.bufsize()) {
+			       protected void added() {
+				   dpy();
+			       }
+			       void dpy() {
+				   dpy.settext(Math.round((this.val * 1000) / Audio.fmt.getSampleRate()) + " ms");
+			       }
+			       public void changed() {
+				   Audio.bufsize(val, true);
+				   dpy();
+			       }
+			   }, dpy);
+		prev.settip("Sets the size of the audio buffer. Smaller sizes are better, " +
+			    "but larger sizes can fix issues with broken sound.", true);
+	    }
 	    add(new PButton(UI.scale(200), "Back", 27, back), prev.pos("bl").adds(0, 30));
 	    pack();
 	}
