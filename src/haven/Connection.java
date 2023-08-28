@@ -50,7 +50,13 @@ public class Connection {
 	this.username = username;
 	try {
 	    this.sk = DatagramChannel.open();
-	    sk.connect(server);
+	    try {
+		sk.connect(server);
+	    } catch(SocketException e) {
+		/* Apparently, connect() can throw, among other
+		 * things, NoRouteToHostException. */
+		throw(new SessionConnError());
+	    }
 	    sk.configureBlocking(false);
 
 	    sel = Selector.open();
