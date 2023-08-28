@@ -511,6 +511,8 @@ public class Connection {
 		    }
 		} catch(ClosedByInterruptException | CancelledKeyException | InterruptedException e) {
 		    return(new Close(false));
+		} catch(PortUnreachableException e) {
+		    return(null);
 		} catch(IOException e) {
 		    new Warning(e, "connection error").issue();
 		    return(null);
