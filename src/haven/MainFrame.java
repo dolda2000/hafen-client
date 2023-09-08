@@ -404,8 +404,10 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
     }
 
     public static void status(String state) {
-	if(status.get())
+	if(status.get()) {
 	    System.out.println("hafen:status:" + state);
+	    System.out.flush();
+	}
     }
 
     private static void main2(String[] args) {
