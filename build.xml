@@ -1,6 +1,7 @@
 <?xml version="1.0" ?>
 
 <project name="hafen" default="deftgt">
+  <property file="build.properties" />
   <property name="ext-lib-base" value="http://www.havenandhearth.com/java" />
 
   <target name="build-env">
