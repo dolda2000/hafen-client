@@ -1020,6 +1020,7 @@ public class Resource implements Serializable {
 	    id = buf.int16();
 	    o = cdec(buf);
 	    so = UI.scale(o);
+	    boolean hasscale = false;
 	    Map<String, byte[]> kvdata = new HashMap<>();
 	    if((fl & 4) != 0) {
 		while(true) {
@@ -1035,6 +1036,7 @@ public class Resource implements Serializable {
 			tsz = val.coord();
 		    } else if(key.equals("scale")) {
 			scale = val.float32();
+			hasscale = true;
 		    } else {
 			kvdata.put(key, data);
 		    }
@@ -1058,7 +1060,7 @@ public class Resource implements Serializable {
 		so = new Coord(Math.min(so.x, tsz.x - ssz.x), Math.min(so.y, sz.y - ssz.y));
 	    }
 	    scaled = PUtils.uiscale(img, ssz);
-	    if(false && (scale == 1) && (img.getColorModel().getNumComponents() >= 3))
+	    if(false && !hasscale && (img.getColorModel().getNumComponents() >= 3))
 		PUtils.monochromize(scaled, java.awt.Color.RED);
 	}
 
