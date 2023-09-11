@@ -1060,8 +1060,8 @@ public class Resource implements Serializable {
 		so = new Coord(Math.min(so.x, tsz.x - ssz.x), Math.min(so.y, sz.y - ssz.y));
 	    }
 	    scaled = PUtils.uiscale(img, ssz);
-	    if(false && !hasscale && (img.getColorModel().getNumComponents() >= 3))
-		PUtils.monochromize(scaled, java.awt.Color.RED);
+	    if(false && !hasscale)
+		scaled = PUtils.monochromize(PUtils.coercergba(scaled), java.awt.Color.RED);
 	}
 
 	public BufferedImage scaled() {
