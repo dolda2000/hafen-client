@@ -383,9 +383,10 @@ public class Connection {
 		if(ack == null) {
 		    objacks.put(id, ack = new ObjAck(id, fr, now));
 		} else {
-		    if(fr > ack.frame)
+		    if(fr > ack.frame) {
 			ack.frame = fr;
-		    ack.lrecv = now;
+			ack.lrecv = now;
+		    }
 		}
 	    }
 	}
