@@ -353,6 +353,8 @@ public class Connection {
 		long id = msg.uint32();
 		int fr = msg.int32();
 		OCache.ObjDelta delta = new OCache.ObjDelta(fl, id, fr);
+		if((fl & 1) != 0)
+		    delta.initframe = fr;
 		while(true) {
 		    int afl = 0, len, type = msg.uint8();
 		    if(type == OCache.OD_END)
@@ -372,10 +374,14 @@ public class Connection {
 			}
 		    }
 		    OCache.AttrDelta attr = new OCache.AttrDelta(delta, type, msg, len);
-		    if(type == OCache.OD_REM)
-			delta.rem = true;
-		    else
+		    if(type == OCache.OD_REM) {
+			if(attr.eom())
+			    delta.rem = true;
+			else
+			    delta.initframe = attr.int32();
+		    } else {
 			delta.attrs.add(attr);
+		    }
 		}
 		for(Callback cb : cbs)
 		    cb.handle(delta);
@@ -383,9 +389,10 @@ public class Connection {
 		if(ack == null) {
 		    objacks.put(id, ack = new ObjAck(id, fr, now));
 		} else {
-		    if(fr > ack.frame)
+		    if(fr > ack.frame) {
 			ack.frame = fr;
-		    ack.lrecv = now;
+			ack.lrecv = now;
+		    }
 		}
 	    }
 	}
