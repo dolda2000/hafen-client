@@ -32,6 +32,48 @@ import java.util.concurrent.locks.*;
 import haven.*;
 import static haven.Utils.eq;
 
+/*
+ * The management of slot state is moderately complex, so here's some
+ * documentation. The confusion between "state-slots" and "tree-slots"
+ * is unfortunate.
+ *
+ * - A tree-slot's state() function returns an Inheritance object.
+ *   Inheritance is a fairly simple data-class, which just implements
+ *   a GroupPipe with pre-calculated data. It is calculated from the
+ *   tree-slot's parent's Inheritance, and from the tree-slot's
+ *   dstate(), which is a DepInfo object, such that if the dstate() is
+ *   defined for a particular state-slot, the pipe for that state-slot
+ *   is this tree-slot's pdstate(), otherwise it whatever pipe the
+ *   parent's Inheritance has.
+ *
+ * - A tree-slot's dstate() function returns a DepInfo object. DepInfo
+ *   stores the definition mask and dependencies of the state
+ *   contributed by the tree-slot's own pipe-ops (ostate/cstate), the
+ *   definition-mask being the slots that were written when evaluating
+ *   the pipe-ops, and the dependencies being the slots that were read
+ *   from the parent state. It also records the actual states that
+ *   were written, even though it itself is not a Pipe.
+ *
+ * - The dstate is calculated using a DepPipe, which is the Pipe
+ *   passed when evaluating the tree-slot's pipe-ops. It records what
+ *   state-slots were written to during the evaluation, and which of
+ *   the parent state's that were read during the same evaluation.
+ *
+ * - A tree-slot's pdstate() function returns the actual pipe used for
+ *   the states written into DepInfos (ie. the concrete pipe, as
+ *   opposed to the GroupPipe, associated with that tree-slot). If the
+ *   tree-slot is state-locked, the returned pipe is a StaticPipe,
+ *   otherwise it is a TreeSlot.SlotPipe, either being created from
+ *   the tree-slot's dstate.
+ *   A SlotPipe simply returns the state recorded in the tree-slot's
+ *   DepInfo, however it also survives a change of dstates, preserving
+ *   its identity over time.
+ *   A StaticPipe also simply returns the state recorded in the
+ *   DepInfo it was created with, but since it is used for locked
+ *   states, there is no need for it to ensure use of the latest
+ *   updated dstate. It is also interned on the DepInfo, and so may be
+ *   shared by several tree-slots.
+ */
 public class RenderTree implements RenderList.Adapter, Disposable {
     private final Lock lock = new ReentrantLock();
     private final TreeSlot root;
