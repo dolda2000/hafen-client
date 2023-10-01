@@ -61,7 +61,7 @@ public class PUtils {
     }
 
     public static BufferedImage copy(BufferedImage src) {
-	return(rasterimg(copy(src.getRaster())));
+	return(new BufferedImage(src.getColorModel(), copy(src.getRaster()), src.isAlphaPremultiplied(), null));
     }
 
     public static BufferedImage rasterimg(WritableRaster img) {
