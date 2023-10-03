@@ -2210,7 +2210,6 @@ public class CharWnd extends Window {
 	    feps.update(args);
 	} else if(nm == "glut") {
 	    glut.update(args);
-	} else if(nm == "glut") {
 	} else if(nm == "ftrig") {
 	    feps.trig(ui.sess.getres((Integer)args[0]));
 	} else if(nm == "lvl") {

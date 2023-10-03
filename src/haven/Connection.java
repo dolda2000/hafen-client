@@ -355,6 +355,8 @@ public class Connection {
 		OCache.ObjDelta delta = new OCache.ObjDelta(fl, id, fr);
 		if((fl & 1) != 0)
 		    delta.initframe = fr;
+		if((fl & 8) != 0)
+		    delta.initframe = msg.int32();
 		while(true) {
 		    int afl = 0, len, type = msg.uint8();
 		    if(type == OCache.OD_END)
@@ -375,10 +377,7 @@ public class Connection {
 		    }
 		    OCache.AttrDelta attr = new OCache.AttrDelta(delta, type, msg, len);
 		    if(type == OCache.OD_REM) {
-			if(attr.eom())
-			    delta.rem = true;
-			else
-			    delta.initframe = attr.int32();
+			delta.rem = true;
 		    } else {
 			delta.attrs.add(attr);
 		    }
