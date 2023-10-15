@@ -200,7 +200,10 @@ public class Connection {
 	private Connect(byte[] cookie, Object... args) {
 	    msg = new PMessage(Session.MSG_SESS);
 	    msg.adduint16(2);
-	    msg.addstring("Hafen");
+	    String protocol = "Hafen";
+	    if(!Config.confid.equals(""))
+		protocol += "/" + Config.confid;
+	    msg.addstring(protocol);
 	    msg.adduint16(Session.PVER);
 	    msg.addstring(username);
 	    msg.adduint16(cookie.length);
