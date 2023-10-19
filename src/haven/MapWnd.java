@@ -258,9 +258,9 @@ public class MapWnd extends Window implements Console.Directory {
 	    smbtn.c = new Coord(sz.x - btnw, tobtn.c.y - UI.scale(5) - smbtn.sz.y);
 	    if(namesel != null) {
 		namesel.c = listf.c.add(0, listf.sz.y + UI.scale(10));
+		mremove.c = pmbtn.c.sub(0, mremove.sz.y + UI.scale(10));
 		if(colsel != null) {
 		    colsel.c = namesel.c.add(0, namesel.sz.y + UI.scale(10));
-		    mremove.c = colsel.c.add(0, colsel.sz.y + UI.scale(10));
 		}
 	    }
 	}
@@ -624,11 +624,11 @@ public class MapWnd extends Window implements Console.Directory {
 	    if(tool.namesel != null) {
 		ui.destroy(tool.namesel);
 		tool.namesel = null;
+		ui.destroy(mremove);
+		mremove = null;
 		if(colsel != null) {
 		    ui.destroy(colsel);
 		    colsel = null;
-		    ui.destroy(mremove);
-		    mremove = null;
 		}
 	    }
 
@@ -656,13 +656,13 @@ public class MapWnd extends Window implements Console.Directory {
 				view.file.update(mark);
 			    }
 			});
-		    mremove = tool.add(new Button(UI.scale(200), "Remove", false) {
-			    public void click() {
-				view.file.remove(mark);
-				change2(null);
-			    }
-			});
 		}
+		mremove = tool.add(new Button(UI.scale(200), "Remove", false) {
+			public void click() {
+			    view.file.remove(mark);
+			    change2(null);
+			}
+		    });
 		MapWnd.this.resize(csz());
 	    }
 	}
