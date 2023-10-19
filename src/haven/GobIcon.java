@@ -41,6 +41,7 @@ public class GobIcon extends GAttrib {
     private static final Map<Indir<Resource>, Image> cache = new WeakHashMap<>();
     public final Indir<Resource> res;
     private Image img;
+    public boolean markchecked;
 
     public GobIcon(Gob g, Indir<Resource> res) {
 	super(g);
@@ -54,6 +55,7 @@ public class GobIcon extends GAttrib {
 	public boolean rot;
 	public double ao;
 	public int z;
+	public boolean markable, defmark;
 
 	public Image(Resource res) {
 	    this.res = res;
@@ -81,6 +83,18 @@ public class GobIcon extends GAttrib {
 	    data = rimg.kvdata.get("mm/z");
 	    if(data != null)
 		this.z = Utils.intvard(data, 0);
+	    data = rimg.kvdata.get("mm/mark");
+	    if(data != null) {
+		int mark = Utils.intvard(data, 0);
+		if(mark == 1)
+		    markable = true;
+		else if(mark == 2)
+		    markable = defmark = true;
+	    }
+	}
+
+	public boolean markp() {
+	    return(defmark);
 	}
     }
 

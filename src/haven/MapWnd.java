@@ -363,6 +363,7 @@ public class MapWnd extends Window implements Console.Directory {
 		i.remove();
 	    }
 	}
+	view.markobjs();
 	if(visible && (markerseq != view.file.markerseq)) {
 	    if(view.file.lock.readLock().tryLock()) {
 		try {

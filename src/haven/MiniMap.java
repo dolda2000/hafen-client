@@ -715,6 +715,57 @@ public class MiniMap extends Widget {
 	return(null);
     }
 
+    public void markobjs() {
+	for(DisplayIcon icon : icons) {
+	    try {
+		if(icon.icon.markchecked)
+		    continue;
+		GobIcon.Image img = icon.icon.img();
+		Debug.dump(img.res, img.markp());
+		if(!img.markp()) {
+		    icon.icon.markchecked = true;
+		    continue;
+		}
+		Coord tc = icon.gob.rc.floor(tilesz);
+		MCache.Grid obg = ui.sess.glob.map.getgrid(tc.div(cmaps));
+		if(!file.lock.writeLock().tryLock())
+		    continue;
+		SMarker mid;
+		try {
+		    MapFile.GridInfo info = file.gridinfo.get(obg.id);
+		    if(info == null)
+			continue;
+		    Coord sc = tc.add(info.sc.sub(obg.gc).mul(cmaps));
+		    SMarker prev = null;
+		    for(Marker pm : file.markers) {
+			if(!(pm instanceof SMarker))
+			    continue;
+			SMarker ps = (SMarker)pm;
+			if(!ps.tc.equals(sc) || !ps.res.name.equals(img.res.name))
+			    continue;
+			prev = ps;
+			break;
+		    }
+		    if(prev == null) {
+			Resource.Tooltip tt = img.res.flayer(Resource.tooltip);
+			mid = new SMarker(info.seg, sc, tt.t, 0, new Resource.Spec(Resource.remote(), img.res.name, img.res.ver));
+			file.add(mid);
+		    } else {
+			mid = prev;
+		    }
+		} finally {
+		    file.lock.writeLock().unlock();
+		}
+		synchronized(icon.gob) {
+		    icon.gob.setattr(new MarkerID(icon.gob, mid));
+		}
+		icon.icon.markchecked = true;
+	    } catch(Loading l) {
+		continue;
+	    }
+	}
+    }
+
     public boolean filter(DisplayIcon icon) {
 	MarkerID iattr = icon.gob.getattr(MarkerID.class);
 	if((iattr != null) && (findmarker(iattr.mark) != null))
