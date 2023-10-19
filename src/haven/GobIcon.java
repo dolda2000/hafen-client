@@ -48,13 +48,16 @@ public class GobIcon extends GAttrib {
     }
 
     public static class Image {
+	public final Resource res;
 	public final Tex tex;
 	public Coord cc;
 	public boolean rot;
 	public double ao;
 	public int z;
 
-	public Image(Resource.Image rimg) {
+	public Image(Resource res) {
+	    this.res = res;
+	    Resource.Image rimg = res.layer(Resource.imgc);
 	    Tex tex = rimg.tex();
 	    if ((tex.sz().x > size) || (tex.sz().y > size)) {
 		BufferedImage buf = rimg.img;
@@ -86,7 +89,7 @@ public class GobIcon extends GAttrib {
 	    synchronized(cache) {
 		Image img = cache.get(res);
 		if(img == null) {
-		    img = new Image(res.get().layer(Resource.imgc));
+		    img = new Image(res.get());
 		    cache.put(res, img);
 		}
 		this.img = img;
