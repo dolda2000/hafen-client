@@ -296,18 +296,18 @@ public class MiniMap extends Widget {
     }
 
     public static class MarkerID extends GAttrib {
-	public final long id;
+	public final Marker mark;
 
-	public MarkerID(Gob gob, long id) {
+	public MarkerID(Gob gob, Marker mark) {
 	    super(gob);
-	    this.id = id;
+	    this.mark = mark;
 	}
 
-	public static Gob find(OCache oc, long id) {
+	public static Gob find(OCache oc, Marker mark) {
 	    synchronized(oc) {
 		for(Gob gob : oc) {
 		    MarkerID iattr = gob.getattr(MarkerID.class);
-		    if((iattr != null) && (iattr.id == id))
+		    if((iattr != null) && (iattr.mark == mark))
 			return(gob);
 		}
 	    }
@@ -691,12 +691,12 @@ public class MiniMap extends Widget {
 	return(null);
     }
 
-    public DisplayMarker findmarker(long id) {
+    public DisplayMarker findmarker(Marker rm) {
 	for(DisplayGrid dgrid : display) {
 	    if(dgrid == null)
 		continue;
 	    for(DisplayMarker mark : dgrid.markers(false)) {
-		if((mark.m instanceof SMarker) && (((SMarker)mark.m).oid == id))
+		if(mark.m == rm)
 		    return(mark);
 	    }
 	}
@@ -717,7 +717,7 @@ public class MiniMap extends Widget {
 
     public boolean filter(DisplayIcon icon) {
 	MarkerID iattr = icon.gob.getattr(MarkerID.class);
-	if((iattr != null) && (findmarker(iattr.id) != null))
+	if((iattr != null) && (findmarker(iattr.mark) != null))
 	    return(true);
 	return(false);
     }
