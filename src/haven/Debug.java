@@ -113,6 +113,32 @@ public class Debug {
 		    for(int o = 0; o < ba.length; o++)
 			System.err.print(ba[o] ? "\u22a4" : "\u22a5");
 		    System.err.print(']');
+		} else if(stuff[i] instanceof Collection) {
+		    Collection<?> c = (Collection<?>)stuff[i];
+		    System.err.print(c.getClass().getSimpleName());
+		    System.err.print('(');
+		    boolean f = true;
+		    for(Object o : c) {
+			if(!f)
+			    System.err.print(", ");
+			f = false;
+			dump_r(o);
+		    }
+		    System.err.print(')');
+		} else if(stuff[i] instanceof Map) {
+		    Map<?, ?> m = (Map<?, ?>)stuff[i];
+		    System.err.print(m.getClass().getSimpleName());
+		    System.err.print('(');
+		    boolean f = true;
+		    for(Map.Entry<?, ?> e : m.entrySet()) {
+			if(!f)
+			    System.err.print(", ");
+			f = false;
+			dump_r(e.getKey());
+			System.err.print(": ");
+			dump_r(e.getValue());
+		    }
+		    System.err.print(')');
 		} else {
 		    System.err.print(stuff[i]);
 		}

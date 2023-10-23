@@ -86,6 +86,8 @@ public class Utils {
     }
 
     public static Path path(String path) {
+	if(path == null)
+	    return(null);
 	return(FileSystems.getDefault().getPath(path));
     }
 
@@ -436,6 +438,48 @@ public class Utils {
 
     public static boolean bv(Object arg) {
 	return(iv(arg) != 0);
+    }
+
+    /* Nested format: [[KEY, VALUE], [KEY, VALUE], ...] */
+    public static <K, V> Map<K, V> mapdecn(Object ob, Class<K> kt, Class<V> vt) {
+	Map<K, V> ret = new HashMap<>();
+	Object[] enc = (Object[])ob;
+	for(Object sob : enc) {
+	    Object[] ent = (Object[])sob;
+	    ret.put(kt.cast(ent[0]), vt.cast(ent[1]));
+	}
+	return(ret);
+    }
+    public static Map<Object, Object> mapdecn(Object ob) {
+	return(mapdecn(ob, Object.class, Object.class));
+    }
+    public static Object mapencn(Map<?, ?> map) {
+	Object[] ret = new Object[map.size()];
+	int a = 0;
+	for(Map.Entry<?, ?> ent : map.entrySet())
+	    ret[a++] = new Object[] {ent.getKey(), ent.getValue()};
+	return(ret);
+    }
+
+    /* Flat format: [KEY, VALUE, KEY, VALUE, ...] */
+    public static <K, V> Map<K, V> mapdecf(Object ob, Class<K> kt, Class<V> vt) {
+	Map<K, V> ret = new HashMap<>();
+	Object[] enc = (Object[])ob;
+	for(int a = 0; a < enc.length - 1; a += 2)
+	    ret.put(kt.cast(enc[a]), vt.cast(enc[a + 1]));
+	return(ret);
+    }
+    public static Map<Object, Object> mapdecf(Object ob) {
+	return(mapdecf(ob, Object.class, Object.class));
+    }
+    public static Object mapencf(Map<?, ?> map) {
+	Object[] ret = new Object[map.size() * 2];
+	int a = 0;
+	for(Map.Entry<?, ?> ent : map.entrySet()) {
+	    ret[a + 0] = ent.getKey();
+	    ret[a + 1] = ent.getValue();
+	}
+	return(ret);
     }
 
     public static int sb(int n, int b) {

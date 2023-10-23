@@ -224,35 +224,30 @@ public class GobIcon extends GAttrib {
 	    this.tag = tag;
 	}
 
-	public void save(Message buf) {
-	    buf.addbytes(sig);
-	    buf.adduint8(2);
-	    buf.addint32(tag);
-	    buf.adduint8(notify ? 1 : 0);
+	public void save(Message dst) {
+	    Map<Object, Object> buf = new HashMap<>();
+	    buf.put("tag", tag);
+	    if(notify)
+		buf.put("notify", 1);
+	    List<Object> abuf = new ArrayList<>();
 	    for(Setting set : settings.values()) {
-		buf.addstring(set.res.name);
-		buf.adduint16(set.res.ver);
-		buf.adduint8((byte)'s');
-		buf.adduint8(set.show ? 1 : 0);
-		buf.adduint8((byte)'d');
-		buf.adduint8(set.defshow ? 1 : 0);
-		if(set.notify) {
-		    buf.adduint8((byte)'n');
-		    buf.adduint8(1);
-		}
-		if(set.resns != null) {
-		    buf.adduint8((byte)'R');
-		    buf.addstring(set.resns);
-		} else if(set.filens != null) {
-		    buf.adduint8((byte)'W');
-		    buf.addstring(set.filens.toString());
-		}
-		buf.adduint8(0);
+		Map<Object, Object> sbuf = new HashMap<>();
+		sbuf.put("res", new Object[] {set.res.name, set.res.ver});
+		if(set.show)    sbuf.put("s", 1);
+		if(set.defshow) sbuf.put("d", 1);
+		if(set.notify)  sbuf.put("n", 1);
+		if(set.resns != null)  sbuf.put("R", set.resns);
+		if(set.filens != null) sbuf.put("W", set.filens.toString());
+		abuf.add(Utils.mapencn(sbuf));
 	    }
-	    buf.addstring("");
+	    buf.put("icons", abuf.toArray(new Object[0]));
+
+	    dst.addbytes(sig);
+	    dst.adduint8(3);
+	    dst.addlist(Utils.mapencn(buf));
 	}
 
-	public static Settings load(Message buf) {
+	public static Settings loadold(Message buf) {
 	    if(!Arrays.equals(buf.bytes(sig.length), sig))
 		throw(new Message.FormatError("Invalid signature"));
 	    int ver = buf.uint8();
@@ -301,6 +296,35 @@ public class GobIcon extends GAttrib {
 		}
 		if(!setdef)
 		    set.defshow = set.show;
+		ret.settings.put(res.name, set);
+	    }
+	    return(ret);
+	}
+
+	public static Settings load(Message blob) {
+	    if(!Arrays.equals(blob.bytes(sig.length), sig))
+		throw(new Message.FormatError("Invalid signature"));
+	    int ver = blob.uint8();
+	    if((ver < 3) || (ver > 3))
+		throw(new Message.FormatError("Unknown version: " + ver));
+	    Settings ret = new Settings();
+	    Map<Object, Object> root = Utils.mapdecn(blob.tto());
+	    ret.tag = Utils.iv(root.get("tag"));
+	    ret.notify = Utils.bv(root.getOrDefault("notify", 0));
+	    for(Object eicon : (Object[])root.get("icons")) {
+		Map<Object, Object> icon = Utils.mapdecn(eicon);
+		Object[] eres = (Object[])icon.get("res");
+		Resource.Spec res = new Resource.Spec(null, (String)eres[0], Utils.iv(eres[1]));
+		Setting set = new Setting(res);
+		set.show    = Utils.bv(icon.getOrDefault("s", 0));
+		set.defshow = Utils.bv(icon.getOrDefault("d", 0));
+		set.notify  = Utils.bv(icon.getOrDefault("n", 0));
+		set.resns   = (String)icon.getOrDefault("R", null);
+		try {
+		    set.filens = Utils.path((String)icon.getOrDefault("W", null));
+		} catch(RuntimeException e) {
+		    new Warning(e, "could not read path").issue();
+		}
 		ret.settings.put(res.name, set);
 	    }
 	    return(ret);

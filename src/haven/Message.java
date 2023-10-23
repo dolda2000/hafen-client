@@ -261,87 +261,76 @@ public abstract class Message {
 	return(uint32() / 0x100000000p0);
     }
 
+    public Object tto(int type) {
+	switch(type) {
+	case T_INT:
+	    return(int32());
+	case T_STR:
+	    return(string());
+	case T_COORD:
+	    return(coord());
+	case T_UINT8:
+	    return(uint8());
+	case T_UINT16:
+	    return(uint16());
+	case T_INT8:
+	    return(int8());
+	case T_INT16:
+	    return(int16());
+	case T_COLOR:
+	    return(color());
+	case T_FCOLOR:
+	    return(fcolor());
+	case T_TTOL:
+	    return(list());
+	case T_NIL:
+	    return(null);
+	case T_UID:
+	    return(UID.of(int64()));
+	case T_BYTES:
+	    int len = uint8();
+	    if((len & 128) != 0)
+		len = int32();
+	    return(bytes(len));
+	case T_FLOAT8:
+	    return(MiniFloat.decode((byte)int8()));
+	case T_FLOAT16:
+	    return(HalfFloat.decode((short)int16()));
+	case T_FLOAT32:
+	    return(float32());
+	case T_FLOAT64:
+	    return(float64());
+	case T_FCOORD32:
+	    return(new Coord2d(float32(), float32()));
+	case T_FCOORD64:
+	    return(new Coord2d(float64(), float64()));
+	case T_SNORM8:  return( NormNumber.decsnorm8(this));
+	case T_SNORM16: return(NormNumber.decsnorm16(this));
+	case T_SNORM32: return(NormNumber.decsnorm32(this));
+	case T_UNORM8:  return( NormNumber.decunorm8(this));
+	case T_UNORM16: return(NormNumber.decunorm16(this));
+	case T_UNORM32: return(NormNumber.decunorm32(this));
+	case T_MNORM8:  return( NormNumber.decmnorm8(this));
+	case T_MNORM16: return(NormNumber.decmnorm16(this));
+	case T_MNORM32: return(NormNumber.decmnorm32(this));
+	default:
+	    throw(new FormatError("unknown type tag: " + type).msg(this));
+	}
+    }
+
+    public Object tto() {
+	return(tto(uint8()));
+    }
+
     public Object[] list() {
 	ArrayList<Object> ret = new ArrayList<Object>();
-	list: while(true) {
+	while(true) {
 	    if(eom())
 		break;
 	    int t = uint8();
-	    switch(t) {
-	    case T_END:
-		break list;
-	    case T_INT:
-		ret.add(int32());
+	    if(t == T_END)
 		break;
-	    case T_STR:
-		ret.add(string());
-		break;
-	    case T_COORD:
-		ret.add(coord());
-		break;
-	    case T_UINT8:
-		ret.add(uint8());
-		break;
-	    case T_UINT16:
-		ret.add(uint16());
-		break;
-	    case T_INT8:
-		ret.add(int8());
-		break;
-	    case T_INT16:
-		ret.add(int16());
-		break;
-	    case T_COLOR:
-		ret.add(color());
-		break;
-	    case T_FCOLOR:
-		ret.add(fcolor());
-		break;
-	    case T_TTOL:
-		ret.add(list());
-		break;
-	    case T_NIL:
-		ret.add(null);
-		break;
-	    case T_UID:
-		ret.add(UID.of(int64()));
-		break;
-	    case T_BYTES:
-		int len = uint8();
-		if((len & 128) != 0)
-		    len = int32();
-		ret.add(bytes(len));
-		break;
-	    case T_FLOAT8:
-		ret.add(MiniFloat.decode((byte)int8()));
-		break;
-	    case T_FLOAT16:
-		ret.add(HalfFloat.decode((short)int16()));
-		break;
-	    case T_FLOAT32:
-		ret.add(float32());
-		break;
-	    case T_FLOAT64:
-		ret.add(float64());
-		break;
-	    case T_FCOORD32:
-		ret.add(new Coord2d(float32(), float32()));
-		break;
-	    case T_FCOORD64:
-		ret.add(new Coord2d(float64(), float64()));
-		break;
-	    case T_SNORM8:  ret.add( NormNumber.decsnorm8(this)); break;
-	    case T_SNORM16: ret.add(NormNumber.decsnorm16(this)); break;
-	    case T_SNORM32: ret.add(NormNumber.decsnorm32(this)); break;
-	    case T_UNORM8:  ret.add( NormNumber.decunorm8(this)); break;
-	    case T_UNORM16: ret.add(NormNumber.decunorm16(this)); break;
-	    case T_UNORM32: ret.add(NormNumber.decunorm32(this)); break;
-	    case T_MNORM8:  ret.add( NormNumber.decmnorm8(this)); break;
-	    case T_MNORM16: ret.add(NormNumber.decmnorm16(this)); break;
-	    case T_MNORM32: ret.add(NormNumber.decmnorm32(this)); break;
-	    default:
-		throw(new FormatError("Encountered unknown type " + t + " in TTO list.").msg(this));
-	    }
+	    ret.add(tto(t));
 	}
 	return(ret.toArray());
     }
