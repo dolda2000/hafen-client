@@ -721,7 +721,6 @@ public class MiniMap extends Widget {
 		if(icon.icon.markchecked)
 		    continue;
 		GobIcon.Image img = icon.icon.img();
-		Debug.dump(img.res, img.markp());
 		if(!img.markp()) {
 		    icon.icon.markchecked = true;
 		    continue;
