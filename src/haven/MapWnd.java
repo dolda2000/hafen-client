@@ -363,6 +363,7 @@ public class MapWnd extends Window implements Console.Directory {
 		i.remove();
 	    }
 	}
+	view.markobjs();
 	if(visible && (markerseq != view.file.markerseq)) {
 	    if(view.file.lock.readLock().tryLock()) {
 		try {
@@ -747,7 +748,7 @@ public class MapWnd extends Window implements Console.Directory {
 			    if(info == null)
 				throw(new Loading());
 			    Coord sc = tc.add(info.sc.sub(obg.gc).mul(cmaps));
-			    SMarker prev = view.file.smarkers.get(oid);
+			    SMarker prev = view.file.smarker(res.name, info.seg, sc);
 			    if(prev == null) {
 				mark = new SMarker(info.seg, sc, rnm, oid, new Resource.Spec(Resource.remote(), res.name, res.ver));
 				view.file.add(mark);

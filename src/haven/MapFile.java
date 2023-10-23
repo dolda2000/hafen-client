@@ -103,7 +103,7 @@ public class MapFile {
 		for(int i = 0, no = data.int32(); i < no; i++) {
 		    Marker mark = loadmarker(data);
 		    file.markers.add(mark);
-		    if(mark instanceof SMarker)
+		    if((mark instanceof SMarker) && (((SMarker)mark).oid != 0))
 			file.smarkers.put(((SMarker)mark).oid, (SMarker)mark);
 		}
 	    } else {
@@ -343,7 +343,7 @@ public class MapFile {
 	lock.writeLock().lock();
 	try {
 	    if(markers.add(mark)) {
-		if(mark instanceof SMarker)
+		if((mark instanceof SMarker) && (((SMarker)mark).oid != 0))
 		    smarkers.put(((SMarker)mark).oid, (SMarker)mark);
 		defersave();
 		markerseq++;
@@ -357,7 +357,7 @@ public class MapFile {
 	lock.writeLock().lock();
 	try {
 	    if(markers.remove(mark)) {
-		if(mark instanceof SMarker)
+		if((mark instanceof SMarker) && (((SMarker)mark).oid != 0))
 		    smarkers.remove(((SMarker)mark).oid, (SMarker)mark);
 		defersave();
 		markerseq++;
@@ -377,6 +377,17 @@ public class MapFile {
 	} finally {
 	    lock.readLock().unlock();
 	}
+    }
+
+    public SMarker smarker(String resnm, long seg, Coord tc) {
+	for(Marker mark : markers) {
+	    if(!(mark instanceof SMarker))
+		continue;
+	    SMarker sm = (SMarker)mark;
+	    if(sm.res.name.equals(resnm) && (sm.seg == seg) && sm.tc.equals(tc))
+		return(sm);
+	}
+	return(null);
     }
 
     public static class TileInfo {
@@ -1881,7 +1892,7 @@ public class MapFile {
 		if((pm.getClass() != mark.getClass()) || !pm.nm.equals(mark.nm) || !pm.tc.equals(mark.tc))
 		    continue;
 		if(pm instanceof SMarker) {
-		    if(((SMarker)pm).oid != ((SMarker)mark).oid)
+		    if(!((SMarker)pm).res.name.equals(((SMarker)mark).res.name))
 			continue;
 		}
 		return(pm);
