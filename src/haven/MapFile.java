@@ -379,6 +379,17 @@ public class MapFile {
 	}
     }
 
+    public SMarker smarker(String resnm, long seg, Coord tc) {
+	for(Marker mark : markers) {
+	    if(!(mark instanceof SMarker))
+		continue;
+	    SMarker sm = (SMarker)mark;
+	    if(sm.res.name.equals(resnm) && (sm.seg == seg) && sm.tc.equals(tc))
+		return(sm);
+	}
+	return(null);
+    }
+
     public static class TileInfo {
 	public final Resource.Spec res;
 	public final int prio;
