@@ -41,7 +41,6 @@ public class GobIcon extends GAttrib {
     private static final Map<Indir<Resource>, Image> cache = new WeakHashMap<>();
     public final Indir<Resource> res;
     private Image img;
-    public boolean markchecked;
 
     public GobIcon(Gob g, Indir<Resource> res) {
 	super(g);
@@ -55,7 +54,6 @@ public class GobIcon extends GAttrib {
 	public boolean rot;
 	public double ao;
 	public int z;
-	public boolean markable, defmark;
 
 	public Image(Resource res) {
 	    this.res = res;
@@ -83,18 +81,6 @@ public class GobIcon extends GAttrib {
 	    data = rimg.kvdata.get("mm/z");
 	    if(data != null)
 		this.z = Utils.intvard(data, 0);
-	    data = rimg.kvdata.get("mm/mark");
-	    if(data != null) {
-		int mark = Utils.intvard(data, 0);
-		if(mark == 1)
-		    markable = true;
-		else if(mark == 2)
-		    markable = defmark = true;
-	    }
-	}
-
-	public boolean markp() {
-	    return(defmark);
 	}
     }
 
@@ -179,6 +165,7 @@ public class GobIcon extends GAttrib {
 	public boolean show, defshow, notify;
 	public String resns;
 	public Path filens;
+	public boolean mark, markset;
 
 	public Setting(Resource.Spec res) {
 	    this.res = res;
@@ -190,6 +177,30 @@ public class GobIcon extends GAttrib {
 	    if(filens != null)
 		return(notiflimit(wavnotif(filens), filens));
 	    return(null);
+	}
+
+	private Resource lres;
+	public Resource resource() {
+	    if(this.lres != null)
+		return(this.lres);
+	    return(this.lres = this.res.loadsaved(Resource.remote()));
+	}
+
+	private int markdata() {
+	    byte[] data = resource().flayer(Resource.imgc).kvdata.get("mm/mark");
+	    if(data == null)
+		return(0);
+	    return(Utils.intvard(data, 0));
+	}
+
+	public boolean getmarkablep() {
+	    return(markdata() != 0);
+	}
+
+	public boolean getmarkp() {
+	    if(markset)
+		return(mark);
+	    return(markdata() == 2);
 	}
     }
 
@@ -236,6 +247,7 @@ public class GobIcon extends GAttrib {
 		if(set.show)    sbuf.put("s", 1);
 		if(set.defshow) sbuf.put("d", 1);
 		if(set.notify)  sbuf.put("n", 1);
+		if(set.markset) sbuf.put("m", set.mark ? 1 : 0);
 		if(set.resns != null)  sbuf.put("R", set.resns);
 		if(set.filens != null) sbuf.put("W", set.filens.toString());
 		abuf.add(Utils.mapencn(sbuf));
@@ -320,6 +332,10 @@ public class GobIcon extends GAttrib {
 		set.defshow = Utils.bv(icon.getOrDefault("d", 0));
 		set.notify  = Utils.bv(icon.getOrDefault("n", 0));
 		set.resns   = (String)icon.getOrDefault("R", null);
+		if(icon.containsKey("m")) {
+		    set.markset = true;
+		    set.mark = Utils.bv(icon.get("m"));
+		}
 		try {
 		    set.filens = Utils.path((String)icon.getOrDefault("W", null));
 		} catch(RuntimeException e) {
@@ -398,7 +414,7 @@ public class GobIcon extends GAttrib {
 				sz.x - UI.scale(2) - (sz.y / 2), sz.y / 2, 0.5, 0.5);
 		    prev = adda(new CheckBox("").state(() -> icon.conf.show).set(andsave(val -> icon.conf.show = val)).settip("Display"),
 				prev.c.x - UI.scale(2) - (sz.y / 2), sz.y / 2, 0.5, 0.5);
-		    add(SListWidget.IconText.of(Coord.of(prev.c.x - UI.scale(2), sz.y), () -> item.conf.res.loadsaved(Resource.remote())), Coord.z);
+		    add(SListWidget.IconText.of(Coord.of(prev.c.x - UI.scale(2), sz.y), () -> item.conf.resource()), Coord.z);
 		}
 	    }
 
@@ -425,7 +441,7 @@ public class GobIcon extends GAttrib {
 		    for(Icon icon : ordered) {
 			if(icon.name == null) {
 			    try {
-				Resource.Tooltip name = icon.conf.res.loadsaved(Resource.remote()).layer(Resource.tooltip);
+				Resource.Tooltip name = icon.conf.resource().layer(Resource.tooltip);
 				icon.name = (name == null) ? "???" : name.t;
 			    } catch(Loading l) {
 				reorder = true;
@@ -487,7 +503,13 @@ public class GobIcon extends GAttrib {
 		    };
 		prev = add(new Label("Sound to play on notification:"), prev.pos("bl").adds(0, 5));
 		nb = new NotifBox(w - pb.sz.x - UI.scale(15));
-		addhl(prev.pos("bl").adds(0, 2), w, Frame.with(nb, false), pb);
+		addhl(prev.pos("bl").adds(0, 2), w, prev = Frame.with(nb, false), pb);
+		if(conf.getmarkablep()) {
+		    add(new CheckBox("Place permanent marker")
+			.state(() -> conf.markset ? conf.mark : conf.getmarkp())
+			.set(andsave(val -> {conf.markset = true; conf.mark = val;})),
+			prev.pos("bl").adds(0, 5));
+		}
 		pack();
 	    }
 

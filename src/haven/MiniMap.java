@@ -228,6 +228,7 @@ public class MiniMap extends Widget {
 	public final GobIcon icon;
 	public final Gob gob;
 	public final GobIcon.Image img;
+	public final GobIcon.Setting conf;
 	public Coord2d rc = null;
 	public Coord sc = null;
 	public double ang = 0.0;
@@ -236,6 +237,7 @@ public class MiniMap extends Widget {
 	public double stime;
 	public boolean notify;
 	private Consumer<UI> snotify;
+	private boolean markchecked;
 
 	public DisplayIcon(GobIcon icon, GobIcon.Setting conf) {
 	    this.icon = icon;
@@ -243,6 +245,7 @@ public class MiniMap extends Widget {
 	    this.img = icon.img();
 	    this.z = this.img.z;
 	    this.stime = Utils.rtime();
+	    this.conf = conf;
 	    if(this.notify = conf.notify)
 		this.snotify = conf.notification();
 	}
@@ -718,47 +721,44 @@ public class MiniMap extends Widget {
     public void markobjs() {
 	for(DisplayIcon icon : icons) {
 	    try {
-		if(icon.icon.markchecked)
+		if(icon.markchecked)
 		    continue;
 		GobIcon.Image img = icon.icon.img();
-		if(!img.markp()) {
-		    icon.icon.markchecked = true;
+		if(!icon.conf.getmarkablep()) {
+		    icon.markchecked = true;
 		    continue;
 		}
 		Coord tc = icon.gob.rc.floor(tilesz);
 		MCache.Grid obg = ui.sess.glob.map.getgrid(tc.div(cmaps));
 		if(!file.lock.writeLock().tryLock())
 		    continue;
-		SMarker mid;
+		SMarker mid = null;
 		try {
 		    MapFile.GridInfo info = file.gridinfo.get(obg.id);
 		    if(info == null)
 			continue;
 		    Coord sc = tc.add(info.sc.sub(obg.gc).mul(cmaps));
-		    SMarker prev = null;
-		    for(Marker pm : file.markers) {
-			if(!(pm instanceof SMarker))
-			    continue;
-			SMarker ps = (SMarker)pm;
-			if(!ps.tc.equals(sc) || !ps.res.name.equals(img.res.name))
-			    continue;
-			prev = ps;
-			break;
-		    }
+		    SMarker prev = file.smarker(img.res.name, info.seg, sc);
 		    if(prev == null) {
-			Resource.Tooltip tt = img.res.flayer(Resource.tooltip);
-			mid = new SMarker(info.seg, sc, tt.t, 0, new Resource.Spec(Resource.remote(), img.res.name, img.res.ver));
-			file.add(mid);
+			if(icon.conf.getmarkp()) {
+			    Resource.Tooltip tt = img.res.flayer(Resource.tooltip);
+			    mid = new SMarker(info.seg, sc, tt.t, 0, new Resource.Spec(Resource.remote(), img.res.name, img.res.ver));
+			    file.add(mid);
+			} else {
+			    mid = null;
+			}
 		    } else {
 			mid = prev;
 		    }
 		} finally {
 		    file.lock.writeLock().unlock();
 		}
-		synchronized(icon.gob) {
-		    icon.gob.setattr(new MarkerID(icon.gob, mid));
+		if(mid != null) {
+		    synchronized(icon.gob) {
+			icon.gob.setattr(new MarkerID(icon.gob, mid));
+		    }
 		}
-		icon.icon.markchecked = true;
+		icon.markchecked = true;
 	    } catch(Loading l) {
 		continue;
 	    }
