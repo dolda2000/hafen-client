@@ -86,6 +86,8 @@ public class Utils {
     }
 
     public static Path path(String path) {
+	if(path == null)
+	    return(null);
 	return(FileSystems.getDefault().getPath(path));
     }
 
