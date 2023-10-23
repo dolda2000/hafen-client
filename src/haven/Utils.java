@@ -448,7 +448,7 @@ public class Utils {
 	}
 	return(ret);
     }
-    public static Map<?, ?> mapdecn(Object ob) {
+    public static Map<Object, Object> mapdecn(Object ob) {
 	return(mapdecn(ob, Object.class, Object.class));
     }
     public static Object mapencn(Map<?, ?> map) {
@@ -467,7 +467,7 @@ public class Utils {
 	    ret.put(kt.cast(enc[a]), vt.cast(enc[a + 1]));
 	return(ret);
     }
-    public static Map<?, ?> mapdecf(Object ob) {
+    public static Map<Object, Object> mapdecf(Object ob) {
 	return(mapdecf(ob, Object.class, Object.class));
     }
     public static Object mapencf(Map<?, ?> map) {
