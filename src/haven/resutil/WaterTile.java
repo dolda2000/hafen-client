@@ -227,14 +227,14 @@ public class WaterTile extends Tiler {
 			    public Expression root() {
 				/*
 				return(mul(sub(mix(pick(texture2D(snrm.ref(),
-								  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
-								      mul(Cons.mod(MiscLib.time.ref(), l(2.0)), vec2(l(0.025), l(0.035))))),
+								  add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
+								      mul(Cons.mod(FrameInfo.time(), l(2.0)), vec2(l(0.025), l(0.035))))),
 							"rgb"),
 						   pick(texture2D(snrm.ref(),
-								  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
-								      mul(Cons.mod(add(MiscLib.time.ref(), l(1.0)), l(2.0)), vec2(l(-0.035), l(-0.025))))),
+								  add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
+								      mul(Cons.mod(add(FrameInfo.time(), l(1.0)), l(2.0)), vec2(l(-0.035), l(-0.025))))),
 							"rgb"),
-						   abs(sub(Cons.mod(MiscLib.time.ref(), l(2.0)), l(1.0)))),
+						   abs(sub(Cons.mod(FrameInfo.time(), l(2.0)), l(1.0)))),
 					       l(0.5)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
 				*/
 				return(mul(sub(mix(add(pick(texture2D(snrm.ref(),
@@ -257,18 +257,18 @@ public class WaterTile extends Tiler {
 					       l(0.5 * 2)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
 				/*
 				return(mul(sub(add(pick(texture2D(snrm.ref(),
-								  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
-								      mul(MiscLib.time.ref(), vec2(l(0.025), l(0.035))))),
+								  add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
+								      mul(FrameInfo.time(), vec2(l(0.025), l(0.035))))),
 							"rgb"),
 						   pick(texture2D(snrm.ref(),
-								  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
-								      mul(MiscLib.time.ref(), vec2(l(-0.035), l(-0.025))))),
+								  add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
+								      mul(FrameInfo.time(), vec2(l(-0.035), l(-0.025))))),
 							"rgb")),
 					       l(0.5 * 2)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
 				*/
 				/*
 				return(mul(sub(pick(texture2D(snrm.ref(),
-							      mul(pick(MiscLib.fragmapv.ref(), "st"), l(0.005))),
+							      mul(pick(Homo3D.fragmapv.ref(), "st"), l(0.005))),
 						    "rgb"),
 					       l(0.5)), vec3(l(1.0 / 32), l(1.0 / 32), l(1.0))));
 				*/
