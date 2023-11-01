@@ -43,6 +43,37 @@ public class WaterTile extends Tiler {
     private static final Pipe.Op bcol = new Light.PhongLight(true, new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0), 0);
     public final Tiler.MCons bottom;
 
+    public static class FlowData {
+	public final float[] xv, yv;
+	public final Scan vs;
+
+	public FlowData(MapMesh m) {
+	    MCache map = m.map;
+	    vs = new Scan(Coord.z, m.sz.add(1, 1));
+	    xv = new float[vs.l];
+	    yv = new float[vs.l];
+	    for(int y = 0; y <= m.sz.y; y++) {
+		for(int x = 0; x <= m.sz.x; x++) {
+		    double tz = map.getfz(m.ul.add(x, y));
+		    if(map.tiler(map.gettile(m.ul.add(x - 1, y))) instanceof WaterTile)
+			xv[vs.o(x, y)] += map.getfz(m.ul.add(x - 1, y)) - tz;
+		    if(map.tiler(map.gettile(m.ul.add(x + 1, y))) instanceof WaterTile)
+			xv[vs.o(x, y)] += tz - map.getfz(m.ul.add(x + 1, y));
+		    if(map.tiler(map.gettile(m.ul.add(x, y - 1))) instanceof WaterTile)
+			yv[vs.o(x, y)] -= map.getfz(m.ul.add(x, y - 1)) - tz;
+		    if(map.tiler(map.gettile(m.ul.add(x, y + 1))) instanceof WaterTile)
+			yv[vs.o(x, y)] -= tz - map.getfz(m.ul.add(x, y + 1));
+		}
+	    }
+	}
+
+	public Coord3f vel(Coord tc) {
+	    return(Coord3f.of(xv[vs.o(tc)], yv[vs.o(tc)], 0));
+	}
+
+	public static final MapMesh.DataID<FlowData> id = MapMesh.makeid(FlowData.class);
+    }
+
     public static class BottomData implements MapMesh.ConsHooks {
 	public final float[] depth;
 	public final Scan ds;
@@ -198,19 +229,42 @@ public class WaterTile extends Tiler {
 	}
     }
 
-    static final SamplerCube sky;
-    static final TexRender nrm;
-    static {
-	sky = new SamplerCube(new RUtils.CubeFill(() -> Resource.local().load("gfx/tiles/skycube").get().layer(Resource.imgc).img).mktex());
-	nrm = Resource.local().loadwait("gfx/tiles/wnrm").layer(TexR.class).tex();
-    }
+    static final SamplerCube sky = new SamplerCube(new RUtils.CubeFill(() -> Resource.local().load("gfx/tiles/skycube").get().layer(Resource.imgc).img).mktex());
+    static final TexRender nrm = Resource.local().loadwait("gfx/tiles/wnrm").layer(TexR.class).tex();
+    static final TexRender flow = Resource.local().loadwait("gfx/tiles/wnoise").layer(TexR.class).tex();
 
     private static final State.Slot<State> surfslot = new State.Slot<>(State.Slot.Type.DRAW, State.class);
     private static final Pipe.Op surfextra = Pipe.Op.compose(new States.DepthBias(2, 2), FragColor.blend(new BlendMode(BlendMode.Factor.ONE, BlendMode.Factor.ONE)));
     public static class BetterSurface extends State {
+	public static final Attribute[] vertv = new Attribute[4];
+	@SuppressWarnings("unchecked")
+	public static final MeshBuf.LayerID<MeshBuf.Vec2Layer>[] lvertv = new MeshBuf.LayerID[4];
+	public static final AutoVarying[] vvertv = new AutoVarying[4];
+	public static final AutoVarying[] vverti = new AutoVarying[4];
+	public static final Attribute vipol = new Attribute(Type.VEC2);
+	public static final MeshBuf.LayerID<MeshBuf.Vec2Layer> lvipol = new MeshBuf.V2LayerID(vipol);
 	private final Uniform ssky = new Uniform(Type.SAMPLERCUBE, p -> sky);
 	private final Uniform snrm = new Uniform(Type.SAMPLER2D, p -> nrm.img);
+	private final Uniform sflow = new Uniform(Type.SAMPLER2D, p -> flow.img);
 	private final Uniform icam = new Uniform(Type.MAT3, p -> Homo3D.camxf(p).transpose(), Homo3D.cam);
+
+	static {
+	    for(int I = 0; I < 4; I++) {
+		int i = I;
+		vertv[i] = new Attribute(Type.VEC2);
+		lvertv[i] = new MeshBuf.V2LayerID(vertv[i]);
+		vvertv[i] = new AutoVarying(Type.VEC2) {
+			public Expression root(VertexContext vctx) {
+			    return(vertv[i].ref());
+			}
+		    };
+		vverti[i] = new AutoVarying(Type.FLOAT) {
+			public Expression root(VertexContext vctx) {
+			    return(min(mul(length(vertv[i].ref()), l(0.04)), l(1.0)));
+			}
+		    };
+	    }
+	}
 
 	private BetterSurface() {
 	}
@@ -220,6 +274,9 @@ public class WaterTile extends Tiler {
 			protected Expression root(VertexContext vctx) {
 			    return(mul(icam.ref(), reflect(Homo3D.vertedir(vctx).depref(), Homo3D.get(vctx.prog).eyen.depref())));
 			}
+		    };
+		AutoVarying vvipol = new AutoVarying(Type.VEC2) {
+			protected Expression root(VertexContext vctx) {return(vipol.ref());}
 		    };
 		public void modify(final ProgramContext prog) {
 		    Homo3D.fragedir(prog.fctx);
@@ -281,12 +338,38 @@ public class WaterTile extends Tiler {
 				       mul(pick(m, "y"), vec3(l(0.0), l(1.0), l(0.0))),
 				       mul(pick(m, "z"), in)));
 			}, -10);
-		    FragColor.fragcol(prog.fctx).
-			mod(in -> mul(in, textureCube(ssky.ref(),
-						      neg(mul(icam.ref(), reflect(Homo3D.fragedir(prog.fctx).depref(),
-										  Homo3D.frageyen(prog.fctx).depref())))),
-				      l(0.4))
-			    , 0);
+		    FragColor.fragcol(prog.fctx)
+			.mod(in -> mul(in, textureCube(ssky.ref(),
+						       neg(mul(icam.ref(), reflect(Homo3D.fragedir(prog.fctx).depref(),
+										   Homo3D.frageyen(prog.fctx).depref())))),
+				       l(0.4)),
+			     0);
+		    double fres = 0.1;
+		    FragColor.fragcol(prog.fctx)
+			.mod(in -> add(in, vec4(vec3(mix(mix(mul(pick(texture2D(sflow.ref(),
+									    add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(fres), l(fres))),
+										mul(FrameInfo.time(), mul(vvertv[0].ref(), l(-0.1))))),
+								      "r"),
+								 vverti[0].ref()),
+							     mul(pick(texture2D(sflow.ref(),
+										add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(fres), l(fres))),
+										    mul(FrameInfo.time(), mul(vvertv[1].ref(), l(-0.1))))),
+								      "r"),
+								 vverti[1].ref()),
+							     pick(vvipol.ref(), "x")),
+							 mix(mul(pick(texture2D(sflow.ref(),
+										add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(fres), l(fres))),
+										    mul(FrameInfo.time(), mul(vvertv[3].ref(), l(-0.1))))),
+								      "r"),
+								 vverti[3].ref()),
+							     mul(pick(texture2D(sflow.ref(),
+										add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(fres), l(fres))),
+										    mul(FrameInfo.time(), mul(vvertv[2].ref(), l(-0.1))))),
+								      "r"),
+								 vverti[2].ref()),
+							     pick(vvipol.ref(), "x")),
+							 pick(vvipol.ref(), "y"))), l(1.0))),
+			     10);
 		}
 	    };
 
@@ -409,11 +492,22 @@ public class WaterTile extends Tiler {
 
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	MapMesh.MapSurface ms = m.data(MapMesh.gnd);
-	SModel smod = SModel.get(m, surfmat, VertFactory.id);
+	MeshBuf mesh = MapMesh.Model.get(m, surfmat);
 	MPart d = MPart.splitquad(lc, gc, ms.fortilea(lc), ms.split[ms.ts.o(lc)]);
-	MeshVertex[] v = smod.get(d);
-	smod.new Face(v[d.f[0]], v[d.f[1]], v[d.f[2]]);
-	smod.new Face(v[d.f[3]], v[d.f[4]], v[d.f[5]]);
+	MeshVertex[] mv = new MeshVertex[d.v.length];
+	MeshBuf.Vec2Layer[] vertv = new MeshBuf.Vec2Layer[4];
+	for(int i = 0; i < 4; i++)
+	    vertv[i] = mesh.layer(BetterSurface.lvertv[i]);
+	MeshBuf.Vec2Layer vipol = mesh.layer(BetterSurface.lvipol);
+	FlowData sd = m.data(FlowData.id);
+	for(int i = 0; i < d.v.length; i++) {
+	    mv[i] = new MeshVertex(mesh, d.v[i]);
+	    for(int o = 0; o < 4; o++)
+		vertv[o].set(mv[i], sd.vel(d.lc.add(Coord.uccw[o])));
+	    vipol.set(mv[i], Coord3f.of(d.tcx[i], d.tcy[i], 0));
+	}
+	for(int i = 0; i < d.f.length; i += 3)
+	    mesh.new Face(mv[d.f[i]], mv[d.f[i + 1]], mv[d.f[i + 2]]);
 	Bottom b = m.data(Bottom.id);
 	MPart bd = MPart.splitquad(lc, gc, b.fortilea(lc), ms.split[ms.ts.o(lc)]);
 	bd.mat = botmat;
