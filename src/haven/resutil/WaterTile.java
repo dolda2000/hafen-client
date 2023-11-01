@@ -37,6 +37,7 @@ import haven.Surface.Vertex;
 import haven.Surface.MeshVertex;
 import haven.render.TextureCube.SamplerCube;
 import static haven.render.sl.Cons.*;
+import static haven.Coord.upcw;
 
 public class WaterTile extends Tiler {
     public final int depth;
@@ -44,31 +45,129 @@ public class WaterTile extends Tiler {
     public final Tiler.MCons bottom;
 
     public static class FlowData {
+	public static final int I = 5;
 	public final float[] xv, yv;
-	public final Scan vs;
+	public final Scan vs, fs;
+
+	void dump(Scan s, float[] xd, float[] yd) {
+	    for(int y = 0; y < 25; y++) {
+		for(int x = 0; x < 25; x++) {
+		    System.err.printf("(%7.2f, %7.2f) ", xd[s.o(x, y)], yd[s.o(x, y)]);
+		}
+		System.err.println();
+	    }
+	    System.err.println();
+	}
 
 	public FlowData(MapMesh m) {
 	    MCache map = m.map;
 	    vs = new Scan(Coord.z, m.sz.add(1, 1));
-	    xv = new float[vs.l];
-	    yv = new float[vs.l];
-	    for(int y = 0; y <= m.sz.y; y++) {
-		for(int x = 0; x <= m.sz.x; x++) {
-		    double tz = map.getfz(m.ul.add(x, y));
-		    if(map.tiler(map.gettile(m.ul.add(x - 1, y))) instanceof WaterTile)
-			xv[vs.o(x, y)] += map.getfz(m.ul.add(x - 1, y)) - tz;
-		    if(map.tiler(map.gettile(m.ul.add(x + 1, y))) instanceof WaterTile)
-			xv[vs.o(x, y)] += tz - map.getfz(m.ul.add(x + 1, y));
-		    if(map.tiler(map.gettile(m.ul.add(x, y - 1))) instanceof WaterTile)
-			yv[vs.o(x, y)] -= map.getfz(m.ul.add(x, y - 1)) - tz;
-		    if(map.tiler(map.gettile(m.ul.add(x, y + 1))) instanceof WaterTile)
-			yv[vs.o(x, y)] -= tz - map.getfz(m.ul.add(x, y + 1));
+	    fs = new Scan(Coord.of(-I, -I), m.sz.add(1 + (I * 2), 1 + (I * 2)));
+	    Scan ts = new Scan(Coord.of(-I - 1, -I - 1), m.sz.add(3 + (I * 2), 3 + (I * 2)));
+	    float[] xs = new float[fs.l];
+	    float[] ys = new float[fs.l];
+	    boolean[] wv = new boolean[ts.l];
+	    for(int y = -I - 1; y < m.sz.y + I + 1; y++) {
+		for(int x = -I - 1; x < m.sz.x + I + 1; x++) {
+		    if(map.tiler(map.gettile(m.ul.add(x, y))) instanceof WaterTile) {
+			wv[ts.o(x + 0, y + 0)] = true;
+			wv[ts.o(x + 1, y + 0)] = true;
+			wv[ts.o(x + 1, y + 1)] = true;
+			wv[ts.o(x + 0, y + 1)] = true;
+		    }
 		}
 	    }
+	    for(int y = -I; y <= m.sz.y + I; y++) {
+		for(int x = -I; x <= m.sz.x + I; x++) {
+		    if(!wv[ts.o(x, y)])
+			continue;
+		    double tz = map.getfz(m.ul.add(x, y));
+		    if(wv[ts.o(x - 1, y)])
+			xs[fs.o(x, y)] += map.getfz(m.ul.add(x - 1, y)) - tz;
+		    if(wv[ts.o(x + 1, y)])
+			xs[fs.o(x, y)] += tz - map.getfz(m.ul.add(x + 1, y));
+		    if(wv[ts.o(x, y - 1)])
+			ys[fs.o(x, y)] += map.getfz(m.ul.add(x, y - 1)) - tz;
+		    if(wv[ts.o(x, y + 1)])
+			ys[fs.o(x, y)] += tz - map.getfz(m.ul.add(x, y + 1));
+		}
+	    }
+	    float[] pxv = new float[fs.l];
+	    float[] pyv = new float[fs.l];
+	    for(int i = 0; i < fs.l; i++) {
+		pxv[i] = xs[i] * 10;
+		pyv[i] = ys[i] * 10;
+	    }
+	    float[] cont = new float[8];
+	    float[] nxpcw = new float[8];
+	    float[] nypcw = new float[8];
+	    for(int v = 0; v < 8; v++) {
+		float l = (float)Math.hypot(upcw[v].x, upcw[v].y);
+		nxpcw[v] = upcw[v].x / l;
+		nypcw[v] = upcw[v].y / l;
+	    }
+	    for(int iter = 0; iter < I; iter++) {
+		float[] nxv = Arrays.copyOf(pxv, pxv.length);
+		float[] nyv = Arrays.copyOf(pyv, pyv.length);
+		for(int y = -I; y <= m.sz.y + I; y++) {
+		    for(int x = -I; x <= m.sz.x + I; x++) {
+			float xf = pxv[fs.o(x, y)];
+			float yf = pyv[fs.o(x, y)];
+			float fv = (float)Math.hypot(xf, yf);
+			float nxf = xf, nyf = yf;
+			if(fv > 0) {
+			    nxf /= fv; nyf /= fv;
+			}
+			for(int v = 0; v < 8; v++) {
+			    if(wv[ts.o(upcw[v].add(x, y))]) {
+				float c = (nxf * nxpcw[v]) + (nyf * nypcw[v]);
+				cont[v] = (float)Math.pow((c + 1.0f) * 0.5f, 2);
+			    } else {
+				cont[v] = 0;
+			    }
+			}
+			float cs = 0;
+			for(int v = 0; v < 8; v++)
+			    cs += cont[v];
+			if(cs > 0) {
+			    for(int v = 0; v < 8; v++) {
+				float PF = 0.25f;
+				int X = x + upcw[v].x, Y = y + upcw[v].y;
+				if((X >= -I) && (Y >= -I) && (X <= m.sz.x + I) && (Y <= m.sz.y + I)) {
+				    cont[v] /= cs;
+				    nxv[fs.o(X, Y)] += nxpcw[v] * cont[v] * fv * PF;
+				    nyv[fs.o(X, Y)] += nypcw[v] * cont[v] * fv * PF;
+				}
+			    }
+			}
+			/*
+			nxv[fs.o(x, y)] = xs[fs.o(x, y)];
+			nyv[fs.o(x, y)] = ys[fs.o(x, y)];
+			*/
+		    }
+		}
+		/*
+		if(m.ul.equals(-975, -925))
+		    dump(fs, pxv, pyv);
+		*/
+		pxv = nxv;
+		pyv = nyv;
+	    }
+	    xv = pxv;
+	    yv = pyv;
+	    for(int i = 0; i < xv.length; i++) {
+		xv[i] *= (1f / I);
+		yv[i] *= (1f / I);
+	    }
+	    /*
+	    Debug.dump(m.ul);
+	    if(m.ul.equals(-1000, -925))
+		Debug.dump(xv, yv);
+	    */
 	}
 
 	public Coord3f vel(Coord tc) {
-	    return(Coord3f.of(xv[vs.o(tc)], yv[vs.o(tc)], 0));
+	    return(Coord3f.of(xv[fs.o(tc)], -yv[fs.o(tc)], 0));
 	}
 
 	public static final MapMesh.DataID<FlowData> id = MapMesh.makeid(FlowData.class);
@@ -260,7 +359,7 @@ public class WaterTile extends Tiler {
 		    };
 		vverti[i] = new AutoVarying(Type.FLOAT) {
 			public Expression root(VertexContext vctx) {
-			    return(min(mul(length(vertv[i].ref()), l(0.04)), l(1.0)));
+			    return(min(mul(length(vertv[i].ref()), l(0.06)), l(1.0)));
 			}
 		    };
 	    }
