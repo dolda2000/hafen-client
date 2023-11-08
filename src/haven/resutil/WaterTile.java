@@ -151,7 +151,7 @@ public class WaterTile extends Tiler {
 			}
 		    }
 		}
-		float PF = 0.5f;
+		float PF = 0.75f;
 		for(int y = -I; y <= m.sz.y + I; y++) {
 		    for(int x = -I; x <= m.sz.x + I; x++) {
 			int O = fs.o(x, y);
