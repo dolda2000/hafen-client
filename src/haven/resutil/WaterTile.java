@@ -45,129 +45,154 @@ public class WaterTile extends Tiler {
     public final Tiler.MCons bottom;
 
     public static class FlowData {
-	public static final int I = 5;
+	public static final float[] nxpcw, nypcw;
+	public static final int I = 10;
 	public final float[] xv, yv;
-	public final Scan vs, fs;
+	public final Scan vs;
 
-	void dump(Scan s, float[] xd, float[] yd) {
-	    for(int y = 0; y < 25; y++) {
-		for(int x = 0; x < 25; x++) {
-		    System.err.printf("(%7.2f, %7.2f) ", xd[s.o(x, y)], yd[s.o(x, y)]);
-		}
-		System.err.println();
-	    }
-	    System.err.println();
-	}
-
-	public FlowData(MapMesh m) {
-	    MCache map = m.map;
-	    vs = new Scan(Coord.z, m.sz.add(1, 1));
-	    fs = new Scan(Coord.of(-I, -I), m.sz.add(1 + (I * 2), 1 + (I * 2)));
-	    Scan ts = new Scan(Coord.of(-I - 1, -I - 1), m.sz.add(3 + (I * 2), 3 + (I * 2)));
-	    float[] xs = new float[fs.l];
-	    float[] ys = new float[fs.l];
-	    boolean[] wv = new boolean[ts.l];
-	    for(int y = -I - 1; y < m.sz.y + I + 1; y++) {
-		for(int x = -I - 1; x < m.sz.x + I + 1; x++) {
-		    if(map.tiler(map.gettile(m.ul.add(x, y))) instanceof WaterTile) {
-			wv[ts.o(x + 0, y + 0)] = true;
-			wv[ts.o(x + 1, y + 0)] = true;
-			wv[ts.o(x + 1, y + 1)] = true;
-			wv[ts.o(x + 0, y + 1)] = true;
-		    }
-		}
-	    }
-	    for(int y = -I; y <= m.sz.y + I; y++) {
-		for(int x = -I; x <= m.sz.x + I; x++) {
-		    if(!wv[ts.o(x, y)])
-			continue;
-		    double tz = map.getfz(m.ul.add(x, y));
-		    if(wv[ts.o(x - 1, y)])
-			xs[fs.o(x, y)] += map.getfz(m.ul.add(x - 1, y)) - tz;
-		    if(wv[ts.o(x + 1, y)])
-			xs[fs.o(x, y)] += tz - map.getfz(m.ul.add(x + 1, y));
-		    if(wv[ts.o(x, y - 1)])
-			ys[fs.o(x, y)] += map.getfz(m.ul.add(x, y - 1)) - tz;
-		    if(wv[ts.o(x, y + 1)])
-			ys[fs.o(x, y)] += tz - map.getfz(m.ul.add(x, y + 1));
-		}
-	    }
-	    float[] pxv = new float[fs.l];
-	    float[] pyv = new float[fs.l];
-	    for(int i = 0; i < fs.l; i++) {
-		pxv[i] = xs[i] * 10;
-		pyv[i] = ys[i] * 10;
-	    }
-	    float[] cont = new float[8];
-	    float[] nxpcw = new float[8];
-	    float[] nypcw = new float[8];
+	static {
+	    nxpcw = new float[8];
+	    nypcw = new float[8];
 	    for(int v = 0; v < 8; v++) {
 		float l = (float)Math.hypot(upcw[v].x, upcw[v].y);
 		nxpcw[v] = upcw[v].x / l;
 		nypcw[v] = upcw[v].y / l;
 	    }
-	    for(int iter = 0; iter < I; iter++) {
-		float[] nxv = Arrays.copyOf(pxv, pxv.length);
-		float[] nyv = Arrays.copyOf(pyv, pyv.length);
-		for(int y = -I; y <= m.sz.y + I; y++) {
-		    for(int x = -I; x <= m.sz.x + I; x++) {
-			float xf = pxv[fs.o(x, y)];
-			float yf = pyv[fs.o(x, y)];
-			float fv = (float)Math.hypot(xf, yf);
-			float nxf = xf, nyf = yf;
-			if(fv > 0) {
-			    nxf /= fv; nyf /= fv;
+	}
+
+	public class Field {
+	    public final MapMesh m;
+	    public final MCache map;
+	    public final float[] xs, ys;
+	    public float[] xv, yv;
+	    public final boolean[] wv;
+	    public final Scan vs, fs, ts;
+
+	    public Field(MapMesh m) {
+		this.m = m;
+		map = m.map;
+		vs = new Scan(Coord.z, m.sz.add(1, 1));
+		fs = new Scan(Coord.of(-I, -I), m.sz.add(1 + (I * 2), 1 + (I * 2)));
+		ts = new Scan(Coord.of(-I - 1, -I - 1), m.sz.add(3 + (I * 2), 3 + (I * 2)));
+		xs = new float[fs.l];
+		ys = new float[fs.l];
+		xv = new float[fs.l];
+		yv = new float[fs.l];
+		wv = new boolean[ts.l];
+	    }
+
+	    public void calc() {
+		water();
+		slopes();
+		for(int i = 0; i < I; i++)
+		    iter();
+	    }
+
+	    private void water() {
+		for(int y = -I - 1; y < m.sz.y + I + 1; y++) {
+		    for(int x = -I - 1; x < m.sz.x + I + 1; x++) {
+			if(map.tiler(map.gettile(m.ul.add(x, y))) instanceof WaterTile) {
+			    wv[ts.o(x + 0, y + 0)] = true;
+			    wv[ts.o(x + 1, y + 0)] = true;
+			    wv[ts.o(x + 1, y + 1)] = true;
+			    wv[ts.o(x + 0, y + 1)] = true;
 			}
-			for(int v = 0; v < 8; v++) {
-			    if(wv[ts.o(upcw[v].add(x, y))]) {
-				float c = (nxf * nxpcw[v]) + (nyf * nypcw[v]);
-				cont[v] = (float)Math.pow((c + 1.0f) * 0.5f, 2);
-			    } else {
-				cont[v] = 0;
-			    }
-			}
-			float cs = 0;
-			for(int v = 0; v < 8; v++)
-			    cs += cont[v];
-			if(cs > 0) {
-			    for(int v = 0; v < 8; v++) {
-				float PF = 0.25f;
-				int X = x + upcw[v].x, Y = y + upcw[v].y;
-				if((X >= -I) && (Y >= -I) && (X <= m.sz.x + I) && (Y <= m.sz.y + I)) {
-				    cont[v] /= cs;
-				    nxv[fs.o(X, Y)] += nxpcw[v] * cont[v] * fv * PF;
-				    nyv[fs.o(X, Y)] += nypcw[v] * cont[v] * fv * PF;
-				}
-			    }
-			}
-			/*
-			nxv[fs.o(x, y)] = xs[fs.o(x, y)];
-			nyv[fs.o(x, y)] = ys[fs.o(x, y)];
-			*/
 		    }
 		}
-		/*
-		if(m.ul.equals(-975, -925))
-		    dump(fs, pxv, pyv);
-		*/
-		pxv = nxv;
-		pyv = nyv;
 	    }
-	    xv = pxv;
-	    yv = pyv;
-	    for(int i = 0; i < xv.length; i++) {
-		xv[i] *= (1f / I);
-		yv[i] *= (1f / I);
+
+	    private void slopes() {
+		for(int y = -I; y <= m.sz.y + I; y++) {
+		    for(int x = -I; x <= m.sz.x + I; x++) {
+			if(!wv[ts.o(x, y)])
+			    continue;
+			double tz = map.getfz(m.ul.add(x, y));
+			if(wv[ts.o(x - 1, y)])
+			    xs[fs.o(x, y)] += map.getfz(m.ul.add(x - 1, y)) - tz;
+			if(wv[ts.o(x + 1, y)])
+			    xs[fs.o(x, y)] += tz - map.getfz(m.ul.add(x + 1, y));
+			if(wv[ts.o(x, y - 1)])
+			    ys[fs.o(x, y)] += map.getfz(m.ul.add(x, y - 1)) - tz;
+			if(wv[ts.o(x, y + 1)])
+			    ys[fs.o(x, y)] += tz - map.getfz(m.ul.add(x, y + 1));
+		    }
+		}
 	    }
-	    /*
-	    Debug.dump(m.ul);
-	    if(m.ul.equals(-1000, -925))
-		Debug.dump(xv, yv);
-	    */
+
+	    private void iter() {
+		float[] nxv = new float[fs.l];
+		float[] nyv = new float[fs.l];
+		float[] p = new float[fs.l];
+		for(int y = -I; y <= m.sz.y + I; y++) {
+		    for(int x = -I; x <= m.sz.x + I; x++) {
+			int O = fs.o(x, y);
+			if(!wv[ts.o(x, y)])
+			    continue;
+			float xs = Utils.clip(this.xs[O], -25f, 25f), ys = Utils.clip(this.ys[O], -25f, 25f);
+			nxv[O] = xv[O] + xs;
+			nyv[O] = yv[O] + ys;
+			float nv = (float)Math.hypot(nxv[O], nyv[O]);
+			float mv = Math.max((float)Math.hypot(xs, ys),
+					    (float)Math.hypot(xv[O], yv[O]));
+			if(nv > mv) {
+			    nxv[O] *= mv / nv;
+			    nyv[O] *= mv / nv;
+			}
+		    }
+		}
+		for(int y = -I; y <= m.sz.y + I; y++) {
+		    for(int x = -I; x <= m.sz.x + I; x++) {
+			int O = fs.o(x, y);
+			if(!wv[ts.o(x, y)])
+			    continue;
+			for(int i = 0; i < 8; i++) {
+			    int X = x + upcw[i].x, Y = y + upcw[i].y;
+			    if(fs.has(X, Y) && wv[ts.o(X, Y)])
+				p[O] += (nxv[fs.o(X, Y)] * -nxpcw[i]) + (nyv[fs.o(X, Y)] * -nypcw[i]);
+			}
+		    }
+		}
+		float PF = 0.5f;
+		for(int y = -I; y <= m.sz.y + I; y++) {
+		    for(int x = -I; x <= m.sz.x + I; x++) {
+			int O = fs.o(x, y);
+			if(!wv[ts.o(x, y)])
+			    continue;
+			int n = 0;
+			for(int i = 0; i < 8; i++) {
+			    if(wv[ts.o(upcw[i].add(x, y))])
+				n++;
+			}
+			for(int i = 0; i < 8; i++) {
+			    int X = x + upcw[i].x, Y = y + upcw[i].y;
+			    if(fs.has(X, Y) && wv[ts.o(X, Y)]) {
+				nxv[fs.o(X, Y)] += p[O] * PF * nxpcw[i] / n;
+				nyv[fs.o(X, Y)] += p[O] * PF * nypcw[i] / n;
+			    }
+			}
+		    }
+		}
+		xv = nxv;
+		yv = nyv;
+	    }
+	}
+
+	public FlowData(MapMesh m) {
+	    Field f = new Field(m);
+	    f.calc();
+	    this.vs = f.vs;
+	    this.xv = new float[vs.l];
+	    this.yv = new float[vs.l];
+	    for(int y = 0; y <= m.sz.y; y++) {
+		for(int x = 0; x <= m.sz.x; x++) {
+		    xv[vs.o(x, y)] = f.xv[f.fs.o(x, y)];
+		    yv[vs.o(x, y)] = f.yv[f.fs.o(x, y)];
+		}
+	    }
 	}
 
 	public Coord3f vel(Coord tc) {
-	    return(Coord3f.of(xv[fs.o(tc)], -yv[fs.o(tc)], 0));
+	    return(Coord3f.of(xv[vs.o(tc)], -yv[vs.o(tc)], 0));
 	}
 
 	public static final MapMesh.DataID<FlowData> id = MapMesh.makeid(FlowData.class);
