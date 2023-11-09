@@ -354,7 +354,7 @@ public class WaterTile extends Tiler {
 
     static final SamplerCube sky = new SamplerCube(new RUtils.CubeFill(() -> Resource.local().load("gfx/tiles/skycube").get().layer(Resource.imgc).img).mktex());
     static final TexRender nrm = Resource.local().loadwait("gfx/tiles/wnrm").layer(TexR.class).tex();
-    static final TexRender flow = Resource.local().loadwait("gfx/tiles/wnoise").layer(TexR.class).tex();
+    static final TexRender flow = Resource.local().loadwait("gfx/tiles/wfoam").layer(TexR.class).tex();
 
     private static final State.Slot<State> surfslot = new State.Slot<>(State.Slot.Type.DRAW, State.class);
     private static final Pipe.Op surfextra = Pipe.Op.compose(new States.DepthBias(2, 2), new States.Facecull());
