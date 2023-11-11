@@ -159,7 +159,7 @@ public class Window extends Widget implements DTarget {
 		return(true);
 	    if(checkhit(c)) {
 		Window wnd = (Window)parent;
-		wnd.parent.setfocus(this);
+		wnd.parent.setfocus(wnd);
 		wnd.raise();
 		if(button == 1)
 		    wnd.drag(c);
