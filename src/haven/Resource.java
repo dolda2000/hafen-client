@@ -343,10 +343,10 @@ public class Resource implements Serializable {
 	}
 		
 	private URL encodeurl(URL raw) throws IOException {
-	    /* This is "kinda" ugly. It is, actually, how the Java
-	     * documentation recommend that it be done, though... */
+	    /* This is kinda crazy, but it is, actually, how the Java
+	     * documentation recommends that it be done... */
 	    try {
-		return(new URL(new URI(raw.getProtocol(), raw.getHost(), raw.getPath(), raw.getRef()).toASCIIString()));
+		return(new URI(new URI(raw.getProtocol(), raw.getHost(), raw.getPath(), raw.getRef()).toASCIIString()).toURL());
 	    } catch(URISyntaxException e) {
 		throw(new IOException(e));
 	    }
