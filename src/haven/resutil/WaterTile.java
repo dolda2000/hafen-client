@@ -452,7 +452,8 @@ public class WaterTile extends Tiler {
     public static final Pipe.Op surfmat = Pipe.Op.compose(new BaseSurface(), new Rendered.Order.Default(6000));
 
     private static final Pipe.Op foamextra = Pipe.Op.compose(surfextra, FragColor.blend(new BlendMode(BlendMode.Factor.ONE, BlendMode.Factor.ONE)),
-							     new Light.PhongLight(true, new Color(255, 255, 255), new Color(128, 128, 128), new Color(0, 0, 0), new Color(0, 0, 0), 0));
+							     new Light.PhongLight(true, new Color(255, 255, 255), new Color(128, 128, 128), new Color(0, 0, 0), new Color(0, 0, 0), 0),
+							     ShadowMap.maskshadow);
     public static class FoamSurface extends State {
 	public static final Attribute[] vertv = new Attribute[4];
 	@SuppressWarnings("unchecked")
