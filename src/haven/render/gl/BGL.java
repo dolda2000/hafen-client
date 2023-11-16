@@ -747,73 +747,121 @@ public abstract class BGL {
 
     public void glUniform1f(final ID location, final float v0) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniform1f(location.glid(), v0);}
+		public void run(GL gl) {
+		    int id = location.glid();
+		    if(id != -1)
+			gl.glUniform1f(id, v0);
+		}
 	    });
     }
 
     public void glUniform2f(final ID location, final float v0, final float v1) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniform2f(location.glid(), v0, v1);}
+		public void run(GL gl) {
+		    int id = location.glid();
+		    if(id != -1)
+			gl.glUniform2f(id, v0, v1);
+		}
 	    });
     }
 
     public void glUniform3f(final ID location, final float v0, final float v1, final float v2) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniform3f(location.glid(), v0, v1, v2);}
+		public void run(GL gl) {
+		    int id = location.glid();
+		    if(id != -1)
+			gl.glUniform3f(id, v0, v1, v2);
+		}
 	    });
     }
 
     public void glUniform3fv(final ID location, final int count, final float[] val) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniform3fv(location.glid(), count, val);}
+		public void run(GL gl) {
+		    int id = location.glid();
+		    if(id != -1)
+			gl.glUniform3fv(id, count, val);
+		}
 	    });
     }
 
     public void glUniform4f(final ID location, final float v0, final float v1, final float v2, final float v3) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniform4f(location.glid(), v0, v1, v2, v3);}
+		public void run(GL gl) {
+		    int id = location.glid();
+		    if(id != -1)
+			gl.glUniform4f(id, v0, v1, v2, v3);
+		}
 	    });
     }
 
     public void glUniform4fv(final ID location, final int count, final float[] val) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniform4fv(location.glid(), count, val);}
+		public void run(GL gl) {
+		    int id = location.glid();
+		    if(id != -1)
+			gl.glUniform4fv(id, count, val);
+		}
 	    });
     }
 
     public void glUniform1i(final ID location, final int v0) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniform1i(location.glid(), v0);}
+		public void run(GL gl) {
+		    int id = location.glid();
+		    if(id != -1)
+			gl.glUniform1i(id, v0);
+		}
 	    });
     }
 
     public void glUniform2i(final ID location, final int v0, final int v1) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniform2i(location.glid(), v0, v1);}
+		public void run(GL gl) {
+		    int id = location.glid();
+		    if(id != -1)
+			gl.glUniform2i(id, v0, v1);
+		}
 	    });
     }
 
     public void glUniform3i(final ID location, final int v0, final int v1, final int v2) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniform3i(location.glid(), v0, v1, v2);}
+		public void run(GL gl) {
+		    int id = location.glid();
+		    if(id != -1)
+			gl.glUniform3i(id, v0, v1, v2);
+		}
 	    });
     }
 
     public void glUniform4i(final ID location, final int v0, final int v1, final int v2, final int v3) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniform4i(location.glid(), v0, v1, v2, v3);}
+		public void run(GL gl) {
+		    int id = location.glid();
+		    if(id != -1)
+			gl.glUniform4i(id, v0, v1, v2, v3);
+		}
 	    });
     }
 
     public void glUniformMatrix3fv(final ID location, final int count, final boolean transpose, final float[] value) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniformMatrix3fv(location.glid(), count, transpose, value);}
+		public void run(GL gl) {
+		    int id = location.glid();
+		    if(id != -1)
+			gl.glUniformMatrix3fv(id, count, transpose, value);
+		}
 	    });
     }
 
     public void glUniformMatrix4fv(final ID location, final int count, final boolean transpose, final float[] value) {
 	add(new Command() {
-		public void run(GL gl) {gl.glUniformMatrix4fv(location.glid(), count, transpose, value);}
+		public void run(GL gl) {
+		    int id = location.glid();
+		    if(id != -1)
+			gl.glUniformMatrix4fv(id, count, transpose, value);
+		}
 	    });
     }
 
