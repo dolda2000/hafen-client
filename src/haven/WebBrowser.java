@@ -38,7 +38,7 @@ public abstract class WebBrowser {
     static {
 	Console.setscmd("browse", new Console.Command() {
 		public void run(Console cons, String[] args) throws Exception {
-		    WebBrowser.sshow(new java.net.URL(args[1]));
+		    WebBrowser.sshow(Utils.url(args[1]));
 		}
 	    });
     }
