@@ -151,9 +151,9 @@ public class BaseFileCache implements ResCache {
 	BaseFileCache ret;
 	try {
 	    if(cachebase.get() != null)
-		return(get(cachebase.get().toURI()));
+		return(get(cachebase.get()));
 	    if(Resource.resurl.get() != null)
-		return(get(Resource.resurl.get().toURI()));
+		return(get(Resource.resurl.get()));
 	    return(get("default"));
 	} catch(Exception e) {
 	    return(null);

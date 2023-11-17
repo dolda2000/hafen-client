@@ -29,7 +29,7 @@ package haven;
 import java.io.*;
 
 public interface ResCache {
-    public static final Config.Variable<java.net.URL> cachebase = Config.Variable.propu("haven.cachebase", "");
+    public static final Config.Variable<java.net.URI> cachebase = Config.Variable.propu("haven.cachebase", "");
     public OutputStream store(String name) throws IOException;
     public InputStream fetch(String name) throws IOException;
     
