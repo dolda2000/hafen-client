@@ -98,11 +98,7 @@ public class Config {
     public static final URL parseurl(String url) {
 	if((url == null) || url.equals(""))
 	    return(null);
-	try {
-	    return(new URL(url));
-	} catch(java.net.MalformedURLException e) {
-	    throw(new RuntimeException(e));
-	}
+	return(Utils.url(url));
     }
 
     public static void parsesvcaddr(String spec, Consumer<String> host, Consumer<Integer> port) {
@@ -247,8 +243,8 @@ public class Config {
 		break;
 	    case 'U':
 		try {
-		    Resource.resurl.set(new URL(opt.arg));
-		} catch(java.net.MalformedURLException e) {
+		    Resource.resurl.set(Utils.url(opt.arg));
+		} catch(IllegalArgumentException e) {
 		    System.err.println(e);
 		    System.exit(1);
 		}

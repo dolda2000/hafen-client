@@ -2038,8 +2038,8 @@ public class Resource implements Serializable {
 		break;
 	    case 'U':
 		try {
-		    url = new URL(opt.arg);
-		} catch(MalformedURLException e) {
+		    url = Utils.url(opt.arg);
+		} catch(IllegalArgumentException e) {
 		    System.err.println("get-code: malformed url: " + opt.arg);
 		    System.exit(1);
 		}
@@ -2149,8 +2149,8 @@ public class Resource implements Serializable {
 		break;
 	    case 'U':
 		try {
-		    url = new URL(opt.arg);
-		} catch(MalformedURLException e) {
+		    url = Utils.url(opt.arg);
+		} catch(IllegalArgumentException e) {
 		    System.err.println("get-code: malformed url: " + opt.arg);
 		    System.exit(1);
 		}

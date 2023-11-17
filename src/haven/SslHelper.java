@@ -146,7 +146,7 @@ public class SslHelper {
     }
 
     public HttpsURLConnection connect(String url) throws IOException {
-	return(connect(new URL(url)));
+	return(connect(Utils.url(url)));
     }
 
     public void ignoreName() {

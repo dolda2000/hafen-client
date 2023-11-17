@@ -44,8 +44,8 @@ public class HttpStatus extends HackThread {
 
     private static URL defsrc(String host) {
 	try {
-	    return(new URL("http", host, "/mt/srv-mon"));
-	} catch(MalformedURLException e) {
+	    return(new URI("http", host, "/mt/srv-mon", null).toURL());
+	} catch(URISyntaxException | MalformedURLException e) {
 	    throw(new RuntimeException(e));
 	}
     }

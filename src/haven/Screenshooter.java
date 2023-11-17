@@ -295,8 +295,8 @@ public class Screenshooter extends Window {
 		    throw(new IOException("Unexpected type of reply from server"));
 		byte[] b = Utils.readall(in);
 		try {
-		    result = new URL(new String(b, "utf-8"));
-		} catch(MalformedURLException e) {
+		    result = Utils.url(new String(b, "utf-8"));
+		} catch(IllegalArgumentException e) {
 		    throw((IOException)new IOException("Unexpected reply from server").initCause(e));
 		}
 	    } finally {

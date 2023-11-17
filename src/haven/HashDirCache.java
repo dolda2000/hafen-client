@@ -96,11 +96,7 @@ public class HashDirCache implements ResCache {
     }
 
     private static URI mkurn(String id) {
-	try {
-	    return(new URI("urn:haven-cache:" + id));
-	} catch(java.net.URISyntaxException e) {
-	    throw(new IllegalArgumentException(id));
-	}
+	return(Utils.uri("urn:haven-cache:" + id));
     }
 
     public static HashDirCache get(String id) {
