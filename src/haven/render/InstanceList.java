@@ -40,7 +40,8 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
     private final Map<Slot<? extends Rendered>, Object> bypassed = new IdentityHashMap<>(), invalid = new IdentityHashMap<>();
     private final Map<Slot<? extends Rendered>, InstKey> uslotmap = new IdentityHashMap<>();
     private final Map<Slot<? extends Rendered>, InstancedSlot.Instance> islotmap = new IdentityHashMap<>();
-    private final Map<Pipe, Object> pipemap = new IdentityHashMap<>();
+    private final Map<Pipe, Object> ipipemap = new IdentityHashMap<>();
+    private final Map<Pipe, Object> upipemap = new IdentityHashMap<>();
     private final Set<InstancedSlot> dirty = new HashSet<>();
     private int nbypass, ninvalid, nuinst, nbatches, ninst;
 
@@ -249,14 +250,14 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 		    if(gn < 0)
 			continue;
 		    Pipe p = st.group(gn);
-		    Object cur = pipemap.get(p);
+		    Object cur = ipipemap.get(p);
 		    if(cur == null) {
-			pipemap.put(p, this);
+			ipipemap.put(p, this);
 		    } else if(cur instanceof Instance) {
 			List<Instance> nl = new ArrayList<>(2);
 			nl.add((Instance)cur);
 			nl.add(this);
-			pipemap.put(p, nl);
+			ipipemap.put(p, nl);
 		    } else if(cur instanceof List) {
 			List<Instance> ls = (List<Instance>)cur;
 			ls.add(this);
@@ -273,16 +274,16 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 		    Pipe p = rpipes[i];
 		    if(p == null)
 			continue;
-		    Object cur = pipemap.get(p);
+		    Object cur = ipipemap.get(p);
 		    if(cur == null) {
 			throw(new AssertionError());
 		    } else if(cur == this) {
-			pipemap.remove(p);
+			ipipemap.remove(p);
 		    } else if(cur instanceof List) {
 			List<Instance> ls = (List<Instance>)cur;
 			ls.remove(this);
 			if(ls.size() < 2)
-			    pipemap.put(p, ls.get(0));
+			    ipipemap.put(p, ls.get(0));
 		    } else {
 			throw(new AssertionError());
 		    }
@@ -489,6 +490,83 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 	}
     }
 
+    private class Sole {
+	final InstKey key;
+	final Slot<? extends Rendered> slot;
+	final Pipe[] rpipes;
+
+	Sole(InstKey key, Slot<? extends Rendered> slot) {
+	    this.key = key;
+	    this.slot = slot;
+	    this.rpipes = new Pipe[key.instids.length];
+	}
+
+	@SuppressWarnings("unchecked")
+	void register() {
+	    GroupPipe st = slot.state();
+	    int nst = st.nstates();
+	    int[] ism = key.instidmap;
+	    for(int i = 0; (i < ism.length) && (ism[i] < nst); i++) {
+		int gn = st.gstate(ism[i]);
+		if(gn < 0)
+		    continue;
+		Pipe p = st.group(gn);
+		Object cur = upipemap.get(p);
+		if(cur == null) {
+		    upipemap.put(p, this);
+		} else if(cur instanceof Sole) {
+		    List<Sole> nl = new ArrayList<>(2);
+		    nl.add((Sole)cur);
+		    nl.add(this);
+		    upipemap.put(p, nl);
+		} else if(cur instanceof List) {
+		    List<Sole> ls = (List<Sole>)cur;
+		    ls.add(this);
+		} else {
+		    throw(new AssertionError());
+		}
+		rpipes[i] = p;
+	    }
+	}
+
+	@SuppressWarnings("unchecked")
+	void unregister() {
+	    for(int i = 0; i < rpipes.length; i++) {
+		Pipe p = rpipes[i];
+		if(p == null)
+		    continue;
+		Object cur = upipemap.get(p);
+		if(cur == null) {
+		    throw(new AssertionError());
+		} else if(cur == this) {
+		    upipemap.remove(p);
+		} else if(cur instanceof List) {
+		    List<Sole> ls = (List<Sole>)cur;
+		    ls.remove(this);
+		    if(ls.size() < 2)
+			upipemap.put(p, ls.get(0));
+		} else {
+		    throw(new AssertionError());
+		}
+	    }
+	}
+
+	void update(Pipe group, int[] mask) {
+	    for(int i = 0; i < key.instids.length; i++) {
+		for(int o = 0; o < mask.length; o++) {
+		    if(mask[o] == key.instidmap[i]) {
+			if(instid0(group, State.Slot.byid(key.instidmap[i])) != key.instids[i]) {
+			    InstanceList.this.remove(slot);
+			    InstanceList.this.add(slot);
+			    return;
+			}
+			break;
+		    }
+		}
+	    }
+	}
+    }
+
     private void cladd(Slot<? extends Rendered> slot) {
 	synchronized(clients) {
 	    clients.forEach(cl -> cl.add(slot));
@@ -527,8 +605,10 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 		cladd(slot);
 	    if(previnst != null)
 		remove0(previnst, islotmap.get(slot), true);
-	    instreg.put(key, slot);
+	    Sole reg = new Sole(key, slot);
+	    instreg.put(key, reg);
 	    uslotmap.put(slot, key);
+	    reg.register();
 	    nuinst++;
 	} else if(cur instanceof InstancedSlot) {
 	    InstancedSlot curbat = (InstancedSlot)cur;
@@ -542,8 +622,8 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 		remove0(previnst, prev, false);
 	    uslotmap.put(slot, curbat.key);
 	    ninst++;
-	} else if(cur instanceof Slot) {
-	    Slot<? extends Rendered> cs = (Slot<? extends Rendered>)cur;
+	} else if(cur instanceof Sole) {
+	    Slot<? extends Rendered> cs = ((Sole)cur).slot;
 	    InstKey curkey = uslotmap.get(cs);
 	    if(!curkey.equals(key))
 		throw(new AssertionError());
@@ -562,6 +642,7 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 	    instreg.put(curkey, ni);
 	    uslotmap.put(slot, curkey);
 	    ni.register();
+	    ((Sole)cur).unregister();
 	    nuinst--; nbatches++; ninst += 2;
 	} else {
 	    throw(new AssertionError());
@@ -642,11 +723,13 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 	    } else if(cur instanceof InstancedSlot) {
 		InstancedSlot b = (InstancedSlot)cur;
 		remove0((InstancedSlot)cur, islotmap.get(slot), true);
-	    } else if(cur instanceof Slot) {
-		if(cur != slot)
+	    } else if(cur instanceof Sole) {
+		Sole uinst = (Sole)cur;
+		if(uinst.slot != slot)
 		    throw(new IllegalStateException("removing non-present slot"));
 		clremove(slot);
 		instreg.remove(key);
+		uinst.unregister();
 		nuinst--;
 	    } else {
 		throw(new AssertionError());
@@ -691,8 +774,9 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 		} else {
 		    add0(slot, key, false, b);
 		}
-	    } else if(prev instanceof Slot) {
-		if(prev != slot)
+	    } else if(prev instanceof Sole) {
+		Sole uinst = (Sole)prev;
+		if(uinst.slot != slot)
 		    throw(new IllegalStateException("updating non-present slot"));
 		if(key.equals(prevkey)) {
 		    clupdate(slot);
@@ -700,12 +784,14 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 		    clupdate(slot);
 		    instreg.remove(prevkey);
 		    uslotmap.remove(slot);
+		    uinst.unregister();
 		    invalid.put(slot, Boolean.TRUE);
 		    nuinst--;
 		    ninvalid++;
 		} else {
 		    add0(slot, key, true, null);
 		    instreg.remove(prevkey);
+		    uinst.unregister();
 		    nuinst--;
 		}
 	    } else {
@@ -718,12 +804,19 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
     public void update(Pipe group, int[] mask) {
 	clupdate(group, mask);
 	synchronized(this) {
-	    Object insts = pipemap.get(group);
+	    Object insts = ipipemap.get(group);
 	    if(insts instanceof InstancedSlot.Instance) {
 		((InstancedSlot.Instance)insts).update(group, mask);
 	    } else if(insts instanceof List) {
 		for(InstancedSlot.Instance inst : new ArrayList<>((List<InstancedSlot.Instance>)insts))
 		    inst.update(group, mask);
+	    }
+	    Object lone = upipemap.get(group);
+	    if(lone instanceof Sole) {
+		((Sole)lone).update(group, mask);
+	    } else if(lone instanceof List) {
+		for(Sole slot : new ArrayList<>((List<Sole>)lone))
+		    slot.update(group, mask);
 	    }
 	}
     }
@@ -747,7 +840,13 @@ public class InstanceList implements RenderList<Rendered>, RenderList.Adapter, D
 		public Iterator<Slot<?>> iterator() {
 		    Collection<Slot<?>> ret = new ArrayList<>();
 		    for(Object slot : instreg.values()) {
-			ret.add((Slot<?>)slot);
+			if(slot instanceof Sole) {
+			    ret.add(((Sole)slot).slot);
+			} else if(slot instanceof Slot) {
+			    ret.add((Slot<?>)slot);
+			} else {
+			    throw(new AssertionError());
+			}
 		    }
 		    for(Slot<?> slot : master.slots()) {
 			if(!uslotmap.containsKey(slot))

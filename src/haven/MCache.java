@@ -275,6 +275,7 @@ public class MCache implements MapSource {
 	public boolean ol[][];
 	public long id;
 	public int seq = -1;
+	public boolean removed = false;
 	private int olseq = -1;
 	private final Cut cuts[];
 
@@ -503,7 +504,7 @@ public class MCache implements MapSource {
 	    }
 
 	    for(int i = 0; i < nids; i++) {
-		Tileset.Flavor.Terrain trn = new Tileset.Flavor.Terrain(this, ids[i], garea, area.ul.sub(garea.ul));
+		Tileset.Flavor.Terrain trn = new Tileset.Flavor.Terrain(this, MCache.this, ids[i], garea, area.ul.sub(garea.ul));
 		Tileset set = trn.tileset(ids[i]);
 		int o = 0;
 		for(Indir<Tileset.Flavor> flp : set.flavors) {
@@ -605,6 +606,7 @@ public class MCache implements MapSource {
 	}
 
 	public void dispose() {
+	    removed = true;
 	    for(Cut cut : cuts)
 		cut.dispose();
 	}
@@ -835,17 +837,23 @@ public class MCache implements MapSource {
 	}
     }
 
-    private Grid cached = null;
+    /* Apparently, the values of thread-locals don't necessarily
+     * become unreachable just because the thread-local itself becomes
+     * unreachable, so keep the grid in a weak reference. */
+    private final ThreadLocal<Reference<Grid>> cached = new ThreadLocal<>();
     public Grid getgrid(Coord gc) {
+	Reference<Grid> ref = cached.get();
+	Grid ret = (ref == null) ? null : ref.get();
+	if((ret != null) && ret.gc.equals(gc) && !ret.removed)
+	    return(ret);
 	synchronized(grids) {
-	    if((cached == null) || !cached.gc.equals(gc)) {
-		cached = grids.get(gc);
-		if(cached == null) {
-		    request(gc);
-		    throw(new LoadingMap(this, gc));
-		}
+	    ret = grids.get(gc);
+	    if(ret == null) {
+		request(gc);
+		throw(new LoadingMap(this, gc));
 	    }
-	    return(cached);
+	    cached.set(new WeakReference<>(ret));
+	    return(ret);
 	}
     }
 
@@ -995,10 +1003,8 @@ public class MCache implements MapSource {
 	    synchronized(req) {
 		if(req.containsKey(c)) {
 		    Grid g = grids.get(c);
-		    if(g == null) {
+		    if(g == null)
 			grids.put(c, g = new Grid(c));
-			cached = null;
-		    }
 		    g.fill(msg);
 		    req.remove(c);
 		    olseq++;
@@ -1093,7 +1099,6 @@ public class MCache implements MapSource {
 		    g.dispose();
 		grids.clear();
 		req.clear();
-		cached = null;
 	    }
 	    gridwait.wnotify();
 	}
@@ -1116,7 +1121,6 @@ public class MCache implements MapSource {
 		    if((gc.x < ul.x) || (gc.y < ul.y) || (gc.x > lr.x) || (gc.y > lr.y))
 			i.remove();
 		}
-		cached = null;
 	    }
 	    gridwait.wnotify();
 	}

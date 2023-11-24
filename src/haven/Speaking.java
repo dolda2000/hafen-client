@@ -67,7 +67,7 @@ public class Speaking extends GAttrib implements RenderTree.Node, PView.Render2D
 
     @OCache.DeltaType(OCache.OD_SPEECH)
     public static class $speak implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    float zo = msg.int16() / 100.0f;
 	    String text = msg.string();
 	    if(text.length() < 1) {

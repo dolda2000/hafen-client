@@ -58,7 +58,7 @@ public class StreamOut {
 	    main: while(running) {
 		ByteBuffer data;
 		synchronized(this) {
-		    if(obuf == null) {
+		    while(obuf == null) {
 			try {
 			    double now = Utils.rtime();
 			    if(now - last > 5) {

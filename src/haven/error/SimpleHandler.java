@@ -24,26 +24,19 @@
  *  Boston, MA 02111-1307 USA
  */
 
-package haven;
+package haven.error;
 
-public class Lumin extends GAttrib {
-    Coord off;
-    int sz, str;
-	
-    public Lumin(Gob g, Coord off, int sz, int str) {
-	super(g);
-	this.off = off;
-	this.sz = sz;
-	this.str = str;
+public class SimpleHandler extends ThreadGroup {
+    private final boolean dump;
+
+    public SimpleHandler(String name, boolean dump) {
+	super(name);
+	this.dump = dump;
     }
 
-    @OCache.DeltaType(OCache.OD_LUMIN)
-    public static class $lumin implements OCache.Delta {
-	public void apply(Gob g, OCache.AttrDelta msg) {
-	    Coord off = msg.coord();
-	    int sz = msg.uint16();
-	    int str = msg.uint8();
-	    g.setattr(new Lumin(g, off, sz, str));
-	}
+    public void uncaughtException(Thread t, Throwable e) {
+	if(dump)
+	    e.printStackTrace();
+	System.exit(127);
     }
 }

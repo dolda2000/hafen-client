@@ -59,7 +59,7 @@ public class Avatar extends GAttrib {
 
     @OCache.DeltaType(OCache.OD_AVATAR)
     public static class $avatar implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    List<Indir<Resource>> layers = new LinkedList<Indir<Resource>>();
 	    while(true) {
 		int layer = msg.uint16();

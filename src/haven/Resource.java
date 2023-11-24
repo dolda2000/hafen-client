@@ -40,7 +40,7 @@ import javax.imageio.*;
 import java.awt.image.BufferedImage;
 
 public class Resource implements Serializable {
-    public static final Config.Variable<URL> resurl = Config.Variable.propu("haven.resurl", "");
+    public static final Config.Variable<URI> resurl = Config.Variable.propu("haven.resurl", "");
     public static final Config.Variable<Path> resdir = Config.Variable.propp("haven.resdir", System.getenv("HAFEN_RESDIR"));
     private static ResCache prscache;
     public static ThreadGroup loadergroup = null;
@@ -313,7 +313,7 @@ public class Resource implements Serializable {
     public static class HttpSource implements ResSource, Serializable {
 	public static final String USER_AGENT;
 	private final transient SslHelper ssl;
-	public URL baseurl;
+	public URI base;
 
 	static {
 	    StringBuilder buf = new StringBuilder();
@@ -338,22 +338,22 @@ public class Resource implements Serializable {
 	    ssl.ignoreName();
 	}
 	
-	public HttpSource(URL baseurl) {
-	    this.baseurl = baseurl;
+	public HttpSource(URI base) {
+	    this.base = base;
 	}
 		
-	private URL encodeurl(URL raw) throws IOException {
-	    /* This is "kinda" ugly. It is, actually, how the Java
-	     * documentation recommend that it be done, though... */
+	private URI encodeuri(URI raw) throws IOException {
+	    /* This is kinda crazy, but it is, actually, how the Java
+	     * documentation recommends that it be done... */
 	    try {
-		return(new URL(new URI(raw.getProtocol(), raw.getHost(), raw.getPath(), raw.getRef()).toASCIIString()));
+		return(new URI(new URI(raw.getScheme(), raw.getAuthority(), raw.getPath(), raw.getFragment()).toASCIIString()));
 	    } catch(URISyntaxException e) {
 		throw(new IOException(e));
 	    }
 	}
 
 	public InputStream get(String name) throws IOException {
-	    URL resurl = encodeurl(new URL(baseurl, name + ".res"));
+	    URL resurl = encodeuri(base.resolve(name + ".res")).toURL();
 	    RetryingInputStream ret = new RetryingInputStream() {
 		    protected InputStream create() throws IOException {
 			URLConnection c;
@@ -374,7 +374,7 @@ public class Resource implements Serializable {
 	}
 
 	public String toString() {
-	    return("HTTP res source (" + baseurl + ")");
+	    return("HTTP res source (" + base + ")");
 	}
     }
 
@@ -828,8 +828,8 @@ public class Resource implements Serializable {
 	return(_remote);
     }
 
-    public static void addurl(URL url) {
-	ResSource src = new HttpSource(url);
+    public static void addurl(URI uri) {
+	ResSource src = new HttpSource(uri);
 	if(prscache != null) {
 	    class Caching extends TeeSource {
 		private final transient ResCache cache;
@@ -1000,6 +1000,7 @@ public class Resource implements Serializable {
 	    id = buf.int16();
 	    o = cdec(buf);
 	    so = UI.scale(o);
+	    boolean hasscale = false;
 	    Map<String, byte[]> kvdata = new HashMap<>();
 	    if((fl & 4) != 0) {
 		while(true) {
@@ -1015,6 +1016,7 @@ public class Resource implements Serializable {
 			tsz = val.coord();
 		    } else if(key.equals("scale")) {
 			scale = val.float32();
+			hasscale = true;
 		    } else {
 			kvdata.put(key, data);
 		    }
@@ -1038,6 +1040,8 @@ public class Resource implements Serializable {
 		so = new Coord(Math.min(so.x, tsz.x - ssz.x), Math.min(so.y, sz.y - ssz.y));
 	    }
 	    scaled = PUtils.uiscale(img, ssz);
+	    if(false && !hasscale)
+		scaled = PUtils.monochromize(PUtils.coercergba(scaled), java.awt.Color.RED);
 	}
 
 	public BufferedImage scaled() {
@@ -1559,8 +1563,9 @@ public class Resource implements Serializable {
 		    ClassLoader loader = Resource.class.getClassLoader();
 		    if(classpath.size() > 0) {
 			Collection<ClassLoader> loaders = new LinkedList<ClassLoader>();
-			for(Indir<Resource> res : classpath)
-			    loaders.add(res.get().layer(CodeEntry.class).loader());
+			for(Indir<Resource> res : classpath) {
+			    loaders.add(res.get().flayer(CodeEntry.class).loader());
+			}
 			loader = new LibClassLoader(loader, loaders);
 		    }
 		    if(clmap.size() > 0)
@@ -1981,7 +1986,7 @@ public class Resource implements Serializable {
     }
 
     public static void cmd_getcode(String[] args) {
-	URL url = null;
+	URI url = null;
 	PosixArgs opt = PosixArgs.getopt(args, "hqo:U:");
 	if(opt == null) {
 	    usage_getcode(System.err);
@@ -2003,8 +2008,8 @@ public class Resource implements Serializable {
 		break;
 	    case 'U':
 		try {
-		    url = new URL(opt.arg);
-		} catch(MalformedURLException e) {
+		    url = Utils.uri(opt.arg);
+		} catch(IllegalArgumentException e) {
 		    System.err.println("get-code: malformed url: " + opt.arg);
 		    System.exit(1);
 		}
@@ -2100,7 +2105,7 @@ public class Resource implements Serializable {
     }
 
     public static void cmd_findupdates(String[] args) {
-	URL url = null;
+	URI url = null;
 	PosixArgs opt = PosixArgs.getopt(args, "hU:");
 	if(opt == null) {
 	    usage_findupdates(System.err);
@@ -2114,8 +2119,8 @@ public class Resource implements Serializable {
 		break;
 	    case 'U':
 		try {
-		    url = new URL(opt.arg);
-		} catch(MalformedURLException e) {
+		    url = Utils.uri(opt.arg);
+		} catch(IllegalArgumentException e) {
 		    System.err.println("get-code: malformed url: " + opt.arg);
 		    System.exit(1);
 		}

@@ -217,7 +217,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    for(int i = 0; i < no.length; i++) {
 		for(int o = 0; o < ro[i].length; o++) {
 		    Coord2d a = ro[i][o], b = ro[i][(o + 1) % ro[i].length];
-		    for(Coord2d c : new Coord2d.GridIsect(a, b, MCache.tilesz, false)) {
+		    for(Coord2d c : new Line2d.GridIsect(a, b, MCache.tilesz, false)) {
 			double z = map.getz(surf, c);
 			if(Float.isNaN(ret) || (z < ret))
 			    ret = (float)z;
@@ -236,6 +236,79 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 		this.ca = ra;
 	    }
 	    return(Coord3f.of((float)rc.x, (float)rc.y, this.z));
+	}
+    }
+
+    public static class LinePlace extends DefaultPlace {
+	public final double max, min;
+	public final Coord2d k;
+	private Coord3f c;
+	private Matrix4f r = Matrix4f.id;
+	private int seq = -1;
+	private Coord2d cc;
+	private double ca;
+
+	public LinePlace(MCache map, MCache.SurfaceID surf, Coord2d[][] points, Coord2d k) {
+	    super(map, surf);
+	    Line2d l = Line2d.from(Coord2d.z, k);
+	    double max = 0, min = 0;
+	    for(int i = 0; i < points.length; i++) {
+		for(int o = 0; o < points[i].length; o++) {
+		    int p = (o + 1) % points[i].length;
+		    Line2d edge = Line2d.twixt(points[i][o], points[i][p]);
+		    Coord2d t = l.cross(edge);
+		    if((t.y >= 0) && (t.y <= 1)) {
+			max = Math.max(t.x, max);
+			min = Math.min(t.x, min);
+		    }
+		}
+	    }
+	    if((max == 0) || (min == 0))
+		throw(new RuntimeException("illegal bounds for LinePlace"));
+	    this.k = k;
+	    this.max = max;
+	    this.min = min;
+	}
+
+	public LinePlace(MCache map, MCache.SurfaceID surf, Resource res, String id, Coord2d k) {
+	    this(map, surf, res.flayer(Resource.obst, id).p, k);
+	}
+
+	public LinePlace(MCache map, MCache.SurfaceID surf, Resource res, Coord2d k) {
+	    this(map, surf, res, "", k);
+	}
+
+	private void recalc(Coord2d rc, double ra) {
+	    Coord2d rk = k.rot(ra);
+	    double maxz = map.getz(surf, rc.add(rk.mul(max)));
+	    double minz = map.getz(surf, rc.add(rk.mul(min)));
+	    Coord3f rax = Coord3f.of((float)-rk.y, (float)-rk.x, 0);
+	    float dz = (float)(maxz - minz);
+	    float dx = (float)(max - min);
+	    float hyp = (float)Math.sqrt((dx * dx) + (dz * dz));
+	    float sin = dz / hyp, cos = dx / hyp;
+	    c = Coord3f.of((float)rc.x, (float)rc.y, (float)minz + (dz * (float)(-min / (max - min))));
+	    r = Transform.makerot(new Matrix4f(), rax, sin, cos).mul(super.getr(rc, ra));
+	}
+
+	private void check(Coord2d rc, double ra) {
+	    int mseq = map.chseq;
+	    if((mseq != this.seq) || !Utils.eq(rc, cc) || (ra != ca)) {
+		recalc(rc, ra);
+		this.seq = mseq;
+		this.cc = rc;
+		this.ca = ra;
+	    }
+	}
+
+	public Coord3f getc(Coord2d rc, double ra) {
+	    check(rc, ra);
+	    return(c);
+	}
+
+	public Matrix4f getr(Coord2d rc, double ra) {
+	    check(rc, ra);
+	    return(r);
 	}
     }
 
@@ -623,9 +696,12 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    return;
 	}
 	if(!Utils.eq(nst, curstate)) {
-	    for(RenderTree.Slot slot : slots)
-		slot.ostate(nst);
-	    this.curstate = nst;
+	    try {
+		for(RenderTree.Slot slot : slots)
+		    slot.ostate(nst);
+		this.curstate = nst;
+	    } catch(Loading l) {
+	    }
 	}
     }
 
@@ -732,7 +808,13 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     }
 
     public class Placed implements RenderTree.Node, TickList.Ticking, TickList.TickNode {
-	private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
+	/* XXX: Using a COW list is far from an ideal solution. It
+	 * should work for the specific case of flavobjs (which are
+	 * added asynchronously in a way that makes it difficult to
+	 * lock on each individually), but it's certainly not a
+	 * general solution, and it would be nice with something that
+	 * is in fact more general. */
+	private final Collection<RenderTree.Slot> slots = new java.util.concurrent.CopyOnWriteArrayList<>();
 	private Placement cur;
 
 	private Placed() {}

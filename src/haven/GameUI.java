@@ -224,11 +224,8 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	this.genus = genus;
 	setcanfocus(true);
 	setfocusctl(true);
-	chat = add(new ChatUI(0, 0));
-	if(Utils.getprefb("chatvis", true)) {
-	    chat.hresize(chat.savedh);
-	    chat.show();
-	}
+	chat = add(new ChatUI());
+	chat.show(Utils.getprefb("chatvis", true));
 	beltwdg.raise();
 	blpanel = add(new Hidepanel("gui-bl", null, new Coord(-1,  1)) {
 		public void move(double a) {
@@ -759,12 +756,8 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		mapfile = null;
 	    }
 	    ResCache mapstore = ResCache.global;
-	    if(MapFile.mapbase.get() != null) {
-		try {
-		    mapstore = HashDirCache.get(MapFile.mapbase.get().toURI());
-		} catch(java.net.URISyntaxException e) {
-		}
-	    }
+	    if(MapFile.mapbase.get() != null)
+		mapstore = HashDirCache.get(MapFile.mapbase.get());
 	    if(mapstore != null) {
 		MapFile file;
 		try {
@@ -1002,13 +995,13 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    }
 	}
 	if(!chat.visible()) {
-	    chat.drawsmall(g, new Coord(blpw + UI.scale(10), by), UI.scale(50));
+	    chat.drawsmall(g, new Coord(blpw + UI.scale(10), by), UI.scale(100));
 	}
     }
     
-    private String iconconfname() {
+    private String iconconfname(String ver) {
 	StringBuilder buf = new StringBuilder();
-	buf.append("data/mm-icons");
+	buf.append("data/mm-icons" + ver);
 	if(genus != null)
 	    buf.append("/" + genus);
 	if(ui.sess != null)
@@ -1020,22 +1013,29 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	if(ResCache.global == null)
 	    return(new GobIcon.Settings());
 	try {
-	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(iconconfname()))) {
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(iconconfname("-2")))) {
 		return(GobIcon.Settings.load(fp));
 	    }
 	} catch(java.io.FileNotFoundException e) {
-	    return(new GobIcon.Settings());
 	} catch(Exception e) {
 	    new Warning(e, "failed to load icon-conf").issue();
-	    return(new GobIcon.Settings());
 	}
+	try {
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(iconconfname("")))) {
+		return(GobIcon.Settings.loadold(fp));
+	    }
+	} catch(java.io.FileNotFoundException e) {
+	} catch(Exception e) {
+	    new Warning(e, "failed to load old icon-conf").issue();
+	}
+	return(new GobIcon.Settings());
     }
 
     public void saveiconconf() {
 	if(ResCache.global == null)
 	    return;
 	try {
-	    try(StreamMessage fp = new StreamMessage(ResCache.global.store(iconconfname()))) {
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.store(iconconfname("-2")))) {
 		iconconf.save(fp);
 	    }
 	} catch(Exception e) {
@@ -1055,7 +1055,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 
 	public boolean clickmarker(DisplayMarker mark, Location loc, int button, boolean press) {
 	    if(mark.m instanceof MapFile.SMarker) {
-		Gob gob = MarkerID.find(ui.sess.glob.oc, ((MapFile.SMarker)mark.m).oid);
+		Gob gob = MarkerID.find(ui.sess.glob.oc, (MapFile.SMarker)mark.m);
 		if(gob != null)
 		    mvclick(map, null, loc, gob, button);
 	    }
@@ -1422,14 +1422,14 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    if(chat.visible() && !chat.hasfocus) {
 		setfocus(chat);
 	    } else {
-		if(chat.targeth == 0) {
-		    chat.sresize(chat.savedh);
-		    setfocus(chat);
+		if(chat.targetshow) {
+		    chat.sshow(false);
 		} else {
-		    chat.sresize(0);
+		    chat.sshow(true);
+		    setfocus(chat);
 		}
 	    }
-	    Utils.setprefb("chatvis", chat.targeth != 0);
+	    Utils.setprefb("chatvis", chat.targetshow);
 	    return(true);
 	} else if((key == 27) && (map != null) && !map.hasfocus) {
 	    setfocus(map);
@@ -1603,26 +1603,26 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		    Tex glow;
 		    {
 			this.tooltip = RichText.render("Chat ($col[255,255,0]{Ctrl+C})", 0);
-			glow = new TexI(PUtils.rasterimg(PUtils.blurmask(up.getRaster(), 2, 2, Color.WHITE)));
+			glow = new TexI(PUtils.rasterimg(PUtils.blurmask(up.getRaster(), UI.scale(2), UI.scale(2), Color.WHITE)));
 		    }
 
 		    public void click() {
-			if(chat.targeth == 0) {
-			    chat.sresize(chat.savedh);
-			    setfocus(chat);
+			if(chat.targetshow) {
+			    chat.sshow(false);
 			} else {
-			    chat.sresize(0);
+			    chat.sshow(true);
+			    setfocus(chat);
 			}
-			Utils.setprefb("chatvis", chat.targeth != 0);
+			Utils.setprefb("chatvis", chat.targetshow);
 		    }
 
 		    public void draw(GOut g) {
 			super.draw(g);
 			Color urg = chat.urgcols[chat.urgency];
 			if(urg != null) {
-			    GOut g2 = g.reclipl(new Coord(-2, -2), g.sz().add(4, 4));
+			    GOut g2 = g.reclipl2(UI.scale(-4, -4), g.sz().add(UI.scale(4, 4)));
 			    g2.chcolor(urg.getRed(), urg.getGreen(), urg.getBlue(), 128);
-			    g2.image(glow, Coord.z, UI.scale(glow.sz()));
+			    g2.image(glow, Coord.z);
 			}
 		    }
 		}, sz, 1, 1);

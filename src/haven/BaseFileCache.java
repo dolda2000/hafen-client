@@ -140,11 +140,7 @@ public class BaseFileCache implements ResCache {
     }
 
     private static URI mkurn(String id) {
-	try {
-	    return(new URI("urn:haven-cache:" + id));
-	} catch(java.net.URISyntaxException e) {
-	    throw(new IllegalArgumentException(id));
-	}
+	return(Utils.uri("urn:haven-cache:" + id));
     }
 
     public static BaseFileCache get(String id) throws IOException {
@@ -155,9 +151,9 @@ public class BaseFileCache implements ResCache {
 	BaseFileCache ret;
 	try {
 	    if(cachebase.get() != null)
-		return(get(cachebase.get().toURI()));
+		return(get(cachebase.get()));
 	    if(Resource.resurl.get() != null)
-		return(get(Resource.resurl.get().toURI()));
+		return(get(Resource.resurl.get()));
 	    return(get("default"));
 	} catch(Exception e) {
 	    return(null);

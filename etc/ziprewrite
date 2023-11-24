@@ -1,0 +1,95 @@
+#!/usr/bin/python3
+
+import sys, os, getopt, zipfile, re
+
+def makesubst(subst):
+    if '\\' in subst:
+        def process(m):
+            ret = ""
+            p = 0
+            while True:
+                P = m.find('\\', p)
+                if P < 0:
+                    return ret + subst[p:]
+                ret = subst[p:P]
+                P += 1
+                if subst[P] == '\\':
+                    ret += '\\'
+                    P += 1
+                else:
+                    grp = 0
+                    while subst[P].isdigit():
+                        grp = (grp * 10) + int(subst[P])
+                        P += 1
+                    ret += m.group(grp)
+                p = P
+        return process
+    else:
+        return lambda m: subst
+
+def parsesubst(sline):
+    sep = sline[0]
+    sline = sline[1:]
+    p = sline.find(sep)
+    if p < 0:
+        sys.stderr.write("ziprewrite: missing substitution\n")
+        sys.exit(1)
+    pat = sline[0:p]
+    sline = sline[p + 1:]
+    p = sline.find(sep)
+    if p < 0:
+        subst = sline
+        flags = ""
+    else:
+        subst = sline[:p]
+        flags = sline[p + 1:]
+    return pat, subst, flags
+
+def usage(out):
+    out.write("usage: ziprewrite [-hm] /PATTERN/SUBST[/g] ZIPFILE...\n")
+
+def main(argv):
+    anywhere = False
+    opts, args = getopt.getopt(argv[1:], "hm")
+    for o, a in opts:
+        if o == "-h":
+            usage(sys.stdout)
+            sys.exit(0)
+        elif o == "-m":
+            anywhere = True
+    if len(args) < 2:
+        usage(sys.stderr)
+        sys.exit(1)
+
+    pat, subst, flags = parsesubst(args[0])
+    glob = 'g' in flags
+    pat = re.compile(pat)
+    subst = makesubst(subst)
+
+    for zipnm in args[1:]:
+        tmpnm = zipnm + ".new"
+        with zipfile.ZipFile(zipnm) as zin, zipfile.ZipFile(tmpnm, "w") as zout:
+            for entry in zin.namelist():
+                info = zin.getinfo(entry)
+                p = 0
+                fn = info.filename
+                while True:
+                    m = pat.search(fn, p)
+                    if m is None:
+                        break
+                    s, e = m.span()
+                    fn = fn[0:s] + subst(m) + fn[e:]
+                    p = e
+                    if not glob:
+                        break
+                info.filename = fn
+                with zin.open(entry, "r") as fin, zout.open(info, "w") as fout:
+                    while True:
+                        buf = fin.read(65536)
+                        if buf == b"":
+                            break
+                        fout.write(buf)
+        os.rename(tmpnm, zipnm)
+
+if __name__ == "__main__":
+    main(sys.argv)

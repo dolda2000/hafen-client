@@ -141,13 +141,14 @@ public class Tileset extends Resource.Layer {
 	}
 
 	public static class Terrain implements MapSource {
-	    public final MapSource grid;
+	    public final MapSource grid, map;
 	    public final int tile;
 	    public final Area area;
 	    private final Coord toff;
 
-	    public Terrain(MapSource grid, int tile, Area area, Coord toff) {
+	    public Terrain(MapSource grid, MapSource map, int tile, Area area, Coord toff) {
 		this.grid = grid;
+		this.map = map;
 		this.tile = tile;
 		this.area = area;
 		this.toff = toff;

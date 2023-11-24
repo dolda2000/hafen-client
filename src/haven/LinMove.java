@@ -70,7 +70,7 @@ public class LinMove extends Moving {
 
     @OCache.DeltaType(OCache.OD_LINBEG)
     public static class $linbeg implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    Coord2d s = msg.coord().mul(OCache.posres);
 	    Coord2d v = msg.coord().mul(OCache.posres);
 	    LinMove lm = g.getattr(LinMove.class);
@@ -82,7 +82,7 @@ public class LinMove extends Moving {
 
     @OCache.DeltaType(OCache.OD_LINSTEP)
     public static class $linstep implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    double t, e;
 	    int w = msg.int32();
 	    if(w == -1) {

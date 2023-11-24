@@ -186,9 +186,34 @@ public abstract class PView extends Widget {
 	    audio.cycle();
     }
 
-    private class Resampler extends PostProcessor {
+    private abstract class Resampler extends PostProcessor {
+	final Coord isz, osz;
+
+	Resampler(Coord isz, Coord osz) {
+	    this.isz = isz;
+	    this.osz = osz;
+	}
+    }
+
+    private class LinResampler extends Resampler {
+	LinResampler(Coord isz, Coord osz) {super(isz, osz);}
+
 	public void run(GOut g, Texture2D.Sampler2D in) {
 	    g.image(new TexRaw(in, true), Coord.z, g.sz());
+	}
+    }
+
+    private class IntResampler extends Resampler {
+	public final int scale;
+
+	public IntResampler(Coord isz, Coord osz, int scale) {
+	    super(isz, osz);
+	    this.scale = scale;
+	}
+
+	public void run(GOut g, Texture2D.Sampler2D in) {
+	    in.magfilter(Texture.Filter.NEAREST);
+	    g.image(new TexRaw(in, true), Coord.z, in.tex.sz().mul(scale));
 	}
     }
 
@@ -210,12 +235,23 @@ public abstract class PView extends Widget {
 	return(new GOut(def.out, st, new Coord(area.sz())));
     }
 
-    private PostProcessor pp_resamp = null;
+    private Resampler pp_resamp = null;
     protected void resolve(GOut g) {
 	List<PostProcessor> copy = new ArrayList<PostProcessor>(ctx.postproc());
 	if(!rsz.equals(this.sz)) {
-	    if(pp_resamp == null)
-		pp_resamp = new Resampler();
+	    if((pp_resamp == null) || !pp_resamp.isz.equals(rsz) || !pp_resamp.osz.equals(this.sz)) {
+		if(pp_resamp != null)
+		    pp_resamp.dispose();
+		if(this.sz.x > rsz.x) {
+		    int iscale = (this.sz.x + (rsz.x >> 1)) / rsz.x;
+		    if((Math.abs((rsz.x * iscale) - this.sz.x) < iscale))
+			pp_resamp = new IntResampler(rsz, this.sz, iscale);
+		    else
+			pp_resamp = new LinResampler(rsz, this.sz);
+		} else {
+		    pp_resamp = new LinResampler(rsz, this.sz);
+		}
+	    }
 	    copy.add(pp_resamp);
 	} else {
 	    if(pp_resamp != null) {

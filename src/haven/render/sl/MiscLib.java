@@ -32,6 +32,28 @@ import static haven.render.sl.Function.PDir.*;
 import static haven.render.sl.Type.*;
 
 public abstract class MiscLib {
+    public static final Function vqrot = new Function.Def(VEC3) {{
+	Expression v = param(IN, VEC3).ref();
+	Expression q = param(IN, VEC4).ref();
+	Expression vx = pick(v, "x"), vy = pick(v, "y"), vz = pick(v, "z");
+	Expression qx = pick(q, "x"), qy = pick(q, "y"), qz = pick(q, "z"), qw = pick(q, "w");
+	Expression T = l(2.0);
+	Expression x = add(mul(qw, qw, vx), mul(T, qw, qy, vz), neg(mul(T, qw, qz, vy)), mul(qx, qx, vx),
+			   mul(T, qx, qy, vy), mul(T, qx, qz, vz), neg(mul(qz, qz, vx)), neg(mul(qy, qy, vx)));
+	Expression y = add(mul(T, qx, qy, vx), mul(qy, qy, vy), mul(T, qy, qx, vz), mul(T, qw, qz, vx),
+			   neg(mul(qz, qz, vy)), mul(qw, qw, vy), neg(mul(T, qw, qx, vz)), neg(mul(qx, qx, vy)));
+	Expression z = add(mul(T, qx, qz, vx), mul(T, qy, qz, vy), mul(qz, qz, vz), neg(mul(T, qw, qy, vx)),
+			   neg(mul(qy, qy, vz)), mul(T, qw, qx, vy), neg(mul(qx, qx, vz)), mul(qw, qw, vz));
+	code.add(new Return(vec3(x, y, z)));
+    }};
+    public static float[] rotasq(Coord3f axis, float angle) {
+	float[] q = new float[4];
+	float m = (float)Math.sin(angle * 0.5f);
+	q[3] = (float)Math.cos(angle * 0.5f);
+	q[0] = m * axis.x; q[1] = m * axis.y; q[2] = m * axis.z;
+	return(q);
+    }
+
     public static final Function colblend = new Function.Def(VEC4) {{
 	Expression base = param(IN, VEC4).ref();
 	Expression blend = param(IN, VEC4).ref();

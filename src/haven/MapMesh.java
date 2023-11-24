@@ -102,6 +102,14 @@ public class MapMesh implements RenderTree.Node, Disposable {
         public int o(Coord in) {
             return(o(in.x, in.y));
         }
+
+	public boolean has(int x, int y) {
+	    return((x >= ul.x) && (y >= ul.y) && (x < br.x) && (y < br.y));
+	}
+
+	public boolean has(Coord in) {
+	    return(has(in.x, in.y));
+	}
     }
 
     public class MapSurface extends haven.Surface implements ConsHooks {

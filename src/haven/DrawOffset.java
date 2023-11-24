@@ -36,7 +36,7 @@ public class DrawOffset extends GAttrib {
 
     @OCache.DeltaType(OCache.OD_ZOFF)
     public static class $zoff implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    float off = msg.int16() / 100.0f;
 	    if(off == 0) {
 		g.delattr(DrawOffset.class);

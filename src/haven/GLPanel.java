@@ -493,6 +493,13 @@ public interface GLPanel extends UIPanel, UI.Context {
 	    cmdmap.put("gldebug", (cons, args) -> {
 		    gldebug = Utils.parsebool(args[1]);
 		});
+	    cmdmap.put("cursor", new Console.Command() {
+		    public void run(Console cons, String[] args) {
+			cursmode = args[1].intern();
+			lastcursor = null;
+			p.setCursor(null);
+		    }
+		});
 	}
 	public Map<String, Console.Command> findcmds() {
 	    return(cmdmap);

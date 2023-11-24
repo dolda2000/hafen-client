@@ -451,6 +451,20 @@ public abstract class GLEnvironment implements Environment {
 	return(new FillBuffers.Array(this, to - from));
     }
 
+    public FillBuffer fillbuf(DataBuffer target) {
+	if(target instanceof Texture.Image) {
+	    /* XXX: This seems to be a buf with JOGL and buffer-space
+	     * checking for mip-mapped 3D textures. This should be
+	     * entirely unnecessary. */
+	    Texture.Image<?> img = (Texture.Image<?>)target;
+	    if(img.tex instanceof Texture3D) {
+		if(img.size() < 14)
+		    return(fillbuf(target, 0, 14));
+	    }
+	}
+	return(Environment.super.fillbuf(target));
+    }
+
     GLRender prepare() {
 	if(prep == null)
 	    prep = new GLRender(this);

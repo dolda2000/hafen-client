@@ -102,7 +102,7 @@ public class Following extends Moving {
 
     @OCache.DeltaType(OCache.OD_FOLLOW)
     public static class $follow implements OCache.Delta {
-	public void apply(Gob g, Message msg) {
+	public void apply(Gob g, OCache.AttrDelta msg) {
 	    long oid = msg.uint32();
 	    if(oid != 0xffffffffl) {
 		Indir<Resource> xfres = OCache.Delta.getres(g, msg.uint16());

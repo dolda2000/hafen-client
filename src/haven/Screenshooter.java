@@ -38,10 +38,10 @@ import java.io.*;
 import java.net.*;
 
 public class Screenshooter extends Window {
-    public static final Config.Variable<URL> screenurl = Config.Variable.propu("haven.screenurl", "");
+    public static final Config.Variable<URI> screenurl = Config.Variable.propu("haven.screenurl", "");
     public static final ComponentColorModel outcm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), new int[] {8, 8, 8}, false, false, ComponentColorModel.OPAQUE, DataBuffer.TYPE_BYTE);
     public static final PUtils.Convolution thumbflt = new PUtils.Lanczos(3);
-    public final URL tgt;
+    public final URI tgt;
     public final Shot shot;
     private final TextEntry comment;
     private final CheckBox decobox, pub;
@@ -49,7 +49,7 @@ public class Screenshooter extends Window {
     private Coord btnc;
     private Button btn;
 
-    public Screenshooter(URL tgt, Shot shot) {
+    public Screenshooter(URI tgt, Shot shot) {
 	super(Coord.z, "Screenshot");
 	this.tgt = tgt;
 	this.shot = shot;
@@ -260,7 +260,7 @@ public class Screenshooter extends Window {
 	    byte[] data = buf.toByteArray();
 	    buf = null;
 	    setstate("Connecting...");
-	    URL pared = Utils.urlparam(tgt, "p", pub.a?"y":"n");
+	    URL pared = Utils.uriparam(tgt, "p", pub.a?"y":"n").toURL();
 	    HttpURLConnection conn = (HttpURLConnection)pared.openConnection();
 	    conn.setDoOutput(true);
 	    conn.setFixedLengthStreamingMode(data.length);
@@ -295,8 +295,8 @@ public class Screenshooter extends Window {
 		    throw(new IOException("Unexpected type of reply from server"));
 		byte[] b = Utils.readall(in);
 		try {
-		    result = new URL(new String(b, "utf-8"));
-		} catch(MalformedURLException e) {
+		    result = Utils.url(new String(b, "utf-8"));
+		} catch(IllegalArgumentException e) {
 		    throw((IOException)new IOException("Unexpected reply from server").initCause(e));
 		}
 	    } finally {
@@ -334,7 +334,7 @@ public class Screenshooter extends Window {
 	btn = add(new Button(125, "Cancel", false, th::interrupt), btnc);
     }
 
-    public static void take(GameUI gameui, URL tgt) {
+    public static void take(GameUI gameui, URI tgt) {
 	new Object() {
 	    BufferedImage map = null, ui = null;
 	    {

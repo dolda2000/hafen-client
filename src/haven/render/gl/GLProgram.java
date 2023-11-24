@@ -377,8 +377,13 @@ public class GLProgram implements Disposable {
 	    }
 
 	    public int glid() {
-		if(id < 0)
-		    throw(new UnknownExternException("Uniform not resolvable in program: " + name, GLProgram.this, "uniform", name));
+		/* XXX? It would be much nicer to be able to "discard"
+		 * unused uniforms right after linking, but that would
+		 * force all users of uniforms to wait until
+		 * compilation is complete, which is also not
+		 * great. Instead, glUniform* are conditioned to
+		 * silently discard operations on negative uniform
+		 * IDs. Not sure if there's a better alternative. */
 		return(id);
 	    }
 
