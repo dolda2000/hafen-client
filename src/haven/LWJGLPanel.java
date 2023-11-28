@@ -152,15 +152,8 @@ public class LWJGLPanel extends AWTGLCanvas implements GLPanel, Console.Director
 		    });
 	    }
 	} catch(InterruptedException e) {
-	} finally {
-	    try {
-		awtrun(super::disposeCanvas);
-	    } catch(InterruptedException e) {
-	    }
 	}
     }
-
-    public void disposeCanvas() {}
 
     public void run() {
 	Thread drawthread = new HackThread(LWJGLPanel.this::renderloop, "Render thread");
