@@ -27,7 +27,7 @@
 package haven;
 
 import java.util.*;
-import java.awt.Toolkit;
+import java.awt.EventQueue;
 import java.awt.Robot;
 import java.awt.Point;
 import org.lwjgl.opengl.awt.*;
@@ -107,16 +107,30 @@ public class LWJGLPanel extends AWTGLCanvas implements GLPanel, Console.Director
 	this.wnd = base.copy().prep(new States.Viewport(shape)).prep(new Ortho2D(shape));
     }
 
+    private void awtrun(Runnable task) throws InterruptedException {
+	try {
+	    EventQueue.invokeAndWait(task);
+	} catch(java.lang.reflect.InvocationTargetException e) {
+	    if(e.getCause() instanceof RuntimeException)
+		throw((RuntimeException)e.getCause());
+	    throw(new RuntimeException(e));
+	}
+    }
+
+    private void glrun(Runnable task) throws InterruptedException {
+	awtrun(() -> runInContext(task));
+    }
+
     private void renderloop() {
 	reshape(Area.sized(Coord.of(getWidth(), getHeight())));
-	runInContext(() -> {
-		org.lwjgl.opengl.GL.createCapabilities();
-		synchronized(this) {
-		    setenv(new LWJGLEnvironment(effective, this.shape));
-		    notifyAll();
-		}
-	    });
 	try {
+	    glrun(() -> {
+		    org.lwjgl.opengl.GL.createCapabilities();
+		    synchronized(this) {
+			setenv(new LWJGLEnvironment(effective, this.shape));
+			notifyAll();
+		    }
+		});
 	    while(true) {
 		long wst = System.nanoTime();
 		env.submitwait();
@@ -127,7 +141,7 @@ public class LWJGLPanel extends AWTGLCanvas implements GLPanel, Console.Director
 		    this.reshape(shape);
 		    env.reshape(shape);
 		}
-		runInContext(() -> {
+		glrun(() -> {
 			try {
 			    env.process(LWJGLWrap.instance);
 			} catch(BGL.BGLException e) {
@@ -139,7 +153,10 @@ public class LWJGLPanel extends AWTGLCanvas implements GLPanel, Console.Director
 	    }
 	} catch(InterruptedException e) {
 	} finally {
-	    super.disposeCanvas();
+	    try {
+		awtrun(super::disposeCanvas);
+	    } catch(InterruptedException e) {
+	    }
 	}
     }
 
