@@ -33,11 +33,8 @@ import org.lwjgl.opengl.awt.*;
 import haven.render.gl.GL;
 
 public class LWJGLEnvironment extends GLEnvironment {
-    public final GLData effdata;
-
-    public LWJGLEnvironment(GLData effdata, Area wnd) {
+    public LWJGLEnvironment(Area wnd) {
 	super(LWJGLWrap.instance, wnd);
-	this.effdata = effdata;
     }
 
     public static class LWJGLCaps extends Caps {
@@ -45,8 +42,7 @@ public class LWJGLEnvironment extends GLEnvironment {
 
 	public LWJGLCaps(GL gl, LWJGLEnvironment env) {
 	    super(gl);
-	    this.coreprof = true;
-	    // this.coreprof = (env.effdata.profile == GLData.Profile.CORE);
+	    this.coreprof = glgeti(gl, GL.GL_CONTEXT_PROFILE_MASK) == GL.GL_CONTEXT_CORE_PROFILE_BIT;
 	}
 
 	public void checkreq() {

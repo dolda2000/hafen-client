@@ -68,14 +68,14 @@ public abstract class GLEnvironment implements Environment {
 	public final float anisotropy;
 	public final float linemin, linemax;
 
-	private static int glgeti(GL gl, int param) {
+	public static int glgeti(GL gl, int param) {
 	    int[] buf = {0};
 	    gl.glGetIntegerv(param, buf);
 	    GLException.checkfor(gl, null);
 	    return(buf[0]);
 	}
 
-	private static int glcondi(GL gl, int param, int def) {
+	public static int glcondi(GL gl, int param, int def) {
 	    GLException.checkfor(gl, null);
 	    int[] buf = {0};
 	    gl.glGetIntegerv(param, buf);
@@ -84,7 +84,7 @@ public abstract class GLEnvironment implements Environment {
 	    return(buf[0]);
 	}
 
-	private static float glgetf(GL gl, int param) {
+	public static float glgetf(GL gl, int param) {
 	    float[] buf = {0};
 	    gl.glGetFloatv(param, buf);
 	    GLException.checkfor(gl, null);
