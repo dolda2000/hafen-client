@@ -36,11 +36,11 @@ import haven.render.States;
 import haven.render.gl.*;
 import haven.render.lwjgl.*;
 import haven.JOGLPanel.SyncMode;
-import static org.lwjgl.opengl.GL30.*;
 
 public class LWJGLPanel extends AWTGLCanvas implements GLPanel, Console.Directory {
     private static final boolean dumpbgl = true;
     private LWJGLEnvironment env = null;
+    private boolean aswap;
     private Area shape;
     private Pipe base, wnd;
     private final Loop main = new Loop(this);
@@ -94,9 +94,16 @@ public class LWJGLPanel extends AWTGLCanvas implements GLPanel, Console.Director
     public Area shape() {return(shape);}
     public Pipe basestate() {return(wnd);}
 
+    private boolean iswap() {
+	return(main.ui.gprefs.vsync.val);
+    }
+
     public void glswap(GL gl) {
+	boolean iswap = iswap();
 	if(main.gldebug)
 	    GLException.checkfor(gl, null);
+	if(iswap != aswap)
+	    setSwapInterval((aswap = iswap) ? 1 : 0);
 	swapBuffers();
 	if(main.gldebug)
 	    GLException.checkfor(gl, null);
@@ -105,6 +112,10 @@ public class LWJGLPanel extends AWTGLCanvas implements GLPanel, Console.Director
     private void reshape(Area shape) {
 	this.shape = shape;
 	this.wnd = base.copy().prep(new States.Viewport(shape)).prep(new Ortho2D(shape));
+    }
+
+    private void initgl() {
+	setSwapInterval((aswap = iswap()) ? 1 : 0);
     }
 
     private void awtrun(Runnable task) throws InterruptedException {
@@ -128,6 +139,7 @@ public class LWJGLPanel extends AWTGLCanvas implements GLPanel, Console.Director
 		    org.lwjgl.opengl.GL.createCapabilities();
 		    synchronized(this) {
 			setenv(new LWJGLEnvironment(effective, this.shape));
+			initgl();
 			notifyAll();
 		    }
 		});
