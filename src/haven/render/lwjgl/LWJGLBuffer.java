@@ -79,4 +79,6 @@ public class LWJGLBuffer extends GLObject implements SysBuffer {
 	data = null;
 	clean.dispose();
     }
+
+    protected boolean leakcheck() {return(false);}
 }
