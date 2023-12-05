@@ -46,7 +46,9 @@ public abstract class GLObject implements Disposable {
     public void abortcreate() {}
     protected abstract void delete(GL gl);
 
-    private final Disposable lck = LEAK_CHECK ? Finalizer.leakcheck(this) : null;
+    protected boolean leakcheck() {return(true);}
+
+    private final Disposable lck = (LEAK_CHECK && leakcheck()) ? Finalizer.leakcheck(this) : null;
     protected void dispose0() {
 	if(lck != null)
 	    lck.dispose();

@@ -42,7 +42,10 @@ public class LWJGLEnvironment extends GLEnvironment {
 
 	public LWJGLCaps(GL gl, LWJGLEnvironment env) {
 	    super(gl);
-	    this.coreprof = glgeti(gl, GL.GL_CONTEXT_PROFILE_MASK) == GL.GL_CONTEXT_CORE_PROFILE_BIT;
+	    if((major > 3) || ((major == 3) && (minor >= 2)))
+		this.coreprof = glgeti(gl, GL.GL_CONTEXT_PROFILE_MASK) == GL.GL_CONTEXT_CORE_PROFILE_BIT;
+	    else
+		this.coreprof = false;
 	}
 
 	public void checkreq() {
