@@ -864,7 +864,7 @@ public class MiniMap extends Widget {
 	if(amount > 0) {
 	    if(allowzoomout())
 		zoomlevel = Math.min(zoomlevel + 1, dlvl + 1);
-	} else {
+	} else if(amount < 0) {
 	    zoomlevel = Math.max(zoomlevel - 1, 0);
 	}
 	return(true);
