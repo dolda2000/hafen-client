@@ -76,7 +76,9 @@ public interface UIPanel extends Runnable {
 		    } else if(me.getID() == MouseEvent.MOUSE_RELEASED) {
 			ui.mouseup(me, new Coord(me.getX(), me.getY()), me.getButton());
 		    } else if(me instanceof MouseWheelEvent) {
-			ui.mousewheel(me, new Coord(me.getX(), me.getY()), ((MouseWheelEvent)me).getWheelRotation());
+			int amount = ((MouseWheelEvent)me).getWheelRotation();
+			if(amount != 0)
+			    ui.mousewheel(me, new Coord(me.getX(), me.getY()), amount);
 		    }
 		} else if(e instanceof KeyEvent) {
 		    KeyEvent ke = (KeyEvent)e;
