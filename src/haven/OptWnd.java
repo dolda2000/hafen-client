@@ -444,8 +444,9 @@ public class OptWnd extends Window {
 	    Widget prev = add(new Label("Interface scale (requires restart)"), 0, 0);
 	    {
 		Label dpy = new Label("");
-		final double smin = 1, smax = Math.floor(UI.maxscale() / 0.25) * 0.25;
-		final int steps = (int)Math.round((smax - smin) / 0.25);
+		final double gran = 0.05;
+		final double smin = 1, smax = Math.floor(UI.maxscale() / gran) * gran;
+		final int steps = (int)Math.round((smax - smin) / gran);
 		addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
 		       prev = new HSlider(UI.scale(160), 0, steps, (int)Math.round(steps * (Utils.getprefd("uiscale", 1.0) - smin) / (smax - smin))) {
 			       protected void added() {
