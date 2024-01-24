@@ -140,6 +140,9 @@ public abstract class Sprite implements RenderTree.Node {
     public void gtick(Render g) {
     }
 
+    public void age() {
+    }
+
     public void dispose() {
     }
 }
