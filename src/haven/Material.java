@@ -343,10 +343,6 @@ public class Material implements Pipe.Op {
 		String nm = buf.string();
 		Object[] args = buf.list();
 		ResCons2 cons = rnames.get(nm);
-		/* XXXRENDER
-		if(cons == null)
-		    throw(new Resource.LoadException("Unknown material part name: " + nm, res));
-		*/
 		if(cons != null)
 		    ret.left.add(cons.cons(res, args));
 		else
