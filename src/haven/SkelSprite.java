@@ -217,14 +217,13 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	Map<Skeleton.ResPose, PoseMod> newids = new HashMap<Skeleton.ResPose, PoseMod>();
 	for(Skeleton.ResPose p : res.layers(Skeleton.ResPose.class)) {
 	    if((p.id < 0) || ((mask & (1 << p.id)) != 0)) {
-		Skeleton.PoseMod mod;
-		if((mod = modids.get(p)) == null) {
+		Skeleton.PoseMod mod = modids.get(p);
+		if(mod == null) {
 		    mod = p.forskel(this, skel, p.defmode);
 		    if(old)
 			mod.age();
 		}
-		if(p.id >= 0)
-		    newids.put(p, mod);
+		newids.put(p, mod);
 		if(!mod.stat())
 		    stat = false;
 		poses.add(mod);
