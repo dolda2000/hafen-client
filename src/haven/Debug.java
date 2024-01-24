@@ -159,6 +159,10 @@ public class Debug {
 	return(thing);
     }
 
+    public static void dumpstack(Object... msg) {
+	new Throwable((msg.length == 0) ? Thread.currentThread().getName() : Arrays.asList(msg).toString()).printStackTrace();
+    }
+
     public static <T> T statprint(T line, boolean cond) {
 	if(cond) {
 	    synchronized(framestats) {
