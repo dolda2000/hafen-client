@@ -208,10 +208,6 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 
     private Map<Skeleton.ResPose, PoseMod> modids = new HashMap<Skeleton.ResPose, PoseMod>();
     private void chposes(int mask, boolean old) {
-	if(!old) {
-	    this.oldpose = skel.new Pose(pose);
-	    this.ipold = 1.0f;
-	}
 	Collection<PoseMod> poses = new LinkedList<PoseMod>();
 	stat = true;
 	Map<Skeleton.ResPose, PoseMod> newids = new HashMap<Skeleton.ResPose, PoseMod>();
@@ -230,6 +226,10 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	    }
 	}
 	this.mods = poses.toArray(new PoseMod[0]);
+	if(!old && !modids.equals(newids)) {
+	    this.oldpose = skel.new Pose(pose);
+	    this.ipold = 1.0f;
+	}
 	this.modids = newids;
 	rebuild();
     }
