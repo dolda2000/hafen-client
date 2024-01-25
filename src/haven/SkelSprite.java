@@ -74,7 +74,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	    skel = null;
 	    pose = null;
 	}
-	update(fl, true);
+	update(fl);
     }
 
     public SkelSprite(Owner owner, Resource res) {
@@ -206,19 +206,17 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	this.manims = anims.toArray(new MeshAnim.Animation[0]);
     }
 
-    private Map<Skeleton.ResPose, PoseMod> modids = new HashMap<Skeleton.ResPose, PoseMod>();
-    private void chposes(int mask, boolean old) {
+    private static final Map<Skeleton.ResPose, PoseMod> initmodids = new HashMap<>();
+    private Map<Skeleton.ResPose, PoseMod> modids = initmodids;
+    private void chposes(int mask) {
 	Collection<PoseMod> poses = new LinkedList<PoseMod>();
 	stat = true;
-	Map<Skeleton.ResPose, PoseMod> newids = new HashMap<Skeleton.ResPose, PoseMod>();
+	Map<Skeleton.ResPose, PoseMod> newids = new HashMap<>();
 	for(Skeleton.ResPose p : res.layers(Skeleton.ResPose.class)) {
 	    if((p.id < 0) || ((mask & (1 << p.id)) != 0)) {
 		Skeleton.PoseMod mod = modids.get(p);
-		if(mod == null) {
+		if(mod == null)
 		    mod = p.forskel(this, skel, p.defmode);
-		    if(old)
-			mod.age();
-		}
 		newids.put(p, mod);
 		if(!mod.stat())
 		    stat = false;
@@ -226,7 +224,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	    }
 	}
 	this.mods = poses.toArray(new PoseMod[0]);
-	if(!old && !modids.equals(newids)) {
+	if((modids != initmodids) && !modids.equals(newids)) {
 	    this.oldpose = skel.new Pose(pose);
 	    this.ipold = 1.0f;
 	}
@@ -234,16 +232,12 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	rebuild();
     }
 
-    private void update(int fl, boolean old) {
+    private void update(int fl) {
 	chmanims(fl);
 	if(skel != null)
-	    chposes(fl, old);
+	    chposes(fl);
 	chparts(fl);
 	this.curfl = fl;
-    }
-
-    public void update(int fl) {
-	update(fl, false);
     }
 
     public void update() {
@@ -264,6 +258,13 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	slots.remove(slot);
     }
     
+    public void age() {
+	for(PoseMod mod : mods)
+	    mod.age();
+	this.ipold = 0.0f;
+	this.oldpose = null;
+    }
+
     public boolean tick(double ddt) {
 	float dt = (float)ddt;
 	if(!stat || (ipold > 0)) {
