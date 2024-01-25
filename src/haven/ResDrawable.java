@@ -35,7 +35,6 @@ public class ResDrawable extends Drawable implements EquipTarget {
     public final Resource rres;
     public final Sprite spr;
     MessageBuf sdt;
-    // private double delay = 0; XXXRENDER
 
     public ResDrawable(Gob gob, Indir<Resource> res, Message sdt, boolean old) {
 	super(gob);
