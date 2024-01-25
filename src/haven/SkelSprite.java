@@ -197,13 +197,24 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	pose.gbuild();
     }
 
+    private static final Map<MeshAnim.Res, MeshAnim.Animation> nomaids = new HashMap<>();
+    private Map<MeshAnim.Res, MeshAnim.Animation> maids = nomaids;
     private void chmanims(int mask) {
 	Collection<MeshAnim.Animation> anims = new LinkedList<>();
+	Map<MeshAnim.Res, MeshAnim.Animation> newids = new HashMap<>();
 	for(MeshAnim.Res ar : res.layers(MeshAnim.Res.class)) {
-	    if((ar.id < 0) || (((1 << ar.id) & mask) != 0))
-		anims.add(ar.make());
+	    if((ar.id < 0) || (((1 << ar.id) & mask) != 0)) {
+		MeshAnim.Animation anim = maids.get(ar);
+		if(anim == null)
+		    anim = ar.make();
+		newids.put(ar, anim);
+		anims.add(anim);
+	    }
 	}
 	this.manims = anims.toArray(new MeshAnim.Animation[0]);
+	if(newids.isEmpty())
+	    newids = nomaids;
+	this.maids = newids;
     }
 
     private static final Map<Skeleton.ResPose, PoseMod> initmodids = new HashMap<>();
@@ -261,6 +272,8 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
     public void age() {
 	for(PoseMod mod : mods)
 	    mod.age();
+	for(MeshAnim.Animation anim : manims)
+	    anim.age();
 	this.ipold = 0.0f;
 	this.oldpose = null;
     }
