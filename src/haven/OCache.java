@@ -294,14 +294,18 @@ public class OCache implements Iterable<Gob> {
 		sdt = new MessageBuf(sdt);
 		Gob.Overlay nol = null;
 		if(ol == null) {
-		    g.addol(nol = new Gob.Overlay(g, olid, res, sdt), false);
+		    nol = new Gob.Overlay(g, olid, res, sdt);
+		    nol.old = msg.old;
+		    g.addol(nol, false);
 		} else if(!ol.sdt.equals(sdt)) {
 		    if(ol.spr instanceof Sprite.CUpd) {
 			MessageBuf copy = new MessageBuf(sdt);
 			((Sprite.CUpd)ol.spr).update(copy);
 			ol.sdt = copy;
 		    } else {
-			g.addol(nol = new Gob.Overlay(g, olid, res, sdt), false);
+			nol = new Gob.Overlay(g, olid, res, sdt);
+			nol.old = msg.old;
+			g.addol(nol, false);
 			ol.remove(false);
 		    }
 		}

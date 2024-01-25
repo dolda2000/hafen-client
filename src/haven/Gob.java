@@ -52,7 +52,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	public final Indir<Resource> res;
 	public MessageBuf sdt;
 	public Sprite spr;
-	public boolean delign = false;
+	public boolean delign = false, old = false;
 	private Collection<RenderTree.Slot> slots = null;
 	private boolean added = false;
 
@@ -75,6 +75,8 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	private void init() {
 	    if(spr == null) {
 		spr = Sprite.create(gob, res.get(), sdt);
+		if(old)
+		    spr.age();
 		if(added && (spr instanceof SetupMod))
 		    gob.setupmods.add((SetupMod)spr);
 	    }
