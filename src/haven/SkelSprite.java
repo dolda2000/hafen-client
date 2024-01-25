@@ -243,7 +243,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	rebuild();
     }
 
-    private void update(int fl) {
+    public void update(int fl) {
 	chmanims(fl);
 	if(skel != null)
 	    chposes(fl);
