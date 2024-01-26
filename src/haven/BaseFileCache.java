@@ -209,7 +209,24 @@ public class BaseFileCache implements ResCache {
 	    Files.createDirectories(dir);
 	Path tmp = Files.createTempFile(dir, "cache", ".new");
 	OutputStream fp = Files.newOutputStream(tmp);
+	class Cleaner implements Finalizer.Cleaner {
+	    boolean closed = false;
+
+	    public void clean() {
+		if(!closed) {
+		    try {
+			fp.close();
+			Files.delete(tmp);
+		    } catch(IOException e) {
+			new Warning(e, "cleaning unclosed cache-stream").issue();
+		    }
+		}
+	    }
+	}
+	Cleaner cleaner = new Cleaner();
 	return(new OutputStream() {
+		private Runnable clean = Finalizer.finalize(this, cleaner);
+
 		public void write(int b) throws IOException {
 		    fp.write(b);
 		}
@@ -225,6 +242,8 @@ public class BaseFileCache implements ResCache {
 		    } catch(AtomicMoveNotSupportedException e) {
 			Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING);
 		    }
+		    cleaner.closed = true;
+		    clean.run();
 		}
 	    });
     }
