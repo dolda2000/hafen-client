@@ -1092,7 +1092,7 @@ public class Skeleton {
 		return(equ -> () -> loc);
 	    };
 	    opcodes[17] = buf -> {
-		final float ang = buf.unorm16() * 2 * (float)Math.PI;
+		final float ang = buf.mnorm16() * 2 * (float)Math.PI;
 		float[] ax = new float[3];
 		Utils.oct2uvec(ax, buf.snorm16(), buf.snorm16());
 		Location loc = Location.rot(new Coord3f(ax[0], ax[1], ax[2]), ang);
