@@ -1113,6 +1113,17 @@ public class Skeleton {
 			return(pose.new BoneAlign(ref, orig, tgt));
 		    });
 	    };
+	    opcodes[19] = buf -> {
+		Coord3f ref = Utils.oct2uvec(buf.snorm16, buf.snorm16);
+		final String orignm = buf.string();
+		final String tgtnm = buf.string();
+		return(equ -> {
+			Pose pose = (Pose)equ;
+			Bone orig = pose.skel().bones.get(orignm);
+			Bone tgt = pose.skel().bones.get(tgtnm);
+			return(pose.new BoneAlign(ref, orig, tgt));
+		    });
+	    };
 	    opcodes[4] = buf -> {
 		return(equ -> () -> Location.nullrot);
 	    };
