@@ -945,14 +945,14 @@ public class Skeleton {
 		}
 		switch(t) {
 		case 0: case 2: {
-		    String resnm = buf.string();
-		    int resver = buf.uint16();
-		    byte[] sdt = buf.bytes(buf.uint8());
-		    int fl = (t == 2) ? buf.uint8() : 0;
+		    String resnm = sub.string();
+		    int resver = sub.uint16();
+		    byte[] sdt = sub.bytes(sub.uint8());
+		    int fl = (t == 2) ? sub.uint8() : 0;
 		    Indir<Resource> res = getres().pool.load(resnm, resver);
 		    Function<ModOwner, Pipe.Op> ploc = null;
 		    if((fl & 1) != 0) {
-			String eqnm = buf.string();
+			String eqnm = sub.string();
 			Indir<Resource> src = ((fl & 2) == 0) ? getres().indir() : res;
 			ploc = new Function<ModOwner, Pipe.Op>() {
 				BoneOffset eqp = null;
@@ -968,7 +968,7 @@ public class Skeleton {
 		    break;
 		}
 		case 1: {
-		    String id = buf.string();
+		    String id = sub.string();
 		    events[i] = new FxTrack.Trigger(tm, id);
 		    break;
 		}
