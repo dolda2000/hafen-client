@@ -1114,7 +1114,7 @@ public class Skeleton {
 		    });
 	    };
 	    opcodes[19] = buf -> {
-		Coord3f ref = Utils.oct2uvec(buf.snorm16, buf.snorm16);
+		Coord3f ref = Utils.oct2uvec(buf.snorm16(), buf.snorm16());
 		final String orignm = buf.string();
 		final String tgtnm = buf.string();
 		return(equ -> {
