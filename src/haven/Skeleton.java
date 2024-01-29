@@ -596,7 +596,7 @@ public class Skeleton {
 		    String bnm = buf.string();
 		    String bp = buf.string();
 		    Coord3f pos = new Coord3f(buf.float32(), buf.float32(), buf.float32());
-		    float rang = buf.unorm16() * 2 * (float)Math.PI;
+		    float rang = buf.mnorm16() * 2 * (float)Math.PI;
 		    float[] rax = new float[3];
 		    Utils.oct2uvec(rax, buf.snorm16(), buf.snorm16());
 		    Bone b = new Bone(bnm, pos, new Coord3f(rax[0], rax[1], rax[2]), rang);
@@ -924,7 +924,7 @@ public class Skeleton {
 		    float[] trans = new float[3];
 		    for(int o = 0; o < 3; o++)
 			trans[o] = Utils.hfdec((short)buf.int16());
-		    float rang = buf.unorm16() * 2 * (float)Math.PI;
+		    float rang = buf.mnorm16() * 2 * (float)Math.PI;
 		    float[] rax = new float[3];
 		    Utils.oct2uvec(rax, buf.snorm16(), buf.snorm16());
 		    frames[i] = new Track.Frame(tm, trans, rotasq(new float[4], rax, rang));
