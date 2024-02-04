@@ -33,4 +33,24 @@ public interface EquipTarget {
     public final Supplier<Pipe.Op> nil = () -> Pipe.Op.nil;
 
     public Supplier<? extends Pipe.Op> eqpoint(String nm, Message dat);
+
+    public static class NoSuchTarget extends IllegalArgumentException {
+	public final String tgt, nm;
+
+	public NoSuchTarget(EquipTarget tgt, String nm) {
+	    this.tgt = String.valueOf(tgt);
+	    this.nm = nm;
+	}
+
+	public String getMessage() {
+	    return(String.format("No such eqpoint: %s on %s", nm, tgt));
+	}
+    }
+
+    public static Supplier<? extends Pipe.Op> eqpoint(EquipTarget tgt, String nm, Message dat) {
+	Supplier<? extends Pipe.Op> ret = tgt.eqpoint(nm, dat);
+	if(ret == null)
+	    throw(new NoSuchTarget(tgt, nm));
+	return(ret);
+    }
 }
