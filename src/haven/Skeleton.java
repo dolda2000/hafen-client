@@ -710,6 +710,10 @@ public class Skeleton {
 	    cbl.add(l);
 	}
 
+	public void remove(FxTrack.EventListener l) {
+	    cbl.remove(l);
+	}
+
 	private void playfx(float ot, float nt) {
 	    if(ot > nt) {
 		playfx(Math.min(ot, len), len);
