@@ -65,32 +65,22 @@ public class Following extends Moving {
 	return(gob.glob.oc.getgob(this.tgt));
     }
 
-    private Skeleton.Pose getpose(Gob tgt) {
-	if(tgt == null)
-	    return(null);
-	return(Skeleton.getpose(tgt.getattr(Drawable.class)));
-    }
-
     private Pipe.Op xf = null, lpxf = null, lbxf = null;
-    private Supplier<? extends Pipe.Op> bxf = () -> null;
-    private Skeleton.Pose lpose = null;
-    private boolean hlpose = false;
+    private Gob ltgt;
+    private Supplier<? extends Pipe.Op> bxf = null;
     public Pipe.Op xf() {
 	synchronized(this) {
 	    Gob tgt = tgt();
 	    if(tgt != null) {
-		Skeleton.Pose cpose = getpose(tgt);
-		if(!hlpose || (cpose != lpose)) {
-		    bxf = xfres.get().flayer(Skeleton.BoneOffset.class, xfname).from(lpose = cpose);
-		    hlpose = true;
+		if((bxf == null) || (tgt != ltgt)) {
+		    bxf = xfres.get().flayer(Skeleton.BoneOffset.class, xfname).from(tgt);
+		    ltgt = tgt;
 		}
 	    } else {
-		bxf = () -> null;
-		lpose = null;
-		hlpose = false;
+		bxf = null;
 	    }
 	    Pipe.Op cpxf = (tgt == null) ? null : tgt.placed.placement();
-	    Pipe.Op cbxf = bxf.get();
+	    Pipe.Op cbxf = (bxf == null) ? null : bxf.get();
 	    if((xf == null) || !Utils.eq(cbxf, lbxf) || !Utils.eq(cpxf, lpxf)) {
 		xf = Pipe.Op.compose(cpxf, cbxf);
 		lpxf = cpxf;
