@@ -1100,7 +1100,7 @@ public class Skeleton {
 	    };
 	    opcodes[2] = buf -> {
 		final String bonenm = buf.string();
-		return(equ -> equ.eqpoint(bonenm, Message.nil));
+		return(equ -> EquipTarget.eqpoint(equ, bonenm, Message.nil));
 	    };
 	    opcodes[3] = buf -> {
 		Coord3f ref = Coord3f.of((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat()).norm();
