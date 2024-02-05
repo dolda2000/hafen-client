@@ -1279,6 +1279,10 @@ public class Utils {
 	return(a);
     }
 
+    public static float smoothstep(float d) {
+	return(d * d * (3 - (2 * d)));
+    }
+
     public static double smoothstep(double d) {
 	return(d * d * (3 - (2 * d)));
     }
