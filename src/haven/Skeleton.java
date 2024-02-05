@@ -997,9 +997,11 @@ public class Skeleton {
 		float tm = (fmt == 0) ? (float)buf.cpfloat() : (buf.unorm16() * len);
 		int t = buf.uint8();
 		Message sub = buf;
+		boolean exhaust = false;
 		if((t & 0x80) != 0) {
 		    sub = new MessageBuf(buf.bytes(buf.uint16()));
 		    t &= 0x7f;
+		    exhaust = true;
 		}
 		switch(t) {
 		case 0: case 2: {
@@ -1046,8 +1048,13 @@ public class Skeleton {
 		    break;
 		}
 		default:
-		    throw(new Resource.LoadException("Illegal control event: " + t, getres()));
+		    if(exhaust)
+			Warning.warn("unknown animation control event: %d", t);
+		    else
+			throw(new Resource.LoadException("Illegal control event: " + t, getres()));
 		}
+		if(exhaust)
+		    sub.skip();
 	    }
 	    return(new FxTrack(events));
 	}
