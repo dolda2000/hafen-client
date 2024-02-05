@@ -316,7 +316,9 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	Skeleton.BoneOffset bo = res.layer(Skeleton.BoneOffset.class, nm);
 	if(bo != null)
 	    return(bo.from(pose));
-	return(pose.eqpoint(nm, dat));
+	if(pose != null)
+	    return(pose.eqpoint(nm, dat));
+	return(null);
     }
 
     static {
