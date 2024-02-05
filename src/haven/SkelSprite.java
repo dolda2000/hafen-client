@@ -92,10 +92,10 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	//     slot.add(pose.new Debug());
     }
 
+    private static final OwnerContext.ClassResolver<SkelSprite> ctxr = new OwnerContext.ClassResolver<SkelSprite>()
+	.add(SkelSprite.class, spr -> spr);
     public <T> T context(Class<T> cl) {
-	if(owner == null)
-	    throw(new NoContext(cl));
-	return(owner.context(cl));
+	return(OwnerContext.orparent(cl, ctxr.context(cl, this, false), owner));
     }
     public Collection<Location.Chain> getloc() {
 	Collection<Location.Chain> ret = new ArrayList<>(slots.size());
