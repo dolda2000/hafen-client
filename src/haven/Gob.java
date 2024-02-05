@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.function.*;
 import haven.render.*;
 
-public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, EquipTarget, Skeleton.HasPose {
+public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, EquipTarget {
     public Coord2d rc;
     public double a;
     public boolean virtual = false;
@@ -775,13 +775,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	Drawable d = getattr(Drawable.class);
 	if(d != null)
 	    return(d.getres());
-	return(null);
-    }
-
-    public Skeleton.Pose getpose() {
-	Drawable d = getattr(Drawable.class);
-	if(d != null)
-	    return(d.getpose());
 	return(null);
     }
 

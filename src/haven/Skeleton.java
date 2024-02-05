@@ -413,15 +413,6 @@ public class Skeleton {
 	}
     }
 
-    public interface HasPose {
-	public Pose getpose();
-    }
-    public static Pose getpose(Object owner) {
-	if(owner instanceof HasPose)
-	    return(((HasPose)owner).getpose());
-	return(null);
-    }
-    
     public interface ModOwner extends OwnerContext {
 	public double getv();
 	public Collection<Location.Chain> getloc();

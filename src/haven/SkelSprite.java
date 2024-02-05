@@ -32,7 +32,7 @@ import haven.render.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 
-public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skeleton.HasPose, Skeleton.ModOwner {
+public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skeleton.ModOwner {
     public static final Pipe.Op
 	rigid = new BaseColor(FColor.GREEN),
 	morphed = new BaseColor(FColor.RED),
@@ -306,10 +306,6 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
     public void gtick(Render g) {
 	for(Consumer<Render> gpart : gtickparts)
 	    gpart.accept(g);
-    }
-
-    public Pose getpose() {
-	return(pose);
     }
 
     public Supplier<Pipe.Op> eqpoint(String nm, Message dat) {

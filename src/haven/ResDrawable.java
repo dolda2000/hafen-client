@@ -76,10 +76,6 @@ public class ResDrawable extends Drawable implements EquipTarget {
 	return(rres);
     }
 
-    public Skeleton.Pose getpose() {
-	return(Skeleton.getpose(spr));
-    }
-
     public Gob.Placer placer() {
 	if(spr instanceof Gob.Placing) {
 	    Gob.Placer ret = ((Gob.Placing)spr).placer();
