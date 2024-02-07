@@ -111,10 +111,20 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    }
 	    remove0();
 	    gob.ols.remove(this);
+	    removed();
 	}
 
 	public void remove() {
 	    remove(true);
+	}
+
+	protected void removed() {
+	}
+
+	public boolean tick(double dt) {
+	    if(spr == null)
+		return(false);
+	    return(spr.tick(dt));
 	}
 
 	public void added(RenderTree.Slot slot) {
@@ -432,7 +442,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 		    ol.init();
 		} catch(Loading e) {}
 	    } else {
-		boolean done = ol.spr.tick(dt);
+		boolean done = ol.tick(dt);
 		if((!ol.delign || (ol.spr instanceof Sprite.CDel)) && done) {
 		    ol.remove0();
 		    i.remove();
