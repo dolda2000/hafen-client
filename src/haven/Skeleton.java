@@ -701,6 +701,10 @@ public class Skeleton {
 	    cbl.add(l);
 	}
 
+	public void remove(FxTrack.EventListener l) {
+	    cbl.remove(l);
+	}
+
 	private void playfx(float ot, float nt) {
 	    if(ot > nt) {
 		playfx(Math.min(ot, len), len);
@@ -874,6 +878,60 @@ public class Skeleton {
 	    }
 	}
 
+	public static class FxOverlay extends Gob.Overlay {
+	    public final String fxid;
+
+	    public FxOverlay(Gob gob, String id, Indir<Resource> res, Message sdt) {
+		super(gob, -1, res, sdt);
+		this.fxid = id;
+	    }
+	}
+
+	public static class MkOverlay extends Event {
+	    public final String id;
+	    public final Indir<Resource> res;
+	    public final byte[] sdt;
+
+	    public MkOverlay(float time, String id, Indir<Resource> res, byte[] sdt) {
+		super(time);
+		this.id = id.intern();
+		this.res = res;
+		this.sdt = sdt;
+	    }
+
+	    public void trigger(ModOwner owner) {
+		Gob gob = owner.fcontext(Gob.class, false);
+		if(gob != null) {
+		    FxOverlay ol = new FxOverlay(gob, this.id, this.res, new MessageBuf(this.sdt));
+		    ol.delign = true;
+		    gob.addol(ol, true);
+		}
+	    }
+	}
+
+	public static class RmOverlay extends Event {
+	    public final String id;
+
+	    public RmOverlay(float time, String id) {
+		super(time);
+		this.id = id.intern();
+	    }
+
+	    public void trigger(ModOwner owner) {
+		Gob gob = owner.fcontext(Gob.class, false);
+		if(gob != null) {
+		    for(Gob.Overlay ol : gob.ols) {
+			if((ol instanceof FxOverlay) && (((FxOverlay)ol).fxid == this.id)) {
+			    if(ol.spr instanceof Sprite.CDel)
+				((Sprite.CDel)ol.spr).delete();
+			    else
+				ol.remove(true);
+			}
+		    }
+		}
+	    }
+	}
+
 	public static class Trigger extends Event {
 	    public final String id;
 
@@ -930,9 +988,11 @@ public class Skeleton {
 		float tm = (fmt == 0) ? (float)buf.cpfloat() : (buf.unorm16() * len);
 		int t = buf.uint8();
 		Message sub = buf;
+		boolean exhaust = false;
 		if((t & 0x80) != 0) {
 		    sub = new MessageBuf(buf.bytes(buf.uint16()));
 		    t &= 0x7f;
+		    exhaust = true;
 		}
 		switch(t) {
 		case 0: case 2: {
@@ -963,9 +1023,29 @@ public class Skeleton {
 		    events[i] = new FxTrack.Trigger(tm, id);
 		    break;
 		}
-		default:
-		    throw(new Resource.LoadException("Illegal control event: " + t, getres()));
+		case 3: {
+		    int fl = sub.uint8();
+		    String id = sub.string();
+		    String resnm = sub.string();
+		    int resver = sub.uint16();
+		    byte[] sdt = sub.bytes(sub.uint8());
+		    Indir<Resource> res = getres().pool.load(resnm, resver);
+		    events[i] = new FxTrack.MkOverlay(tm, id, res, sdt);
+		    break;
 		}
+		case 4: {
+		    String id = sub.string();
+		    events[i] = new FxTrack.RmOverlay(tm, id);
+		    break;
+		}
+		default:
+		    if(exhaust)
+			Warning.warn("unknown animation control event: %d", t);
+		    else
+			throw(new Resource.LoadException("Illegal control event: " + t, getres()));
+		}
+		if(exhaust)
+		    sub.skip();
 	    }
 	    return(new FxTrack(events));
 	}
