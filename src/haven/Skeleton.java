@@ -906,7 +906,8 @@ public class Skeleton {
 	    }
 
 	    public boolean tick(double dt) {
-		super.tick(dt);
+		if(super.tick(dt))
+		    return(true);
 		boolean rv = !ticked;
 		ticked = false;
 		return(rv);
