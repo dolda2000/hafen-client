@@ -76,16 +76,22 @@ public interface MapSource {
 		int t = m.gettile(a.ul.add(c));
 		if(t < 0)
 		    continue;
-		Tiler tl = m.tiler(t);
-		if(tl instanceof haven.resutil.Ridges.RidgeTile) {
-		    if(haven.resutil.Ridges.brokenp(m, a.ul.add(c))) {
-			for(int y = c.y - 1; y <= c.y + 1; y++) {
-			    for(int x = c.x - 1; x <= c.x + 1; x++) {
-				Color cc = new Color(buf.getRGB(x, y));
-				buf.setRGB(x, y, Utils.blendcol(cc, Color.BLACK, ((x == c.x) && (y == c.y))?1:0.1).getRGB());
+		try {
+		    Tiler tl = m.tiler(t);
+		    if(tl instanceof haven.resutil.Ridges.RidgeTile) {
+			if(haven.resutil.Ridges.brokenp(m, a.ul.add(c))) {
+			    for(int y = c.y - 1; y <= c.y + 1; y++) {
+				for(int x = c.x - 1; x <= c.x + 1; x++) {
+				    Color cc = new Color(buf.getRGB(x, y));
+				    buf.setRGB(x, y, Utils.blendcol(cc, Color.BLACK, ((x == c.x) && (y == c.y))?1:0.1).getRGB());
+				}
 			    }
 			}
 		    }
+		} catch(RuntimeException exc) {
+		    /* XXX: Tileset resources loaded from cache can contain outdated
+		     * and illegal references. Catching them and ignoring them here
+		     * seems like an ugly hack, but what is the better alternative? */
 		}
 	    }
 	}
