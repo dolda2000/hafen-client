@@ -436,6 +436,7 @@ public class Skeleton {
     public abstract class PoseMod {
 	public final ModOwner owner;
 	public float[][] lpos, lrot;
+	protected final Collection<FxTrack.EventListener> cbl = new ArrayList<FxTrack.EventListener>(0);
 
 	public PoseMod(ModOwner owner) {
 	    this.owner = owner;
@@ -472,6 +473,19 @@ public class Skeleton {
 	}
 
 	public void age() {
+	}
+	
+	public void listen(FxTrack.EventListener l) {
+	    cbl.add(l);
+	}
+
+	public void remove(FxTrack.EventListener l) {
+	    cbl.remove(l);
+	}
+
+	public void callback(FxTrack.Event ev) {
+	    for(FxTrack.EventListener l : cbl)
+		l.event(ev);
 	}
 
 	public abstract boolean stat();
@@ -632,7 +646,6 @@ public class Skeleton {
     public class TrackMod extends PoseMod {
 	public final Track[] tracks;
 	public final FxTrack[] effects;
-	private final Collection<FxTrack.EventListener> cbl = new ArrayList<FxTrack.EventListener>(0);
 	public final float len;
 	public final WrapMode mode;
 	private final boolean stat;
@@ -705,14 +718,6 @@ public class Skeleton {
 		}
 	    }
 	}
-	
-	public void listen(FxTrack.EventListener l) {
-	    cbl.add(l);
-	}
-
-	public void remove(FxTrack.EventListener l) {
-	    cbl.remove(l);
-	}
 
 	private void playfx(float ot, float nt) {
 	    if(ot > nt) {
@@ -722,8 +727,7 @@ public class Skeleton {
 		for(FxTrack t : effects) {
 		    for(FxTrack.Event ev : t.events) {
 			if((ev.time >= ot) && (ev.time < nt)) {
-			    for(FxTrack.EventListener l : cbl)
-				l.event(ev);
+			    callback(ev);
 			    ev.trigger(owner);
 			}
 		    }
