@@ -719,17 +719,19 @@ public class Skeleton {
 		    for(FxTrack.Event ev : t.events) {
 			if((ev.time >= ot) && (ev.time < nt)) {
 			    callback(ev);
-			    ev.trigger(owner);
+			    ev.trigger(owner, this);
 			}
 		    }
 		}
+		if(!cbl.isEmpty())
+		    callback(new FxTrack.Tick(nt));
 	    }
 	}
 
 	public boolean tick(float dt) {
 	    if(speedmod)
 		dt *= owner.getv() / nspeed;
-	    float nt = time + (back?-dt:dt);
+	    float nt = time + (back ? -dt : dt);
 	    switch(mode) {
 	    case LOOP:
 		if(len == 0)
@@ -838,7 +840,7 @@ public class Skeleton {
 		this.time = time;
 	    }
 
-	    public abstract void trigger(ModOwner owner);
+	    public abstract void trigger(ModOwner owner, PoseMod mod);
 	}
 
 	public FxTrack(Event[] events) {
@@ -857,7 +859,7 @@ public class Skeleton {
 		this.loc = loc;
 	    }
 
-	    public void trigger(ModOwner owner) {
+	    public void trigger(ModOwner owner, PoseMod mod) {
 		Glob glob = owner.context(Glob.class);
 		Collection<Location.Chain> locs = owner.getloc();
 		Loader l = glob.loader;
@@ -882,12 +884,34 @@ public class Skeleton {
 	    }
 	}
 
-	public static class FxOverlay extends Gob.Overlay {
+	public static class FxOverlay extends Gob.Overlay implements FxTrack.EventListener {
 	    public final String fxid;
+	    private final PoseMod mod;
+	    private boolean ticked = true;
 
-	    public FxOverlay(Gob gob, String id, Indir<Resource> res, Message sdt) {
+	    public FxOverlay(Gob gob, PoseMod mod, String id, Indir<Resource> res, Message sdt) {
 		super(gob, -1, res, sdt);
 		this.fxid = id;
+		this.mod = mod;
+		mod.listen(this);
+	    }
+
+	    public boolean tick(double dt) {
+		if(super.tick(dt))
+		    return(true);
+		boolean rv = !ticked;
+		ticked = false;
+		return(rv);
+	    }
+
+	    protected void removed() {
+		super.removed();
+		mod.remove(this);
+	    }
+
+	    public void event(FxTrack.Event ev) {
+		if(ev instanceof FxTrack.Tick)
+		    ticked = true;
 	    }
 	}
 
@@ -903,11 +927,10 @@ public class Skeleton {
 		this.sdt = sdt;
 	    }
 
-	    public void trigger(ModOwner owner) {
+	    public void trigger(ModOwner owner, PoseMod mod) {
 		Gob gob = owner.fcontext(Gob.class, false);
 		if(gob != null) {
-		    FxOverlay ol = new FxOverlay(gob, this.id, this.res, new MessageBuf(this.sdt));
-		    ol.delign = true;
+		    FxOverlay ol = new FxOverlay(gob, mod, this.id, this.res, new MessageBuf(this.sdt));
 		    gob.addol(ol, true);
 		}
 	    }
@@ -921,7 +944,7 @@ public class Skeleton {
 		this.id = id.intern();
 	    }
 
-	    public void trigger(ModOwner owner) {
+	    public void trigger(ModOwner owner, PoseMod mod) {
 		Gob gob = owner.fcontext(Gob.class, false);
 		if(gob != null) {
 		    for(Gob.Overlay ol : gob.ols) {
@@ -944,7 +967,15 @@ public class Skeleton {
 		this.id = id.intern();
 	    }
 
-	    public void trigger(ModOwner owner) {}
+	    public void trigger(ModOwner owner, PoseMod mod) {}
+	}
+
+	public static class Tick extends Event {
+	    public Tick(float time) {
+		super(time);
+	    }
+
+	    public void trigger(ModOwner owner, PoseMod mod) {}
 	}
     }
 

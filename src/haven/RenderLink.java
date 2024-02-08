@@ -146,6 +146,24 @@ public interface RenderLink {
 	}
     }
 
+    public static class ResSprite implements RenderLink {
+	public final Indir<Resource> res;
+
+	public ResSprite(Indir<Resource> res) {
+	    this.res = res;
+	}
+
+	public static ResSprite parse(Resource res, Message buf) {
+	    String nm = buf.string();
+	    int ver = buf.uint16();
+	    return(new ResSprite(res.pool.load(nm, ver)));
+	}
+
+	public Node make(Owner owner) {
+	    return(Sprite.create(owner, res.get(), Message.nil));
+	}
+    }
+
     public static class Parameters implements RenderLink {
 	public final Resource from;
 	public final Indir<Resource> res;
@@ -218,6 +236,8 @@ public interface RenderLink {
 		l = Collect.parse(res, buf);
 	    } else if(t == 3) {
 		l = Parameters.parse(res, buf);
+	    } else if(t == 4) {
+		l = ResSprite.parse(res, buf);
 	    } else {
 		throw(new Resource.LoadException("Invalid renderlink type: " + t, res));
 	    }

@@ -42,7 +42,7 @@ public class ResDrawable extends Drawable implements EquipTarget {
 	this.sdt = new MessageBuf(sdt);
 	this.rres = res.get();
 	spr = Sprite.create(gob, rres, this.sdt.clone());
-	if(old)
+	if(old || true)
 	    spr.age();
     }
 
