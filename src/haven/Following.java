@@ -65,22 +65,33 @@ public class Following extends Moving {
 	return(gob.glob.oc.getgob(this.tgt));
     }
 
+    private class XfResolver implements Runnable {
+	final Gob tgt;
+	Supplier<? extends Pipe.Op> xf = null;
+
+	XfResolver(Gob tgt) {
+	    this.tgt = tgt;
+	    tgt.defer(this);
+	}
+
+	public void run() {
+	    this.xf = xfres.get().flayer(Skeleton.BoneOffset.class, xfname).from(tgt);
+	}
+    }
+
     private Pipe.Op xf = null, lpxf = null, lbxf = null;
-    private Gob ltgt;
-    private Supplier<? extends Pipe.Op> bxf = null;
+    private XfResolver bxf = null;
     public Pipe.Op xf() {
 	synchronized(this) {
 	    Gob tgt = tgt();
 	    if(tgt != null) {
-		if((bxf == null) || (tgt != ltgt)) {
-		    bxf = xfres.get().flayer(Skeleton.BoneOffset.class, xfname).from(tgt);
-		    ltgt = tgt;
-		}
+		if((bxf == null) || (tgt != bxf.tgt))
+		    bxf = new XfResolver(tgt);
 	    } else {
 		bxf = null;
 	    }
 	    Pipe.Op cpxf = (tgt == null) ? null : tgt.placed.placement();
-	    Pipe.Op cbxf = (bxf == null) ? null : bxf.get();
+	    Pipe.Op cbxf = ((bxf == null) || (bxf.xf == null)) ? null : bxf.xf.get();
 	    if((xf == null) || !Utils.eq(cbxf, lbxf) || !Utils.eq(cpxf, lpxf)) {
 		xf = Pipe.Op.compose(cpxf, cbxf);
 		lpxf = cpxf;
