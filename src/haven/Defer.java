@@ -109,7 +109,7 @@ public class Defer extends ThreadGroup {
 	}
     }
 
-    public class Future<T> implements Runnable, Prioritized {
+    public class Future<T> implements Runnable, Prioritized, haven.Future<T> {
 	public final Callable<T> task;
 	private final Waitable.Queue wq = new Waitable.Queue();
 	private int prio = -1;
