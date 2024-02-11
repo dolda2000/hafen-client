@@ -101,7 +101,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
     }
 
     public <T> T context(Class<T> cl) {
-	return(owner.context(cl));
+	return(OwnerContext.orparent(cl, ctxr.context(cl, this, false), owner));
     }
     public Collection<Location.Chain> getloc() {
 	Collection<Location.Chain> ret = new ArrayList<>(slots.size());
