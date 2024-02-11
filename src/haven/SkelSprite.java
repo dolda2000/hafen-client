@@ -77,6 +77,14 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	update(fl);
     }
 
+    private static final OwnerContext.ClassResolver<SkelSprite> ctxr = new OwnerContext.ClassResolver<SkelSprite>()
+	.add(SkelSprite.class, spr -> spr);
+    public class RecOwner extends Sprite.RecOwner {
+	public <T> T context(Class<T> cl) {
+	    return(OwnerContext.orparent(cl, ctxr.context(cl, SkelSprite.this, false), owner));
+	}
+    }
+
     public SkelSprite(Owner owner, Resource res) {
 	this(owner, res, 0xffff0000);
     }
@@ -92,10 +100,8 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	//     slot.add(pose.new Debug());
     }
 
-    private static final OwnerContext.ClassResolver<SkelSprite> ctxr = new OwnerContext.ClassResolver<SkelSprite>()
-	.add(SkelSprite.class, spr -> spr);
     public <T> T context(Class<T> cl) {
-	return(OwnerContext.orparent(cl, ctxr.context(cl, this, false), owner));
+	return(owner.context(cl));
     }
     public Collection<Location.Chain> getloc() {
 	Collection<Location.Chain> ret = new ArrayList<>(slots.size());
