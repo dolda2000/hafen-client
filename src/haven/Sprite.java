@@ -55,6 +55,10 @@ public abstract class Sprite implements RenderTree.Node {
 	public <T> T context(Class<T> cl) {return(owner.context(cl));}
 
 	public Resource getres() {return(res);}
+
+	public String toString() {
+	    return(String.format("#<rec-owner of %s, owned by %s>", Sprite.this, owner));
+	}
     }
 
     public static interface CDel {
