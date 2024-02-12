@@ -1173,45 +1173,45 @@ public class Skeleton {
 	public final transient Function<EquipTarget, Supplier<Pipe.Op>>[] prog;
 
 	@SuppressWarnings("unchecked")
-	private static final Function<Message, Function<EquipTarget, Supplier<? extends Pipe.Op>>>[] opcodes = new Function[256];
+	private static final BiFunction<Message, BoneOffset, Function<EquipTarget, Supplier<? extends Pipe.Op>>>[] opcodes = new BiFunction[256];
 	static {
-	    opcodes[0] = buf -> {
+	    opcodes[0] = (buf, bo) -> {
 		float x = (float)buf.cpfloat();
 		float y = (float)buf.cpfloat();
 		float z = (float)buf.cpfloat();
 		Location loc = Location.xlate(new Coord3f(x, y, z));
 		return(equ -> () -> loc);
 	    };
-	    opcodes[16] = buf -> {
+	    opcodes[16] = (buf, bo) -> {
 		float x = buf.float32();
 		float y = buf.float32();
 		float z = buf.float32();
 		Location loc = Location.xlate(new Coord3f(x, y, z));
 		return(equ -> () -> loc);
 	    };
-	    opcodes[1] = buf -> {
-		final float ang = (float)buf.cpfloat();
-		final float ax = (float)buf.cpfloat();
-		final float ay = (float)buf.cpfloat();
-		final float az = (float)buf.cpfloat();
+	    opcodes[1] = (buf, bo) -> {
+		float ang = (float)buf.cpfloat();
+		float ax = (float)buf.cpfloat();
+		float ay = (float)buf.cpfloat();
+		float az = (float)buf.cpfloat();
 		Location loc = Location.rot(new Coord3f(ax, ay, az), ang);
 		return(equ -> () -> loc);
 	    };
-	    opcodes[17] = buf -> {
-		final float ang = buf.mnorm16() * 2 * (float)Math.PI;
+	    opcodes[17] = (buf, bo) -> {
+		float ang = buf.mnorm16() * 2 * (float)Math.PI;
 		float[] ax = new float[3];
 		Utils.oct2uvec(ax, buf.snorm16(), buf.snorm16());
 		Location loc = Location.rot(new Coord3f(ax[0], ax[1], ax[2]), ang);
 		return(equ -> () -> loc);
 	    };
-	    opcodes[2] = buf -> {
-		final String bonenm = buf.string();
-		return(equ -> EquipTarget.eqpoint(equ, bonenm, Message.nil));
+	    opcodes[2] = (buf, bo) -> {
+		String bonenm = buf.string();
+		return(equ -> EquipTarget.eqpoint(equ, bonenm, Message.nil, bo));
 	    };
-	    opcodes[3] = buf -> {
+	    opcodes[3] = (buf, bo) -> {
 		Coord3f ref = Coord3f.of((float)buf.cpfloat(), (float)buf.cpfloat(), (float)buf.cpfloat()).norm();
-		final String orignm = buf.string();
-		final String tgtnm = buf.string();
+		String orignm = buf.string();
+		String tgtnm = buf.string();
 		return(equ -> {
 			Pose pose = (Pose)equ;
 			Bone orig = pose.skel().bones.get(orignm);
@@ -1219,10 +1219,10 @@ public class Skeleton {
 			return(pose.new BoneAlign(ref, orig, tgt));
 		    });
 	    };
-	    opcodes[19] = buf -> {
+	    opcodes[19] = (buf, bo) -> {
 		Coord3f ref = Utils.oct2uvec(buf.snorm16(), buf.snorm16());
-		final String orignm = buf.string();
-		final String tgtnm = buf.string();
+		String orignm = buf.string();
+		String tgtnm = buf.string();
 		return(equ -> {
 			Pose pose = (Pose)equ;
 			Bone orig = pose.skel().bones.get(orignm);
@@ -1230,11 +1230,11 @@ public class Skeleton {
 			return(pose.new BoneAlign(ref, orig, tgt));
 		    });
 	    };
-	    opcodes[4] = buf -> {
+	    opcodes[4] = (buf, bo) -> {
 		return(equ -> () -> Location.nullrot);
 	    };
-	    opcodes[5] = buf -> {
-		final float scale = buf.float32();
+	    opcodes[5] = (buf, bo) -> {
+		float scale = buf.float32();
 		Location loc = Location.scale(scale);
 		return(post -> () -> loc);
 	    };
@@ -1246,7 +1246,7 @@ public class Skeleton {
 	    this.nm = buf.string();
 	    List<Function<EquipTarget, Supplier<? extends Pipe.Op>>> cbuf = new LinkedList<>();
 	    while(!buf.eom())
-		cbuf.add(opcodes[buf.uint8()].apply(buf));
+		cbuf.add(opcodes[buf.uint8()].apply(buf, this));
 	    this.prog = cbuf.toArray(new Function[0]);
 	}
 
