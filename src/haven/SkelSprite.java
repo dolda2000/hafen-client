@@ -32,7 +32,7 @@ import haven.render.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 
-public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skeleton.ModOwner {
+public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Sprite.Owner, Skeleton.ModOwner {
     public static final Pipe.Op
 	rigid = new BaseColor(FColor.GREEN),
 	morphed = new BaseColor(FColor.RED),
@@ -77,14 +77,6 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	update(fl);
     }
 
-    private static final OwnerContext.ClassResolver<SkelSprite> ctxr = new OwnerContext.ClassResolver<SkelSprite>()
-	.add(SkelSprite.class, spr -> spr);
-    public class RecOwner extends Sprite.RecOwner {
-	public <T> T context(Class<T> cl) {
-	    return(OwnerContext.orparent(cl, ctxr.context(cl, SkelSprite.this, false), owner));
-	}
-    }
-
     public SkelSprite(Owner owner, Resource res) {
 	this(owner, res, 0xffff0000);
     }
@@ -100,8 +92,16 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	//     slot.add(pose.new Debug());
     }
 
+    private static final OwnerContext.ClassResolver<SkelSprite> ctxr = new OwnerContext.ClassResolver<SkelSprite>()
+	.add(SkelSprite.class, spr -> spr);
     public <T> T context(Class<T> cl) {
 	return(OwnerContext.orparent(cl, ctxr.context(cl, this, false), owner));
+    }
+    public Random mkrandoom() {
+	return(owner.mkrandoom());
+    }
+    public Resource getres() {
+	return(res);
     }
     public Collection<Location.Chain> getloc() {
 	Collection<Location.Chain> ret = new ArrayList<>(slots.size());
@@ -165,12 +165,9 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Skel
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0)))
 		rbuf.add(animwrap(mr.mat.get().apply(mr.m), tbuf, gbuf));
 	}
-	Owner rec = null;
 	for(RenderLink.Res lr : res.layers(RenderLink.Res.class)) {
 	    if((lr.id < 0) || (((1 << lr.id) & mask) != 0)) {
-		if(rec == null)
-		    rec = new RecOwner();
-		RenderTree.Node r = lr.l.make(rec);
+		RenderTree.Node r = lr.l.make(this);
 		if(r instanceof Pipe.Op.Wrapping)
 		    r = animwrap((Pipe.Op.Wrapping)r, tbuf, gbuf);
 		rbuf.add(r);
