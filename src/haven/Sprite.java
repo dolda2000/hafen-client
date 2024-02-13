@@ -86,6 +86,10 @@ public abstract class Sprite implements RenderTree.Node {
 	public Sprite create(Owner owner, Resource res, Message sdt);
     }
 
+    public interface Mill {
+	public Sprite create(Owner owner);
+    }
+
     public static class ResourceException extends RuntimeException {
 	public Resource res;
 
