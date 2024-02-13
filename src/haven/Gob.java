@@ -953,4 +953,8 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	public TickList.Ticking ticker() {return(this);}
     }
     public final Placed placed = new Placed();
+
+    public String toString() {
+	return(String.format("#<ob %d %s>", id, getattr(Drawable.class)));
+    }
 }
