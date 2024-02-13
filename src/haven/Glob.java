@@ -57,11 +57,26 @@ public class Glob {
 	party = new Party(this);
     }
 
-    @Resource.PublishedCode(name = "wtr")
     public static interface Weather {
 	public Pipe.Op state();
 	public void update(Object... args);
 	public boolean tick(double dt);
+
+	public static class FactMaker extends Resource.PublishedCode.Instancer.Chain<Factory> {
+	    public FactMaker() {super(Factory.class);}
+	    {
+		add(new Direct<>(Factory.class));
+		add(new StaticCall<>(Factory.class, "mkweather", Weather.class, new Class<?>[] {Object[].class},
+				     (make) -> (args) -> make.apply(new Object[]{args})));
+		add(new Construct<>(Factory.class, Weather.class, new Class<?>[] {Object[].class},
+				    (cons) -> (args) -> cons.apply(new Object[]{args})));
+	    }
+	}
+
+	@Resource.PublishedCode(name = "wtr", instancer = FactMaker.class)
+	public static interface Factory {
+	    public Weather weather(Object... args);
+	}
     }
 
     public static class CAttr {
@@ -273,13 +288,11 @@ public class Glob {
 		    ret.add((Weather)val);
 		} else {
 		    try {
-			Class<? extends Weather> cl = cur.getKey().get().flayer(Resource.CodeEntry.class).getcl(Weather.class);
-			Weather w = Utils.construct(cl.getConstructor(Object[].class), new Object[] {val});
+			Weather.Factory f = cur.getKey().get().flayer(Resource.CodeEntry.class).get(Weather.Factory.class);
+			Weather w = f.weather((Object[])val);
 			cur.setValue(w);
 			ret.add(w);
 		    } catch(Loading l) {
-		    } catch(NoSuchMethodException e) {
-			throw(new RuntimeException(e));
 		    }
 		}
 	    }
