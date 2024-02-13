@@ -49,32 +49,33 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     public static class Overlay implements RenderTree.Node {
 	public final int id;
 	public final Gob gob;
-	public final Indir<Resource> res;
-	public MessageBuf sdt;
+	public final Sprite.Mill sm;
 	public Sprite spr;
 	public boolean delign = false, old = false;
 	private Collection<RenderTree.Slot> slots = null;
 	private boolean added = false;
 
-	public Overlay(Gob gob, int id, Indir<Resource> res, Message sdt) {
+	public Overlay(Gob gob, int id, Sprite.Mill sm) {
 	    this.gob = gob;
 	    this.id = id;
-	    this.res = res;
-	    this.sdt = new MessageBuf(sdt);
+	    this.sm = sm;
 	    this.spr = null;
+	}
+
+	public Overlay(Gob gob, int id, Indir<Resource> res, Message sdt) {
+	    this(gob, id, owner -> Sprite.create(owner, res.get(), sdt));
 	}
 
 	public Overlay(Gob gob, Sprite spr) {
 	    this.gob = gob;
 	    this.id = -1;
-	    this.res = null;
-	    this.sdt = null;
+	    this.sm = null;
 	    this.spr = spr;
 	}
 
 	private void init() {
 	    if(spr == null) {
-		spr = Sprite.create(gob, res.get(), sdt);
+		spr = sm.create(gob);
 		if(old)
 		    spr.age();
 		if(added && (spr instanceof SetupMod))
@@ -653,7 +654,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	}
 
 	public String toString() {
-	    return(String.format("#<gob-click %d %s>", gob.id, gob.getres()));
+	    return(String.format("#<gob-click %s>", gob));
 	}
     }
 
@@ -781,6 +782,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	return(Utils.mkrandoom(id));
     }
 
+    @Deprecated
     public Resource getres() {
 	Drawable d = getattr(Drawable.class);
 	if(d != null)

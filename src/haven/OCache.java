@@ -268,6 +268,20 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
+    public static class OlSprite implements Sprite.Mill {
+	public final Indir<Resource> res;
+	public Message sdt;
+
+	public OlSprite(Indir<Resource> res, Message sdt) {
+	    this.res = res;
+	    this.sdt = sdt;
+	}
+
+	public Sprite create(Sprite.Owner owner) {
+	    return(Sprite.create(owner, res.get(), sdt));
+	}
+    }
+
     @DeltaType(OD_OVERLAY)
     public static class $overlay implements Delta {
 	public void apply(Gob g, AttrDelta msg) {
@@ -294,16 +308,17 @@ public class OCache implements Iterable<Gob> {
 		sdt = new MessageBuf(sdt);
 		Gob.Overlay nol = null;
 		if(ol == null) {
-		    nol = new Gob.Overlay(g, olid, res, sdt);
+		    nol = new Gob.Overlay(g, olid, new OlSprite(res, sdt));
 		    nol.old = msg.old;
 		    g.addol(nol, false);
-		} else if(!ol.sdt.equals(sdt)) {
-		    if(ol.spr instanceof Sprite.CUpd) {
+		} else {
+		    OlSprite os = (ol.sm instanceof OlSprite) ? (OlSprite)ol.sm : null;
+		    if((os != null) && !Utils.eq(os.sdt, sdt) && (ol.spr instanceof Sprite.CUpd)) {
 			MessageBuf copy = new MessageBuf(sdt);
 			((Sprite.CUpd)ol.spr).update(copy);
-			ol.sdt = copy;
+			os.sdt = copy;
 		    } else {
-			nol = new Gob.Overlay(g, olid, res, sdt);
+			nol = new Gob.Overlay(g, olid, new OlSprite(res, sdt));
 			nol.old = msg.old;
 			g.addol(nol, false);
 			ol.remove(false);
