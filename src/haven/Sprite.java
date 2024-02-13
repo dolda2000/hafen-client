@@ -47,7 +47,7 @@ public abstract class Sprite implements RenderTree.Node {
 
     public interface Owner extends OwnerContext {
 	public Random mkrandoom();
-	public Resource getres();
+	@Deprecated public Resource getres();
     }
 
     public class RecOwner implements Owner {
