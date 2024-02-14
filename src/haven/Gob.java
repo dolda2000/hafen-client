@@ -49,20 +49,20 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     public static class Overlay implements RenderTree.Node {
 	public final int id;
 	public final Gob gob;
-	public final Sprite.Mill sm;
+	public final Sprite.Mill<?> sm;
 	public Sprite spr;
 	public boolean delign = false, old = false;
 	private Collection<RenderTree.Slot> slots = null;
 	private boolean added = false;
 
-	public Overlay(Gob gob, int id, Sprite.Mill sm) {
+	public Overlay(Gob gob, int id, Sprite.Mill<?> sm) {
 	    this.gob = gob;
 	    this.id = id;
 	    this.sm = sm;
 	    this.spr = null;
 	}
 
-	public Overlay(Gob gob, Sprite.Mill sm) {
+	public Overlay(Gob gob, Sprite.Mill<?> sm) {
 	    this(gob, -1, sm);
 	}
 
@@ -522,7 +522,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     public void addol(Indir<Resource> res, Message sdt) {
 	addol(new Overlay(this, -1, res, sdt));
     }
-    public void addol(Sprite.Mill ol) {
+    public void addol(Sprite.Mill<?> ol) {
 	addol(new Overlay(this, ol));
     }
 

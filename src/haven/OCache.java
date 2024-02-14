@@ -268,7 +268,7 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
-    public static class OlSprite implements Sprite.Mill {
+    public static class OlSprite implements Sprite.Mill<Sprite> {
 	public final Indir<Resource> res;
 	public Message sdt;
 
