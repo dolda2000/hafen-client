@@ -522,6 +522,9 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     public void addol(Indir<Resource> res, Message sdt) {
 	addol(new Overlay(this, -1, res, sdt));
     }
+    public void addol(Sprite.Mill ol) {
+	addol(new Overlay(this, ol));
+    }
 
     public Overlay findol(int id) {
 	for(Overlay ol : ols) {
