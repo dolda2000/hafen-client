@@ -100,7 +100,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Spri
     public Random mkrandoom() {
 	return(owner.mkrandoom());
     }
-    public Resource getres() {
+    @Deprecated public Resource getres() {
 	return(res);
     }
     public Collection<Location.Chain> getloc() {

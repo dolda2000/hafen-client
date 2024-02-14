@@ -220,6 +220,7 @@ public class Composited implements RenderTree.Node, EquipTarget {
 	    return(OwnerContext.orparent(cl, eqctxr.context(cl, this, false), eqowner));
 	}
 
+	@Deprecated
 	public Resource getres() {
 	    return(r.res);
 	}

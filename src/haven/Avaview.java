@@ -125,8 +125,8 @@ public class Avaview extends PView {
 	.add(Resource.Resolver.class, v -> (v.resmap == null ? v.ui.sess : v.resmap));
     private class AvaOwner implements Sprite.Owner, Skeleton.ModOwner {
 	public Random mkrandoom() {return(new Random());}
-	public Resource getres() {return(null);}
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, Avaview.this));}
+	@Deprecated public Resource getres() {return(null);}
 
 	public Collection<Location.Chain> getloc() {return(Collections.emptyList());}
 	public double getv() {return(0);}
