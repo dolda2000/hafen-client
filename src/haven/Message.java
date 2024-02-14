@@ -150,6 +150,9 @@ public abstract class Message {
 	int off = rget(8);
 	return(Utils.int64d(rbuf, off));
     }
+    public UID uniqid() {
+	return(UID.of(int64()));
+    }
     public String string() {
 	int l = 0;
 	while(true) {
