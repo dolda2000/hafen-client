@@ -61,6 +61,8 @@ public interface Pipe {
 	    }
 
 	    public boolean equals(Object o) {
+		if(o == this)
+		    return(true);
 		if(!(o instanceof Composed))
 		    return(false);
 		return(Arrays.equals(ops, ((Composed)o).ops));
