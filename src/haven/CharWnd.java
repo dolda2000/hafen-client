@@ -76,18 +76,18 @@ public class CharWnd extends Window {
 	private V lv;
 
         private RLabel(Supplier<V> val, Function<V, String> fmt, Function<V, Color> col, V ival) {
-            super(fmt.apply(ival));
+            super(ival == null ? "" : fmt.apply(ival));
 	    this.val = val;
 	    this.fmt = fmt;
 	    this.col = col;
 	    this.lv = ival;
             this.oc = oc;
-	    if(col != null)
+	    if((col != null) && (ival != null))
 		setcolor(lc = col.apply(ival));
         }
 
         public RLabel(Supplier<V> val, Function<V, String> fmt, Function<V, Color> col) {
-	    this(val, fmt, col, val.get());
+	    this(val, fmt, col, null);
 	}
 
         public RLabel(Supplier<V> val, Function<V, String> fmt, Color col) {
@@ -95,19 +95,7 @@ public class CharWnd extends Window {
 	    setcolor(col);
 	}
 
-	protected void added() {
-	    if(oc == null) {
-		oc = new Coord(c.x + sz.x, c.y);
-	    }
-	    move(oc.add(-sz.x, 0));
-	}
-
-	public void settext(String text) {
-	    super.settext(text);
-	    move(oc.add(-sz.x, 0));
-	}
-
-	public void tick(double dt) {
+	private void update() {
 	    V v = val.get();
 	    if(!Utils.eq(v, lv)) {
 		settext(fmt.apply(v));
@@ -120,6 +108,24 @@ public class CharWnd extends Window {
 		    }
 		}
 	    }
+	}
+
+	protected void attached() {
+	    super.attached();
+	    if(oc == null)
+		oc = new Coord(c.x + sz.x, c.y);
+	    if(lv == null)
+		update();
+	}
+
+	public void settext(String text) {
+	    super.settext(text);
+	    if(oc != null)
+		move(oc.add(-sz.x, 0));
+	}
+
+	public void tick(double dt) {
+	    update();
 	}
     }
 
