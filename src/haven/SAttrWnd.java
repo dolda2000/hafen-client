@@ -27,7 +27,6 @@
 package haven;
 
 import java.util.*;
-import java.util.function.*;
 import java.awt.Color;
 import haven.resutil.Curiosity;
 import static haven.CharWnd.*;
@@ -234,6 +233,8 @@ public class SAttrWnd extends Widget {
 	    Widget inf = add(new StudyInfo(new Coord(attrw - child.sz.x - wbox.bisz().x - margin1, child.sz.y), child), child.pos("ur").add(wbox.bisz().x + margin1, 0));
 	    Frame.around(this, Collections.singletonList(inf));
 	    pack();
+	} else {
+	    super.addchild(child, args);
 	}
     }
 
