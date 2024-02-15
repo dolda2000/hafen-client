@@ -54,7 +54,7 @@ public class CharWnd extends Window {
     public static final int margin2 = 2 * margin1;
     public static final int margin3 = 2 * margin2;
     public final BAttrWnd battr;
-    public final Collection<SAttr> skill;
+    public final SAttrWnd sattr;
     public final SkillGrid skg;
     public final CredoGrid credos;
     public final ExpGrid exps;
@@ -64,99 +64,8 @@ public class CharWnd extends Window {
     public final QuestList cqst, dqst;
     public Wound.Info wound;
     public Quest.Info quest;
-    public int exp, enc;
     private final Tabs.Tab questtab;
-    private final Tabs.Tab sattr, fgt;
-    private final Coord studyc;
-    private int scost;
-
-    public class SAttr extends Widget {
-	public final String nm;
-	public final Text rnm;
-	public final Glob.CAttr attr;
-	public final Tex img;
-	public final Color bg;
-	public int tbv, cost;
-	private Text ct;
-	private int cbv, ccv;
-
-	private SAttr(Glob glob, String attr, Color bg) {
-	    super(new Coord(attrw, attrf.height() + UI.scale(2)));
-	    Resource res = Resource.local().loadwait("gfx/hud/chr/" + attr);
-	    this.nm = attr;
-	    this.img = new TexI(convolve(res.flayer(Resource.imgc).img, new Coord(this.sz.y, this.sz.y), iconfilter));
-	    this.rnm = attrf.render(res.flayer(Resource.tooltip).t);
-	    this.attr = glob.getcattr(attr);
-	    this.bg = bg;
-	    adda(new IButton("gfx/hud/buttons/add", "u", "d", "h") {
-		    public void click() {adj(1);}
-		}, sz.x - margin1, sz.y / 2, 1, 0.5);
-	    adda(new IButton("gfx/hud/buttons/sub", "u", "d", "h") {
-		    public void click() {adj(-1);}
-		}, sz.x - margin3, sz.y / 2, 1, 0.5);
-	}
-
-	public void tick(double dt) {
-	    if(attr.base != cbv) {
-		tbv = 0;
-		ccv = 0;
-		cbv = attr.base;
-	    }
-	    if(attr.comp != ccv) {
-		ccv = attr.comp;
-		Color c = Color.WHITE;
-		if(ccv > cbv) {
-		    c = buff;
-		    tooltip = Text.render(String.format("%d + %d", cbv, ccv - cbv));
-		} else if(ccv < cbv) {
-		    c = debuff;
-		    tooltip = Text.render(String.format("%d - %d", cbv, cbv - ccv));
-		} else {
-		    tooltip = null;
-		}
-		if(tbv > 0)
-		    c = tbuff;
-		ct = attrf.render(Integer.toString(ccv + tbv), c);
-		updcost();
-	    }
-	}
-
-	public void draw(GOut g) {
-	    g.chcolor(bg);
-	    g.frect(Coord.z, sz);
-	    g.chcolor();
-	    super.draw(g);
-	    Coord cn = new Coord(0, sz.y / 2);
-	    g.aimage(img, cn.add(5, 0), 0, 0.5);
-	    g.aimage(rnm.tex(), cn.add(img.sz().x + margin2, 1), 0, 0.5);
-	    g.aimage(ct.tex(), cn.add(sz.x - UI.scale(40), 1), 1, 0.5);
-	}
-
-	private void updcost() {
-	    int cv = attr.base, nv = cv + tbv;
-	    int cost = 100 * ((nv + (nv * nv)) - (cv + (cv * cv))) / 2;
-	    scost += cost - this.cost;
-	    this.cost = cost;
-	}
-
-	public void adj(int a) {
-	    if(tbv + a < 0) a = -tbv;
-	    tbv += a;
-	    ccv = 0;
-	    updcost();
-	}
-
-	public void reset() {
-	    tbv = 0;
-	    ccv = 0;
-	    updcost();
-	}
-
-	public boolean mousewheel(Coord c, int a) {
-	    adj(-a);
-	    return(true);
-	}
-    }
+    private final Tabs.Tab fgt;
 
     public static class RLabel<V> extends Label {
 	private final Supplier<V> val;
@@ -211,57 +120,6 @@ public class CharWnd extends Window {
 		    }
 		}
 	    }
-	}
-    }
-
-    public RLabel<?> explabel() {
-	return(new RLabel<Integer>(() -> exp, Utils::thformat, new Color(192, 192, 255)));
-    }
-
-    public RLabel<?> enclabel() {
-	return(new RLabel<Integer>(() -> enc, Utils::thformat, new Color(255, 255, 192)));
-    }
-
-    public static class StudyInfo extends Widget {
-	public final Widget study;
-	public int texp, tw, tenc;
-
-	private StudyInfo(Coord sz, Widget study) {
-	    super(sz);
-	    this.study = study;
-	    Widget plbl, pval;
-	    plbl = add(new Label("Attention:"), UI.scale(2, 2));
-	    pval = adda(new RLabel<Pair<Integer, Integer>>(() -> new Pair<>(tw, (ui == null) ? 0 : ui.sess.glob.getcattr("int").comp),
-							   n -> String.format("%,d/%,d", n.a, n.b),
-							   new Color(255, 192, 255, 255)),
-			plbl.pos("br").adds(0, 2).x(sz.x - UI.scale(2)), 1.0, 0.0);
-	    plbl = add(new Label("Experience cost:"), pval.pos("bl").adds(0, 2).xs(2));
-	    pval = adda(new RLabel<Integer>(() -> tenc, Utils::thformat, new Color(255, 255, 192, 255)),
-			plbl.pos("br").adds(0, 2).x(sz.x - UI.scale(2)), 1.0, 0.0);
-	    pval = adda(new RLabel<Integer>(() -> texp, Utils::thformat, new Color(192, 192, 255, 255)),
-			pos("cbr").subs(2, 2), 1.0, 1.0);
-	    plbl = adda(new Label("Learning points:"), pval.pos("ul").subs(0, 2).xs(2), 0.0, 1.0);
-	}
-
-	private void upd() {
-	    int texp = 0, tw = 0, tenc = 0;
-	    for(GItem item : study.children(GItem.class)) {
-		try {
-		    Curiosity ci = ItemInfo.find(Curiosity.class, item.info());
-		    if(ci != null) {
-			texp += ci.exp;
-			tw += ci.mw;
-			tenc += ci.enc;
-		    }
-		} catch(Loading l) {
-		}
-	    }
-	    this.texp = texp; this.tw = tw; this.tenc = tenc;
-	}
-
-	public void tick(double dt) {
-	    upd();
-	    super.tick(dt);
 	}
     }
 
@@ -1447,56 +1305,12 @@ public class CharWnd extends Window {
     public CharWnd(Glob glob) {
 	super(UI.scale(new Coord(300, 290)), "Character Sheet");
 
-	final Tabs tabs = new Tabs(new Coord(15, 10), Coord.z, this);
+	Tabs tabs = new Tabs(new Coord(15, 10), Coord.z, this);
         Tabs.Tab battr = tabs.add();
 	this.battr = battr.add(new BAttrWnd(glob));
 
-        sattr = tabs.add();
-	{
-	    Widget prev;
-	    prev = sattr.add(settip(new Img(catf.render("Abilities").tex()), "gfx/hud/chr/tips/sattr"), Coord.z);
-	    skill = new ArrayList<>();
-	    SAttr aw;
-	    skill.add(aw = sattr.add(new SAttr(glob, "unarmed", every), prev.pos("bl").adds(5, 0).add(wbox.btloff())));
-	    skill.add(aw = sattr.add(new SAttr(glob, "melee", other), aw.pos("bl")));
-	    skill.add(aw = sattr.add(new SAttr(glob, "ranged", every), aw.pos("bl")));
-	    skill.add(aw = sattr.add(new SAttr(glob, "explore", other), aw.pos("bl")));
-	    skill.add(aw = sattr.add(new SAttr(glob, "stealth", every), aw.pos("bl")));
-	    skill.add(aw = sattr.add(new SAttr(glob, "sewing", other), aw.pos("bl")));
-	    skill.add(aw = sattr.add(new SAttr(glob, "smithing", every), aw.pos("bl")));
-	    skill.add(aw = sattr.add(new SAttr(glob, "masonry", other), aw.pos("bl")));
-	    skill.add(aw = sattr.add(new SAttr(glob, "carpentry", every), aw.pos("bl")));
-	    skill.add(aw = sattr.add(new SAttr(glob, "cooking", other), aw.pos("bl")));
-	    skill.add(aw = sattr.add(new SAttr(glob, "farming", every), aw.pos("bl")));
-	    skill.add(aw = sattr.add(new SAttr(glob, "survive", other), aw.pos("bl")));
-	    skill.add(aw = sattr.add(new SAttr(glob, "lore", every), aw.pos("bl")));
-	    Widget lframe = Frame.around(sattr, skill);
-
-	    prev = sattr.add(settip(new Img(catf.render("Study Report").tex()), "gfx/hud/chr/tips/study"), width, 0);
-	    studyc = prev.pos("bl").adds(5, 0);
-	    Widget bframe = sattr.adda(new Frame(new Coord(attrw, UI.scale(105)), true), prev.pos("bl").adds(5, 0).x, lframe.pos("br").y, 0.0, 1.0);
-	    int rx = bframe.pos("iur").subs(10, 0).x;
-	    prev = sattr.add(new Label("Experience points:"), bframe.pos("iul").adds(10, 5));
-	    sattr.adda(enclabel(), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
-	    prev = sattr.add(new Label("Learning points:"), prev.pos("bl").adds(0, 2));
-	    sattr.adda(explabel(), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
-	    prev = sattr.add(new Label("Learning cost:"), prev.pos("bl").adds(0, 2));
-	    sattr.adda(new RLabel<Integer>(() -> scost, Utils::thformat, n -> (n > exp) ? debuff : Color.WHITE), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
-	    prev = sattr.adda(new Button(UI.scale(75), "Buy").action(() -> {
-			ArrayList<Object> args = new ArrayList<>();
-			for (SAttr attr : skill) {
-			    if (attr.tbv > 0) {
-				args.add(attr.attr.nm);
-				args.add(attr.attr.base + attr.tbv);
-			    }
-			}
-			CharWnd.this.wdgmsg("sattr", args.toArray(new Object[0]));
-	    }), bframe.pos("ibr").subs(5, 5), 1.0, 1.0);
-	    sattr.adda(new Button(UI.scale(75), "Reset").action(() -> {
-			for (SAttr attr : skill)
-			    attr.reset();
-	    }), prev.pos("bl").subs(5, 0), 1.0, 1.0);
-	}
+        Tabs.Tab sattr = tabs.add();
+	this.sattr = sattr.add(new SAttrWnd(glob));
 
 	Tabs.Tab skills = tabs.add();
         {
@@ -1533,7 +1347,7 @@ public class CharWnd extends Window {
                                 CharWnd.this.wdgmsg("buy", skg.sel.nm);
 		}), bf.pos("ibr").subs(10, 0).y(bf.pos("mid").y), 1.0, 0.5);
 		Label clbl = sktab.adda(new Label("Cost:"), bf.pos("iul").adds(10, 0).y(bf.pos("mid").y), 0, 0.5);
-		sktab.adda(new RLabel<Pair<Integer, Integer>>(() -> new Pair<>(((skg.sel == null) || skg.sel.has) ? null : skg.sel.cost, exp),
+		sktab.adda(new RLabel<Pair<Integer, Integer>>(() -> new Pair<>(((skg.sel == null) || skg.sel.has) ? null : skg.sel.cost, this.sattr.exp),
 							      n -> (n.a == null) ? "N/A" : String.format("%,d / %,d LP", n.a, n.b),
 							      n -> ((n.a != null) && (n.a > n.b)) ? debuff : Color.WHITE),
 			   bbtn.pos("ul").subs(10, 0).y(bf.pos("mid").y), 1.0, 0.5);
@@ -1685,12 +1499,9 @@ public class CharWnd extends Window {
     }
 
     public void addchild(Widget child, Object... args) {
-	String place = (args[0] instanceof String)?(((String)args[0]).intern()):null;
-	if(place == "study") {
-	    sattr.add(child, studyc.add(wbox.btloff()));
-	    Widget f = Frame.around(sattr, Collections.singletonList(child));
-	    Widget inf = sattr.add(new StudyInfo(new Coord(attrw - child.sz.x - wbox.bisz().x - margin1, child.sz.y), child), child.pos("ur").add(wbox.bisz().x + margin1, 0));
-	    Frame.around(sattr, Collections.singletonList(inf));
+	String place = (args[0] instanceof String) ? (((String)args[0]).intern()) : null;
+	if(sattr.children.contains(place)) {
+	    sattr.addchild(child, args);
 	} else if(place == "fmg") {
 	    fgt.add(child, 0, 0);
 	} else if(place == "wound") {
@@ -1765,12 +1576,10 @@ public class CharWnd extends Window {
 		int comp = (Integer)args[a++];
 		ui.sess.glob.cattr(attr, base, comp);
 	    }
-	} else if(nm == "exp") {
-	    exp = ((Number)args[0]).intValue();
-	}else if(nm == "enc") {
-	    enc = ((Number)args[0]).intValue();
 	} else if(BAttrWnd.msgs.contains(nm)) {
 	    battr.uimsg(nm, args);
+	} else if(SAttrWnd.msgs.contains(nm)) {
+	    sattr.uimsg(nm, args);
 	} else if(nm == "csk") {
 	    skg.csk.update(decsklist(args, 0, true));
 	} else if(nm == "nsk") {
@@ -1848,5 +1657,12 @@ public class CharWnd extends Window {
 	} else {
 	    super.uimsg(nm, args);
 	}
+    }
+
+    public void wdgmsg(Widget sender, String msg, Object... args) {
+	if((sender == battr) || (sender == sattr))
+	    wdgmsg(msg, args);
+	else
+	    super.wdgmsg(sender, msg, args);
     }
 }
