@@ -34,6 +34,13 @@ public class WoundWnd extends Widget {
     public final WoundList wounds;
     public Wound.Info wound;
 
+    @RName("wounds")
+    public static class $_ implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    return(new WoundWnd());
+	}
+    }
+
     public static class Wound {
 	public final int id, parentid;
 	public Indir<Resource> res;

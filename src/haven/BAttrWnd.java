@@ -40,6 +40,13 @@ public class BAttrWnd extends Widget {
     public final Constipations cons;
     public final GlutMeter glut;
 
+    @RName("battr")
+    public static class $_ implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    return(new BAttrWnd(ui.sess.glob));
+	}
+    }
+
     public static class Attr extends Widget {
 	public final String nm;
 	public final Text rnm;

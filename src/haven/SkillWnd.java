@@ -37,6 +37,13 @@ public class SkillWnd extends Widget {
     public final ExpGrid exps;
     private SAttrWnd sattr;
 
+    @RName("skill")
+    public static class $_ implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    return(new SkillWnd());
+	}
+    }
+
     public class Skill {
 	public final String nm;
 	public final Indir<Resource> res;

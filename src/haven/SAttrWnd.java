@@ -38,6 +38,13 @@ public class SAttrWnd extends Widget {
     private final Coord studyc;
     private int scost;
 
+    @RName("sattr")
+    public static class $_ implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    return(new SAttrWnd(ui.sess.glob));
+	}
+    }
+
     public class SAttr extends Widget {
 	public final String nm;
 	public final Text rnm;

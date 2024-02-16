@@ -37,6 +37,13 @@ public class QuestWnd extends Widget {
     public final QuestList cqst, dqst;
     public Quest.Info quest;
 
+    @RName("quests")
+    public static class $_ implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    return(new QuestWnd());
+	}
+    }
+
     public static class Quest {
 	public static final int QST_PEND = 0, QST_DONE = 1, QST_FAIL = 2, QST_DISABLED = 3;
 	public static final Color[] stcol = {
