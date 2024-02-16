@@ -31,6 +31,7 @@ import java.awt.Graphics;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.*;
+import java.util.function.*;
 
 public class Text implements Disposable {
     public static final Font serif = new Font("Serif", Font.PLAIN, 10);
@@ -247,6 +248,17 @@ public class Text implements Disposable {
 
 	public static UText forfield(Object obj, String fn) {
 	    return(forfield(std, obj, fn));
+	}
+
+	public static <T> UText<T> of(Furnace fnd, Supplier<? extends T> val, Function<? super T, String> fmt) {
+	    return(new UText<T>(fnd) {
+		    public T value() {return(val.get());}
+		    public String text(T value) {return(fmt.apply(value));}
+		});
+	}
+
+	public static <T> UText<T> of(Furnace fnd, Supplier<T> val) {
+	    return(of(fnd, val, String::valueOf));
 	}
     }
 
