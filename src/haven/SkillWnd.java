@@ -453,11 +453,10 @@ public class SkillWnd extends Widget {
 		});
 	}
 	lists.pack();
-	int bw = ((lists.sz.x + UI.scale(5)) / 3) - UI.scale(5);
-	addhl(lists.c.add(0, lists.sz.y + UI.scale(5)), lists.sz.x,
-	      lists.new TabButton(bw, "Skills", sktab),
-	      lists.new TabButton(bw, "Credos", credos),
-	      lists.new TabButton(bw, "Lore",   exps));
+	addhlp(lists.c.add(0, lists.sz.y + UI.scale(5)), UI.scale(5), lists.sz.x,
+	      lists.new TabButton(0, "Skills", sktab),
+	      lists.new TabButton(0, "Credos", credos),
+	      lists.new TabButton(0, "Lore",   exps));
 	pack();
     }
 
