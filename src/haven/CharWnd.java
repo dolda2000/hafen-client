@@ -35,9 +35,6 @@ import haven.resutil.FoodInfo;
 import haven.resutil.Curiosity;
 import static haven.PUtils.*;
 
-/* XXX: There starts to seem to be reason to split the while character
- * sheet into some more modular structure, as it is growing quite
- * large. */
 public class CharWnd extends Window {
     public static final RichText.Foundry ifnd = new RichText.Foundry(Resource.remote(), java.awt.font.TextAttribute.FAMILY, "SansSerif", java.awt.font.TextAttribute.SIZE, UI.scale(9)).aa(true);
     public static final Text.Furnace catf = new BlurFurn(new TexFurn(new Text.Foundry(Text.fraktur, 25).aa(true), Window.ctex), UI.scale(3), UI.scale(2), new Color(96, 48, 0));
@@ -57,10 +54,10 @@ public class CharWnd extends Window {
     public final BAttrWnd battr;
     public final SAttrWnd sattr;
     public final SkillWnd skill;
+    public FightWnd fight;
     public final WoundWnd wound;
     public final QuestWnd quest;
-    public final Tabs.Tab questtab;
-    private final Tabs.Tab fgt;
+    public final Tabs.Tab battrtab, sattrtab, skilltab, fighttab, woundtab, questtab;
 
     public static class RLabel<V> extends Label {
 	private final Supplier<V> val;
@@ -162,21 +159,17 @@ public class CharWnd extends Window {
 	super(UI.scale(new Coord(300, 290)), "Character Sheet");
 
 	Tabs tabs = new Tabs(new Coord(15, 10), Coord.z, this);
-        Tabs.Tab battr = tabs.add();
-	this.battr = battr.add(new BAttrWnd(glob));
-
-        Tabs.Tab sattr = tabs.add();
-	this.sattr = sattr.add(new SAttrWnd(glob));
-
-	Tabs.Tab skill = tabs.add();
-	this.skill = skill.add(new SkillWnd());
-
-	Tabs.Tab wound = tabs.add();
-	this.wound = wound.add(new WoundWnd());
-
-	Tabs.Tab quest = tabs.add();
-	this.quest = quest.add(new QuestWnd());
-	questtab = quest;
+        battrtab = tabs.add();
+	this.battr = battrtab.add(new BAttrWnd(glob));
+        sattrtab = tabs.add();
+	this.sattr = sattrtab.add(new SAttrWnd(glob));
+	skilltab = tabs.add();
+	this.skill = skilltab.add(new SkillWnd());
+	fighttab = tabs.add();
+	woundtab = tabs.add();
+	this.wound = woundtab.add(new WoundWnd());
+	questtab = tabs.add();
+	this.quest = questtab.add(new QuestWnd());
 
 	{
 	    Widget prev;
@@ -204,15 +197,13 @@ public class CharWnd extends Window {
 
 	    tabs.pack();
 
-	    fgt = tabs.add();
-
 	    this.addhl(new Coord(tabs.c.x, tabs.c.y + tabs.sz.y + margin2), tabs.sz.x,
-		new TB("battr", battr, "Base Attributes"),
-		new TB("sattr", sattr, "Abilities"),
-		new TB("skill", skill, "Lore & Skills"),
-		new TB("fgt", fgt, "Martial Arts & Combat Schools"),
-		new TB("wound", wound, "Health & Wounds"),
-		new TB("quest", quest, "Quest Log")
+		new TB("battr", battrtab, "Base Attributes"),
+		new TB("sattr", sattrtab, "Abilities"),
+		new TB("skill", skilltab, "Lore & Skills"),
+		new TB("fgt",   fighttab, "Martial Arts & Combat Schools"),
+		new TB("wound", woundtab, "Health & Wounds"),
+		new TB("quest", questtab, "Quest Log")
 	    );
 	}
 
@@ -228,7 +219,7 @@ public class CharWnd extends Window {
 	} else if(quest.children.contains(place)) {
 	    quest.addchild(child, args);
 	} else if(place == "fmg") {
-	    fgt.add(child, 0, 0);
+	    fight = fighttab.add((FightWnd)child, 0, 0);
 	} else {
 	    super.addchild(child, args);
 	}
