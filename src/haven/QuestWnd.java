@@ -561,13 +561,13 @@ public class QuestWnd extends Widget {
 		add(this.nm, Coord.z);
 	    }
 
-	    public void tick(double dt) {
-		super.tick(dt);
+	    public void draw(GOut g) {
 		if((q.res != dres) || (q.title != dtit)) {
 		    nm.invalidate();
 		    dres = q.res;
 		    dtit = q.title;
 		}
+		super.draw(g);
 	    }
 
 	    public boolean mousedown(Coord c, int button) {

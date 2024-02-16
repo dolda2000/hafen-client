@@ -172,10 +172,10 @@ public class WoundWnd extends Widget {
 		return(true);
 	    }
 
-	    public void tick(double dt) {
-		super.tick(dt);
+	    public void draw(GOut g) {
 		if(!Utils.eq(dres, w.res) || !Utils.eq(dqd, w.qdata))
 		    update();
+		super.draw(g);
 	    }
 
 	    public boolean mousedown(Coord c, int button) {
