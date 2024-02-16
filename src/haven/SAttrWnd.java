@@ -57,12 +57,10 @@ public class SAttrWnd extends Widget {
 	    this.rnm = attrf.render(res.flayer(Resource.tooltip).t);
 	    this.attr = glob.getcattr(attr);
 	    this.bg = bg;
-	    add = adda(new IButton("gfx/hud/buttons/add", "u", "d", "h") {
-		    public void click() {adj(1);}
-		}, sz.x - UI.scale(5), sz.y / 2, 1, 0.5);
-	    sub = adda(new IButton("gfx/hud/buttons/sub", "u", "d", "h") {
-		    public void click() {adj(-1);}
-		}, add.c.x - UI.scale(5), sz.y / 2, 1, 0.5);
+	    add = adda(new IButton("gfx/hud/buttons/add", "u", "d", "h").action(() -> adj(1)),
+		       sz.x - UI.scale(5), sz.y / 2, 1, 0.5);
+	    sub = adda(new IButton("gfx/hud/buttons/sub", "u", "d", "h").action(() -> adj(-1)),
+		       add.c.x - UI.scale(5), sz.y / 2, 1, 0.5);
 	}
 
 	public void tick(double dt) {
@@ -76,10 +74,10 @@ public class SAttrWnd extends Widget {
 		Color c = Color.WHITE;
 		if(ccv > cbv) {
 		    c = buff;
-		    tooltip = Text.render(String.format("%d + %d", cbv, ccv - cbv));
+		    tooltip = String.format("%d + %d", cbv, ccv - cbv);
 		} else if(ccv < cbv) {
 		    c = debuff;
-		    tooltip = Text.render(String.format("%d - %d", cbv, cbv - ccv));
+		    tooltip = String.format("%d - %d", cbv, cbv - ccv);
 		} else {
 		    tooltip = null;
 		}
@@ -178,6 +176,22 @@ public class SAttrWnd extends Widget {
 	}
     }
 
+    private void buy() {
+	ArrayList<Object> args = new ArrayList<>();
+	for (SAttr attr : attrs) {
+	    if (attr.tbv > 0) {
+		args.add(attr.attr.nm);
+		args.add(attr.attr.base + attr.tbv);
+	    }
+	}
+	wdgmsg("sattr", args.toArray(new Object[0]));
+    }
+
+    private void reset() {
+	for (SAttr attr : attrs)
+	    attr.reset();
+    }
+
     public SAttrWnd(Glob glob) {
 	Widget prev;
 	prev = add(CharWnd.settip(new Img(catf.render("Abilities").tex()), "gfx/hud/chr/tips/sattr"), Coord.z);
@@ -208,20 +222,8 @@ public class SAttrWnd extends Widget {
 	adda(explabel(), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
 	prev = add(new Label("Learning cost:"), prev.pos("bl").adds(0, 2));
 	adda(new RLabel<Integer>(() -> scost, Utils::thformat, n -> (n > exp) ? debuff : Color.WHITE), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
-	prev = adda(new Button(UI.scale(75), "Buy").action(() -> {
-		    ArrayList<Object> args = new ArrayList<>();
-		    for (SAttr attr : attrs) {
-			if (attr.tbv > 0) {
-			    args.add(attr.attr.nm);
-			    args.add(attr.attr.base + attr.tbv);
-			}
-		    }
-		    SAttrWnd.this.wdgmsg("sattr", args.toArray(new Object[0]));
-	}), bframe.pos("ibr").subs(5, 5), 1.0, 1.0);
-	adda(new Button(UI.scale(75), "Reset").action(() -> {
-		    for (SAttr attr : attrs)
-			attr.reset();
-	}), prev.pos("bl").subs(5, 0), 1.0, 1.0);
+	prev = adda(new Button(UI.scale(75), "Buy").action(this::buy), bframe.pos("ibr").subs(5, 5), 1.0, 1.0);
+	adda(new Button(UI.scale(75), "Reset").action(this::reset), prev.pos("bl").subs(5, 0), 1.0, 1.0);
 	pack();
     }
 
@@ -242,9 +244,9 @@ public class SAttrWnd extends Widget {
     public static final Collection<String> msgs = Arrays.asList("exp", "enc");
     public void uimsg(String nm, Object... args) {
 	if(nm == "exp") {
-	    exp = ((Number)args[0]).intValue();
+	    exp = Utils.iv(args[0]);
 	} else if(nm == "enc") {
-	    enc = ((Number)args[0]).intValue();
+	    enc = Utils.iv(args[0]);
 	} else {
 	    super.uimsg(nm, args);
 	}

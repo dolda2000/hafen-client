@@ -44,15 +44,6 @@ public class SkillWnd extends Widget {
 	public boolean has = false;
 	private String sortkey;
 	private Tex small;
-	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
-	    public String value() {
-		try {
-		    return(res.get().flayer(Resource.tooltip).t);
-		} catch(Loading l) {
-		    return("...");
-		}
-	    }
-	};
 
 	private Skill(String nm, Indir<Resource> res, int cost, boolean has) {
 	    this.nm = nm;
@@ -117,15 +108,6 @@ public class SkillWnd extends Widget {
 	public final int mtime, score;
 	private String sortkey = "\uffff";
 	private Tex small;
-	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
-	    public String value() {
-		try {
-		    return(res.get().flayer(Resource.tooltip).t);
-		} catch(Loading l) {
-		    return("...");
-		}
-	    }
-	};
 
 	private Experience(Indir<Resource> res, int mtime, int score) {
 	    this.res = res;
@@ -158,14 +140,14 @@ public class SkillWnd extends Widget {
 
 	public SkillGrid(Coord sz) {
 	    super(sz);
-	    nsk = new Group(UI.scale(new Coord(40, 40)), new Coord(-1, 5), "Available Skills", Collections.emptyList());
-	    csk = new Group(UI.scale(new Coord(40, 40)), new Coord(-1, 5), "Known Skills", Collections.emptyList());
+	    nsk = new Group(UI.scale(40, 40), new Coord(-1, 5), "Available Skills", Collections.emptyList());
+	    csk = new Group(UI.scale(40, 40), new Coord(-1, 5), "Known Skills", Collections.emptyList());
 	    itemtooltip = Skill::tooltip;
 	}
 
 	protected void drawitem(GOut g, Skill sk) {
 	    if(sk.small == null)
-		sk.small = new TexI(convolvedown(sk.res.get().flayer(Resource.imgc).img, UI.scale(new Coord(40, 40)), iconfilter));
+		sk.small = new TexI(convolvedown(sk.res.get().flayer(Resource.imgc).img, UI.scale(40, 40), iconfilter));
 	    g.image(sk.small, Coord.z);
 	}
 
@@ -197,7 +179,7 @@ public class SkillWnd extends Widget {
     }
 
     public class CredoGrid extends Scrollport {
-	public final Coord crsz = UI.scale(new Coord(70, 88));
+	public final Coord crsz = UI.scale(70, 88);
 	public final int btnw = UI.scale(100);
 	public final Tex credoufr = new TexI(convolvedown(Resource.loadimg("gfx/hud/chr/yrkirframe"), crsz, iconfilter));
 	public final Tex credosfr = new TexI(convolvedown(Resource.loadimg("gfx/hud/chr/yrkirsframe"), crsz, iconfilter));
@@ -361,13 +343,13 @@ public class SkillWnd extends Widget {
 
 	public ExpGrid(Coord sz) {
 	    super(sz);
-	    seen = new Group(UI.scale(new Coord(40, 40)), new Coord(-1, 5), null, Collections.emptyList());
+	    seen = new Group(UI.scale(40, 40), new Coord(-1, 5), null, Collections.emptyList());
 	    itemtooltip = Experience::tooltip;
 	}
 
 	protected void drawitem(GOut g, Experience exp) {
 	    if(exp.small == null)
-		exp.small = new TexI(convolvedown(exp.res.get().flayer(Resource.imgc).img, UI.scale(new Coord(40, 40)), iconfilter));
+		exp.small = new TexI(convolvedown(exp.res.get().flayer(Resource.imgc).img, UI.scale(40, 40), iconfilter));
 	    g.image(exp.small, Coord.z);
 	}
 
@@ -484,7 +466,7 @@ public class SkillWnd extends Widget {
 	while(a < args.length) {
 	    String nm = (String)args[a++];
 	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
-	    int cost = ((Number)args[a++]).intValue();
+	    int cost = Utils.iv(args[a++]);
 	    buf.add(new Skill(nm, res, cost, has));
 	}
 	return(buf);
@@ -504,8 +486,8 @@ public class SkillWnd extends Widget {
 	List<Experience> buf = new ArrayList<>();
 	while(a < args.length) {
 	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
-	    int mtime = ((Number)args[a++]).intValue();
-	    int score = ((Number)args[a++]).intValue();
+	    int mtime = Utils.iv(args[a++]);
+	    int score = Utils.iv(args[a++]);
 	    buf.add(new Experience(res, mtime, score));
 	}
 	return(buf);
@@ -528,9 +510,9 @@ public class SkillWnd extends Widget {
 		int a = 0;
 		String cnm = (String)args[a++];
 		Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
-		int crl = (Integer)args[a++], crlt = (Integer)args[a++];
-		int crql = (Integer)args[a++], crqlt = (Integer)args[a++];
-		int qid = (Integer)args[a++];
+		int crl = Utils.iv(args[a++]), crlt = Utils.iv(args[a++]);
+		int crql = Utils.iv(args[a++]), crqlt = Utils.iv(args[a++]);
+		int qid = Utils.iv(args[a++]);
 		credos.pcr(new Credo(cnm, res, false),
 			   crl, crlt, crql, crqlt, qid);
 	    } else {

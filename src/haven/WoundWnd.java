@@ -42,45 +42,10 @@ public class WoundWnd extends Widget {
 	private String sortkey = "\uffff";
 	private Tex small;
 	private int namew;
-	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
-	    public String value() {
-		try {
-		    return(res.get().flayer(Resource.tooltip).t);
-		} catch(Loading l) {
-		    return("...");
-		}
-	    }
-
-	    public Text render(String text) {
-		Text.Foundry fnd = (Text.Foundry)this.fnd;
-		Text.Line full = fnd.render(text);
-		if(full.sz().x <= namew)
-		    return(full);
-		int ew = fnd.strsize("...").x;
-		for(int i = full.text.length() - 1; i > 0; i--) {
-		    if((full.advance(i) + ew) < namew)
-			return(fnd.render(text.substring(0, i) + "..."));
-		}
-		return(full);
-	    }
-
-	    /*
-	    public Text render(String text) {
-		Text.Foundry fnd = (Text.Foundry)this.fnd;
-		Text.Line ret = fnd.render(text);
-		while(ret.sz().x > namew) {
-		    fnd = new Text.Foundry(fnd.font, fnd.font.getSize() - 1, fnd.defcol).aa(true);
-		    ret = fnd.render(text);
-		}
-		return(ret);
-	    }
-	    */
-	};
-	private final Text.UText<?> rqd = new Text.UText<Object>(attrf) {
-	    public Object value() {
-		return(qdata);
-	    }
-	};
+	private final Indir<Text> rnm = Utils.transform(() -> Loading.or(() -> res.get().flayer(Resource.tooltip).t,
+									   "..."),
+							  t -> attrf.ellipsize(t, namew));
+	private final Indir<Text> rqd = Utils.transform(() -> qdata, v -> attrf.render(String.valueOf(v)));
 
 	private Wound(int id, Indir<Resource> res, Object qdata, int parentid) {
 	    this.id = id;
@@ -183,7 +148,7 @@ public class WoundWnd extends Widget {
 	protected void drawitem(GOut g, Wound w, int idx) {
 	    if((wound != null) && (wound.woundid() == w.id))
 		drawsel(g);
-	    g.chcolor((idx % 2 == 0)?every:other);
+	    g.chcolor((idx % 2 == 0) ? every : other);
 	    g.frect(Coord.z, g.sz());
 	    g.chcolor();
 	    int x = w.level * itemh;
@@ -200,8 +165,8 @@ public class WoundWnd extends Widget {
 	    Text qd = w.rqd.get();
 	    if(qd != null) {
 		Tex tex = qd.tex();
-		g.aimage(tex, new Coord(sz.x - 15, itemh / 2), 1.0, 0.5);
-		w.namew -= tex.sz().x + 15 + 5;
+		g.aimage(tex, new Coord(sz.x - UI.scale(15), itemh / 2), 1.0, 0.5);
+		w.namew -= tex.sz().x + UI.scale(15 + 5);
 	    }
 	    g.aimage(w.rnm.get().tex(), new Coord(x, itemh / 2), 0, 0.5);
 	}
@@ -292,10 +257,10 @@ public class WoundWnd extends Widget {
 
     private void decwound(Object[] args, int a, int len) {
 	int id = (Integer)args[a];
-	Indir<Resource> res = (args[a + 1] == null)?null:ui.sess.getres((Integer)args[a + 1]);
+	Indir<Resource> res = (args[a + 1] == null) ? null : ui.sess.getres((Integer)args[a + 1]);
 	if(res != null) {
 	    Object qdata = args[a + 2];
-	    int parentid = (len > 3) ? ((args[a + 3] == null) ? -1 : (Integer)args[a + 3]) : -1;
+	    int parentid = (len > 3) ? ((args[a + 3] == null) ? -1 : Utils.iv(args[a + 3])) : -1;
 	    Wound w = wounds.get(id);
 	    if(w == null) {
 		wounds.add(new Wound(id, res, qdata, parentid));

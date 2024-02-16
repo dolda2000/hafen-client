@@ -66,10 +66,10 @@ public class BAttrWnd extends Widget {
 		Color c = Color.WHITE;
 		if(ccv > cbv) {
 		    c = buff;
-		    tooltip = Text.render(String.format("%d + %d", cbv, ccv - cbv));
+		    tooltip = String.format("%d + %d", cbv, ccv - cbv);
 		} else if(ccv < cbv) {
 		    c = debuff;
-		    tooltip = Text.render(String.format("%d - %d", cbv, cbv - ccv));
+		    tooltip = String.format("%d - %d", cbv, cbv - ccv);
 		} else {
 		    tooltip = null;
 		}
@@ -433,9 +433,9 @@ public class BAttrWnd extends Widget {
 
 	public void update(Object... args) {
 	    int a = 0;
-	    this.glut = ((Number)args[a++]).doubleValue();
-	    this.lglut = ((Number)args[a++]).doubleValue();
-	    this.gmod = ((Number)args[a++]).doubleValue();
+	    this.glut = Utils.dv(args[a++]);
+	    this.lglut = Utils.dv(args[a++]);
+	    this.gmod = Utils.dv(args[a++]);
 	    this.lbl = (String)args[a++];
 	    this.bg = (Color)args[a++];
 	    this.fg = (Color)args[a++];
@@ -496,7 +496,7 @@ public class BAttrWnd extends Widget {
 		ResData t = new ResData(ui.sess.getres((Integer)args[a++]), MessageBuf.nil);
 		if(args[a] instanceof byte[])
 		    t.sdt = new MessageBuf((byte[])args[a++]);
-		double m = ((Number)args[a++]).doubleValue();
+		double m = Utils.dv(args[a++]);
 		cons.update(t, m);
 	    }
 	} else {

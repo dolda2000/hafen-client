@@ -49,15 +49,7 @@ public class QuestWnd extends Widget {
 	public int done;
 	public int mtime;
 	private Tex small;
-	private final Text.UText<?> rnm = new Text.UText<String>(attrf) {
-	    public String value() {
-		try {
-		    return(title());
-		} catch(Loading l) {
-		    return("...");
-		}
-	    }
-	};
+	private final Indir<Text> rnm = Utils.transform(() -> Loading.or(this::title, "..."), attrf::render);
 
 	private Quest(int id, Indir<Resource> res, String title, int done, int mtime) {
 	    this.id = id;
@@ -250,7 +242,7 @@ public class QuestWnd extends Widget {
 		    List<Condition> ncond = new ArrayList<Condition>(args.length);
 		    while(a < args.length) {
 			String desc = (String)args[a++];
-			int st = (Integer)args[a++];
+			int st = Utils.iv(args[a++]);
 			String status = (String)args[a++];
 			Object[] wdata = null;
 			if((a < args.length) && (args[a] instanceof Object[]))
@@ -513,9 +505,9 @@ public class QuestWnd extends Widget {
 	@RName("quest")
 	public static class $quest implements Factory {
 	    public Widget create(UI ui, Object[] args) {
-		int id = (Integer)args[0];
+		int id = Utils.iv(args[0]);
 		Indir<Resource> res = ui.sess.getres((Integer)args[1]);
-		String title = (args.length > 2)?(String)args[2]:null;
+		String title = (args.length > 2) ? (String)args[2] : null;
 		return(new DefaultBox(id, res, title));
 	    }
 	}
@@ -657,12 +649,12 @@ public class QuestWnd extends Widget {
     public void uimsg(String nm, Object... args) {
 	if(nm == "quests") {
 	    for(int i = 0; i < args.length;) {
-		int id = (Integer)args[i++];
+		int id = Utils.iv(args[i++]);
 		Integer resid = (Integer)args[i++];
-		Indir<Resource> res = (resid == null) ? null : ui.sess.getres(resid);
-		if(res != null) {
-		    int st = (Integer)args[i++];
-		    int mtime = (Integer)args[i++];
+		if(resid != null) {
+		    Indir<Resource> res = ui.sess.getres(resid);
+		    int st = Utils.iv(args[i++]);
+		    int mtime = Utils.iv(args[i++]);
 		    String title = null;
 		    if((i < args.length) && (args[i] instanceof String))
 			title = (String)args[i++];
