@@ -40,12 +40,6 @@ public class WoundWnd extends Widget {
 	public Object qdata;
 	public int level;
 	private String sortkey = "\uffff";
-	private Tex small;
-	private int namew;
-	private final Indir<Text> rnm = Utils.transform(() -> Loading.or(() -> res.get().flayer(Resource.tooltip).t,
-									   "..."),
-							  t -> attrf.ellipsize(t, namew));
-	private final Indir<Text> rqd = Utils.transform(() -> qdata, v -> attrf.render(String.valueOf(v)));
 
 	private Wound(int id, Indir<Resource> res, Object qdata, int parentid) {
 	    this.id = id;
@@ -95,7 +89,7 @@ public class WoundWnd extends Widget {
 	}
     }
 
-    public class WoundList extends Listbox<Wound> implements DTarget {
+    public class WoundList extends SListBox<Wound, Widget> {
 	public List<Wound> wounds = new ArrayList<Wound>();
 	private boolean loading = false;
 	private final Comparator<Wound> wcomp = new Comparator<Wound>() {
@@ -104,9 +98,12 @@ public class WoundWnd extends Widget {
 	    }
 	};
 
-	private WoundList(int w, int h) {
-	    super(w, h, attrf.height() + UI.scale(2));
+	private WoundList(Coord sz) {
+	    super(sz, attrf.height() + UI.scale(2));
 	}
+
+	protected List<Wound> items() {return(wounds);}
+	protected Widget makeitem(Wound w, int idx, Coord sz) {return(new Item(sz, w));}
 
 	private List<Wound> treesort(List<Wound> from, int pid, int level) {
 	    List<Wound> direct = new ArrayList<>(from.size());
@@ -138,63 +135,73 @@ public class WoundWnd extends Widget {
 		}
 		wounds = treesort(wounds, -1, 0);
 	    }
+	    super.tick(dt);
 	}
 
-	protected Wound listitem(int idx) {return(wounds.get(idx));}
-	protected int listitems() {return(wounds.size());}
+	public class Item extends Widget implements DTarget {
+	    public final Wound w;
+	    private Widget qd, nm;
+	    private Object dres, dqd;
 
-	protected void drawbg(GOut g) {}
-
-	protected void drawitem(GOut g, Wound w, int idx) {
-	    if((wound != null) && (wound.woundid() == w.id))
-		drawsel(g);
-	    g.chcolor((idx % 2 == 0) ? every : other);
-	    g.frect(Coord.z, g.sz());
-	    g.chcolor();
-	    int x = w.level * itemh;
-	    try {
-		if(w.small == null)
-		    w.small = new TexI(PUtils.convolvedown(w.res.get().flayer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
-		g.image(w.small, new Coord(x, 0));
-		x += itemh + UI.scale(5);
-	    } catch(Loading e) {
-		g.image(WItem.missing.layer(Resource.imgc).tex(), new Coord(x, 0), new Coord(itemh, itemh));
-		x += itemh + UI.scale(5);
+	    public Item(Coord sz, Wound w) {
+		super(sz);
+		this.w = w;
+		update();
 	    }
-	    w.namew = sz.x - x;
-	    Text qd = w.rqd.get();
-	    if(qd != null) {
-		Tex tex = qd.tex();
-		g.aimage(tex, new Coord(sz.x - UI.scale(15), itemh / 2), 1.0, 0.5);
-		w.namew -= tex.sz().x + UI.scale(15 + 5);
+
+	    private void update() {
+		if(qd != null) {qd.reqdestroy(); qd = null;}
+		if(nm != null) {nm.reqdestroy(); nm = null;}
+		int nw = sz.x;
+		if(w.qdata != null) {
+		    qd = adda(new Label(w.qdata.toString(), attrf), sz.x - UI.scale(1), sz.y / 2, 1.0, 0.5);
+		    nw = qd.c.x - UI.scale(5);
+		}
+		int x = w.level * itemh;
+		nm = adda(IconText.of(Coord.of(nw - x, sz.y), w.res), x, sz.y / 2, 0.0, 0.5);
+		this.dqd = w.qdata;
+		this.dres = w.res;
 	    }
-	    g.aimage(w.rnm.get().tex(), new Coord(x, itemh / 2), 0, 0.5);
-	}
 
-	protected void itemclick(Wound item, int button) {
-	    if(button == 3) {
-		WoundWnd.this.wdgmsg("wclick", item.id, button, ui.modflags());
-	    } else {
-		super.itemclick(item, button);
+	    public boolean drop(Coord cc, Coord ul) {
+		return(false);
 	    }
-	}
 
-	public boolean drop(Coord cc, Coord ul) {
-	    return(false);
-	}
-
-	public boolean iteminteract(Coord cc, Coord ul) {
-	    Wound w = itemat(cc);
-	    if(w != null)
+	    public boolean iteminteract(Coord cc, Coord ul) {
 		WoundWnd.this.wdgmsg("wiact", w.id, ui.modflags());
-	    return(true);
+		return(true);
+	    }
+
+	    public void tick(double dt) {
+		super.tick(dt);
+		if(!Utils.eq(dres, w.res) || !Utils.eq(dqd, w.qdata))
+		    update();
+	    }
+
+	    public boolean mousedown(Coord c, int button) {
+		if(super.mousedown(c, button))
+		    return(true);
+		if(button == 1) {
+		    WoundWnd.this.wdgmsg("wsel", w.id);
+		    return(true);
+		} else if(button == 3) {
+		    WoundWnd.this.wdgmsg("wclick", w.id, button, ui.modflags());
+		    return(true);
+		}
+		return(false);
+	    }
 	}
 
-	public void change(Wound w) {
-	    if(w == null)
+	protected void drawslot(GOut g, Wound w, int idx, Area area) {
+	    super.drawslot(g, w, idx, area);
+	    if((wound != null) && (wound.woundid() == w.id))
+		drawsel(g, w, idx, area);
+	}
+
+	protected boolean unselect(int button) {
+	    if(button == 1)
 		WoundWnd.this.wdgmsg("wsel", (Object)null);
-	    else
-		WoundWnd.this.wdgmsg("wsel", w.id);
+	    return(true);
 	}
 
 	public Wound get(int id) {
@@ -225,7 +232,7 @@ public class WoundWnd extends Widget {
 	Widget prev;
 
 	prev = add(CharWnd.settip(new Img(catf.render("Health & Wounds").tex()), "gfx/hud/chr/tips/wounds"), 0, 0);
-	this.wounds = add(new WoundList(attrw, 12), prev.pos("bl").x(width + UI.scale(5)).add(wbox.btloff()));
+	this.wounds = add(new WoundList(Coord.of(attrw, height)), prev.pos("bl").x(width + UI.scale(5)).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(this.wounds));
 	woundbox = add(new Widget(new Coord(attrw, this.wounds.sz.y)) {
 		public void draw(GOut g) {
