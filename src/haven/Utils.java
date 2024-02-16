@@ -1849,6 +1849,23 @@ public class Utils {
 	    });
     }
 
+    public static <V, R> Indir<R> transform(Supplier<? extends V> val, Function<? super V, ? extends R> xf) {
+	return(new Indir<R>() {
+		private V last;
+		private R res;
+		private boolean has = false;
+
+		public R get() {
+		    V v = val.get();
+		    if(!has || !Utils.eq(last, v)) {
+			res = xf.apply(v);
+			last = v;
+		    }
+		    return(res);
+		}
+	    });
+    }
+
     public static <K, V> MapBuilder<K, V> map() {
 	return(new MapBuilder<K, V>(new HashMap<K, V>()));
     }

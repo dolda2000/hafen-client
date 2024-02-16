@@ -186,6 +186,18 @@ public class Text implements Disposable {
 	public Line render(String text) {
 	    return(render(text, defcol));
 	}
+
+	public Line ellipsize(String text, int w, String e) {
+	    Line full = render(text);
+	    if(full.sz().x <= w)
+		return(full);
+	    int len = full.charat(w - strsize(e).x);
+	    return(render(text.substring(0, len) + e));
+	}
+
+	public Line ellipsize(String text, int w) {
+	    return(ellipsize(text, w, "\u2026"));
+	}
     }
 
     public static abstract class Imager extends Furnace {
