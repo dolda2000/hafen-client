@@ -35,7 +35,7 @@ import static haven.CharWnd.*;
 import static haven.PUtils.*;
 
 public class BAttrWnd extends Widget {
-    public final Collection<Attr> attrs;
+    public final List<Attr> attrs;
     public final FoodMeter feps;
     public final Constipations cons;
     public final GlutMeter glut;
@@ -98,125 +98,131 @@ public class BAttrWnd extends Widget {
 	}
     }
 
-    public static class Constipations extends Listbox<Constipations.El> {
+    public static class Constipations extends SListBox<Constipations.El, Widget> {
 	public static final Color hilit = new Color(255, 255, 0, 48);
-	public static final Text.Foundry elf = attrf;
-	public static final int elh = elf.height() + UI.scale(2);
-	public static final int ellw = elf.strsize("...").x;
-	public static final int etmaxw = elf.strsize("100%").x;
-	public static final Convolution tflt = new Hanning(1);
 	public static final Color buffed = new Color(160, 255, 160), full = new Color(250, 230, 64), none = new Color(250, 19, 43);
 	public final List<El> els = new ArrayList<El>();
-	private Integer[] order = {};
+	public static final Comparator<El> ecmp = (a, b) -> {
+	    if(a.a < b.a)
+		return(-1);
+	    else if(a.a > b.a)
+		return(1);
+	    return(0);
+	};
 
 	public class El {
 	    public final ResData t;
 	    public double a;
-	    private Tex tt, at;
 	    private boolean hl;
 
 	    public El(ResData t, double a) {this.t = t; this.a = a;}
-	    public void update(double a) {this.a = a; at = null;}
+	    public void update(double a) {this.a = a;}
+	}
 
-	    public Tex tt() {
-		if(tt == null) {
-		    ItemSpec spec = new ItemSpec(OwnerContext.uictx.curry(ui), t, null);
-		    BufferedImage img = spec.image();
-		    String nm = spec.name();
-		    int maxw = sz.x - etmaxw - sb.sz.x - UI.scale(5) - elh;
-		    Text.Line rnm = elf.render(nm);
-		    if(rnm.sz().x > maxw) {
-			int len = rnm.charat(maxw - ellw);
-			rnm = elf.render(nm.substring(0, len) + "...");
-		    }
-		    BufferedImage buf = TexI.mkbuf(new Coord(elh + 5 + rnm.sz().x, elh));
-		    Graphics g = buf.getGraphics();
-		    g.drawImage(convolvedown(img, new Coord(elh, elh), tflt), 0, 0, null);
-		    g.drawImage(rnm.img, elh + 5, ((elh - rnm.sz().y) / 2) + 1, null);
-		    g.dispose();
-		    tt = new TexI(buf);
-		}
-		return(tt);
+	public Constipations(Coord sz) {
+	    super(sz, attrf.height() + UI.scale(2));
+	}
+
+	public static class Reordered<T> extends AbstractList<T> {
+	    private final List<T> back;
+	    private final Comparator<? super T> cmp;
+	    private Integer[] order = {};
+
+	    public Reordered(List<T> back, Comparator<? super T> cmp) {
+		this.back = back;
+		this.cmp = cmp;
+		update();
 	    }
 
-	    public Tex at() {
-		if(at == null) {
-		    Color c= (a > 1.0)?buffed:Utils.blendcol(none, full, a);
-		    at = elf.render(String.format("%d%%", Math.max((int)Math.round((1.0 - a) * 100), 1)), c).tex();
+	    public int size() {
+		return(back.size());
+	    }
+
+	    public T get(int i) {
+		return(back.get(order[i]));
+	    }
+
+	    public void update() {
+		if(order.length != back.size()) {
+		    order = new Integer[back.size()];
+		    for(int i = 0; i < order.length; i++)
+			order[i] = i;
 		}
-		return(at);
+		Arrays.sort(order, (a, b) -> cmp.compare(back.get(a), back.get(b)));
+	    }
+	}
+
+	private final Reordered<El> oels = new Reordered<>(els, ecmp);
+	protected List<El> items() {return(oels);}
+	protected Widget makeitem(El el, int idx, Coord sz) {return(new Item(sz, el));}
+
+	public static class ItemIcon extends IconText {
+	    public final ItemSpec spec;
+
+	    public ItemIcon(Coord sz, ItemSpec spec) {
+		super(sz);
+		this.spec = spec;
+	    }
+
+	    protected BufferedImage img() {return(spec.image());}
+	    protected String text() {return(spec.name());}
+	}
+
+	public class Item extends Widget {
+	    public final El el;
+	    private Widget nm, a;
+	    private double da = Double.NaN;
+
+	    public Item(Coord sz, El el) {
+		super(sz);
+		this.el = el;
+		update();
+	    }
+
+	    private void update() {
+		if(el.a != da) {
+		    if(nm != null) {nm.reqdestroy(); nm = null;}
+		    if( a != null) { a.reqdestroy();  a = null;}
+		    Label a = adda(new Label(String.format("%d%%", Math.max((int)Math.round((1.0 - el.a) * 100), 1)), attrf),
+				   sz.x - UI.scale(1), sz.y / 2, 1.0, 0.5);
+		    a.setcolor((el.a > 1.0) ? buffed : Utils.blendcol(none, full, el.a));
+		    nm = adda(new ItemIcon(sz, new ItemSpec(OwnerContext.uictx.curry(Constipations.this.ui), el.t, null)),
+			      0, sz.y / 2, 0.0, 0.5);
+		    this.a = a;
+		    da = el.a;
+		}
+	    }
+
+	    public void draw(GOut g) {
+		update();
+		super.draw(g);
 	    }
 	}
 
 	private ItemInfo.InfoTip lasttip = null;
 	public void draw(GOut g) {
-	    ItemInfo.InfoTip tip = null;
-	    if(ui.lasttip instanceof ItemInfo.InfoTip)
-		tip = (ItemInfo.InfoTip)ui.lasttip;
+	    ItemInfo.InfoTip tip = (ui.lasttip instanceof ItemInfo.InfoTip) ? (ItemInfo.InfoTip)ui.lasttip : null;
 	    if(tip != lasttip) {
 		for(El el : els)
 		    el.hl = false;
-		FoodInfo finf;
-		try {
-		    finf = (tip == null)?null:ItemInfo.find(FoodInfo.class, tip.info());
-		} catch(Loading l) {
-		    finf = null;
-		}
+		FoodInfo finf = Loading.or(() -> (tip == null) ? null : ItemInfo.find(FoodInfo.class, tip.info()), (FoodInfo)null);
 		if(finf != null) {
-		    for(int i = 0; i < els.size(); i++) {
-			El el = els.get(i);
-			for(int o = 0; o < finf.types.length; o++) {
-			    if(finf.types[o] == i) {
-				el.hl = true;
-				break;
-			    }
-			}
-		    }
+		    for(int o = 0; o < finf.types.length; o++)
+			els.get(finf.types[o]).hl = true;
 		}
 		lasttip = tip;
 	    }
 	    super.draw(g);
 	}
 
-	public static final Comparator<El> ecmp = new Comparator<El>() {
-	    public int compare(El a, El b) {
-		if(a.a < b.a)
-		    return(-1);
-		else if(a.a > b.a)
-		    return(1);
-		return(0);
-	    }
-	};
-
-	public Constipations(int w, int h) {
-	    super(w, h, elh);
-	}
-
-	protected void drawbg(GOut g) {}
-	protected El listitem(int i) {return(els.get(order[i]));}
-	protected int listitems() {return(order.length);}
-
-	protected void drawitem(GOut g, El el, int idx) {
-	    g.chcolor(el.hl?hilit:(((idx % 2) == 0)?every:other));
-	    g.frect(Coord.z, g.sz());
+	protected void drawslot(GOut g, El el, int idx, Area area) {
+	    g.chcolor(el.hl ? hilit : ((idx % 2) == 0) ? every : other);
+	    g.frect2(area.ul, area.br);
 	    g.chcolor();
-	    try {
-		g.image(el.tt(), Coord.z);
-	    } catch(Loading e) {}
-	    Tex at = el.at();
-	    g.image(at, new Coord(sz.x - at.sz().x - sb.sz.x, (elh - at.sz().y) / 2));
 	}
 
-	private void order() {
-	    int n = els.size();
-	    order = new Integer[n];
-	    for(int i = 0; i < n; i++)
-		order[i] = i;
-	    Arrays.sort(order, new Comparator<Integer>() {
-		    public int compare(Integer a, Integer b) {
-			return(ecmp.compare(els.get(a), els.get(b)));
-		    }
-		});
+	public boolean unselect(int button) {
+	    return(false);
 	}
 
 	public void update(ResData t, double a) {
@@ -233,10 +239,7 @@ public class BAttrWnd extends Widget {
 		}
 		els.add(new El(t, a));
 	    }
-	    order();
-	}
-
-	protected void itemclick(El item, int button) {
+	    oels.update();
 	}
     }
 
@@ -469,8 +472,9 @@ public class BAttrWnd extends Widget {
 	prev = add(CharWnd.settip(new Img(catf.render("Food Event Points").tex()), "gfx/hud/chr/tips/fep"), prev.pos("bl").x(0).adds(0, 10));
 	feps = add(new FoodMeter(), prev.pos("bl").adds(5, 2));
 
+	int ah = attrs.get(attrs.size() - 1).pos("bl").y - attrs.get(0).pos("ul").y;
 	prev = add(CharWnd.settip(new Img(catf.render("Food Satiations").tex()), "gfx/hud/chr/tips/constip"), width, 0);
-	cons = add(new Constipations(attrw, attrs.size()), prev.pos("bl").adds(5, 0).add(wbox.btloff()));
+	cons = add(new Constipations(Coord.of(attrw, ah)), prev.pos("bl").adds(5, 0).add(wbox.btloff()));
 	prev = Frame.around(this, Collections.singletonList(cons));
 	prev = add(CharWnd.settip(new Img(catf.render("Hunger Level").tex()), "gfx/hud/chr/tips/hunger"), prev.pos("bl").x(width).adds(0, 10));
 	glut = add(new GlutMeter(), prev.pos("bl").adds(5, 2));
