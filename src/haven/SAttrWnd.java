@@ -45,6 +45,7 @@ public class SAttrWnd extends Widget {
 	public final Tex img;
 	public final Color bg;
 	public int tbv, cost;
+	private final IButton add, sub;
 	private Text ct;
 	private int cbv, ccv;
 
@@ -56,12 +57,12 @@ public class SAttrWnd extends Widget {
 	    this.rnm = attrf.render(res.flayer(Resource.tooltip).t);
 	    this.attr = glob.getcattr(attr);
 	    this.bg = bg;
-	    adda(new IButton("gfx/hud/buttons/add", "u", "d", "h") {
+	    add = adda(new IButton("gfx/hud/buttons/add", "u", "d", "h") {
 		    public void click() {adj(1);}
-		}, sz.x - margin1, sz.y / 2, 1, 0.5);
-	    adda(new IButton("gfx/hud/buttons/sub", "u", "d", "h") {
+		}, sz.x - UI.scale(5), sz.y / 2, 1, 0.5);
+	    sub = adda(new IButton("gfx/hud/buttons/sub", "u", "d", "h") {
 		    public void click() {adj(-1);}
-		}, sz.x - margin3, sz.y / 2, 1, 0.5);
+		}, add.c.x - UI.scale(5), sz.y / 2, 1, 0.5);
 	}
 
 	public void tick(double dt) {
@@ -96,8 +97,8 @@ public class SAttrWnd extends Widget {
 	    super.draw(g);
 	    Coord cn = new Coord(0, sz.y / 2);
 	    g.aimage(img, cn.add(5, 0), 0, 0.5);
-	    g.aimage(rnm.tex(), cn.add(img.sz().x + margin2, 1), 0, 0.5);
-	    g.aimage(ct.tex(), cn.add(sz.x - UI.scale(40), 1), 1, 0.5);
+	    g.aimage(rnm.tex(), cn.add(img.sz().x + UI.scale(10), 1), 0, 0.5);
+	    g.aimage(ct.tex(), cn.add(sub.c.x - UI.scale(5), 1), 1, 0.5);
 	}
 
 	private void updcost() {
@@ -230,7 +231,7 @@ public class SAttrWnd extends Widget {
 	if(place == "study") {
 	    add(child, studyc.add(wbox.btloff()));
 	    Widget f = Frame.around(this, Collections.singletonList(child));
-	    Widget inf = add(new StudyInfo(new Coord(attrw - child.sz.x - wbox.bisz().x - margin1, child.sz.y), child), child.pos("ur").add(wbox.bisz().x + margin1, 0));
+	    Widget inf = add(new StudyInfo(new Coord(attrw - child.sz.x - wbox.bisz().x - UI.scale(5), child.sz.y), child), child.pos("ur").add(wbox.bisz().x + UI.scale(5), 0));
 	    Frame.around(this, Collections.singletonList(inf));
 	    pack();
 	} else {

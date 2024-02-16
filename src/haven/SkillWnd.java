@@ -202,6 +202,7 @@ public class SkillWnd extends Widget {
 	public final Tex credoufr = new TexI(convolvedown(Resource.loadimg("gfx/hud/chr/yrkirframe"), crsz, iconfilter));
 	public final Tex credosfr = new TexI(convolvedown(Resource.loadimg("gfx/hud/chr/yrkirsframe"), crsz, iconfilter));
 	public final Text.Foundry prsf = new Text.Foundry(Text.fraktur, 15).aa(true);
+	public final int m = UI.scale(5);
 	public List<Credo> ncr = Collections.emptyList(), ccr = Collections.emptyList();
 	public Credo pcr = null;
 	public int pcl, pclt, pcql, pcqlt, pqid, cost;
@@ -262,12 +263,12 @@ public class SkillWnd extends Widget {
 	    for(Credo cr : crs) {
 		if(col >= 3) {
 		    col = 0;
-		    y += crsz.y + margin1;
+		    y += crsz.y + m;
 		}
-		cont.add(new CredoImg(cr), col * (crsz.x + margin1) + margin1, y);
+		cont.add(new CredoImg(cr), col * (crsz.x + m) + m, y);
 		col++;
 	    }
-	    return(y + crsz.y + margin1);
+	    return(y + crsz.y + m);
 	}
 
 	private void sort(List<Credo> buf) {
@@ -280,32 +281,32 @@ public class SkillWnd extends Widget {
 		ch.destroy();
 	    int y = 0;
 	    if(pcr != null) {
-		cont.add(pcrc, margin1, y);
-		y += pcrc.sz.y + margin1;
-		Widget pcrim = cont.add(new CredoImg(pcr), margin1, y);
-		cont.add(new Label(String.format("Level: %d/%d", pcl, pclt), prsf), pcrim.c.x + pcrim.sz.x + margin1, y);
-		cont.add(new Label(String.format("Quest: %d/%d", pcql, pcqlt), prsf), pcrim.c.x + pcrim.sz.x + margin1, y + margin3);
-		cont.adda(qbtn, pcrim.c.x + pcrim.sz.x + margin1, y + pcrim.sz.y, 0, 1);
+		cont.add(pcrc, m, y);
+		y += pcrc.sz.y + m;
+		Widget pcrim = cont.add(new CredoImg(pcr), m, y);
+		cont.add(new Label(String.format("Level: %d/%d", pcl, pclt), prsf), pcrim.c.x + pcrim.sz.x + m, y);
+		cont.add(new Label(String.format("Quest: %d/%d", pcql, pcqlt), prsf), pcrim.c.x + pcrim.sz.x + m, y + UI.scale(20));
+		cont.adda(qbtn, pcrim.c.x + pcrim.sz.x + m, y + pcrim.sz.y, 0, 1);
 		y += pcrim.sz.y;
-		y += margin2;
+		y += UI.scale(10);
 	    }
 
 	    if(ncr.size() > 0) {
-		cont.add(ncrc, margin1, y);
+		cont.add(ncrc, m, y);
 		y += ncrc.sz.y + 5;
 		y = crgrid(y, ncr);
 		if(pcr == null) {
-		    cont.add(pbtn, margin1, y);
+		    cont.add(pbtn, m, y);
 		    if(cost > 0)
-			cont.adda(new Label(String.format("Cost: %,d LP", cost)), pbtn.c.x + pbtn.sz.x + margin2, pbtn.c.y + (pbtn.sz.y / 2), 0, 0.5);
+			cont.adda(new Label(String.format("Cost: %,d LP", cost)), pbtn.c.x + pbtn.sz.x + UI.scale(10), pbtn.c.y + (pbtn.sz.y / 2), 0, 0.5);
 		    y += pbtn.sz.y;
 		}
-		y += margin2;
+		y += UI.scale(10);
 	    }
 
 	    if(ccr.size() > 0) {
-		cont.add(ccrc, margin1, y);
-		y += ccrc.sz.y + margin1;
+		cont.add(ccrc, m, y);
+		y += ccrc.sz.y + m;
 		y = crgrid(y, ccr);
 	    }
 	    cont.update();
@@ -411,7 +412,7 @@ public class SkillWnd extends Widget {
 	Tabs.Tab sktab = lists.add();
 	{
 	    Frame f = sktab.add(new Frame(new Coord(lists.sz.x, UI.scale(192)), false), 0, 0);
-	    int y = f.sz.y + margin1;
+	    int y = f.sz.y + UI.scale(5);
 	    skg = f.addin(new SkillGrid(Coord.z) {
 		    public void change(Skill sk) {
 			Skill p = sel;
@@ -425,7 +426,6 @@ public class SkillWnd extends Widget {
 		    }
 		});
 	    Widget bf = sktab.adda(new Frame(new Coord(f.sz.x, UI.scale(44)), false), f.c.x, gh, 0.0, 1.0);
-	    int rx = attrw + wbox.btloff().x - margin2;
 	    Button bbtn = sktab.adda(new Button(UI.scale(50), "Buy").action(() -> {
 			if (skg.sel != null)
 			    SkillWnd.this.wdgmsg("buy", skg.sel.nm);
@@ -471,8 +471,8 @@ public class SkillWnd extends Widget {
 		});
 	}
 	lists.pack();
-	int bw = ((lists.sz.x + margin1) / 3) - margin1;
-	addhl(lists.c.add(0, lists.sz.y + margin1), lists.sz.x,
+	int bw = ((lists.sz.x + UI.scale(5)) / 3) - UI.scale(5);
+	addhl(lists.c.add(0, lists.sz.y + UI.scale(5)), lists.sz.x,
 	      lists.new TabButton(bw, "Skills", sktab),
 	      lists.new TabButton(bw, "Credos", credos),
 	      lists.new TabButton(bw, "Lore",   exps));

@@ -48,9 +48,6 @@ public class CharWnd extends Window {
     public static final Color every = new Color(255, 255, 255, 16), other = new Color(255, 255, 255, 32);
     public static final int width = UI.scale(255);
     public static final int height = UI.scale(260);
-    public static final int margin1 = UI.scale(5);
-    public static final int margin2 = 2 * margin1;
-    public static final int margin3 = 2 * margin2;
     public final BAttrWnd battr;
     public final SAttrWnd sattr;
     public final SkillWnd skill;
@@ -197,7 +194,7 @@ public class CharWnd extends Window {
 
 	    tabs.pack();
 
-	    this.addhl(new Coord(tabs.c.x, tabs.c.y + tabs.sz.y + margin2), tabs.sz.x,
+	    this.addhl(new Coord(tabs.c.x, tabs.c.y + tabs.sz.y + UI.scale(10)), tabs.sz.x,
 		new TB("battr", battrtab, "Base Attributes"),
 		new TB("sattr", sattrtab, "Abilities"),
 		new TB("skill", skilltab, "Lore & Skills"),

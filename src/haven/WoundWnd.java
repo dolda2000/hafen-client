@@ -191,10 +191,10 @@ public class WoundWnd extends Widget {
 		if(w.small == null)
 		    w.small = new TexI(PUtils.convolvedown(w.res.get().flayer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
 		g.image(w.small, new Coord(x, 0));
-		x += itemh + margin1;
+		x += itemh + UI.scale(5);
 	    } catch(Loading e) {
 		g.image(WItem.missing.layer(Resource.imgc).tex(), new Coord(x, 0), new Coord(itemh, itemh));
-		x += itemh + margin1;
+		x += itemh + UI.scale(5);
 	    }
 	    w.namew = sz.x - x;
 	    Text qd = w.rqd.get();
@@ -260,7 +260,7 @@ public class WoundWnd extends Widget {
 	Widget prev;
 
 	prev = add(CharWnd.settip(new Img(catf.render("Health & Wounds").tex()), "gfx/hud/chr/tips/wounds"), 0, 0);
-	this.wounds = add(new WoundList(attrw, 12), prev.pos("bl").x(width + margin1).add(wbox.btloff()));
+	this.wounds = add(new WoundList(attrw, 12), prev.pos("bl").x(width + UI.scale(5)).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(this.wounds));
 	woundbox = add(new Widget(new Coord(attrw, this.wounds.sz.y)) {
 		public void draw(GOut g) {

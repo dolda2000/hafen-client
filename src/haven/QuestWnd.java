@@ -314,7 +314,7 @@ public class QuestWnd extends Widget {
 	    private void resize() {
 		Coord sz = new Coord(0, 0);
 		if(rtitle != null) {
-		    sz.y += rtitle.sz().y + margin1;
+		    sz.y += rtitle.sz().y + UI.scale(5);
 		    sz.x = Math.max(sz.x, rtitle.sz().x);
 		}
 		for(Tex c : rcond) {
@@ -429,12 +429,12 @@ public class QuestWnd extends Widget {
 	    }
 
 	    protected void layouth(Widget cont) {
-		RichText text = ifnd.render(rendertext(), cont.sz.x - margin3);
+		RichText text = ifnd.render(rendertext(), cont.sz.x - UI.scale(20));
 		cont.add(new Img(text.tex()), UI.scale(new Coord(10, 10)));
 	    }
 
 	    protected void layoutc(Widget cont) {
-		int y = cont.contentsz().y + margin2;
+		int y = cont.contentsz().y + UI.scale(10);
 		CondWidget[] nw = new CondWidget[cond.length];
 		CondWidget[] pw = condw;
 		cond: for(int i = 0; i < cond.length; i++) {
@@ -461,13 +461,13 @@ public class QuestWnd extends Widget {
 	    }
 
 	    protected void layouto(Widget cont) {
-		int y = cont.contentsz().y + margin2;
+		int y = cont.contentsz().y + UI.scale(10);
 		for(Pair<String, String> opt : options) {
-		    y += cont.add(new Button(cont.sz.x - margin3, opt.b, false) {
+		    y += cont.add(new Button(cont.sz.x - UI.scale(20), opt.b, false) {
 			    public void click() {
 				DefaultBox.this.wdgmsg("opt", opt.a);
 			    }
-			}, new Coord(margin2, y)).sz.y + margin1;
+			}, new Coord(UI.scale(10), y)).sz.y + UI.scale(5);
 		}
 	    }
 
@@ -565,7 +565,7 @@ public class QuestWnd extends Widget {
 	    }
 	    if(q.done == Quest.QST_DISABLED)
 		g.chcolor(255, 128, 0, 255);
-	    g.aimage(q.rnm.get().tex(), new Coord(itemh + margin1, itemh / 2), 0, 0.5);
+	    g.aimage(q.rnm.get().tex(), new Coord(itemh + UI.scale(5), itemh / 2), 0, 0.5);
 	    g.chcolor();
 	}
 
@@ -622,7 +622,7 @@ public class QuestWnd extends Widget {
 		}
 	    }, prev.pos("bl").adds(5, 0).add(wbox.btloff()));
 	Frame.around(this, Collections.singletonList(questbox));
-	Tabs lists = new Tabs(prev.pos("bl").x(width + margin1), Coord.z, this);
+	Tabs lists = new Tabs(prev.pos("bl").x(width + UI.scale(5)), Coord.z, this);
 	Tabs.Tab cqst = lists.add();
 	{
 	    this.cqst = cqst.add(new QuestList(attrw, 11), wbox.btloff());
@@ -634,8 +634,8 @@ public class QuestWnd extends Widget {
 	    Frame.around(dqst, Collections.singletonList(this.dqst));
 	}
 	lists.pack();
-	int bw = ((lists.sz.x + margin1) / 2) - margin1;
-	addhl(lists.c.add(0, lists.sz.y + margin1), lists.sz.x,
+	int bw = ((lists.sz.x + UI.scale(5)) / 2) - UI.scale(5);
+	addhl(lists.c.add(0, lists.sz.y + UI.scale(5)), lists.sz.x,
 		     lists.new TabButton(bw, "Current",   cqst),
 		     lists.new TabButton(bw, "Completed", dqst));
 	pack();
