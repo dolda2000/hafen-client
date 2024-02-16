@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class Loading extends RuntimeException implements Waitable {
     public final Loading rec;
@@ -141,6 +142,22 @@ public class Loading extends RuntimeException implements Waitable {
 	} finally {
 	    if(intd)
 		Thread.currentThread().interrupt();
+	}
+    }
+
+    public static <T> T or(Supplier<T> x, T def) {
+	try {
+	    return(x.get());
+	} catch(Loading l) {
+	    return(def);
+	}
+    }
+
+    public static <T> T or(Supplier<T> x, Supplier<T> def) {
+	try {
+	    return(x.get());
+	} catch(Loading l) {
+	    return(def.get());
 	}
     }
 }
