@@ -1078,6 +1078,13 @@ public class Widget {
 	return(Coord.of(x - pad, y + maxh));
     }
 
+    public int addhlp(Coord c, int pad, int w, Widget... children) {
+	int cw = (w - ((children.length - 1) * pad)) / children.length;
+	for(Widget ch : children)
+	    ch.resizew(cw);
+	return(addhl(c, w, children));
+    }
+
     public int addhl(Coord c, int w, Widget... children) {
 	int x = c.x, y = c.y;
 	if(children.length == 1) {
