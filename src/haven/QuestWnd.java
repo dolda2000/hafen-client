@@ -48,8 +48,6 @@ public class QuestWnd extends Widget {
 	public String title;
 	public int done;
 	public int mtime;
-	private Tex small;
-	private final Indir<Text> rnm = Utils.transform(() -> Loading.or(this::title, "..."), attrf::render);
 
 	private Quest(int id, Indir<Resource> res, String title, int done, int mtime) {
 	    this.id = id;
@@ -517,7 +515,7 @@ public class QuestWnd extends Widget {
 	}
     }
 
-    public class QuestList extends Listbox<Quest> {
+    public class QuestList extends SListBox<Quest, Widget> {
 	public List<Quest> quests = new ArrayList<Quest>();
 	private boolean loading = false;
 	private final Comparator<Quest> comp = new Comparator<Quest>() {
@@ -526,46 +524,76 @@ public class QuestWnd extends Widget {
 	    }
 	};
 
-	private QuestList(int w, int h) {
-	    super(w, h, attrf.height() + 2);
+	public QuestList(Coord sz) {
+	    super(sz, attrf.height() + UI.scale(2));
 	}
+
+	protected List<Quest> items() {return(quests);}
+	protected Widget makeitem(Quest q, int idx, Coord sz) {return(new Item(sz, q));}
 
 	public void tick(double dt) {
 	    if(loading) {
 		loading = false;
 		Collections.sort(quests, comp);
 	    }
+	    super.tick(dt);
 	}
 
-	protected Quest listitem(int idx) {return(quests.get(idx));}
-	protected int listitems() {return(quests.size());}
+	public class Item extends Widget {
+	    public final Quest q;
+	    private final IconText nm;
+	    private Object dres, dtit;
 
-	protected void drawbg(GOut g) {}
+	    public Item(Coord sz, Quest q) {
+		super(sz);
+		this.q = q;
+		this.nm = new IconText(sz) {
+			protected BufferedImage img() {return(q.res.get().flayer(Resource.imgc).img);}
+			protected String text() {return(q.title());}
 
-	protected void drawitem(GOut g, Quest q, int idx) {
-	    if((quest != null) && (quest.questid() == q.id))
-		drawsel(g);
-	    g.chcolor((idx % 2 == 0)?every:other);
-	    g.frect(Coord.z, g.sz());
-	    g.chcolor();
-	    try {
-		if(q.small == null)
-		    q.small = new TexI(PUtils.convolvedown(q.res.get().flayer(Resource.imgc).img, new Coord(itemh, itemh), iconfilter));
-		g.image(q.small, Coord.z);
-	    } catch(Loading e) {
-		g.image(WItem.missing.layer(Resource.imgc).tex(), Coord.z, new Coord(itemh, itemh));
+			protected void drawtext(GOut g) {
+			    if(q.done == Quest.QST_DISABLED)
+				g.chcolor(255, 128, 0, 255);
+			    super.drawtext(g);
+			    g.chcolor();
+			}
+		    };
+		add(this.nm, Coord.z);
 	    }
-	    if(q.done == Quest.QST_DISABLED)
-		g.chcolor(255, 128, 0, 255);
-	    g.aimage(q.rnm.get().tex(), new Coord(itemh + UI.scale(5), itemh / 2), 0, 0.5);
-	    g.chcolor();
+
+	    public void tick(double dt) {
+		super.tick(dt);
+		if((q.res != dres) || (q.title != dtit)) {
+		    nm.invalidate();
+		    dres = q.res;
+		    dtit = q.title;
+		}
+	    }
+
+	    public boolean mousedown(Coord c, int button) {
+		if(super.mousedown(c, button))
+		    return(true);
+		if(button == 1) {
+		    if((QuestWnd.this.quest != null) && (q.id == QuestWnd.this.quest.questid()))
+			QuestWnd.this.wdgmsg("qsel", (Object)null);
+		    else
+			QuestWnd.this.wdgmsg("qsel", q.id);
+		    return(true);
+		}
+		return(false);
+	    }
 	}
 
-	public void change(Quest q) {
-	    if((q == null) || ((QuestWnd.this.quest != null) && (q.id == QuestWnd.this.quest.questid())))
+	protected void drawslot(GOut g, Quest q, int idx, Area area) {
+	    super.drawslot(g, q, idx, area);
+	    if((quest != null) && (quest.questid() == q.id))
+		drawsel(g, q, idx, area);
+	}
+
+	protected boolean unselect(int button) {
+	    if(button == 1)
 		QuestWnd.this.wdgmsg("qsel", (Object)null);
-	    else
-		QuestWnd.this.wdgmsg("qsel", q.id);
+	    return(true);
 	}
 
 	public Quest get(int id) {
@@ -617,12 +645,12 @@ public class QuestWnd extends Widget {
 	Tabs lists = new Tabs(prev.pos("bl").x(width + UI.scale(5)), Coord.z, this);
 	Tabs.Tab cqst = lists.add();
 	{
-	    this.cqst = cqst.add(new QuestList(attrw, 11), wbox.btloff());
+	    this.cqst = cqst.add(new QuestList(Coord.of(attrw, height - Button.hs - UI.scale(5))), wbox.btloff());
 	    Frame.around(cqst, Collections.singletonList(this.cqst));
 	}
 	Tabs.Tab dqst = lists.add();
 	{
-	    this.dqst = dqst.add(new QuestList(attrw, 11), wbox.btloff());
+	    this.dqst = dqst.add(new QuestList(Coord.of(attrw, height - Button.hs - UI.scale(5))), wbox.btloff());
 	    Frame.around(dqst, Collections.singletonList(this.dqst));
 	}
 	lists.pack();
