@@ -932,7 +932,8 @@ public class Resource implements Serializable {
     }
 
     public static void addltype(String name, LayerFactory<?> cons) {
-	ltypes.put(name, cons);
+	if(ltypes.put(name, cons) != null)
+	   Warning.warn("duplicated layer name: " + name);
     }
     
     public static <T extends Layer> void addltype(String name, Class<T> cl) {

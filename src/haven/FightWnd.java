@@ -650,7 +650,7 @@ public class FightWnd extends Widget {
     @RName("fmg")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(new FightWnd((Integer)args[0], (Integer)args[1], (Integer)args[2]));
+	    return(new FightWnd(Utils.iv(args[0]), Utils.iv(args[1]), Utils.iv(args[2])));
 	}
     }
 
@@ -732,7 +732,7 @@ public class FightWnd extends Widget {
 		int resid = (Integer)args[a++];
 		if(resid < 0)
 		    break;
-		int av = (Integer)args[a++];
+		int av = Utils.iv(args[a++]);
 		Action pact = findact(resid);
 		if(pact == null) {
 		    acts.add(new Action(ui.sess.getres(resid), resid, av, 0));
@@ -757,11 +757,11 @@ public class FightWnd extends Widget {
 		    order[i] = null;
 		    continue;
 		}
-		int us = (Integer)args[a++];
+		int us = Utils.iv(args[a++]);
 		(order[i] = findact(resid)).u(us);
 	    }
 	} else if(nm == "saved") {
-	    int fl = (Integer)args[0];
+	    int fl = Utils.iv(args[0]);
 	    for(int i = 0; i < nsave; i++) {
 		if((fl & (1 << i)) != 0) {
 		    if(args[i + 1] instanceof String)
@@ -773,10 +773,10 @@ public class FightWnd extends Widget {
 		}
 	    }
 	} else if(nm == "use") {
-	    usesave = (Integer)args[0];
+	    usesave = Utils.iv(args[0]);
 	    savelist.change(Integer.valueOf(usesave));
 	} else if(nm == "max") {
-	    maxact = (Integer)args[0];
+	    maxact = Utils.iv(args[0]);
 	    recount();
 	} else {
 	    super.uimsg(nm, args);

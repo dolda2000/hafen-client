@@ -169,7 +169,8 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> im
 	    List<? extends I> items = items();
 	    int sy = cury;
 	    for(int i = 0; (i < curi.length) && (i + curo < items.size()); i++) {
-		drawslot(g, curi[i], i + curo, Area.sized(Coord.of(0, ((i + curo) * (itemh + marg)) - sy), Coord.of(itemw, itemh)));
+		if(curi[i] != null)
+		    drawslot(g, curi[i], i + curo, Area.sized(Coord.of(0, ((i + curo) * (itemh + marg)) - sy), Coord.of(itemw, itemh)));
 	    }
 	}
 	super.draw(g);
