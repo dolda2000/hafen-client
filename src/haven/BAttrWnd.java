@@ -106,6 +106,7 @@ public class BAttrWnd extends Widget {
     }
 
     public static class Constipations extends SListBox<Constipations.El, Widget> {
+	public static final PUtils.Convolution tflt = new PUtils.Hanning(1);
 	public static final Color hilit = new Color(255, 255, 0, 48);
 	public static final Color buffed = new Color(160, 255, 160), full = new Color(250, 230, 64), none = new Color(250, 19, 43);
 	public final List<El> els = new ArrayList<El>();
@@ -173,6 +174,7 @@ public class BAttrWnd extends Widget {
 
 	    protected BufferedImage img() {return(spec.image());}
 	    protected String text() {return(spec.name());}
+	    protected PUtils.Convolution filter() {return(tflt);}
 	}
 
 	public class Item extends Widget {

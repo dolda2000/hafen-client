@@ -157,7 +157,9 @@ public class Widget {
 	if(!inited) {
 	    for(Factory f : dolda.jglob.Loader.get(RName.class).instances(Factory.class)) {
 		synchronized(types) {
-		    types.put(f.getClass().getAnnotation(RName.class).value(), f);
+		    String nm = f.getClass().getAnnotation(RName.class).value();
+		    if(types.put(nm, f) != null)
+			Warning.warn("duplicated widget name: " + nm);
 		}
 	    }
 	    inited = true;
