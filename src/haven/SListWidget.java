@@ -121,6 +121,7 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	protected int margin() {return(0);}
 	protected Text.Foundry foundry() {return(CharWnd.attrf);}
 	protected boolean valid(String text) {return(true);}
+	protected PUtils.Convolution filter() {return(GobIcon.filter);}
 
 	private Tex img = null;
 	protected void drawicon(GOut g) {
@@ -130,10 +131,10 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 		    BufferedImage img = img();
 		    if(img.getWidth() > img.getHeight()) {
 			if(img.getWidth() != h)
-			    img = PUtils.convolve(img, Coord.of(h, (h * img.getHeight()) / img.getWidth()), GobIcon.filter);
+			    img = PUtils.convolve(img, Coord.of(h, (h * img.getHeight()) / img.getWidth()), filter());
 		    } else {
 			if(img.getHeight() != h)
-			    img = PUtils.convolve(img, Coord.of((h * img.getWidth()) / img.getHeight(), h), GobIcon.filter);
+			    img = PUtils.convolve(img, Coord.of((h * img.getWidth()) / img.getHeight(), h), filter());
 		    }
 		    this.img = new TexI(img);
 		}
