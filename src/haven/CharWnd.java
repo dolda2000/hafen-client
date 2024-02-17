@@ -55,6 +55,7 @@ public class CharWnd extends Window {
     public final WoundWnd wound;
     public final QuestWnd quest;
     public final Tabs.Tab battrtab, sattrtab, skilltab, fighttab, woundtab, questtab;
+    public int exp, enc;
 
     public static class RLabel<V> extends Label {
 	private final Supplier<V> val;
@@ -231,6 +232,10 @@ public class CharWnd extends Window {
 		int comp = (Integer)args[a++];
 		ui.sess.glob.cattr(attr, base, comp);
 	    }
+	} else if(nm == "exp") {
+	    exp = Utils.iv(args[0]);
+	} else if(nm == "enc") {
+	    enc = Utils.iv(args[0]);
 	} else if(battr.msgs.contains(nm)) {
 	    battr.uimsg(nm, args);
 	} else if(sattr.msgs.contains(nm)) {
