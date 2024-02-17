@@ -34,8 +34,8 @@ import static haven.PUtils.*;
 
 public class SAttrWnd extends Widget {
     public final Collection<SAttr> attrs;
-    public int exp, enc;
     private final Coord studyc;
+    private CharWnd chr;
     private int scost;
 
     public class SAttr extends Widget {
@@ -126,11 +126,16 @@ public class SAttrWnd extends Widget {
     }
 
     public RLabel<?> explabel() {
-	return(new RLabel<Integer>(() -> exp, Utils::thformat, new Color(192, 192, 255)));
+	return(new RLabel<Integer>(() -> chr.exp, Utils::thformat, new Color(192, 192, 255)));
     }
 
     public RLabel<?> enclabel() {
-	return(new RLabel<Integer>(() -> enc, Utils::thformat, new Color(255, 255, 192)));
+	return(new RLabel<Integer>(() -> chr.enc, Utils::thformat, new Color(255, 255, 192)));
+    }
+
+    protected void attached() {
+	this.chr = getparent(CharWnd.class);
+	super.attached();
     }
 
     public static class StudyInfo extends Widget {
@@ -221,7 +226,7 @@ public class SAttrWnd extends Widget {
 	prev = add(new Label("Learning points:"), prev.pos("bl").adds(0, 2));
 	adda(explabel(), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
 	prev = add(new Label("Learning cost:"), prev.pos("bl").adds(0, 2));
-	adda(new RLabel<Integer>(() -> scost, Utils::thformat, n -> (n > exp) ? debuff : Color.WHITE), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
+	adda(new RLabel<Integer>(() -> scost, Utils::thformat, n -> (n > chr.exp) ? debuff : Color.WHITE), new Coord(rx, prev.pos("ul").y), 1.0, 0.0);
 	prev = adda(new Button(UI.scale(75), "Buy").action(this::buy), bframe.pos("ibr").subs(5, 5), 1.0, 1.0);
 	adda(new Button(UI.scale(75), "Reset").action(this::reset), prev.pos("bl").subs(5, 0), 1.0, 1.0);
 	pack();
@@ -241,14 +246,5 @@ public class SAttrWnd extends Widget {
 	}
     }
 
-    public static final Collection<String> msgs = Arrays.asList("exp", "enc");
-    public void uimsg(String nm, Object... args) {
-	if(nm == "exp") {
-	    exp = Utils.iv(args[0]);
-	} else if(nm == "enc") {
-	    enc = Utils.iv(args[0]);
-	} else {
-	    super.uimsg(nm, args);
-	}
-    }
+    public static final Collection<String> msgs = Arrays.asList();
 }

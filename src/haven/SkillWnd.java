@@ -35,7 +35,7 @@ public class SkillWnd extends Widget {
     public final SkillGrid skg;
     public final CredoGrid credos;
     public final ExpGrid exps;
-    private SAttrWnd sattr;
+    private CharWnd chr;
 
     public class Skill {
 	public final String nm;
@@ -376,7 +376,7 @@ public class SkillWnd extends Widget {
     }
 
     protected void attached() {
-	this.sattr = getparent(CharWnd.class).sattr;
+	this.chr = getparent(CharWnd.class);
 	super.attached();
     }
 
@@ -413,7 +413,7 @@ public class SkillWnd extends Widget {
 			    SkillWnd.this.wdgmsg("buy", skg.sel.nm);
 	    }), bf.pos("ibr").subs(10, 0).y(bf.pos("mid").y), 1.0, 0.5);
 	    Label clbl = sktab.adda(new Label("Cost:"), bf.pos("iul").adds(10, 0).y(bf.pos("mid").y), 0, 0.5);
-	    sktab.adda(new RLabel<Pair<Integer, Integer>>(() -> new Pair<>(((skg.sel == null) || skg.sel.has) ? null : skg.sel.cost, this.sattr.exp),
+	    sktab.adda(new RLabel<Pair<Integer, Integer>>(() -> new Pair<>(((skg.sel == null) || skg.sel.has) ? null : skg.sel.cost, this.chr.exp),
 							  n -> (n.a == null) ? "N/A" : String.format("%,d / %,d LP", n.a, n.b),
 							  n -> ((n.a != null) && (n.a > n.b)) ? debuff : Color.WHITE),
 		       bbtn.pos("ul").subs(10, 0).y(bf.pos("mid").y), 1.0, 0.5);
