@@ -444,6 +444,10 @@ public class Utils {
 	return(((Number)arg).intValue());
     }
 
+    public static long uiv(Object arg) {
+	return(uint32(iv(arg)));
+    }
+
     public static float fv(Object arg) {
 	return(((Number)arg).floatValue());
     }
