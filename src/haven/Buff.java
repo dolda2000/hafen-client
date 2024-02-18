@@ -126,7 +126,7 @@ public class Buff extends Widget implements ItemInfo.ResOwner, Bufflist.Managed 
 	    g.image(img, imgoff);
 	    Tex nmeter = (this.nmeter >= 0) ? nmeter() : nmeteri.get();
 	    if(nmeter != null)
-		g.aimage(nmeter, imgoff.add(img.sz()).sub(1, 1), 1, 1, UI.scale(nmeter.sz()));
+		g.aimage(nmeter, imgoff.add(img.sz()).sub(1, 1), 1, 1, nmeter.sz());
 	    Double cmeter;
 	    if(this.cmeter >= 0) {
 		double m = this.cmeter;
