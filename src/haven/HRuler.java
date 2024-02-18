@@ -58,7 +58,7 @@ public class HRuler extends Widget {
     @RName("hr")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    int w = UI.scale((Integer)args[0]);
+	    int w = UI.scale(Utils.iv(args[0]));
 	    Color col = defcol;
 	    if(args.length > 1)
 		col = (Color)args[1];

@@ -37,7 +37,7 @@ public class GiveButton extends Widget {
     @RName("give")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(new GiveButton((Integer)args[0]));
+	    return(new GiveButton(Utils.iv(args[0])));
 	}
     }
 	
@@ -76,7 +76,7 @@ public class GiveButton extends Widget {
     
     public void uimsg(String name, Object... args) {
 	if(name == "ch") {
-	    this.state = (Integer)args[0];
+	    this.state = Utils.iv(args[0]);
 	} else {
 	    super.uimsg(name, args);
 	}

@@ -41,14 +41,14 @@ public class Img extends Widget {
 	    int a = 0;
 	    if(args[a] instanceof String) {
 		String nm = (String)args[a++];
-		int ver = (args.length > a)?((Integer)args[a++]):-1;
+		int ver = (args.length > a) ? ((Integer)args[a++]) : -1;
 		res = new Resource.Spec(Resource.remote(), nm, ver);
 	    } else {
-		res = ui.sess.getres((Integer)args[a++]);
+		res = ui.sess.getres(args[a++]);
 	    }
 	    Img ret = new Img(res);
 	    if(args.length > a) {
-		int fl = (Integer)args[a++];
+		int fl = Utils.iv(args[a++]);
 		ret.hit = (fl & 1) != 0;
 		ret.opaque = (fl & 2) != 0;
 	    }

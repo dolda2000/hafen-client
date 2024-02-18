@@ -50,9 +50,9 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     @RName("item")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    int res = (Integer)args[0];
-	    Message sdt = (args.length > 1)?new MessageBuf((byte[])args[1]):Message.nil;
-	    return(new GItem(ui.sess.getres(res), sdt));
+	    Indir<Resource> res = ui.sess.getres(args[0]);
+	    Message sdt = (args.length > 1) ? new MessageBuf((byte[])args[1]) : Message.nil;
+	    return(new GItem(res, sdt));
 	}
     }
 
@@ -187,11 +187,11 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 
     public void uimsg(String name, Object... args) {
 	if(name == "num") {
-	    num = (Integer)args[0];
+	    num = Utils.iv(args[0]);
 	} else if(name == "chres") {
 	    synchronized(this) {
-		res = ui.sess.getres((Integer)args[0]);
-		sdt = (args.length > 1)?new MessageBuf((byte[])args[1]):MessageBuf.nil;
+		res = ui.sess.getres(args[0]);
+		sdt = (args.length > 1) ? new MessageBuf((byte[])args[1]) : MessageBuf.nil;
 		spr = null;
 	    }
 	} else if(name == "tt") {
@@ -206,7 +206,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 		if(args[0] == null)
 		    nst = (contentswnd.st != "wnd");
 		else
-		    nst = ((Integer)args[0]) != 0;
+		    nst = Utils.bv(args[0]);
 		contentswnd.wndshow(nst);
 	    }
 	} else {

@@ -192,11 +192,11 @@ public class MCache implements MapSource {
 			break;
 		    }
 		    case "mat": {
-			matid = (Integer)arg[1];
+			matid = Utils.iv(arg[1]);
 			break;
 		    }
 		    case "omat": {
-			omatid = (Integer)arg[1];
+			omatid = Utils.iv(arg[1]);
 			break;
 		    }
 		    }

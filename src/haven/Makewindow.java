@@ -153,13 +153,13 @@ public class Makewindow extends Widget {
 	if(msg == "inpop") {
 	    List<Spec> inputs = new ArrayList<>();
 	    for(int i = 0; i < args.length;) {
-		int resid = (Integer)args[i++];
+		Indir<Resource> res = ui.sess.getres(args[i++]);
 		Message sdt = (args[i] instanceof byte[]) ? new MessageBuf((byte[])args[i++]) : MessageBuf.nil;
-		int num = (Integer)args[i++];
+		int num = Utils.iv(args[i++]);
 		Object[] info = {};
 		if((i < args.length) && (args[i] instanceof Object[]))
 		    info = (Object[])args[i++];
-		inputs.add(new Spec(ui.sess.getres(resid), sdt, num, info));
+		inputs.add(new Spec(res, sdt, num, info));
 	    }
 	    ui.sess.glob.loader.defer(() -> {
 		    List<Input> wdgs = new ArrayList<>();
@@ -184,13 +184,13 @@ public class Makewindow extends Widget {
 	} else if(msg == "opop") {
 	    List<Spec> outputs = new ArrayList<Spec>();
 	    for(int i = 0; i < args.length;) {
-		int resid = (Integer)args[i++];
+		Indir<Resource> res = ui.sess.getres(args[i++]);
 		Message sdt = (args[i] instanceof byte[]) ? new MessageBuf((byte[])args[i++]) : MessageBuf.nil;
-		int num = (Integer)args[i++];
+		int num = Utils.iv(args[i++]);
 		Object[] info = {};
 		if((i < args.length) && (args[i] instanceof Object[]))
 		    info = (Object[])args[i++];
-		outputs.add(new Spec(ui.sess.getres(resid), sdt, num, info));
+		outputs.add(new Spec(res, sdt, num, info));
 	    }
 	    ui.sess.glob.loader.defer(() -> {
 		    List<SpecWidget> wdgs = new ArrayList<>();
@@ -214,17 +214,17 @@ public class Makewindow extends Widget {
 	} else if(msg == "qmod") {
 	    List<Indir<Resource>> qmod = new ArrayList<Indir<Resource>>();
 	    for(Object arg : args)
-		qmod.add(ui.sess.getres((Integer)arg));
+		qmod.add(ui.sess.getres(arg));
 	    this.qmod = qmod;
 	} else if(msg == "tool") {
-	    tools.add(ui.sess.getres((Integer)args[0]));
+	    tools.add(ui.sess.getres(args[0]));
 	} else if(msg == "inprcps") {
-	    int idx = (Integer)args[0];
+	    int idx = Utils.iv(args[0]);
 	    List<MenuGrid.Pagina> rcps = new ArrayList<>();
 	    GameUI gui = getparent(GameUI.class);
 	    if((gui != null) && (gui.menu != null)) {
 		for(int a = 1; a < args.length; a++)
-		    rcps.add(gui.menu.paginafor(ui.sess.getres((Integer)args[a])));
+		    rcps.add(gui.menu.paginafor(ui.sess.getres(args[a])));
 	    }
 	    inputs.get(idx).recipes(rcps);
 	} else {

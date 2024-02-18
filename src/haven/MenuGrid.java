@@ -527,12 +527,12 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    if(args[0] == null)
 		change(null);
 	    else
-		change(paginafor(ui.sess.getres((Integer)args[0])));
+		change(paginafor(ui.sess.getres(args[0])));
 	} else if(msg == "fill") {
 	    synchronized(paginae) {
 		int a = 0;
 		while(a < args.length) {
-		    int fl = (Integer)args[a++];
+		    int fl = Utils.iv(args[a++]);
 		    Pagina pag = paginafor(ui.sess.getres((Integer)args[a++], -2));
 		    if((fl & 1) != 0) {
 			pag.state(Pagina.State.ENABLED);
@@ -540,9 +540,9 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 			if((fl & 2) != 0)
 			    pag.state(Pagina.State.DISABLED);
 			if((fl & 4) != 0) {
-			    pag.meter = ((Number)args[a++]).doubleValue() / 1000.0;
+			    pag.meter = Utils.dv(args[a++]) / 1000.0;
 			    pag.gettime = Utils.rtime();
-			    pag.dtime = ((Number)args[a++]).doubleValue() / 1000.0;
+			    pag.dtime = Utils.dv(args[a++]) / 1000.0;
 			}
 			if((fl & 8) != 0)
 			    pag.newp = 1;

@@ -482,7 +482,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    Coord2d mc = ((Coord)args[1]).mul(posres);
 	    long pgob = -1;
 	    if(args.length > 2)
-		pgob = Utils.uint32((Integer)args[2]);
+		pgob = Utils.uiv(args[2]);
 	    return(new MapView(sz, ui.sess.glob, mc, pgob));
 	}
     }
@@ -1818,7 +1818,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		this.placing = null;
 	    }
 	    int a = 0;
-	    Indir<Resource> res = ui.sess.getres((Integer)args[a++]);
+	    Indir<Resource> res = ui.sess.getres(args[a++]);
 	    Message sdt;
 	    if((args.length > a) && (args[a] instanceof byte[]))
 		sdt = new MessageBuf((byte[])args[a++]);
@@ -1833,7 +1833,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			    ret = new Plob(res, new MessageBuf(sdt));
 			while(a < args.length) {
 			    int a2 = a;
-			    Indir<Resource> ores = ui.sess.getres((Integer)args[a2++]);
+			    Indir<Resource> ores = ui.sess.getres(args[a2++]);
 			    Message odt;
 			    if((args.length > a2) && (args[a2] instanceof byte[]))
 				odt = new MessageBuf((byte[])args[a2++]);
@@ -1863,7 +1863,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(args[0] == null)
 		plgob = -1;
 	    else
-		plgob = Utils.uint32((Integer)args[0]);
+		plgob = Utils.uiv(args[0]);
 	} else if(msg == "flashol2") {
 	    Collection<String> ols = new LinkedList<>();
 	    double tm = ((Number)args[0]).doubleValue() / 100.0;
@@ -1871,7 +1871,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		ols.add((String)args[a]);
 	    flashol(ols, tm);
 	} else if(msg == "sel") {
-	    boolean sel = ((Integer)args[0]) != 0;
+	    boolean sel = Utils.bv(args[0]);
 	    synchronized(this) {
 		if(sel && (selection == null)) {
 		    selection = new Selector();
