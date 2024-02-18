@@ -57,15 +57,15 @@ public class Button extends SIWidget {
     public static class $Btn implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    if(args.length > 2)
-		return(new Button(UI.scale((Integer)args[0]), (String)args[1], ((Integer)args[2]) != 0));
+		return(new Button(UI.scale(Utils.iv(args[0])), (String)args[1], Utils.bv(args[2])));
 	    else
-		return(new Button(UI.scale((Integer)args[0]), (String)args[1]));
+		return(new Button(UI.scale(Utils.iv(args[0])), (String)args[1]));
 	}
     }
     @RName("ltbtn")
     public static class $LTBtn implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(wrapped(UI.scale((Integer)args[0]), (String)args[1]));
+	    return(wrapped(UI.scale(Utils.iv(args[0])), (String)args[1]));
 	}
     }
 	
@@ -177,7 +177,7 @@ public class Button extends SIWidget {
 	    else
 		change((String)args[0]);
 	} else if(msg == "dis") {
-	    disable(((Integer)args[1]) != 0);
+	    disable(Utils.bv(args[1]));
 	} else {
 	    super.uimsg(msg, args);
 	}
