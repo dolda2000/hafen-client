@@ -134,6 +134,8 @@ public class Resource implements Serializable {
 	public Indir<Resource> getres(int id);
 
 	public default Indir<Resource> getres(Object desc) {
+	    if(desc == null)
+		return(null);
 	    if(desc instanceof Number) {
 		int id = ((Number)desc).intValue();
 		if(id < 0)
