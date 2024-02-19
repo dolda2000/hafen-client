@@ -41,7 +41,7 @@ public class Img extends Widget {
 	    int a = 0;
 	    if(args[a] instanceof String) {
 		String nm = (String)args[a++];
-		int ver = (args.length > a) ? ((Integer)args[a++]) : -1;
+		int ver = (args.length > a) ? Utils.iv(args[a++]) : -1;
 		res = new Resource.Spec(Resource.remote(), nm, ver);
 	    } else {
 		res = ui.sess.getres(args[a++]);
@@ -92,13 +92,13 @@ public class Img extends Widget {
 	if(name == "ch") {
 	    if(args[0] instanceof String) {
 		String nm = (String)args[0];
-		int ver = (args.length > 1)?((Integer)args[1]):-1;
+		int ver = (args.length > 1) ? Utils.iv(args[1]) : -1;
 		this.res = new Resource.Spec(Resource.remote(), nm, ver);
 	    } else {
-		this.res = ui.sess.getres((Integer)args[0]);
+		this.res = ui.sess.getres(args[0]);
 	    }
 	} else if(name == "cl") {
-	    hit = ((Integer)args[0]) != 0;
+	    hit = Utils.bv(args[0]);
 	} else {
 	    super.uimsg(name, args);
 	}

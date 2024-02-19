@@ -622,13 +622,13 @@ public class WaterTile extends Tiler {
     public static class Fac implements Factory {
 	public Tiler create(int id, Tileset set) {
 	    int a = 0;
-	    int depth = (Integer)set.ta[a++];
+	    int depth = Utils.iv(set.ta[a++]);
 	    Tiler.MCons bottom = new GroundTile(id, set);
 	    while(a < set.ta.length) {
 		Object[] desc = (Object[])set.ta[a++];
 		String p = (String)desc[0];
 		if(p.equals("bottom") /* Backwards compatibility */ || p.equals("gnd") || p.equals("trn")) {
-		    Resource bres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
+		    Resource bres = set.getres().pool.load((String)desc[1], Utils.iv(desc[2])).get();
 		    Tileset ts = bres.flayer(Tileset.class);
 		    Tiler b = ts.tfac().create(id, ts);
 		    bottom = (Tiler.MCons)b;

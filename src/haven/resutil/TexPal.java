@@ -61,12 +61,12 @@ public class TexPal extends State {
 	    final int tid;
 	    int a = 0;
 	    if(args[a] instanceof String) {
-		tres = res.pool.load((String)args[a], (Integer)args[a + 1]);
-		tid = (Integer)args[a + 2];
+		tres = res.pool.load((String)args[a], Utils.iv(args[a + 1]));
+		tid = Utils.iv(args[a + 2]);
 		a += 3;
 	    } else {
 		tres = res.indir();
-		tid = (Integer)args[a];
+		tid = Utils.iv(args[a]);
 		a += 1;
 	    }
 	    return(new Material.Res.Resolver() {

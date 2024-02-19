@@ -84,7 +84,7 @@ public class Avaview extends PView {
 	    if(args[0] == null)
 		this.avagob = -1;
 	    else
-		this.avagob = Utils.uint32((Integer)args[0]);
+		this.avagob = Utils.uiv(args[0]);
 	    this.avadesc = null;
 	} else if(msg == "pop") {
 	    pop(Desc.decode(ui.sess, args));

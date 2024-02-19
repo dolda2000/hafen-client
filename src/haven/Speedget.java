@@ -54,8 +54,8 @@ public class Speedget extends Widget {
     @RName("speedget")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    int cur = (Integer)args[0];
-	    int max = (Integer)args[1];
+	    int cur = Utils.iv(args[0]);
+	    int max = Utils.iv(args[1]);
 	    return(new Speedget(cur, max));
 	}
     }
@@ -83,9 +83,9 @@ public class Speedget extends Widget {
 
     public void uimsg(String msg, Object... args) {
 	if(msg == "cur")
-	    cur = (Integer)args[0];
+	    cur = Utils.iv(args[0]);
 	else if(msg == "max")
-	    max = (Integer)args[0];
+	    max = Utils.iv(args[0]);
     }
 
     public void set(int s) {

@@ -164,10 +164,10 @@ public class Polity extends Widget {
     public void uimsg(String msg, Object... args) {
 	if(msg == "auth") {
 	    synchronized(this) {
-		auth = (Integer)args[0];
-		acap = (Integer)args[1];
-		adrain = (Integer)args[2];
-		offline = ((Integer)args[3]) != 0;
+		auth = Utils.iv(args[0]);
+		acap = Utils.iv(args[1]);
+		adrain = Utils.iv(args[2]);
+		offline = Utils.bv(args[3]);
 		aseq++;
 	    }
 	} else if(msg == "add") {
