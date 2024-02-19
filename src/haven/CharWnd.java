@@ -245,16 +245,6 @@ public class CharWnd extends Window {
 	    exp = Utils.iv(args[0]);
 	} else if(nm == "enc") {
 	    enc = Utils.iv(args[0]);
-	} else if(battr.msgs.contains(nm)) {
-	    battr.uimsg(nm, args);
-	} else if(sattr.msgs.contains(nm)) {
-	    sattr.uimsg(nm, args);
-	} else if(skill.msgs.contains(nm)) {
-	    skill.uimsg(nm, args);
-	} else if(wound.msgs.contains(nm)) {
-	    wound.uimsg(nm, args);
-	} else if(quest.msgs.contains(nm)) {
-	    quest.uimsg(nm, args);
 	} else {
 	    super.uimsg(nm, args);
 	}

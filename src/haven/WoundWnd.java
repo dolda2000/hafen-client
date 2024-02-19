@@ -288,7 +288,6 @@ public class WoundWnd extends Widget {
 	}
     }
 
-    public static final Collection<String> msgs = Arrays.asList("wounds");
     public void uimsg(String nm, Object... args) {
 	if(nm == "wounds") {
 	    if(args.length > 0) {

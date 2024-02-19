@@ -490,7 +490,6 @@ public class BAttrWnd extends Widget {
 	pack();
     }
 
-    public static Collection<String> msgs = Arrays.asList("food", "glut", "ftrig", "lvl", "const");
     public void uimsg(String nm, Object... args) {
 	if(nm == "food") {
 	    feps.update(args);

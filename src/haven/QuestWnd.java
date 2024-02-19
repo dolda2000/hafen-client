@@ -679,7 +679,6 @@ public class QuestWnd extends Widget {
 	}
     }
 
-    public static final Collection<String> msgs = Arrays.asList("quests");
     public void uimsg(String nm, Object... args) {
 	if(nm == "quests") {
 	    for(int i = 0; i < args.length;) {

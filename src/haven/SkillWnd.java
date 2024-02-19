@@ -499,7 +499,6 @@ public class SkillWnd extends Widget {
 	return(buf);
     }
 
-    public static final Collection<String> msgs = Arrays.asList("csk", "nsk", "ccr", "ncr", "crcost", "pcr", "exps");
     public void uimsg(String nm, Object... args) {
 	if(nm == "csk") {
 	    skg.csk.update(decsklist(args, 0, true));

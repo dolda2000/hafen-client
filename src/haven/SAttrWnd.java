@@ -252,6 +252,4 @@ public class SAttrWnd extends Widget {
 	    super.addchild(child, args);
 	}
     }
-
-    public static final Collection<String> msgs = Arrays.asList();
 }
