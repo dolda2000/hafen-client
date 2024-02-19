@@ -405,7 +405,9 @@ public class Widget {
     }
 
     public void addchild(Widget child, Object... args) {
-	if(args[0] instanceof Coord) {
+	if((args.length > 0) && (args[0] == null)) {
+	    add(child);
+	} if(args[0] instanceof Coord) {
 	    Coord c = (Coord)args[0];
 	    String opt = (args.length > 1) ? (String)args[1] : "";
 	    if(opt.indexOf('u') < 0)
