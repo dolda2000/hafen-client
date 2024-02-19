@@ -57,6 +57,50 @@ public class CharWnd extends Window {
     public final Tabs.Tab battrtab, sattrtab, skilltab, fighttab, woundtab, questtab;
     public int exp, enc;
 
+    public static class TabProxy extends AWidget {
+	public final Class<? extends Widget> tcl;
+	public final String id;
+	private Widget tab = null;
+
+	public TabProxy(Class<? extends Widget> tcl, String id) {
+	    this.tcl = tcl;
+	    this.id = id;
+	}
+
+	protected void added() {
+	    super.added();
+	    if(tab == null) {
+		CharWnd chr = getparent(CharWnd.class);
+		tab = chr.getchild(tcl);
+		unlink();
+		if(tab != null) {
+		    tab.addchild(this, id);
+		} else {
+		    tab = Utils.construct(tcl);
+		    tab.addchild(this, id);
+		    chr.addchild(tab, "tab");
+		}
+	    }
+	}
+
+	public void uimsg(String nm, Object... args) {
+	    tab.uimsg(nm, args);
+	}
+    }
+
+    public <T> T getchild(Class<T> cl) {
+	T ret = super.getchild(cl);
+	if(ret != null)
+	    return(ret);
+	if(ret == null) {
+	    for(Widget ch : children()) {
+		if((ch instanceof Tabs.Tab) && ((ret = ch.getchild(cl)) != null))
+		    return(ret);
+	    }
+	}
+	return(null);
+    }
+
     public static class RLabel<V> extends Label {
 	private final Supplier<V> val;
 	private final Function<V, String> fmt;
@@ -216,6 +260,8 @@ public class CharWnd extends Window {
 		wound = woundtab.add((WoundWnd)child, Coord.z);
 	    } else if(child instanceof QuestWnd) {
 		quest = questtab.add((QuestWnd)child, Coord.z);
+	    } else if(child instanceof TabProxy) {
+		add(child);
 	    } else {
 		throw(new RuntimeException("unknown tab widget: " + child));
 	    }
