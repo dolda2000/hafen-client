@@ -405,7 +405,7 @@ public class Composited implements RenderTree.Node, EquipTarget {
 		Message sdt = Message.nil;
 		if(qa[n] instanceof byte[])
 		    sdt = new MessageBuf((byte[])qa[n++]);
-		Coord3f off = new Coord3f(((Number)qa[n + 0]).floatValue(), ((Number)qa[n + 1]).floatValue(), ((Number)qa[n + 2]).floatValue());
+		Coord3f off = new Coord3f(Utils.fv(qa[n + 0]), Utils.fv(qa[n + 1]), Utils.fv(qa[n + 2]));
 		ret.equ.add(new ED(t, at, new ResData(res, sdt), off));
 	    }
 	    return(ret);

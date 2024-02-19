@@ -1165,7 +1165,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    msg(text);
 	} else if(msg == "prog") {
 	    if(args.length > 0) {
-		double p = ((Number)args[0]).doubleValue() / 100.0;
+		double p = Utils.dv(args[0]) / 100.0;
 		if(prog == null)
 		    prog = adda(new Progress(p), 0.5, 0.35);
 		else

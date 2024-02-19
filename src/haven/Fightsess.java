@@ -361,7 +361,7 @@ public class Fightsess extends Widget {
 	    int n = Utils.iv(args[0]);
 	    double now = Utils.rtime();
 	    actions[n].cs = now;
-	    actions[n].ct = now + (((Number)args[1]).doubleValue() * 0.06);
+	    actions[n].ct = now + (Utils.dv(args[1]) * 0.06);
 	} else if(msg == "use") {
 	    this.use = Utils.iv(args[0]);
 	    this.useb = (args.length > 1) ? Utils.iv(args[1]) : -1;

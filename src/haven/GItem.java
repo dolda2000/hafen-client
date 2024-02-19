@@ -199,7 +199,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    rawinfo = new ItemInfo.Raw(args);
 	    infoseq++;
 	} else if(name == "meter") {
-	    meter = (int)((Number)args[0]).doubleValue();
+	    meter = Utils.iv(args[0]);
 	} else if(name == "contopen") {
 	    if(contentswnd != null) {
 		boolean nst;

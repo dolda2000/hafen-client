@@ -1866,7 +1866,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		plgob = Utils.uiv(args[0]);
 	} else if(msg == "flashol2") {
 	    Collection<String> ols = new LinkedList<>();
-	    double tm = ((Number)args[0]).doubleValue() / 100.0;
+	    double tm = Utils.dv(args[0]) / 100.0;
 	    for(int a = 1; a < args.length; a++)
 		ols.add((String)args[a]);
 	    flashol(ols, tm);
@@ -1881,7 +1881,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		}
 	    }
 	} else if(msg == "shake") {
-	    shake += ((Number)args[0]).doubleValue();
+	    shake += Utils.dv(args[0]);
 	} else {
 	    super.uimsg(msg, args);
 	}

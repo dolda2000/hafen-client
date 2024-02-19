@@ -45,7 +45,7 @@ public class TexAnim extends State {
     }
 
     public TexAnim(Resource res, Object... args) {
-	this(new Coord3f(((Number)args[0]).floatValue(), ((Number)args[1]).floatValue(), 0));
+	this(new Coord3f(Utils.fv(args[0]), Utils.fv(args[1]), 0));
     }
 
     private static final Uniform cax = new Uniform(VEC2, p -> p.get(slot).ax, slot);

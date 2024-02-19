@@ -260,7 +260,7 @@ public class Tileset extends Resource.Layer {
 		    if(ret != null)
 			this.flav = ret.make(getres().flayer(Tileset.class), this.args);
 		    else
-			this.flav = new SpriteFlavor(this.res, ((Number)this.args[0]).doubleValue());
+			this.flav = new SpriteFlavor(this.res, Utils.dv(this.args[0]));
 		}
 		return(this.flav);
 	    }

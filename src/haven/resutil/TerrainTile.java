@@ -387,7 +387,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 			if(desc.length > 3)
 			    texh = Utils.fv(desc[3]);
 		    } else if(p.equals("rthres")) {
-			rth = ((Number)desc[1]).doubleValue();
+			rth = Utils.dv(desc[1]);
 		    }
 		}
 		if(mat == null)
