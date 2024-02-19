@@ -140,7 +140,7 @@ public class Resource implements Serializable {
 		int id = ((Number)desc).intValue();
 		if(id < 0)
 		    return(null);
-		return(this.getres(((Number)desc).intValue()));
+		return(this.getres(id));
 	    }
 	    throw(new ClassCastException("unknown type for resource id: " + desc));
 	}
