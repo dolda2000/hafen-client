@@ -265,6 +265,9 @@ public class CharWnd extends Window {
 	    } else {
 		throw(new RuntimeException("unknown tab widget: " + child));
 	    }
+	} else if(place == "fmg") {
+	    /* XXX: Remove me! */
+	    fight = fighttab.add((FightWnd)child, 0, 0);
 	} else {
 	    super.addchild(child, args);
 	}
