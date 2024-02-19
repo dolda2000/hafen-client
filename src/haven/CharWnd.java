@@ -265,14 +265,6 @@ public class CharWnd extends Window {
 	    } else {
 		throw(new RuntimeException("unknown tab widget: " + child));
 	    }
-	} else if(sattr.children.contains(place)) {
-	    sattr.addchild(child, args);
-	} else if(wound.children.contains(place)) {
-	    wound.addchild(child, args);
-	} else if(quest.children.contains(place)) {
-	    quest.addchild(child, args);
-	} else if(place == "fmg") {
-	    fight = fighttab.add((FightWnd)child, 0, 0);
 	} else {
 	    super.addchild(child, args);
 	}

@@ -239,7 +239,6 @@ public class SAttrWnd extends Widget {
 	pack();
     }
 
-    public static final Collection<String> children = Arrays.asList("study");
     public void addchild(Widget child, Object... args) {
 	String place = (args[0] instanceof String) ? (((String)args[0]).intern()) : null;
 	if(place == "study") {
