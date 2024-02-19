@@ -133,6 +133,18 @@ public class Resource implements Serializable {
     public static interface Resolver {
 	public Indir<Resource> getres(int id);
 
+	public default Indir<Resource> getres(Object desc) {
+	    if(desc == null)
+		return(null);
+	    if(desc instanceof Number) {
+		int id = ((Number)desc).intValue();
+		if(id < 0)
+		    return(null);
+		return(this.getres(((Number)desc).intValue()));
+	    }
+	    throw(new ClassCastException("unknown type for resource id: " + desc));
+	}
+
 	public class ResourceMap implements Resource.Resolver {
 	    public final Resource.Resolver bk;
 	    public final Map<Integer, Integer> map;

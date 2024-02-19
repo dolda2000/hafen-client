@@ -76,8 +76,12 @@ public class Buff extends Widget implements ItemInfo.ResOwner, Bufflist.Managed 
     public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
 
     public List<ItemInfo> info() {
-	if(info == null)
+	if(info == null) {
 	    info = ItemInfo.buildinfo(this, rawinfo);
+	    Resource.Pagina pag = res.get().layer(Resource.pagina);
+	    if(pag != null)
+		info.add(new ItemInfo.Pagina(this, pag.text));
+	}
 	return(info);
     }
 
@@ -126,7 +130,7 @@ public class Buff extends Widget implements ItemInfo.ResOwner, Bufflist.Managed 
 	    g.image(img, imgoff);
 	    Tex nmeter = (this.nmeter >= 0) ? nmeter() : nmeteri.get();
 	    if(nmeter != null)
-		g.aimage(nmeter, imgoff.add(img.sz()).sub(1, 1), 1, 1, UI.scale(nmeter.sz()));
+		g.aimage(nmeter, imgoff.add(img.sz()).sub(1, 1), 1, 1, nmeter.sz());
 	    Double cmeter;
 	    if(this.cmeter >= 0) {
 		double m = this.cmeter;
@@ -162,13 +166,14 @@ public class Buff extends Widget implements ItemInfo.ResOwner, Bufflist.Managed 
 
     private BufferedImage longtip() {
 	BufferedImage img;
-	if(rawinfo != null)
+	if(rawinfo != null) {
 	    img = ItemInfo.longtip(info());
-	else
+	} else {
 	    img = shorttip();
-	Resource.Pagina pag = res.get().layer(Resource.pagina);
-	if(pag != null)
-	    img = ItemInfo.catimgs(0, img, RichText.render("\n" + pag.text, textw).img);
+	    Resource.Pagina pag = res.get().layer(Resource.pagina);
+	    if(pag != null)
+		img = ItemInfo.catimgs(0, img, RichText.render("\n" + pag.text, textw).img);
+	}
 	return(img);
     }
 
