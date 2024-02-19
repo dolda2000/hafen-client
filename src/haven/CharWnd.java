@@ -247,7 +247,7 @@ public class CharWnd extends Window {
 
     public void addchild(Widget child, Object... args) {
 	String place = (args[0] instanceof String) ? (((String)args[0]).intern()) : null;
-	if(place == "tab") {
+	if((place == "tab") || /* XXX: Remove me! */ Utils.eq(args[0], Coord.of(47, 47))) {
 	    if(child instanceof BAttrWnd) {
 		battr = battrtab.add((BAttrWnd)child, Coord.z);
 	    } else if(child instanceof SAttrWnd) {
