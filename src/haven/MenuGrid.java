@@ -78,6 +78,10 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    return((sdt == null) ? Message.nil : new MessageBuf(sdt));
 	}
 
+	private void invalidate() {
+	    button = null;
+	}
+
 	private PagButton button = null;
 	public PagButton button() {
 	    if(button == null) {
@@ -583,12 +587,16 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		    if((fl & 1) != 0) {
 			if((fl & 8) != 0)
 			    pag.anew = 2;
-			if((fl & 16) != 0)
-			    pag.rawinfo = (Object[])args[a++];
-			else
-			    pag.rawinfo = new Object[0];
-			if((fl & 32) != 0)
-			    pag.sdt = (byte[])args[a++];
+			Object[] rawinfo = ((fl & 16) != 0) ? (Object[])args[a++] : new Object[0];
+			if(!Arrays.deepEquals(pag.rawinfo, rawinfo)) {
+			    pag.rawinfo = rawinfo;
+			    pag.invalidate();
+			}
+			byte[] data = ((fl & 4) != 0) ? (byte[])args[a++] : null;
+			if(!Arrays.equals(pag.sdt, data)) {
+			    pag.sdt = data;
+			    pag.invalidate();
+			}
 			paginae.add(pag);
 		    } else {
 			paginae.remove(pag);
