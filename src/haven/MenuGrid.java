@@ -337,7 +337,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    public KeyBinding binding() {return(kb_back);}
 	};
 
-    public Map<Indir<Resource>, Pagina> pmap = new WeakHashMap<Indir<Resource>, Pagina>();
+    public Map<Indir<Resource>, Pagina> pmap = new CacheMap<>(CacheMap.RefType.WEAK);
     public Pagina paginafor(Indir<Resource> res) {
 	if(res == null)
 	    return(null);
