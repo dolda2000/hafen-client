@@ -164,6 +164,13 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		spr.tick(dt);
 	}
 
+	public BufferedImage img() {
+	    GSprite spr = spr();
+	    if(spr instanceof GSprite.ImageSprite)
+		return(((GSprite.ImageSprite)spr).image());
+	    return(null);
+	}
+
 	public final AttrCache<GItem.InfoOverlay<?>[]> ols = new AttrCache<>(this::info, info -> {
 		ArrayList<GItem.InfoOverlay<?>> buf = new ArrayList<>();
 		for(ItemInfo inf : info) {
