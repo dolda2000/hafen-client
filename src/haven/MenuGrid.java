@@ -32,6 +32,7 @@ import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 import java.awt.image.BufferedImage;
 import haven.Resource.AButton;
+import haven.ItemInfo.AttrCache;
 import java.util.*;
 
 public class MenuGrid extends Widget implements KeyBinding.Bindable {
@@ -94,9 +95,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		spr = GSprite.create(this, res, Message.nil);
 	    return(spr);
 	}
-	public void draw(GOut g, GSprite spr) {
-	    spr.draw(g);
-	}
 	public String name() {return(res.flayer(Resource.action).name);}
 	public KeyMatch hotkey() {
 	    char hk = res.flayer(Resource.action).hk;
@@ -120,6 +118,36 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	public void tick(double dt) {
 	    if(spr != null)
 		spr.tick(dt);
+	}
+
+	public final AttrCache<GItem.InfoOverlay<?>[]> ols = new AttrCache<>(this::info, info -> {
+		ArrayList<GItem.InfoOverlay<?>> buf = new ArrayList<>();
+		for(ItemInfo inf : info) {
+		    if(inf instanceof GItem.OverlayInfo)
+			buf.add(GItem.InfoOverlay.create((GItem.OverlayInfo<?>)inf));
+		}
+		GItem.InfoOverlay<?>[] ret = buf.toArray(new GItem.InfoOverlay<?>[0]);
+		return(() -> ret);
+	});
+	public final AttrCache<Double> meter = new AttrCache<>(this::info, AttrCache.map1(GItem.MeterInfo.class, minf -> minf::meter));
+
+	public void drawmain(GOut g, GSprite spr) {
+	    spr.draw(g);
+	}
+	public void draw(GOut g, GSprite spr) {
+	    drawmain(g, spr);
+	    GItem.InfoOverlay<?>[] ols = this.ols.get();
+	    if(ols != null) {
+		for(GItem.InfoOverlay<?> ol : ols)
+		    ol.draw(g);
+	    }
+	    Double meter = this.meter.get();
+	    if((meter != null) && (meter > 0)) {
+		g.chcolor(255, 255, 255, 64);
+		Coord half = spr.sz().div(2);
+		g.prect(half, half.inv(), half, meter * Math.PI * 2);
+		g.chcolor();
+	    }
 	}
 
 	public String sortkey() {
