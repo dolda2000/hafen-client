@@ -77,10 +77,11 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	}
     }
 
-    public static class PagButton implements ItemInfo.Owner {
+    public static class PagButton implements ItemInfo.Owner, GSprite.Owner {
 	public final Pagina pag;
 	public final Resource res;
 	public final KeyBinding bind;
+	private GSprite spr;
 
 	public PagButton(Pagina pag) {
 	    this.pag = pag;
@@ -88,13 +89,11 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    this.bind = binding();
 	}
 
-	private Tex tex = null;
-	public void draw(GOut g) {
-	    if(tex == null)
-		tex = new TexI(img());
-	    g.image(tex, Coord.z);
+	public GSprite spr() {
+	    if(spr == null)
+		spr = GSprite.create(this, res, Message.nil);
+	    return(spr);
 	}
-	public BufferedImage img() {return(res.flayer(Resource.imgc).scaled());}
 	public String name() {return(res.flayer(Resource.action).name);}
 	public KeyMatch hotkey() {
 	    char hk = res.flayer(Resource.action).hk;
@@ -159,6 +158,8 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    .add(Glob.class, p -> p.pag.scm.ui.sess.glob)
 	    .add(Session.class, p -> p.pag.scm.ui.sess);
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
+	public Random mkrandoom() {return(new Random());}
+	public Resource getres() {return(res);}
 
 	public BufferedImage rendertt(boolean withpg) {
 	    Resource.Pagina pg = res.layer(Resource.pagina);
@@ -341,6 +342,13 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		g.image(bg, p);
 		PagButton btn = layout[x][y];
 		if(btn != null) {
+		    GSprite spr;
+		    try {
+			spr = btn.spr();
+		    } catch(Loading l) {
+			continue;
+		    }
+		    GOut g2 = g.reclip(p.add(1, 1), spr.sz());
 		    Pagina info = btn.pag;
 		    if(info.tnew != 0) {
 			info.anew = 1;
@@ -349,29 +357,29 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 			    double ph = (now - fstart) - (((x + (y * gsz.x)) * 0.15) % 1.0);
 			    a = (ph < 1.25) ? (Math.cos(ph * Math.PI * 2) * -0.25) + 0.25 : 0.25;
 			}
-			g.usestate(new ColorMask(new FColor(0.125f, 1.0f, 0.125f, (float)a)));
+			g2.usestate(new ColorMask(new FColor(0.125f, 1.0f, 0.125f, (float)a)));
 		    }
-		    btn.draw(g.reclip(p.add(1, 1), bgsz.sub(1, 1)));
-		    g.defstate();
+		    spr.draw(g2);
+		    g2.defstate();
 		    if(showkeys) {
 			Tex ki = btn.keyrend();
 			if(ki != null)
-			    g.aimage(ki, p.add(bgsz.x - UI.scale(2), UI.scale(1)), 1.0, 0.0);
+			    g2.aimage(ki, Coord.of(bgsz.x - UI.scale(2), UI.scale(1)), 1.0, 0.0);
 		    }
 		    if(btn == pressed) {
-			g.chcolor(new Color(0, 0, 0, 128));
-			g.frect(p.add(1, 1), bgsz.sub(1, 1));
-			g.chcolor();
+			g2.chcolor(new Color(0, 0, 0, 128));
+			g2.frect(Coord.z, spr.sz());
+			g2.chcolor();
 		    }
 		}
 	    }
 	}
 	super.draw(g);
 	if(dragging != null) {
-	    PagButton db = dragging.button();
+	    GSprite ds = dragging.button().spr();
 	    ui.drawafter(new UI.AfterDraw() {
 		    public void draw(GOut g) {
-			db.draw(g.reclip(ui.mc.sub(bgsz.div(2)), bgsz));
+			ds.draw(g.reclip(ui.mc.sub(ds.sz().div(2)), ds.sz()));
 		    }
 		});
 	}
