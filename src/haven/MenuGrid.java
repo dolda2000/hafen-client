@@ -36,8 +36,8 @@ import haven.ItemInfo.AttrCache;
 import java.util.*;
 
 public class MenuGrid extends Widget implements KeyBinding.Bindable {
-    public final static Tex bg = Resource.loadtex("gfx/hud/invsq");
-    public final static Coord bgsz = bg.sz().add(-UI.scale(1), -UI.scale(1));
+    public final static Tex bg = Inventory.invsq;
+    public final static Coord bgsz = Inventory.sqsz;
     public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, UI.scale(10f));
     private static Coord gsz = new Coord(4, 4);
     public final Set<Pagina> paginae = new HashSet<Pagina>();
@@ -356,7 +356,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     }
 
     public MenuGrid() {
-	super(bgsz.mul(gsz).add(UI.scale(1), UI.scale(1)));
+	super(bgsz.mul(gsz).add(1, 1));
     }
 
     private void updlayout() {
