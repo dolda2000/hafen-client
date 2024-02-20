@@ -188,10 +188,11 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    {pag.button = this;}
 
 	    public void use(Interaction iact) {
-		if((curoff + 14) >= curbtns.size())
+		int step = (gsz.x * gsz.y) - 2;
+		if((curoff + step) >= curbtns.size())
 		    curoff = 0;
 		else
-		    curoff += (gsz.x * gsz.y) - 2;
+		    curoff += step;
 		updlayout();
 	    }
 
