@@ -306,7 +306,18 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    return(ret);
 	}
 
-	@Resource.PublishedCode(name = "pagina")
+	public static class FactMaker extends Resource.PublishedCode.Instancer.Chain<Factory> {
+	    public FactMaker() {
+		super(Factory.class);
+		add(new Direct<>(Factory.class));
+		add(new StaticCall<>(Factory.class, "mkpagina", PagButton.class, new Class<?>[] {Pagina.class},
+				     (make) -> (pagina) -> make.apply(new Object[] {pagina})));
+		add(new Construct<>(Factory.class, PagButton.class, new Class<?>[] {Pagina.class},
+				    (cons) -> (pagina) -> cons.apply(new Object[] {pagina})));
+	    }
+	}
+
+	@Resource.PublishedCode(name = "pagina", instancer = FactMaker.class)
 	public interface Factory {
 	    public PagButton make(Pagina info);
 	}
