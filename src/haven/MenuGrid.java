@@ -43,6 +43,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     private static Coord gsz = new Coord(4, 4);
     public final Set<Pagina> paginae = new HashSet<Pagina>();
     public Pagina cur;
+    private final Map<Object, Pagina> pmap = new CacheMap<>(CacheMap.RefType.WEAK);
     private Pagina dragging;
     private Collection<PagButton> curbtns = Collections.emptyList();
     private PagButton pressed, layout[][] = new PagButton[gsz.x][gsz.y];
@@ -60,7 +61,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 
     public static class Pagina {
 	public final MenuGrid scm;
-	public final Indir<Resource> res;
+	public Indir<Resource> res;
 	public byte[] sdt = null;
 	public int anew, tnew;
 	public Object[] rawinfo = {};
@@ -341,7 +342,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    public KeyBinding binding() {return(kb_back);}
 	};
 
-    public Map<Indir<Resource>, Pagina> pmap = new CacheMap<>(CacheMap.RefType.WEAK);
     public Pagina paginafor(Indir<Resource> res) {
 	if(res == null)
 	    return(null);
@@ -349,6 +349,15 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    Pagina p = pmap.get(res);
 	    if(p == null)
 		pmap.put(res, p = new Pagina(this, res));
+	    return(p);
+	}
+    }
+
+    public Pagina paginafor(Object id, Indir<Resource> res) {
+	synchronized(pmap) {
+	    Pagina p = pmap.get(id);
+	    if((p == null) && (res != null))
+		pmap.put(id, p = new Pagina(this, res));
 	    return(p);
 	}
     }
@@ -583,8 +592,22 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		int a = 0;
 		while(a < args.length) {
 		    int fl = (Integer)args[a++];
-		    Pagina pag = paginafor(ui.sess.getres((Integer)args[a++], -2));
+		    Pagina pag;
+		    Object id;
+		    if((fl & 2) != 0)
+			pag = paginafor(id = args[a++], null);
+		    else
+			id = (pag = paginafor(ui.sess.getres((Integer)args[a++], -2))).res;
 		    if((fl & 1) != 0) {
+			if((fl & 2) != 0) {
+			    Indir<Resource> res = ui.sess.getres((Integer)args[a++], -2);
+			    if(pag == null) {
+				pag = paginafor(id, res);
+			    } else if(pag.res != res) {
+				pag.res = res;
+				pag.invalidate();
+			    }
+			}
 			if((fl & 8) != 0)
 			    pag.anew = 2;
 			Object[] rawinfo = ((fl & 16) != 0) ? (Object[])args[a++] : new Object[0];
