@@ -26,6 +26,8 @@
 
 package haven;
 
+import java.util.*;
+import haven.render.*;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.KeyEvent;
@@ -33,7 +35,6 @@ import java.awt.font.TextAttribute;
 import java.awt.image.BufferedImage;
 import haven.Resource.AButton;
 import haven.ItemInfo.AttrCache;
-import java.util.*;
 
 public class MenuGrid extends Widget implements KeyBinding.Bindable {
     public final static Tex bg = Inventory.invsq;
@@ -171,6 +172,24 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    return(null);
 	}
 
+	public final AttrCache<Pipe.Op> rstate = new AttrCache<>(this::info, info -> {
+		ArrayList<GItem.RStateInfo> ols = new ArrayList<>();
+		for(ItemInfo inf : info) {
+		    if(inf instanceof GItem.RStateInfo)
+			ols.add((GItem.RStateInfo)inf);
+		}
+		if(ols.size() == 0)
+		    return(() -> null);
+		if(ols.size() == 1) {
+		    Pipe.Op op = ols.get(0).rstate();
+		    return(() -> op);
+		}
+		Pipe.Op[] ops = new Pipe.Op[ols.size()];
+		for(int i = 0; i < ops.length; i++)
+		    ops[i] = ols.get(0).rstate();
+		Pipe.Op cmp = Pipe.Op.compose(ops);
+		return(() -> cmp);
+	});
 	public final AttrCache<GItem.InfoOverlay<?>[]> ols = new AttrCache<>(this::info, info -> {
 		ArrayList<GItem.InfoOverlay<?>> buf = new ArrayList<>();
 		for(ItemInfo inf : info) {
@@ -186,7 +205,10 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    spr.draw(g);
 	}
 	public void draw(GOut g, GSprite spr) {
+	    if(rstate.get() != null)
+		g.usestate(rstate.get());
 	    drawmain(g, spr);
+	    g.defstate();
 	    GItem.InfoOverlay<?>[] ols = this.ols.get();
 	    if(ols != null) {
 		for(GItem.InfoOverlay<?> ol : ols)
