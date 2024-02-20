@@ -233,8 +233,12 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 
 	private List<ItemInfo> info = null;
 	public List<ItemInfo> info() {
-	    if(info == null)
+	    if(info == null) {
 		info = ItemInfo.buildinfo(this, pag.rawinfo);
+		Resource.Pagina pg = res.layer(Resource.pagina);
+		if(pg != null)
+		    info.add(new ItemInfo.Pagina(this, pg.text));
+	    }
 	    return(info);
 	}
 	private static final OwnerContext.ClassResolver<PagButton> ctxr = new OwnerContext.ClassResolver<PagButton>()
@@ -247,7 +251,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	public Resource getres() {return(res);}
 
 	public BufferedImage rendertt(boolean withpg) {
-	    Resource.Pagina pg = res.layer(Resource.pagina);
 	    String tt = name();
 	    KeyMatch key = bind.key();
 	    int pos = -1;
@@ -264,8 +267,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		info.removeIf(el -> el instanceof ItemInfo.Name);
 		if(!info.isEmpty())
 		    ret = ItemInfo.catimgs(0, ret, ItemInfo.longtip(info));
-		if(pg != null)
-		    ret = ItemInfo.catimgs(0, ret, ttfnd.render("\n" + pg.text, UI.scale(200)).img);
 	    }
 	    return(ret);
 	}
