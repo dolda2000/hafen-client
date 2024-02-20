@@ -368,15 +368,8 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		PagButton btn = layout[x][y];
 		if(btn != null) {
 		    Pagina info = btn.pag;
-		    Tex btex;
-		    try {
-			btex = info.img.get();
-			g.image(btex, p.add(UI.scale(1), UI.scale(1)), btex.sz());
-		    } catch(NullPointerException e) {
-			System.err.println(btn);
-			System.err.println(info.scm == this);
-			throw(e);
-		    }
+		    Tex btex = info.img.get();
+		    g.image(btex, p.add(UI.scale(1), UI.scale(1)), btex.sz());
 		    if(showkeys) {
 			Tex ki = btn.keyrend();
 			if(ki != null)
