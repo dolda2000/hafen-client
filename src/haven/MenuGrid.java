@@ -114,6 +114,10 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    }
 	    pag.scm.wdgmsg("act", args);
 	}
+	public void tick(double dt) {
+	    if(spr != null)
+		spr.tick(dt);
+	}
 
 	public String sortkey() {
 	    AButton ai = pag.act();
@@ -462,6 +466,12 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     public void tick(double dt) {
 	if(recons)
 	    updlayout();
+	for(int y = 0; y < gsz.y; y++) {
+	    for(int x = 0; x < gsz.x; x++) {
+		if(layout[x][y] != null)
+		    layout[x][y].tick(dt);
+	    }
+	}
     }
 
     public boolean mouseup(Coord c, int button) {
