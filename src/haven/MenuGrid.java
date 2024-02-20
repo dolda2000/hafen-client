@@ -61,6 +61,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     public static class Pagina {
 	public final MenuGrid scm;
 	public final Indir<Resource> res;
+	public byte[] sdt = null;
 	public int anew, tnew;
 	public Object[] rawinfo = {};
 
@@ -71,6 +72,10 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 
 	public Resource res() {
 	    return(res.get());
+	}
+
+	public Message data() {
+	    return((sdt == null) ? Message.nil : new MessageBuf(sdt));
 	}
 
 	private PagButton button = null;
@@ -579,6 +584,8 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 			    pag.rawinfo = (Object[])args[a++];
 			else
 			    pag.rawinfo = new Object[0];
+			if((fl & 32) != 0)
+			    pag.sdt = (byte[])args[a++];
 			paginae.add(pag);
 		    } else {
 			paginae.remove(pag);
