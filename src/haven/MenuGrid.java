@@ -94,6 +94,9 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		spr = GSprite.create(this, res, Message.nil);
 	    return(spr);
 	}
+	public void draw(GOut g, GSprite spr) {
+	    spr.draw(g);
+	}
 	public String name() {return(res.flayer(Resource.action).name);}
 	public KeyMatch hotkey() {
 	    char hk = res.flayer(Resource.action).hk;
@@ -363,7 +366,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 			}
 			g2.usestate(new ColorMask(new FColor(0.125f, 1.0f, 0.125f, (float)a)));
 		    }
-		    spr.draw(g2);
+		    btn.draw(g2, spr);
 		    g2.defstate();
 		    if(showkeys) {
 			Tex ki = btn.keyrend();
