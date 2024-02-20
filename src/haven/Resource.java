@@ -133,7 +133,7 @@ public class Resource implements Serializable {
     public static interface Resolver {
 	public Indir<Resource> getres(int id);
 
-	public default Indir<Resource> getres(Object desc) {
+	public default Indir<Resource> getresv(Object desc) {
 	    if(desc == null)
 		return(null);
 	    if(desc instanceof Number) {
