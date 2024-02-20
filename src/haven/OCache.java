@@ -313,7 +313,8 @@ public class OCache implements Iterable<Gob> {
 		    g.addol(nol, false);
 		} else {
 		    OlSprite os = (ol.sm instanceof OlSprite) ? (OlSprite)ol.sm : null;
-		    if((os != null) && !Utils.eq(os.sdt, sdt) && (ol.spr instanceof Sprite.CUpd)) {
+		    if((os != null) && Utils.eq(os.sdt, sdt)) {
+		    } else if((os != null) && (ol.spr instanceof Sprite.CUpd)) {
 			MessageBuf copy = new MessageBuf(sdt);
 			((Sprite.CUpd)ol.spr).update(copy);
 			os.sdt = copy;
