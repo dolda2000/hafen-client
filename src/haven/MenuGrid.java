@@ -350,15 +350,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	}
     }
 
-    private static Map<PagButton, Tex> glowmasks = new WeakHashMap<>();
-    private Tex glowmask(PagButton pag) {
-	Tex ret = glowmasks.get(pag);
-	if(ret == null) {
-	    ret = new TexI(PUtils.glowmask(PUtils.glowmask(pag.img().getRaster()), 4, new Color(32, 255, 32)));
-	    glowmasks.put(pag, ret);
-	}
-	return(ret);
-    }
     public void draw(GOut g) {
 	double now = Utils.rtime();
 	for(int y = 0; y < gsz.y; y++) {
@@ -369,7 +360,17 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		if(btn != null) {
 		    Pagina info = btn.pag;
 		    Tex btex = info.img.get();
+		    if(info.newp != 0) {
+			if(info.fstart == 0) {
+			    info.fstart = now;
+			} else {
+			    double ph = (now - info.fstart) - (((x + (y * gsz.x)) * 0.15) % 1.0);
+			    double a = (ph < 1.25) ? (Math.cos(ph * Math.PI * 2) * -0.25) + 0.25 : 0.25;
+			    g.usestate(new ColorMask(new FColor(0.125f, 1.0f, 0.125f, (float)a)));
+			}
+		    }
 		    g.image(btex, p.add(UI.scale(1), UI.scale(1)), btex.sz());
+		    g.defstate();
 		    if(showkeys) {
 			Tex ki = btn.keyrend();
 			if(ki != null)
@@ -383,21 +384,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 			g.chcolor(255, 255, 255, 128);
 			g.fellipse(p.add(bgsz.div(2)), bgsz.div(2), Math.PI / 2, ((Math.PI / 2) + (Math.PI * 2 * m)));
 			g.chcolor();
-		    }
-		    if(info.newp != 0) {
-			if(info.fstart == 0) {
-			    info.fstart = now;
-			} else {
-			    double ph = (now - info.fstart) - (((x + (y * gsz.x)) * 0.15) % 1.0);
-			    Tex glow = glowmask(btn);
-			    if(ph < 1.25) {
-				g.chcolor(255, 255, 255, (int)(255 * ((Math.cos(ph * Math.PI * 2) * -0.5) + 0.5)));
-			    } else {
-				g.chcolor(255, 255, 255, 128);
-			    }
-			    g.image(glow, p.sub(4, 4));
-			    g.chcolor();
-			}
 		    }
 		    if(btn == pressed) {
 			g.chcolor(new Color(0, 0, 0, 128));
