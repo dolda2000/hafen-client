@@ -26,6 +26,8 @@
 
 package haven;
 
+import java.util.*;
+import haven.render.*;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.KeyEvent;
@@ -33,15 +35,15 @@ import java.awt.font.TextAttribute;
 import java.awt.image.BufferedImage;
 import haven.Resource.AButton;
 import haven.ItemInfo.AttrCache;
-import java.util.*;
 
 public class MenuGrid extends Widget implements KeyBinding.Bindable {
-    public final static Tex bg = Resource.loadtex("gfx/hud/invsq");
-    public final static Coord bgsz = bg.sz().add(-UI.scale(1), -UI.scale(1));
+    public final static Tex bg = Inventory.invsq;
+    public final static Coord bgsz = Inventory.sqsz;
     public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, UI.scale(10f));
     private static Coord gsz = new Coord(4, 4);
     public final Set<Pagina> paginae = new HashSet<Pagina>();
     public Pagina cur;
+    private final Map<Object, Pagina> pmap = new CacheMap<>(CacheMap.RefType.WEAK);
     private Pagina dragging;
     private Collection<PagButton> curbtns = Collections.emptyList();
     private PagButton pressed, layout[][] = new PagButton[gsz.x][gsz.y];
@@ -59,7 +61,8 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 
     public static class Pagina {
 	public final MenuGrid scm;
-	public final Indir<Resource> res;
+	public Indir<Resource> res;
+	public byte[] sdt = null;
 	public int anew, tnew;
 	public Object[] rawinfo = {};
 
@@ -70,6 +73,14 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 
 	public Resource res() {
 	    return(res.get());
+	}
+
+	public Message data() {
+	    return((sdt == null) ? Message.nil : new MessageBuf(sdt));
+	}
+
+	private void invalidate() {
+	    button = null;
 	}
 
 	private PagButton button = null;
@@ -130,8 +141,11 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    return(act);
 	}
 
+	private Pagina parent;
 	public Pagina parent() {
-	    return(pag.scm.paginafor(act().parent));
+	    if(parent == null)
+		parent = pag.scm.paginafor(act().parent);
+	    return(parent);
 	}
 
 	public GSprite spr() {
@@ -164,6 +178,31 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		spr.tick(dt);
 	}
 
+	public BufferedImage img() {
+	    GSprite spr = spr();
+	    if(spr instanceof GSprite.ImageSprite)
+		return(((GSprite.ImageSprite)spr).image());
+	    return(null);
+	}
+
+	public final AttrCache<Pipe.Op> rstate = new AttrCache<>(this::info, info -> {
+		ArrayList<GItem.RStateInfo> ols = new ArrayList<>();
+		for(ItemInfo inf : info) {
+		    if(inf instanceof GItem.RStateInfo)
+			ols.add((GItem.RStateInfo)inf);
+		}
+		if(ols.size() == 0)
+		    return(() -> null);
+		if(ols.size() == 1) {
+		    Pipe.Op op = ols.get(0).rstate();
+		    return(() -> op);
+		}
+		Pipe.Op[] ops = new Pipe.Op[ols.size()];
+		for(int i = 0; i < ops.length; i++)
+		    ops[i] = ols.get(0).rstate();
+		Pipe.Op cmp = Pipe.Op.compose(ops);
+		return(() -> cmp);
+	});
 	public final AttrCache<GItem.InfoOverlay<?>[]> ols = new AttrCache<>(this::info, info -> {
 		ArrayList<GItem.InfoOverlay<?>> buf = new ArrayList<>();
 		for(ItemInfo inf : info) {
@@ -179,7 +218,10 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    spr.draw(g);
 	}
 	public void draw(GOut g, GSprite spr) {
+	    if(rstate.get() != null)
+		g.usestate(rstate.get());
 	    drawmain(g, spr);
+	    g.defstate();
 	    GItem.InfoOverlay<?>[] ols = this.ols.get();
 	    if(ols != null) {
 		for(GItem.InfoOverlay<?> ol : ols)
@@ -226,8 +268,12 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 
 	private List<ItemInfo> info = null;
 	public List<ItemInfo> info() {
-	    if(info == null)
+	    if(info == null) {
 		info = ItemInfo.buildinfo(this, pag.rawinfo);
+		Resource.Pagina pg = res.layer(Resource.pagina);
+		if(pg != null)
+		    info.add(new ItemInfo.Pagina(this, pg.text));
+	    }
 	    return(info);
 	}
 	private static final OwnerContext.ClassResolver<PagButton> ctxr = new OwnerContext.ClassResolver<PagButton>()
@@ -240,7 +286,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	public Resource getres() {return(res);}
 
 	public BufferedImage rendertt(boolean withpg) {
-	    Resource.Pagina pg = res.layer(Resource.pagina);
 	    String tt = name();
 	    KeyMatch key = bind.key();
 	    int pos = -1;
@@ -257,13 +302,22 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		info.removeIf(el -> el instanceof ItemInfo.Name);
 		if(!info.isEmpty())
 		    ret = ItemInfo.catimgs(0, ret, ItemInfo.longtip(info));
-		if(pg != null)
-		    ret = ItemInfo.catimgs(0, ret, ttfnd.render("\n" + pg.text, UI.scale(200)).img);
 	    }
 	    return(ret);
 	}
 
-	@Resource.PublishedCode(name = "pagina")
+	public static class FactMaker extends Resource.PublishedCode.Instancer.Chain<Factory> {
+	    public FactMaker() {
+		super(Factory.class);
+		add(new Direct<>(Factory.class));
+		add(new StaticCall<>(Factory.class, "mkpagina", PagButton.class, new Class<?>[] {Pagina.class},
+				     (make) -> (pagina) -> make.apply(new Object[] {pagina})));
+		add(new Construct<>(Factory.class, PagButton.class, new Class<?>[] {Pagina.class},
+				    (cons) -> (pagina) -> cons.apply(new Object[] {pagina})));
+	    }
+	}
+
+	@Resource.PublishedCode(name = "pagina", instancer = FactMaker.class)
 	public interface Factory {
 	    public PagButton make(Pagina info);
 	}
@@ -299,7 +353,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    public KeyBinding binding() {return(kb_back);}
 	};
 
-    public Map<Indir<Resource>, Pagina> pmap = new WeakHashMap<Indir<Resource>, Pagina>();
     public Pagina paginafor(Indir<Resource> res) {
 	if(res == null)
 	    return(null);
@@ -307,6 +360,15 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    Pagina p = pmap.get(res);
 	    if(p == null)
 		pmap.put(res, p = new Pagina(this, res));
+	    return(p);
+	}
+    }
+
+    public Pagina paginafor(Object id, Indir<Resource> res) {
+	synchronized(pmap) {
+	    Pagina p = pmap.get(id);
+	    if((p == null) && (res != null))
+		pmap.put(id, p = new Pagina(this, res));
 	    return(p);
 	}
     }
@@ -349,7 +411,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     }
 
     public MenuGrid() {
-	super(bgsz.mul(gsz).add(UI.scale(1), UI.scale(1)));
+	super(bgsz.mul(gsz).add(1, 1));
     }
 
     private void updlayout() {
@@ -541,14 +603,34 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		int a = 0;
 		while(a < args.length) {
 		    int fl = Utils.iv(args[a++]);
-		    Pagina pag = paginafor(ui.sess.getres((Integer)args[a++], -2));
+		    Pagina pag;
+		    Object id;
+		    if((fl & 2) != 0)
+			pag = paginafor(id = args[a++], null);
+		    else
+			id = (pag = paginafor(ui.sess.getres((Integer)args[a++], -2))).res;
 		    if((fl & 1) != 0) {
+			if((fl & 2) != 0) {
+			    Indir<Resource> res = ui.sess.getres((Integer)args[a++], -2);
+			    if(pag == null) {
+				pag = paginafor(id, res);
+			    } else if(pag.res != res) {
+				pag.res = res;
+				pag.invalidate();
+			    }
+			}
+			byte[] data = ((fl & 4) != 0) ? (byte[])args[a++] : null;
+			if(!Arrays.equals(pag.sdt, data)) {
+			    pag.sdt = data;
+			    pag.invalidate();
+			}
 			if((fl & 8) != 0)
 			    pag.anew = 2;
-			if((fl & 16) != 0)
-			    pag.rawinfo = (Object[])args[a++];
-			else
-			    pag.rawinfo = new Object[0];
+			Object[] rawinfo = ((fl & 16) != 0) ? (Object[])args[a++] : new Object[0];
+			if(!Arrays.deepEquals(pag.rawinfo, rawinfo)) {
+			    pag.rawinfo = rawinfo;
+			    pag.invalidate();
+			}
 			paginae.add(pag);
 		    } else {
 			paginae.remove(pag);

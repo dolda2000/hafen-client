@@ -95,6 +95,14 @@ public class FColor {
 			  (this.a * A) + (that.a * B)));
     }
 
+    public FColor preblend(FColor that) {
+	float ac = this.a + that.a - (this.a * that.a);
+	return(new FColor((((that.r * that.a) - (this.r * that.a)) / ac) + this.r,
+			  (((that.g * that.a) - (this.g * that.a)) / ac) + this.g,
+			  (((that.b * that.a) - (this.b * that.a)) / ac) + this.b,
+			  ac));
+    }
+
     public int hashCode() {
 	return(((((((Float.floatToIntBits(r)) * 31) +
 		   Float.floatToIntBits(g)) * 31) +

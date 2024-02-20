@@ -129,14 +129,18 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	    try {
 		if(this.img == null) {
 		    BufferedImage img = img();
-		    if(img.getWidth() > img.getHeight()) {
-			if(img.getWidth() != h)
-			    img = PUtils.convolve(img, Coord.of(h, (h * img.getHeight()) / img.getWidth()), filter());
+		    if(img == null) {
+			this.img = Tex.nil;
 		    } else {
-			if(img.getHeight() != h)
-			    img = PUtils.convolve(img, Coord.of((h * img.getWidth()) / img.getHeight(), h), filter());
+			if(img.getWidth() > img.getHeight()) {
+			    if(img.getWidth() != h)
+				img = PUtils.convolve(img, Coord.of(h, (h * img.getHeight()) / img.getWidth()), filter());
+			} else {
+			    if(img.getHeight() != h)
+				img = PUtils.convolve(img, Coord.of((h * img.getWidth()) / img.getHeight(), h), filter());
+			}
+			this.img = new TexI(img);
 		    }
-		    this.img = new TexI(img);
 		}
 		g.image(this.img, Coord.of(sz.y).sub(this.img.sz()).div(2));
 	    } catch(Loading l) {

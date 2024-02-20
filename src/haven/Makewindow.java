@@ -319,7 +319,7 @@ public class Makewindow extends Widget {
 	    if((cc != null) && (rpag != null)) {
 		if(!rpag.isEmpty()) {
 		    SListMenu.of(UI.scale(250, 120), rpag,
-				 pag -> pag.button().name(), pag ->pag.button().img(),
+				 pag -> pag.button().name(), pag -> pag.button().img(),
 				 pag -> pag.button().use(new MenuGrid.Interaction(1, ui.modflags())))
 			.addat(this, cc.add(UI.scale(5, 5))).tick(dt);
 		}

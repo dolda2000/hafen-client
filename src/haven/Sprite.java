@@ -151,4 +151,8 @@ public abstract class Sprite implements RenderTree.Node {
 
     public void dispose() {
     }
+
+    public String toString() {
+	return(String.format("#<%s %s of %s>", this.getClass().getSimpleName(), (res == null) ? null : res.name, owner));
+    }
 }

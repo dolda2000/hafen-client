@@ -397,6 +397,10 @@ public class GOut {
 	st.apply(cur2d);
     }
 
+    public void usestate(Pipe.Op st) {
+	st.apply(cur2d);
+    }
+
     public <T extends State> void usestate(State.Slot<? super T> slot) {
 	cur2d.put(slot, null);
     }

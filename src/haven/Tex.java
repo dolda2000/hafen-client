@@ -97,4 +97,10 @@ public interface Tex extends Disposable {
     }
 
     public default void dispose() {};
+
+    public static final Tex nil = new Tex() {
+	    public Coord sz() {return(Coord.z);}
+	    public void render(GOut g, float[] gc, float[] tc) {}
+	    public String toString() {return("#<nil-tex>");}
+	};
 }

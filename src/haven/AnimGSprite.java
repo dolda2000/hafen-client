@@ -26,36 +26,52 @@
 
 package haven;
 
-import java.awt.Color;
-import haven.render.*;
-import haven.render.sl.*;
-import static haven.render.sl.Type.*;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 
-public class ColorMask extends State {
-    public static final Slot<ColorMask> slot = new Slot<ColorMask>(Slot.Type.DRAW, ColorMask.class);
-    public static final Uniform ccol = new Uniform(VEC4, p -> p.get(slot).col, slot);
-    private final FColor col;
+public class AnimGSprite extends GSprite implements GSprite.ImageSprite {
+    public final Resource.Anim anim;
+    public final Resource.Image ref;
+    private int f, ft;
 
-    private static final ShaderMacro sh = prog -> {
-	FragColor.fragcol(prog.fctx).mod(in -> MiscLib.colblend.call(in, ccol.ref()), 100);
-    };
+    public static final Factory fact = new Factory() {
+	    public GSprite create(Owner owner, Resource res, Message sdt) {
+		Resource.Anim anim = res.layer(Resource.animc);
+		if(anim != null)
+		    return(new AnimGSprite(owner, anim));
+		return(null);
+	    }
+	};
 
-    public ColorMask(FColor col) {
-	this.col = col;
+    public AnimGSprite(Owner owner, Resource.Anim anim) {
+	super(owner);
+	this.anim = anim;
+	this.ref = anim.f[0][0];
     }
 
-    public ColorMask(Color col) {
-	this(new FColor(col));
+    public void draw(GOut g) {
+	for(Resource.Image img : anim.f[f])
+	    g.image(img, Coord.z);
     }
 
-    public ShaderMacro shader() {return(sh);}
+    public Coord sz() {
+	return(ref.ssz);
+    }
 
-    public void apply(Pipe buf) {
-	ColorMask prev = buf.get(slot);
-	if(prev == null) {
-	    buf.put(slot, this);
-	} else {
-	    buf.put(slot, new ColorMask(prev.col.preblend(this.col)));
+    public BufferedImage image() {
+	BufferedImage ret = TexI.mkbuf(ref.ssz);
+	Graphics g = ret.getGraphics();
+	for(Resource.Image img : anim.f[0])
+	    g.drawImage(img.scaled(), img.so.x, img.so.y, null);
+	g.dispose();
+	return(ret);
+    }
+
+    public void tick(double dt) {
+	ft += Math.round(dt * 1000);
+	while(ft > anim.d) {
+	    f = (f + 1) % anim.f.length;
+	    ft -= anim.d;
 	}
     }
 }
