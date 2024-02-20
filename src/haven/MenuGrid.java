@@ -88,6 +88,12 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    this.bind = binding();
 	}
 
+	private Tex tex = null;
+	public void draw(GOut g) {
+	    if(tex == null)
+		tex = new TexI(img());
+	    g.image(tex, Coord.z);
+	}
 	public BufferedImage img() {return(res.flayer(Resource.imgc).scaled());}
 	public String name() {return(res.flayer(Resource.action).name);}
 	public KeyMatch hotkey() {
@@ -217,28 +223,12 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     public static class Pagina {
 	public final MenuGrid scm;
 	public final Indir<Resource> res;
-	public State st;
-	public double meter, gettime, dtime;
-	public Indir<Tex> img;
 	public int anew, tnew;
 	public Object[] rawinfo = {};
-
-	public static enum State {
-	    ENABLED, DISABLED {
-		public Indir<Tex> img(Pagina pag) {
-		    return(Utils.cache(() -> new TexI(PUtils.monochromize(PUtils.copy(pag.button().img()), Color.LIGHT_GRAY))));
-		}
-	    };
-
-	    public Indir<Tex> img(Pagina pag) {
-		return(Utils.cache(() -> new TexI(pag.button().img())));
-	    }
-	}
 
 	public Pagina(MenuGrid scm, Indir<Resource> res) {
 	    this.scm = scm;
 	    this.res = res;
-	    state(State.ENABLED);
 	}
 
 	public Resource res() {
@@ -260,11 +250,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		    button = f.make(this);
 	    }
 	    return(button);
-	}
-
-	public void state(State st) {
-	    this.st = st;
-	    this.img = st.img(this);
 	}
     }
 
@@ -357,7 +342,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		PagButton btn = layout[x][y];
 		if(btn != null) {
 		    Pagina info = btn.pag;
-		    Tex btex = info.img.get();
 		    if(info.tnew != 0) {
 			info.anew = 1;
 			double a = 0.25;
@@ -367,25 +351,16 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 			}
 			g.usestate(new ColorMask(new FColor(0.125f, 1.0f, 0.125f, (float)a)));
 		    }
-		    g.image(btex, p.add(UI.scale(1), UI.scale(1)), btex.sz());
+		    btn.draw(g.reclip(p.add(1, 1), bgsz.sub(1, 1)));
 		    g.defstate();
 		    if(showkeys) {
 			Tex ki = btn.keyrend();
 			if(ki != null)
 			    g.aimage(ki, p.add(bgsz.x - UI.scale(2), UI.scale(1)), 1.0, 0.0);
 		    }
-		    if(info.meter > 0) {
-			double m = info.meter;
-			if(info.dtime > 0)
-			    m += (1 - m) * (now - info.gettime) / info.dtime;
-			m = Utils.clip(m, 0, 1);
-			g.chcolor(255, 255, 255, 128);
-			g.fellipse(p.add(bgsz.div(2)), bgsz.div(2), Math.PI / 2, ((Math.PI / 2) + (Math.PI * 2 * m)));
-			g.chcolor();
-		    }
 		    if(btn == pressed) {
 			g.chcolor(new Color(0, 0, 0, 128));
-			g.frect(p.add(UI.scale(1), UI.scale(1)), btex.sz());
+			g.frect(p.add(1, 1), bgsz.sub(1, 1));
 			g.chcolor();
 		    }
 		}
@@ -393,10 +368,10 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	}
 	super.draw(g);
 	if(dragging != null) {
-	    Tex dt = dragging.img.get();
+	    PagButton db = dragging.button();
 	    ui.drawafter(new UI.AfterDraw() {
 		    public void draw(GOut g) {
-			g.image(dt, ui.mc.add(dt.sz().div(2).inv()));
+			db.draw(g.reclip(ui.mc.sub(bgsz.div(2)), bgsz));
 		    }
 		});
 	}
@@ -512,15 +487,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		    int fl = (Integer)args[a++];
 		    Pagina pag = paginafor(ui.sess.getres((Integer)args[a++], -2));
 		    if((fl & 1) != 0) {
-			pag.state(Pagina.State.ENABLED);
-			pag.meter = 0;
-			if((fl & 2) != 0)
-			    pag.state(Pagina.State.DISABLED);
-			if((fl & 4) != 0) {
-			    pag.meter = ((Number)args[a++]).doubleValue() / 1000.0;
-			    pag.gettime = Utils.rtime();
-			    pag.dtime = ((Number)args[a++]).doubleValue() / 1000.0;
-			}
 			if((fl & 8) != 0)
 			    pag.anew = 2;
 			if((fl & 16) != 0)
