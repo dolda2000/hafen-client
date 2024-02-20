@@ -608,16 +608,16 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 				pag.invalidate();
 			    }
 			}
+			byte[] data = ((fl & 4) != 0) ? (byte[])args[a++] : null;
+			if(!Arrays.equals(pag.sdt, data)) {
+			    pag.sdt = data;
+			    pag.invalidate();
+			}
 			if((fl & 8) != 0)
 			    pag.anew = 2;
 			Object[] rawinfo = ((fl & 16) != 0) ? (Object[])args[a++] : new Object[0];
 			if(!Arrays.deepEquals(pag.rawinfo, rawinfo)) {
 			    pag.rawinfo = rawinfo;
-			    pag.invalidate();
-			}
-			byte[] data = ((fl & 4) != 0) ? (byte[])args[a++] : null;
-			if(!Arrays.equals(pag.sdt, data)) {
-			    pag.sdt = data;
 			    pag.invalidate();
 			}
 			paginae.add(pag);
