@@ -57,6 +57,39 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	}
     }
 
+    public static class Pagina {
+	public final MenuGrid scm;
+	public final Indir<Resource> res;
+	public int anew, tnew;
+	public Object[] rawinfo = {};
+
+	public Pagina(MenuGrid scm, Indir<Resource> res) {
+	    this.scm = scm;
+	    this.res = res;
+	}
+
+	public Resource res() {
+	    return(res.get());
+	}
+
+	private PagButton button = null;
+	public PagButton button() {
+	    if(button == null) {
+		Resource res = res();
+		PagButton.Factory f = res.getcode(PagButton.Factory.class, false);
+		if(f == null)
+		    button = new PagButton(this);
+		else
+		    button = f.make(this);
+	    }
+	    return(button);
+	}
+
+	public Pagina parent() {
+	    return(button().parent());
+	}
+    }
+
     public static class Interaction {
 	public final int btn, modflags;
 	public final Coord2d mc;
@@ -83,6 +116,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	public final Resource res;
 	public final KeyBinding bind;
 	private GSprite spr;
+	private AButton act;
 
 	public PagButton(Pagina pag) {
 	    this.pag = pag;
@@ -90,14 +124,24 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    this.bind = binding();
 	}
 
+	public AButton act() {
+	    if(act == null)
+		act = res.flayer(Resource.action);
+	    return(act);
+	}
+
+	public Pagina parent() {
+	    return(pag.scm.paginafor(act().parent));
+	}
+
 	public GSprite spr() {
 	    if(spr == null)
 		spr = GSprite.create(this, res, Message.nil);
 	    return(spr);
 	}
-	public String name() {return(res.flayer(Resource.action).name);}
+	public String name() {return(act().name);}
 	public KeyMatch hotkey() {
-	    char hk = res.flayer(Resource.action).hk;
+	    char hk = act().hk;
 	    if(hk == 0)
 		return(KeyMatch.nil);
 	    return(KeyMatch.forchar(Character.toUpperCase(hk), KeyMatch.MODS & ~KeyMatch.S, 0));
@@ -106,7 +150,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    return(KeyBinding.get("scm/" + res.name, hotkey()));
 	}
 	public void use(Interaction iact) {
-	    Object[] args = Utils.extend(new Object[0], res.flayer(Resource.action).ad);
+	    Object[] args = Utils.extend(new Object[0], act().ad);
 	    args = Utils.extend(args, Integer.valueOf(pag.scm.ui.modflags()));
 	    if(iact.mc != null) {
 		args = Utils.extend(args, iact.mc.floor(OCache.posres));
@@ -151,8 +195,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	}
 
 	public String sortkey() {
-	    AButton ai = pag.act();
-	    if(ai.ad.length == 0)
+	    if(act().ad.length == 0)
 		return("\0" + name());
 	    return(name());
 	}
@@ -247,7 +290,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    {pag.button = this;}
 
 	    public void use(Interaction iact) {
-		pag.scm.change(paginafor(pag.scm.cur.act().parent));
+		pag.scm.change(pag.scm.cur.parent());
 		curoff = 0;
 	    }
 
@@ -255,39 +298,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 
 	    public KeyBinding binding() {return(kb_back);}
 	};
-
-    public static class Pagina {
-	public final MenuGrid scm;
-	public final Indir<Resource> res;
-	public int anew, tnew;
-	public Object[] rawinfo = {};
-
-	public Pagina(MenuGrid scm, Indir<Resource> res) {
-	    this.scm = scm;
-	    this.res = res;
-	}
-
-	public Resource res() {
-	    return(res.get());
-	}
-
-	public Resource.AButton act() {
-	    return(res().layer(Resource.action));
-	}
-
-	private PagButton button = null;
-	public PagButton button() {
-	    if(button == null) {
-		Resource res = res();
-		PagButton.Factory f = res.getcode(PagButton.Factory.class, false);
-		if(f == null)
-		    button = new PagButton(this);
-		else
-		    button = f.make(this);
-	    }
-	    return(button);
-	}
-    }
 
     public Map<Indir<Resource>, Pagina> pmap = new WeakHashMap<Indir<Resource>, Pagina>();
     public Pagina paginafor(Indir<Resource> res) {
@@ -312,7 +322,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		open.add(pag);
 		if(pag.anew > 0) {
 		    try {
-			for(Pagina npag = pag; npag != null; npag = paginafor(npag.act().parent))
+			for(Pagina npag = pag; npag != null; npag = npag.parent())
 			    npag.tnew = Math.max(npag.tnew, pag.anew);
 		    } catch(Loading l) {
 		    }
@@ -325,10 +335,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    Pagina pag = iter.next();
 	    iter.remove();
 	    try {
-		AButton ad = pag.act();
-		if(ad == null)
-		    throw(new RuntimeException("Pagina in " + pag.res + " lacks action"));
-		Pagina parent = paginafor(ad.parent);
+		Pagina parent = pag.parent();
 		if(parent == p)
 		    buf.add(pag.button());
 		else if((parent != null) && !close.contains(parent) && !open.contains(parent))
