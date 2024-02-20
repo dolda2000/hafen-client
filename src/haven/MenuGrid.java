@@ -47,6 +47,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     private UI.Grab grab;
     private int curoff = 0;
     private boolean recons = true, showkeys = false;
+    private double fstart;
 	
     @RName("scm")
     public static class $_ implements Factory {
@@ -216,9 +217,9 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	public final MenuGrid scm;
 	public final Indir<Resource> res;
 	public State st;
-	public double meter, gettime, dtime, fstart;
+	public double meter, gettime, dtime;
 	public Indir<Tex> img;
-	public int newp;
+	public int anew, tnew;
 	public Object[] rawinfo = {};
 
 	public static enum State {
@@ -283,17 +284,16 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	Collection<Pagina> open, close = new HashSet<Pagina>();
 	synchronized(paginae) {
 	    open = new LinkedList<Pagina>();
+	    for(Pagina pag : pmap.values())
+		pag.tnew = 0;
 	    for(Pagina pag : paginae) {
-		if(pag.newp == 2) {
-		    pag.newp = 0;
-		    pag.fstart = 0;
-		}
 		open.add(pag);
-	    }
-	    for(Pagina pag : pmap.values()) {
-		if(pag.newp == 2) {
-		    pag.newp = 0;
-		    pag.fstart = 0;
+		if(pag.anew > 0) {
+		    try {
+			for(Pagina npag = pag; npag != null; npag = paginafor(npag.act().parent))
+			    npag.tnew = Math.max(npag.tnew, pag.anew);
+		    } catch(Loading l) {
+		    }
 		}
 	    }
 	}
@@ -307,10 +307,6 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		if(ad == null)
 		    throw(new RuntimeException("Pagina in " + pag.res + " lacks action"));
 		Pagina parent = paginafor(ad.parent);
-		if((pag.newp != 0) && (parent != null) && (parent.newp == 0)) {
-		    parent.newp = 2;
-		    parent.fstart = (parent.fstart == 0)?pag.fstart:Math.min(parent.fstart, pag.fstart);
-		}
 		if(parent == p)
 		    buf.add(pag.button());
 		else if((parent != null) && !close.contains(parent) && !open.contains(parent))
@@ -347,6 +343,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		    layout[x][y] = btn;
 		}
 	    }
+	    fstart = Utils.rtime();
 	}
     }
 
@@ -360,14 +357,14 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		if(btn != null) {
 		    Pagina info = btn.pag;
 		    Tex btex = info.img.get();
-		    if(info.newp != 0) {
-			if(info.fstart == 0) {
-			    info.fstart = now;
-			} else {
-			    double ph = (now - info.fstart) - (((x + (y * gsz.x)) * 0.15) % 1.0);
-			    double a = (ph < 1.25) ? (Math.cos(ph * Math.PI * 2) * -0.25) + 0.25 : 0.25;
-			    g.usestate(new ColorMask(new FColor(0.125f, 1.0f, 0.125f, (float)a)));
+		    if(info.tnew != 0) {
+			info.anew = 1;
+			double a = 0.25;
+			if(info.tnew == 2) {
+			    double ph = (now - fstart) - (((x + (y * gsz.x)) * 0.15) % 1.0);
+			    a = (ph < 1.25) ? (Math.cos(ph * Math.PI * 2) * -0.25) + 0.25 : 0.25;
 			}
+			g.usestate(new ColorMask(new FColor(0.125f, 1.0f, 0.125f, (float)a)));
 		    }
 		    g.image(btex, p.add(UI.scale(1), UI.scale(1)), btex.sz());
 		    g.defstate();
@@ -471,7 +468,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	if(sub.size() > 0) {
 	    change(r.pag);
 	} else {
-	    r.pag.newp = 0;
+	    r.pag.anew = r.pag.tnew = 0;
 	    r.use(iact);
 	    if(reset)
 		change(null);
@@ -524,7 +521,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 			    pag.dtime = ((Number)args[a++]).doubleValue() / 1000.0;
 			}
 			if((fl & 8) != 0)
-			    pag.newp = 1;
+			    pag.anew = 2;
 			if((fl & 16) != 0)
 			    pag.rawinfo = (Object[])args[a++];
 			else
