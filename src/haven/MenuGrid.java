@@ -136,8 +136,11 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    return(act);
 	}
 
+	private Pagina parent;
 	public Pagina parent() {
-	    return(pag.scm.paginafor(act().parent));
+	    if(parent == null)
+		parent = pag.scm.paginafor(act().parent);
+	    return(parent);
 	}
 
 	public GSprite spr() {
