@@ -166,14 +166,17 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    return(KeyBinding.get("scm/" + res.name, hotkey()));
 	}
 	public void use(Interaction iact) {
-	    Object[] args = Utils.extend(new Object[0], act().ad);
-	    args = Utils.extend(args, Integer.valueOf(pag.scm.ui.modflags()));
+	    Object[] eact = new Object[] {pag.scm.ui.modflags()};
 	    if(iact.mc != null) {
-		args = Utils.extend(args, iact.mc.floor(OCache.posres));
+		eact = Utils.extend(eact, iact.mc.floor(OCache.posres));
 		if(iact.click != null)
-		    args = Utils.extend(args, iact.click.clickargs());
+		    eact = Utils.extend(eact, iact.click.clickargs());
 	    }
-	    pag.scm.wdgmsg("act", args);
+	    AButton act = act();
+	    if((act != null) && (act.ad.length > 0))
+		pag.scm.wdgmsg("act", Utils.extend(Utils.extend(new Object[0], act().ad), eact));
+	    else
+		pag.scm.wdgmsg("use", Utils.extend(new Object[] {pag.id}, eact));
 	}
 	public void tick(double dt) {
 	    if(spr != null)
