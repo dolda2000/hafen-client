@@ -173,10 +173,14 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 		    eact = Utils.extend(eact, iact.click.clickargs());
 	    }
 	    AButton act = act();
-	    if((act != null) && (act.ad.length > 0))
+	    if((act != null) && (act.ad.length > 0)) {
 		pag.scm.wdgmsg("act", Utils.extend(Utils.extend(new Object[0], act().ad), eact));
-	    else
-		pag.scm.wdgmsg("use", Utils.extend(new Object[] {pag.id}, eact));
+	    } else {
+		if(pag.id instanceof Indir)
+		    Warning.warn("tried to use resource-indexed pagina by id: " + res);
+		else
+		    pag.scm.wdgmsg("use", Utils.extend(new Object[] {pag.id}, eact));
+	    }
 	}
 	public void tick(double dt) {
 	    if(spr != null)
