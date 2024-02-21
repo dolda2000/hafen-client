@@ -61,13 +61,15 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 
     public static class Pagina {
 	public final MenuGrid scm;
+	public final Object id;
 	public Indir<Resource> res;
 	public byte[] sdt = null;
 	public int anew, tnew;
 	public Object[] rawinfo = {};
 
-	public Pagina(MenuGrid scm, Indir<Resource> res) {
+	public Pagina(MenuGrid scm, Object id, Indir<Resource> res) {
 	    this.scm = scm;
+	    this.id = id;
 	    this.res = res;
 	}
 
@@ -323,7 +325,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	}
     }
 
-    public final PagButton next = new PagButton(new Pagina(this, Resource.local().loadwait("gfx/hud/sc-next").indir())) {
+    public final PagButton next = new PagButton(new Pagina(this, null, Resource.local().loadwait("gfx/hud/sc-next").indir())) {
 	    {pag.button = this;}
 
 	    public void use(Interaction iact) {
@@ -340,7 +342,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    public KeyBinding binding() {return(kb_next);}
 	};
 
-    public final PagButton bk = new PagButton(new Pagina(this, Resource.local().loadwait("gfx/hud/sc-back").indir())) {
+    public final PagButton bk = new PagButton(new Pagina(this, null, Resource.local().loadwait("gfx/hud/sc-back").indir())) {
 	    {pag.button = this;}
 
 	    public void use(Interaction iact) {
@@ -359,7 +361,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	synchronized(pmap) {
 	    Pagina p = pmap.get(res);
 	    if(p == null)
-		pmap.put(res, p = new Pagina(this, res));
+		pmap.put(res, p = new Pagina(this, res, res));
 	    return(p);
 	}
     }
@@ -368,7 +370,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	synchronized(pmap) {
 	    Pagina p = pmap.get(id);
 	    if((p == null) && (res != null))
-		pmap.put(id, p = new Pagina(this, res));
+		pmap.put(id, p = new Pagina(this, id, res));
 	    return(p);
 	}
     }
@@ -578,7 +580,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	PagButton h = bhit(c);
 	if((button == 1) && (grab != null)) {
 	    if(dragging != null) {
-		ui.dropthing(ui.root, ui.mc, dragging.res());
+		ui.dropthing(ui.root, ui.mc, dragging);
 		pressed = null;
 		dragging = null;
 	    } else if(pressed != null) {

@@ -224,12 +224,16 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	public boolean dropthing(Coord c, Object thing) {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
-		if(thing instanceof Resource) {
-		    Resource res = (Resource)thing;
-		    if(res.layer(Resource.action) != null) {
-			GameUI.this.wdgmsg("setbelt", slot, res.name);
-			return(true);
+		if(thing instanceof MenuGrid.Pagina) {
+		    MenuGrid.Pagina pag = (MenuGrid.Pagina)thing;
+		    try {
+			if(pag.id instanceof Indir)
+			    GameUI.this.wdgmsg("setbelt", slot, pag.res().name);
+			else
+			    GameUI.this.wdgmsg("setbelt", slot, "pag", pag.id);
+		    } catch(Loading l) {
 		    }
+		    return(true);
 		}
 	    }
 	    return(false);
