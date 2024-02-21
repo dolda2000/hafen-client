@@ -70,17 +70,28 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
     public final Map<Integer, String> polowners = new HashMap<Integer, String>();
     public Bufflist buffs;
 
-    private static final OwnerContext.ClassResolver<BeltSlot> beltctxr = new OwnerContext.ClassResolver<BeltSlot>()
+    public abstract class BeltSlot {
+	public final int idx;
+
+	public BeltSlot(int idx) {
+	    this.idx = idx;
+	}
+
+	public abstract void draw(GOut g);
+	public abstract void use(MenuGrid.Interaction iact);
+    }
+
+    private static final OwnerContext.ClassResolver<ResBeltSlot> beltctxr = new OwnerContext.ClassResolver<ResBeltSlot>()
 	.add(GameUI.class, slot -> slot.wdg())
 	.add(Glob.class, slot -> slot.wdg().ui.sess.glob)
 	.add(Session.class, slot -> slot.wdg().ui.sess);
-    public class BeltSlot implements GSprite.Owner {
-	public final int idx, lst;
+    public class ResBeltSlot extends BeltSlot implements GSprite.Owner {
+	public final int lst;
 	public final Indir<Resource> res;
 	public final Message sdt;
 
-	public BeltSlot(int idx, Indir<Resource> res, Message sdt, int lst) {
-	    this.idx = idx;
+	public ResBeltSlot(int idx, Indir<Resource> res, Message sdt, int lst) {
+	    super(idx);
 	    this.res = res;
 	    this.sdt = sdt;
 	    this.lst = lst;
@@ -94,30 +105,22 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    return(ret);
 	}
 
-	public Resource getres() {return(res.get());}
-	public Random mkrandoom() {return(new Random(System.identityHashCode(this)));}
-	public <T> T context(Class<T> cl) {return(beltctxr.context(cl, this));}
-	private GameUI wdg() {return(GameUI.this);}
-    }
-
-    public abstract class Belt extends Widget implements DTarget, DropTarget {
-	public Belt(Coord sz) {
-	    super(sz);
+	public void draw(GOut g) {
+	    try {
+		spr().draw(g);
+	    } catch(Loading l) {}
 	}
 
-	public void act(int idx, MenuGrid.Interaction iact) {
-	    BeltSlot slot = belt[idx];
+	public void use(MenuGrid.Interaction iact) {
 	    boolean local = false;
 	    Resource res = null;
-	    if(slot != null) {
-		if(slot.lst == 1) {
-		    local = true;
-		} else if(slot.lst < 0) {
-		    try {
-			res = slot.res.get();
-			local = res.layer(Resource.action) != null;
-		    } catch(Loading l) {
-		    }
+	    if(lst == 1) {
+		local = true;
+	    } else if(lst < 0) {
+		try {
+		    res = this.res.get();
+		    local = res.layer(Resource.action) != null;
+		} catch(Loading l) {
 		}
 	    }
 	    if(local && (menu != null)) {
@@ -127,7 +130,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		    if(res != null)
 			pag = menu.paginafor(res.indir());
 		    else
-			pag = menu.paginafor(slot.res);
+			pag = menu.paginafor(this.res);
 		    try {
 			MenuGrid.PagButton btn = pag.button();
 			menu.use(btn, iact, false);
@@ -144,6 +147,22 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		GameUI.this.wdgmsg("belt", args);
 		return;
 	    }
+	}
+
+	public Resource getres() {return(res.get());}
+	public Random mkrandoom() {return(new Random(System.identityHashCode(this)));}
+	public <T> T context(Class<T> cl) {return(beltctxr.context(cl, this));}
+	private GameUI wdg() {return(GameUI.this);}
+    }
+
+    public abstract class Belt extends Widget implements DTarget, DropTarget {
+	public Belt(Coord sz) {
+	    super(sz);
+	}
+
+	public void act(int idx, MenuGrid.Interaction iact) {
+	    if(belt[idx] != null)
+		belt[idx].use(iact);
 	}
 
 	public void keyact(int slot) {
@@ -1188,7 +1207,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		int lst = -1;
 		if(args.length > 3)
 		    lst = (Integer)args[3];
-		belt[slot] = new BeltSlot(slot, res, sdt, lst);
+		belt[slot] = new ResBeltSlot(slot, res, sdt, lst);
 	    }
 	} else if(msg == "polowner") {
 	    int id = (Integer)args[0];
@@ -1567,7 +1586,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		g.image(invsq, beltc(i));
 		try {
 		    if(belt[slot] != null)
-			belt[slot].spr().draw(g.reclip(c.add(UI.scale(1), UI.scale(1)), invsq.sz().sub(UI.scale(2), UI.scale(2))));
+			belt[slot].draw(g.reclip(c.add(UI.scale(1), UI.scale(1)), invsq.sz().sub(UI.scale(2), UI.scale(2))));
 		} catch(Loading e) {}
 		g.chcolor(156, 180, 158, 255);
 		FastText.aprintf(g, c.add(invsq.sz().sub(UI.scale(2), 0)), 1, 1, "F%d", i + 1);
@@ -1648,7 +1667,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		g.image(invsq, beltc(i));
 		try {
 		    if(belt[slot] != null) {
-			belt[slot].spr().draw(g.reclip(c.add(UI.scale(1), UI.scale(1)), invsq.sz().sub(UI.scale(2), UI.scale(2))));
+			belt[slot].draw(g.reclip(c.add(UI.scale(1), UI.scale(1)), invsq.sz().sub(UI.scale(2), UI.scale(2))));
 		    }
 		} catch(Loading e) {}
 		g.chcolor(156, 180, 158, 255);
