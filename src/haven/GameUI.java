@@ -145,13 +145,22 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    } catch(Loading l) {
 	    }
 	}
+
+	public static MenuGrid.Pagina resolve(MenuGrid scm, Indir<Resource> resid) {
+	    Resource res = resid.get();
+	    Resource.AButton act = res.layer(Resource.action);
+	    /* XXX: This is quite a hack. Is there a better way? */
+	    if((act != null) && (act.ad.length == 0))
+		return(scm.paginafor(res.indir()));
+	    return(scm.paginafor(resid));
+	}
     }
 
+    /* XXX: Remove me */
     public BeltSlot mkbeltslot(int idx, ResData rdt) {
 	Resource res = rdt.res.get();
 	Resource.AButton act = res.layer(Resource.action);
 	if(act != null) {
-	    /* XXX: This is quite a hack. Is there a better way? */
 	    if(act.ad.length == 0)
 		return(new PagBeltSlot(idx, menu.paginafor(res.indir())));
 	    return(new PagBeltSlot(idx, menu.paginafor(rdt.res)));
@@ -1212,6 +1221,34 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		ui.sess.glob.loader.defer(() -> {
 			belt[slot] = mkbeltslot(slot, rdt);
 		    }, null);
+	    }
+	} else if(msg == "setbelt2") {
+	    int slot = Utils.iv(args[0]);
+	    if(args.length < 2) {
+		belt[slot] = null;
+	    } else {
+		switch((String)args[1]) {
+		case "p": {
+		    Object id = args[2];
+		    belt[slot] = new PagBeltSlot(slot, menu.paginafor(id, null));
+		    break;
+		}
+		case "r": {
+		    Indir<Resource> res = ui.sess.getresv(args[2]);
+		    ui.sess.glob.loader.defer(() -> {
+			    belt[slot] = new PagBeltSlot(slot, PagBeltSlot.resolve(menu, res));
+			}, null);
+		    break;
+		}
+		case "d": {
+		    Indir<Resource> res = ui.sess.getresv(args[2]);
+		    Message sdt = Message.nil;
+		    if(args.length > 2)
+			sdt = new MessageBuf((byte[])args[3]);
+		    belt[slot] = new ResBeltSlot(slot, new ResData(res, sdt));
+		    break;
+		}
+		}
 	    }
 	} else if(msg == "polowner") {
 	    int id = (Integer)args[0];
