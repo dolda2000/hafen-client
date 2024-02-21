@@ -181,7 +181,7 @@ public class Charlist extends Widget {
 		if(rawdesc.length > 3) {
 		    Object[] rawposes = (Object[])rawdesc[3];
 		    for(int i = 0; i < rawposes.length; i += 2)
-			poses.add(new ResData(ui.sess.getres(rawposes[i]), new MessageBuf((byte[])rawposes[i + 1])));
+			poses.add(new ResData(ui.sess.getresv(rawposes[i]), new MessageBuf((byte[])rawposes[i + 1])));
 		}
 		c.ava(desc, map, poses);
 	    }
@@ -203,7 +203,7 @@ public class Charlist extends Widget {
 	    if(rawdesc.length > 3) {
 		Object[] rawposes = (Object[])rawdesc[3];
 		for(int i = 0; i < rawposes.length; i += 2)
-		    poses.add(new ResData(ui.sess.getres(rawposes[i]), new MessageBuf((byte[])rawposes[i + 1])));
+		    poses.add(new ResData(ui.sess.getresv(rawposes[i]), new MessageBuf((byte[])rawposes[i + 1])));
 	    }
 	    synchronized(chars) {
 		for(Char c : chars) {

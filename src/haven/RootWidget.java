@@ -94,7 +94,7 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget {
 	    ui.msg((String)args[0]);
 	} else if(msg == "sfx") {
 	    int a = 0;
-	    Indir<Resource> resid = ui.sess.getres(args[a++]);
+	    Indir<Resource> resid = ui.sess.getresv(args[a++]);
 	    double vol = (args.length > a) ? Utils.dv(args[a++]) : 1.0;
 	    double spd = (args.length > a) ? Utils.dv(args[a++]) : 1.0;
 	    ui.sess.glob.loader.defer(() -> {
@@ -107,7 +107,7 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget {
 		}, null);
 	} else if(msg == "bgm") {
 	    int a = 0;
-	    Indir<Resource> resid = (args.length > a) ? ui.sess.getres(args[a++]) : null;
+	    Indir<Resource> resid = (args.length > a) ? ui.sess.getresv(args[a++]) : null;
 	    boolean loop = (args.length > a) ? Utils.bv(args[a++]) : false;
 	    if(Music.enabled) {
 		if(resid == null)

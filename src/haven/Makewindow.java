@@ -153,7 +153,7 @@ public class Makewindow extends Widget {
 	if(msg == "inpop") {
 	    List<Spec> inputs = new ArrayList<>();
 	    for(int i = 0; i < args.length;) {
-		Indir<Resource> res = ui.sess.getres(args[i++]);
+		Indir<Resource> res = ui.sess.getresv(args[i++]);
 		Message sdt = (args[i] instanceof byte[]) ? new MessageBuf((byte[])args[i++]) : MessageBuf.nil;
 		int num = Utils.iv(args[i++]);
 		Object[] info = {};
@@ -184,7 +184,7 @@ public class Makewindow extends Widget {
 	} else if(msg == "opop") {
 	    List<Spec> outputs = new ArrayList<Spec>();
 	    for(int i = 0; i < args.length;) {
-		Indir<Resource> res = ui.sess.getres(args[i++]);
+		Indir<Resource> res = ui.sess.getresv(args[i++]);
 		Message sdt = (args[i] instanceof byte[]) ? new MessageBuf((byte[])args[i++]) : MessageBuf.nil;
 		int num = Utils.iv(args[i++]);
 		Object[] info = {};
@@ -214,17 +214,17 @@ public class Makewindow extends Widget {
 	} else if(msg == "qmod") {
 	    List<Indir<Resource>> qmod = new ArrayList<Indir<Resource>>();
 	    for(Object arg : args)
-		qmod.add(ui.sess.getres(arg));
+		qmod.add(ui.sess.getresv(arg));
 	    this.qmod = qmod;
 	} else if(msg == "tool") {
-	    tools.add(ui.sess.getres(args[0]));
+	    tools.add(ui.sess.getresv(args[0]));
 	} else if(msg == "inprcps") {
 	    int idx = Utils.iv(args[0]);
 	    List<MenuGrid.Pagina> rcps = new ArrayList<>();
 	    GameUI gui = getparent(GameUI.class);
 	    if((gui != null) && (gui.menu != null)) {
 		for(int a = 1; a < args.length; a++)
-		    rcps.add(gui.menu.paginafor(ui.sess.getres(args[a])));
+		    rcps.add(gui.menu.paginafor(ui.sess.getresv(args[a])));
 	    }
 	    inputs.get(idx).recipes(rcps);
 	} else {

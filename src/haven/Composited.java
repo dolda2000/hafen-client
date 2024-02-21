@@ -380,14 +380,14 @@ public class Composited implements RenderTree.Node, EquipTarget {
 
 	public static Desc decode(Session sess, Object[] args) {
 	    Desc ret = new Desc();
-	    ret.base = sess.getres(args[0]);
+	    ret.base = sess.getresv(args[0]);
 	    Object[] ma = (Object[])args[1];
 	    for(int i = 0; i < ma.length; i += 2) {
 		List<ResData> tex = new ArrayList<ResData>();
-		Indir<Resource> mod = sess.getres(ma[i]);
+		Indir<Resource> mod = sess.getresv(ma[i]);
 		Object[] ta = (Object[])ma[i + 1];
 		for(int o = 0; o < ta.length; o++) {
-		    Indir<Resource> tr = sess.getres(ta[o]);
+		    Indir<Resource> tr = sess.getresv(ta[o]);
 		    Message sdt = Message.nil;
 		    if((ta.length > o + 1) && (ta[o + 1] instanceof byte[]))
 			sdt = new MessageBuf((byte[])ta[++o]);
@@ -401,7 +401,7 @@ public class Composited implements RenderTree.Node, EquipTarget {
 		int n = 0;
 		int t = Utils.iv(qa[n++]);
 		String at = (String)qa[n++];
-		Indir<Resource> res = sess.getres(qa[n++]);
+		Indir<Resource> res = sess.getresv(qa[n++]);
 		Message sdt = Message.nil;
 		if(qa[n] instanceof byte[])
 		    sdt = new MessageBuf((byte[])qa[n++]);

@@ -380,7 +380,7 @@ public class BAttrWnd extends Widget {
 	    this.cap = Utils.fv(args[n++]);
 	    List<El> enew = new LinkedList<El>();
 	    while(n < args.length) {
-		Indir<Resource> res = ui.sess.getres(args[n++]);
+		Indir<Resource> res = ui.sess.getresv(args[n++]);
 		double a = Utils.fv(args[n++]);
 		enew.add(new El(res, a));
 	    }
@@ -490,7 +490,7 @@ public class BAttrWnd extends Widget {
 	} else if(nm == "glut") {
 	    glut.update(args);
 	} else if(nm == "ftrig") {
-	    feps.trig(ui.sess.getres(args[0]));
+	    feps.trig(ui.sess.getresv(args[0]));
 	} else if(nm == "lvl") {
 	    for(Attr aw : attrs) {
 		if(aw.nm.equals(args[0]))
@@ -499,7 +499,7 @@ public class BAttrWnd extends Widget {
 	} else if(nm == "const") {
 	    int a = 0;
 	    while(a < args.length) {
-		ResData t = new ResData(ui.sess.getres(args[a++]), MessageBuf.nil);
+		ResData t = new ResData(ui.sess.getresv(args[a++]), MessageBuf.nil);
 		if(args[a] instanceof byte[])
 		    t.sdt = new MessageBuf((byte[])args[a++]);
 		double m = Utils.dv(args[a++]);

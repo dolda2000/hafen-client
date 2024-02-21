@@ -243,12 +243,12 @@ public class Glob {
 			sky1 = sky2 = null;
 			skyblend = 0.0;
 		    } else {
-			sky1 = sess.getres(a[n++]);
+			sky1 = sess.getresv(a[n++]);
 			if(a.length < 2) {
 			    sky2 = null;
 			    skyblend = 0.0;
 			} else {
-			    sky2 = sess.getres(a[n++]);
+			    sky2 = sess.getresv(a[n++]);
 			    skyblend = Utils.dv(a[n++]);
 			}
 		    }
@@ -259,7 +259,7 @@ public class Glob {
 			wmap.clear();
 		    Collection<Object> old = new LinkedList<Object>(wmap.keySet());
 		    while(n < a.length) {
-			Indir<Resource> res = sess.getres(a[n++]);
+			Indir<Resource> res = sess.getresv(a[n++]);
 			Object[] args = (Object[])a[n++];
 			Object curv = wmap.get(res);
 			if(curv instanceof Weather) {

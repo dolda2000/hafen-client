@@ -352,7 +352,7 @@ public class Fightsess extends Widget {
 	if(msg == "act") {
 	    int n = Utils.iv(args[0]);
 	    if(args.length > 1) {
-		Indir<Resource> res = ui.sess.getres(args[1]);
+		Indir<Resource> res = ui.sess.getresv(args[1]);
 		actions[n] = new Action(res);
 	    } else {
 		actions[n] = null;

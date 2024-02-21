@@ -1181,7 +1181,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    if(args.length < 2) {
 		belt[slot] = null;
 	    } else {
-		Indir<Resource> res = ui.sess.getres(args[1]);
+		Indir<Resource> res = ui.sess.getresv(args[1]);
 		Message sdt = Message.nil;
 		if(args.length > 2)
 		    sdt = new MessageBuf((byte[])args[2]);
@@ -1206,7 +1206,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    }
 	    polowners.put(id, o);
 	} else if(msg == "showhelp") {
-	    Indir<Resource> res = ui.sess.getres(args[0]);
+	    Indir<Resource> res = ui.sess.getresv(args[0]);
 	    if(help == null)
 		help = adda(new HelpWnd(res), 0.5, 0.25);
 	    else
@@ -1214,7 +1214,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	} else if(msg == "map-mark") {
 	    long gobid = Utils.uiv(args[0]);
 	    long oid = ((Number)args[1]).longValue();
-	    Indir<Resource> res = ui.sess.getres(args[2]);
+	    Indir<Resource> res = ui.sess.getresv(args[2]);
 	    String nm = (String)args[3];
 	    if(mapfile != null)
 		mapfile.markobj(gobid, oid, res, nm);

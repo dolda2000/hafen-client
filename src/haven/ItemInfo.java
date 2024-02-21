@@ -363,7 +363,7 @@ public abstract class ItemInfo {
 		    } else if(a[0] instanceof Indir) {
 			ttres = (Resource)((Indir)a[0]).get();
 		    } else {
-			ttres = rr.getres(a[0]).get();
+			ttres = rr.getresv(a[0]).get();
 		    }
 		    InfoFactory f = ttres.getcode(InfoFactory.class, true);
 		    inf = f.build(owner, raw, a);

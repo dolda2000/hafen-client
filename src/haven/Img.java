@@ -44,7 +44,7 @@ public class Img extends Widget {
 		int ver = (args.length > a) ? Utils.iv(args[a++]) : -1;
 		res = new Resource.Spec(Resource.remote(), nm, ver);
 	    } else {
-		res = ui.sess.getres(args[a++]);
+		res = ui.sess.getresv(args[a++]);
 	    }
 	    Img ret = new Img(res);
 	    if(args.length > a) {
@@ -95,7 +95,7 @@ public class Img extends Widget {
 		int ver = (args.length > 1) ? Utils.iv(args[1]) : -1;
 		this.res = new Resource.Spec(Resource.remote(), nm, ver);
 	    } else {
-		this.res = ui.sess.getres(args[0]);
+		this.res = ui.sess.getresv(args[0]);
 	    }
 	} else if(name == "cl") {
 	    hit = Utils.bv(args[0]);

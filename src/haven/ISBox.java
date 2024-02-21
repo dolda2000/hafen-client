@@ -43,7 +43,7 @@ public class ISBox extends Widget implements DTarget {
 	    if(args[0] instanceof String)
 		res = Resource.remote().load((String)args[0]);
 	    else
-		res = ui.sess.getres(args[0]);
+		res = ui.sess.getresv(args[0]);
 	    return(new ISBox(res, Utils.iv(args[1]), Utils.iv(args[2]), Utils.iv(args[3])));
 	}
     }

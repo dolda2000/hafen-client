@@ -80,7 +80,7 @@ public class WoundWnd extends Widget {
 	public static class $wound implements Factory {
 	    public Widget create(UI ui, Object[] args) {
 		int id = Utils.iv(args[0]);
-		Indir<Resource> res = ui.sess.getres(args[1]);
+		Indir<Resource> res = ui.sess.getresv(args[1]);
 		return(new Box(id, res));
 	    }
 	}
@@ -264,7 +264,7 @@ public class WoundWnd extends Widget {
 
     private void decwound(Object[] args, int a, int len) {
 	int id = Utils.iv(args[a]);
-	Indir<Resource> res = (args[a + 1] == null) ? null : ui.sess.getres(args[a + 1]);
+	Indir<Resource> res = (args[a + 1] == null) ? null : ui.sess.getresv(args[a + 1]);
 	if(res != null) {
 	    Object qdata = args[a + 2];
 	    int parentid = (len > 3) ? ((args[a + 3] == null) ? -1 : Utils.iv(args[a + 3])) : -1;

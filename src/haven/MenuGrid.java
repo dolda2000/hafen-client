@@ -597,7 +597,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    if(args[0] == null)
 		change(null);
 	    else
-		change(paginafor(ui.sess.getres(args[0])));
+		change(paginafor(ui.sess.getresv(args[0])));
 	} else if(msg == "fill") {
 	    synchronized(paginae) {
 		int a = 0;

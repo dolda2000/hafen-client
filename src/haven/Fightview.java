@@ -331,11 +331,11 @@ public class Fightview extends Widget {
 	    rel.oip = Utils.iv(args[3]);
             return;
 	} else if(msg == "used") {
-	    use((args[0] == null) ? null : ui.sess.getres(args[0]));
+	    use((args[0] == null) ? null : ui.sess.getresv(args[0]));
 	    return;
 	} else if(msg == "ruse") {
 	    Relation rel = getrel(Utils.uiv(args[0]));
-	    rel.use((args[1] == null) ? null : ui.sess.getres(args[1]));
+	    rel.use((args[1] == null) ? null : ui.sess.getresv(args[1]));
 	    return;
         } else if(msg == "cur") {
             try {
@@ -352,11 +352,11 @@ public class Fightview extends Widget {
 	    atkct = atkcs + (Utils.dv(args[0]) * 0.06);
 	    return;
 	} else if(msg == "blk") {
-	    blk = ui.sess.getres(args[0]);
+	    blk = ui.sess.getresv(args[0]);
 	    return;
 	} else if(msg == "atk") {
-	    batk = ui.sess.getres(args[0]);
-	    iatk = ui.sess.getres(args[1]);
+	    batk = ui.sess.getresv(args[0]);
+	    iatk = ui.sess.getresv(args[1]);
 	    return;
 	}
         super.uimsg(msg, args);

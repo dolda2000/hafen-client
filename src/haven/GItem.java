@@ -51,7 +51,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
     @RName("item")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    Indir<Resource> res = ui.sess.getres(args[0]);
+	    Indir<Resource> res = ui.sess.getresv(args[0]);
 	    Message sdt = (args.length > 1) ? new MessageBuf((byte[])args[1]) : Message.nil;
 	    return(new GItem(res, sdt));
 	}
@@ -200,7 +200,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	    num = Utils.iv(args[0]);
 	} else if(name == "chres") {
 	    synchronized(this) {
-		res = ui.sess.getres(args[0]);
+		res = ui.sess.getresv(args[0]);
 		sdt = (args.length > 1) ? new MessageBuf((byte[])args[1]) : MessageBuf.nil;
 		spr = null;
 	    }

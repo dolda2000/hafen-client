@@ -1818,7 +1818,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 		this.placing = null;
 	    }
 	    int a = 0;
-	    Indir<Resource> res = ui.sess.getres(args[a++]);
+	    Indir<Resource> res = ui.sess.getresv(args[a++]);
 	    Message sdt;
 	    if((args.length > a) && (args[a] instanceof byte[]))
 		sdt = new MessageBuf((byte[])args[a++]);
@@ -1833,7 +1833,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 			    ret = new Plob(res, new MessageBuf(sdt));
 			while(a < args.length) {
 			    int a2 = a;
-			    Indir<Resource> ores = ui.sess.getres(args[a2++]);
+			    Indir<Resource> ores = ui.sess.getresv(args[a2++]);
 			    Message odt;
 			    if((args.length > a2) && (args[a2] instanceof byte[]))
 				odt = new MessageBuf((byte[])args[a2++]);
