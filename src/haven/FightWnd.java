@@ -553,7 +553,7 @@ public class FightWnd extends Widget {
 	private final List<Integer> items = Utils.range(nsave);
 
 	public Savelist(Coord sz) {
-	    super(sz, attrf.height() + 2);
+	    super(sz, attrf.height() + UI.scale(2));
 	    sel = Integer.valueOf(0);
 	}
 
