@@ -70,7 +70,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
     public final Map<Integer, String> polowners = new HashMap<Integer, String>();
     public Bufflist buffs;
 
-    public abstract class BeltSlot {
+    public static abstract class BeltSlot {
 	public final int idx;
 
 	public BeltSlot(int idx) {
@@ -86,22 +86,18 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	.add(Glob.class, slot -> slot.wdg().ui.sess.glob)
 	.add(Session.class, slot -> slot.wdg().ui.sess);
     public class ResBeltSlot extends BeltSlot implements GSprite.Owner {
-	public final int lst;
-	public final Indir<Resource> res;
-	public final Message sdt;
+	public final ResData rdt;
 
-	public ResBeltSlot(int idx, Indir<Resource> res, Message sdt, int lst) {
+	public ResBeltSlot(int idx, ResData rdt) {
 	    super(idx);
-	    this.res = res;
-	    this.sdt = sdt;
-	    this.lst = lst;
+	    this.rdt = rdt;
 	}
 
 	private GSprite spr = null;
 	public GSprite spr() {
 	    GSprite ret = this.spr;
 	    if(ret == null)
-		ret = this.spr = GSprite.create(this, res.get(), new MessageBuf(sdt));
+		ret = this.spr = GSprite.create(this, rdt.res.get(), new MessageBuf(rdt.sdt));
 	    return(ret);
 	}
 
@@ -112,45 +108,55 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	}
 
 	public void use(MenuGrid.Interaction iact) {
-	    boolean local = false;
-	    Resource res = null;
-	    if(lst == 1) {
-		local = true;
-	    } else if(lst < 0) {
-		try {
-		    res = this.res.get();
-		    local = res.layer(Resource.action) != null;
-		} catch(Loading l) {
-		}
+	    Object[] args = {idx, iact.btn, iact.modflags};
+	    if(iact.mc != null) {
+		args = Utils.extend(args, iact.mc.floor(OCache.posres));
+		if(iact.click != null)
+		    args = Utils.extend(args, iact.click.clickargs());
 	    }
-	    if(local && (menu != null)) {
-		if(res != null) {
-		    MenuGrid.Pagina pag = menu.paginafor(this.res);
-		    /* XXX: This is quite a hack. Is there a better way? */
-		    if(!menu.paginae.contains(pag) && (res != null))
-			pag = menu.paginafor(res.indir());
-		    try {
-			MenuGrid.PagButton btn = pag.button();
-			menu.use(btn, iact, false);
-		    } catch(Loading l) {
-		    }
-		}
-	    } else {
-		Object[] args = {idx, iact.btn, iact.modflags};
-		if(iact.mc != null) {
-		    args = Utils.extend(args, iact.mc.floor(OCache.posres));
-		    if(iact.click != null)
-			args = Utils.extend(args, iact.click.clickargs());
-		}
-		GameUI.this.wdgmsg("belt", args);
-		return;
-	    }
+	    GameUI.this.wdgmsg("belt", args);
 	}
 
-	public Resource getres() {return(res.get());}
+	public Resource getres() {return(rdt.res.get());}
 	public Random mkrandoom() {return(new Random(System.identityHashCode(this)));}
 	public <T> T context(Class<T> cl) {return(beltctxr.context(cl, this));}
 	private GameUI wdg() {return(GameUI.this);}
+    }
+
+    public static class PagBeltSlot extends BeltSlot {
+	public final MenuGrid.Pagina pag;
+
+	public PagBeltSlot(int idx, MenuGrid.Pagina pag) {
+	    super(idx);
+	    this.pag = pag;
+	}
+
+	public void draw(GOut g) {
+	    try {
+		MenuGrid.PagButton btn = pag.button();
+		btn.draw(g, btn.spr());
+	    } catch(Loading l) {
+	    }
+	}
+
+	public void use(MenuGrid.Interaction iact) {
+	    try {
+		pag.scm.use(pag.button(), iact, false);
+	    } catch(Loading l) {
+	    }
+	}
+    }
+
+    public BeltSlot mkbeltslot(int idx, ResData rdt) {
+	Resource res = rdt.res.get();
+	Resource.AButton act = res.layer(Resource.action);
+	if(act != null) {
+	    /* XXX: This is quite a hack. Is there a better way? */
+	    if(act.ad.length == 0)
+		return(new PagBeltSlot(idx, menu.paginafor(res.indir())));
+	    return(new PagBeltSlot(idx, menu.paginafor(rdt.res)));
+	}
+	return(new ResBeltSlot(idx, rdt));
     }
 
     public abstract class Belt extends Widget implements DTarget, DropTarget {
@@ -1202,10 +1208,10 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		Message sdt = Message.nil;
 		if(args.length > 2)
 		    sdt = new MessageBuf((byte[])args[2]);
-		int lst = -1;
-		if(args.length > 3)
-		    lst = (Integer)args[3];
-		belt[slot] = new ResBeltSlot(slot, res, sdt, lst);
+		ResData rdt = new ResData(res, sdt);
+		ui.sess.glob.loader.defer(() -> {
+			belt[slot] = mkbeltslot(slot, rdt);
+		    }, null);
 	    }
 	} else if(msg == "polowner") {
 	    int id = (Integer)args[0];
