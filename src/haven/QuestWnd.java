@@ -37,6 +37,13 @@ public class QuestWnd extends Widget {
     public final QuestList cqst, dqst;
     public Quest.Info quest;
 
+    @RName("quests")
+    public static class $_ implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    return(new QuestWnd());
+	}
+    }
+
     public static class Quest {
 	public static final int QST_PEND = 0, QST_DONE = 1, QST_FAIL = 2, QST_DISABLED = 3;
 	public static final Color[] stcol = {
@@ -660,7 +667,6 @@ public class QuestWnd extends Widget {
 	pack();
     }
 
-    public static final Collection<String> children = Arrays.asList("quest");
     public void addchild(Widget child, Object... args) {
 	String place = (args[0] instanceof String) ? (((String)args[0]).intern()) : null;
 	if(place == "quest") {
@@ -672,7 +678,6 @@ public class QuestWnd extends Widget {
 	}
     }
 
-    public static final Collection<String> msgs = Arrays.asList("quests");
     public void uimsg(String nm, Object... args) {
 	if(nm == "quests") {
 	    for(int i = 0; i < args.length;) {

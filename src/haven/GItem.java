@@ -65,8 +65,11 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	public Color olcol();
 
 	public default Pipe.Op rstate() {
-	    Color col = olcol();
-	    return((col == null) ? null : new ColorMask(col));
+	    return(buf -> {
+		    Color col = olcol();
+		    if(col != null)
+			new ColorMask(col).apply(buf);
+		});
 	}
     }
 

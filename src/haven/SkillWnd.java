@@ -36,6 +36,26 @@ public class SkillWnd extends Widget {
     public final CredoGrid credos;
     public final ExpGrid exps;
     private CharWnd chr;
+    private Widget skill, credo, expls;
+
+    @RName("skill")
+    public static class $skill implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    return(new TabProxy(SkillWnd.class, "skill"));
+	}
+    }
+    @RName("credo")
+    public static class $credo implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    return(new TabProxy(SkillWnd.class, "credo"));
+	}
+    }
+    @RName("expls")
+    public static class $expls implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    return(new TabProxy(SkillWnd.class, "expls"));
+	}
+    }
 
     public class Skill {
 	public final String nm;
@@ -201,13 +221,14 @@ public class SkillWnd extends Widget {
 	    pbtn = new Button(btnw, "Pursue", false) {
 		    public void click() {
 			if(sel != null)
-			    SkillWnd.this.wdgmsg("crpursue", sel.nm);
+			    credo.wdgmsg("crpursue", sel.nm);
 		    }
 		};
 	    qbtn = new Button(btnw, "Show quest", false) {
 		    public void click() {
-			SkillWnd.this.wdgmsg("qsel", pqid);
-			getparent(CharWnd.class).questtab.showtab();
+			CharWnd chr = getparent(CharWnd.class);
+			chr.quest.wdgmsg("qsel", pqid);
+			chr.questtab.showtab();
 		    }
 		};
 	}
@@ -410,7 +431,7 @@ public class SkillWnd extends Widget {
 	    Widget bf = sktab.adda(new Frame(new Coord(f.sz.x, UI.scale(44)), false), f.c.x, gh, 0.0, 1.0);
 	    Button bbtn = sktab.adda(new Button(UI.scale(50), "Buy").action(() -> {
 			if (skg.sel != null)
-			    SkillWnd.this.wdgmsg("buy", skg.sel.nm);
+			    skill.wdgmsg("buy", skg.sel.nm);
 	    }), bf.pos("ibr").subs(10, 0).y(bf.pos("mid").y), 1.0, 0.5);
 	    Label clbl = sktab.adda(new Label("Cost:"), bf.pos("iul").adds(10, 0).y(bf.pos("mid").y), 0, 0.5);
 	    sktab.adda(new RLabel<Pair<Integer, Integer>>(() -> new Pair<>(((skg.sel == null) || skg.sel.has) ? null : skg.sel.cost, this.chr.exp),
@@ -492,7 +513,19 @@ public class SkillWnd extends Widget {
 	return(buf);
     }
 
-    public static final Collection<String> msgs = Arrays.asList("csk", "nsk", "ccr", "ncr", "crcost", "pcr", "exps");
+    public void addchild(Widget child, Object... args) {
+	String place = (args[0] instanceof String) ? (((String)args[0]).intern()) : null;
+	if(place == "skill") {
+	    add(skill = child);
+	} else if(place == "credo") {
+	    add(credo = child);
+	} else if(place == "expls") {
+	    add(expls = child);
+	} else {
+	    super.addchild(child, args);
+	}
+    }
+
     public void uimsg(String nm, Object... args) {
 	if(nm == "csk") {
 	    skg.csk.update(decsklist(args, 0, true));

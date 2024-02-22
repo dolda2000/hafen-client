@@ -1802,7 +1802,7 @@ public class Utils {
 	}
     }
 
-    public static class Range extends AbstractCollection<Integer> {
+    public static class Range extends AbstractList<Integer> {
 	public final int min, max, step;
 
 	public Range(int min, int max, int step) {
@@ -1815,28 +1815,17 @@ public class Utils {
 	    return(Math.max((max - min + step - 1) / step, 0));
 	}
 
-	public Iterator<Integer> iterator() {
-	    return(new Iterator<Integer>() {
-		    private int cur = min;
-
-		    public boolean hasNext() {
-			return((step > 0) ? (cur < max) : (cur > max));
-		    }
-
-		    public Integer next() {
-			if(!hasNext())
-			    throw(new NoSuchElementException());
-			int ret = cur;
-			cur += step;
-			return(ret);
-		    }
-		});
+	public Integer get(int idx) {
+	    int rv = min + (step * idx);
+	    if((rv < min) || (rv >= max))
+		throw(new NoSuchElementException());
+	    return(rv);
 	}
     }
 
-    public static Collection<Integer> range(int min, int max, int step) {return(new Range(min, max, step));}
-    public static Collection<Integer> range(int min, int max) {return(range(min, max, 1));}
-    public static Collection<Integer> range(int max) {return(range(0, max));}
+    public static List<Integer> range(int min, int max, int step) {return(new Range(min, max, step));}
+    public static List<Integer> range(int min, int max) {return(range(min, max, 1));}
+    public static List<Integer> range(int max) {return(range(0, max));}
 
     public static <T> Indir<T> cache(Indir<T> src) {
 	return(new Indir<T>() {
