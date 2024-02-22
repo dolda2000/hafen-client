@@ -480,9 +480,9 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 			    g2.aimage(ki, Coord.of(bgsz.x - UI.scale(2), UI.scale(1)), 1.0, 0.0);
 		    }
 		    if(btn == pressed) {
-			g2.chcolor(new Color(0, 0, 0, 128));
-			g2.frect(Coord.z, spr.sz());
-			g2.chcolor();
+			g.chcolor(new Color(0, 0, 0, 128));
+			g.frect(p.add(1, 1), bgsz.sub(1, 1));
+			g.chcolor();
 		    }
 		}
 	    }
