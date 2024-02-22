@@ -54,7 +54,7 @@ public class HSlider extends Widget {
 
     public void draw(GOut g) {
 	int ew = sz.x + chcut, cw = schain.sz().x;
-	int n = (ew + cw - 1) / cw;
+	int n = Math.max((ew + cw - 1) / cw, 2);
 	int cy = (sflarp.sz().y - schain.sz().y) / 2;
 	for(int i = 0; i < n; i++)
 	    g.image(schain, Coord.of(((ew - cw) * i) / (n - 1), cy));
