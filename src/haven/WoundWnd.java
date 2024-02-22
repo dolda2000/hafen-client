@@ -34,6 +34,13 @@ public class WoundWnd extends Widget {
     public final WoundList wounds;
     public Wound.Info wound;
 
+    @RName("wounds")
+    public static class $_ implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    return(new WoundWnd());
+	}
+    }
+
     public static class Wound {
 	public final int id, parentid;
 	public Indir<Resource> res;
@@ -251,7 +258,6 @@ public class WoundWnd extends Widget {
 	pack();
     }
 
-    public static final Collection<String> children = Arrays.asList("wound");
     public void addchild(Widget child, Object... args) {
 	String place = (args[0] instanceof String) ? (((String)args[0]).intern()) : null;
 	if(place == "wound") {
@@ -281,7 +287,6 @@ public class WoundWnd extends Widget {
 	}
     }
 
-    public static final Collection<String> msgs = Arrays.asList("wounds");
     public void uimsg(String nm, Object... args) {
 	if(nm == "wounds") {
 	    if(args.length > 0) {

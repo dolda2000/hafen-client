@@ -48,14 +48,58 @@ public class CharWnd extends Window {
     public static final Color every = new Color(255, 255, 255, 16), other = new Color(255, 255, 255, 32);
     public static final int width = UI.scale(255);
     public static final int height = UI.scale(260);
-    public final BAttrWnd battr;
-    public final SAttrWnd sattr;
-    public final SkillWnd skill;
+    public BAttrWnd battr;
+    public SAttrWnd sattr;
+    public SkillWnd skill;
     public FightWnd fight;
-    public final WoundWnd wound;
-    public final QuestWnd quest;
+    public WoundWnd wound;
+    public QuestWnd quest;
     public final Tabs.Tab battrtab, sattrtab, skilltab, fighttab, woundtab, questtab;
     public int exp, enc;
+
+    public static class TabProxy extends AWidget {
+	public final Class<? extends Widget> tcl;
+	public final String id;
+	private Widget tab = null;
+
+	public TabProxy(Class<? extends Widget> tcl, String id) {
+	    this.tcl = tcl;
+	    this.id = id;
+	}
+
+	protected void added() {
+	    super.added();
+	    if(tab == null) {
+		CharWnd chr = getparent(CharWnd.class);
+		tab = chr.getchild(tcl);
+		unlink();
+		if(tab != null) {
+		    tab.addchild(this, id);
+		} else {
+		    tab = Utils.construct(tcl);
+		    tab.addchild(this, id);
+		    chr.addchild(tab, "tab");
+		}
+	    }
+	}
+
+	public void uimsg(String nm, Object... args) {
+	    tab.uimsg(nm, args);
+	}
+    }
+
+    public <T> T getchild(Class<T> cl) {
+	T ret = super.getchild(cl);
+	if(ret != null)
+	    return(ret);
+	if(ret == null) {
+	    for(Widget ch : children()) {
+		if((ch instanceof Tabs.Tab) && ((ret = ch.getchild(cl)) != null))
+		    return(ret);
+	    }
+	}
+	return(null);
+    }
 
     public static class RLabel<V> extends Label {
 	private final Supplier<V> val;
@@ -156,18 +200,13 @@ public class CharWnd extends Window {
     public CharWnd(Glob glob) {
 	super(UI.scale(new Coord(300, 290)), "Character Sheet");
 
-	Tabs tabs = new Tabs(new Coord(15, 10), Coord.z, this);
+	Tabs tabs = new Tabs(new Coord(15, 10), UI.scale(506, 315), this);
         battrtab = tabs.add();
-	this.battr = battrtab.add(new BAttrWnd(glob));
         sattrtab = tabs.add();
-	this.sattr = sattrtab.add(new SAttrWnd(glob));
 	skilltab = tabs.add();
-	this.skill = skilltab.add(new SkillWnd());
 	fighttab = tabs.add();
 	woundtab = tabs.add();
-	this.wound = woundtab.add(new WoundWnd());
 	questtab = tabs.add();
-	this.quest = questtab.add(new QuestWnd());
 
 	{
 	    Widget prev;
@@ -193,8 +232,6 @@ public class CharWnd extends Window {
 		}
 	    }
 
-	    tabs.pack();
-
 	    this.addhl(new Coord(tabs.c.x, tabs.c.y + tabs.sz.y + UI.scale(10)), tabs.sz.x,
 		new TB("battr", battrtab, "Base Attributes"),
 		new TB("sattr", sattrtab, "Abilities"),
@@ -210,13 +247,26 @@ public class CharWnd extends Window {
 
     public void addchild(Widget child, Object... args) {
 	String place = (args[0] instanceof String) ? (((String)args[0]).intern()) : null;
-	if(sattr.children.contains(place)) {
-	    sattr.addchild(child, args);
-	} else if(wound.children.contains(place)) {
-	    wound.addchild(child, args);
-	} else if(quest.children.contains(place)) {
-	    quest.addchild(child, args);
+	if((place == "tab") || /* XXX: Remove me! */ Utils.eq(args[0], Coord.of(47, 47))) {
+	    if(child instanceof BAttrWnd) {
+		battr = battrtab.add((BAttrWnd)child, Coord.z);
+	    } else if(child instanceof SAttrWnd) {
+		sattr = sattrtab.add((SAttrWnd)child, Coord.z);
+	    } else if(child instanceof SkillWnd) {
+		skill = skilltab.add((SkillWnd)child, Coord.z);
+	    } else if(child instanceof FightWnd) {
+		fight = fighttab.add((FightWnd)child, Coord.z);
+	    } else if(child instanceof WoundWnd) {
+		wound = woundtab.add((WoundWnd)child, Coord.z);
+	    } else if(child instanceof QuestWnd) {
+		quest = questtab.add((QuestWnd)child, Coord.z);
+	    } else if(child instanceof TabProxy) {
+		add(child);
+	    } else {
+		throw(new RuntimeException("unknown tab widget: " + child));
+	    }
 	} else if(place == "fmg") {
+	    /* XXX: Remove me! */
 	    fight = fighttab.add((FightWnd)child, 0, 0);
 	} else {
 	    super.addchild(child, args);
@@ -236,25 +286,8 @@ public class CharWnd extends Window {
 	    exp = Utils.iv(args[0]);
 	} else if(nm == "enc") {
 	    enc = Utils.iv(args[0]);
-	} else if(battr.msgs.contains(nm)) {
-	    battr.uimsg(nm, args);
-	} else if(sattr.msgs.contains(nm)) {
-	    sattr.uimsg(nm, args);
-	} else if(skill.msgs.contains(nm)) {
-	    skill.uimsg(nm, args);
-	} else if(wound.msgs.contains(nm)) {
-	    wound.uimsg(nm, args);
-	} else if(quest.msgs.contains(nm)) {
-	    quest.uimsg(nm, args);
 	} else {
 	    super.uimsg(nm, args);
 	}
-    }
-
-    public void wdgmsg(Widget sender, String msg, Object... args) {
-	if((sender == battr) || (sender == sattr) || (sender == skill) || (sender == wound) || (sender == quest))
-	    wdgmsg(msg, args);
-	else
-	    super.wdgmsg(sender, msg, args);
     }
 }

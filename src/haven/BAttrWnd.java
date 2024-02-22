@@ -40,6 +40,13 @@ public class BAttrWnd extends Widget {
     public final Constipations cons;
     public final GlutMeter glut;
 
+    @RName("battr")
+    public static class $_ implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    return(new BAttrWnd(ui.sess.glob));
+	}
+    }
+
     public static class Attr extends Widget {
 	public final String nm;
 	public final Text rnm;
@@ -483,7 +490,6 @@ public class BAttrWnd extends Widget {
 	pack();
     }
 
-    public static Collection<String> msgs = Arrays.asList("food", "glut", "ftrig", "lvl", "const");
     public void uimsg(String nm, Object... args) {
 	if(nm == "food") {
 	    feps.update(args);
