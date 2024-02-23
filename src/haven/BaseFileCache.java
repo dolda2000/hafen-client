@@ -140,11 +140,7 @@ public class BaseFileCache implements ResCache {
     }
 
     private static URI mkurn(String id) {
-	try {
-	    return(new URI("urn:haven-cache:" + id));
-	} catch(java.net.URISyntaxException e) {
-	    throw(new IllegalArgumentException(id));
-	}
+	return(Utils.uri("urn:haven-cache:" + id));
     }
 
     public static BaseFileCache get(String id) throws IOException {
@@ -155,9 +151,9 @@ public class BaseFileCache implements ResCache {
 	BaseFileCache ret;
 	try {
 	    if(cachebase.get() != null)
-		return(get(cachebase.get().toURI()));
+		return(get(cachebase.get()));
 	    if(Resource.resurl.get() != null)
-		return(get(Resource.resurl.get().toURI()));
+		return(get(Resource.resurl.get()));
 	    return(get("default"));
 	} catch(Exception e) {
 	    return(null);
@@ -213,7 +209,24 @@ public class BaseFileCache implements ResCache {
 	    Files.createDirectories(dir);
 	Path tmp = Files.createTempFile(dir, "cache", ".new");
 	OutputStream fp = Files.newOutputStream(tmp);
+	class Cleaner implements Finalizer.Cleaner {
+	    boolean closed = false;
+
+	    public void clean() {
+		if(!closed) {
+		    try {
+			fp.close();
+			Files.delete(tmp);
+		    } catch(IOException e) {
+			new Warning(e, "cleaning unclosed cache-stream").issue();
+		    }
+		}
+	    }
+	}
+	Cleaner cleaner = new Cleaner();
 	return(new OutputStream() {
+		private Runnable clean = Finalizer.finalize(this, cleaner);
+
 		public void write(int b) throws IOException {
 		    fp.write(b);
 		}
@@ -229,6 +242,8 @@ public class BaseFileCache implements ResCache {
 		    } catch(AtomicMoveNotSupportedException e) {
 			Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING);
 		    }
+		    cleaner.closed = true;
+		    clean.run();
 		}
 	    });
     }

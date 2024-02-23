@@ -1690,8 +1690,12 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    clickmap.tick();
 	}
 	Loader.Future<Plob> placing = this.placing;
-	if((placing != null) && placing.done())
-	    placing.get().ctick(dt);
+	if((placing != null) && placing.done()) {
+	    Plob ob = placing.get();
+	    synchronized(ob) {
+		ob.ctick(dt);
+	    }
+	}
     }
     
     public void resize(Coord sz) {
@@ -1743,7 +1747,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	RenderTree.Slot slot;
 
 	private Plob(Indir<Resource> res, Message sdt) {
-	    super(MapView.this.glob, MapView.this.cc);
+	    super(MapView.this.glob, Coord2d.of(getcc()));
 	    setattr(new ResDrawable(this, res, sdt));
 	}
 

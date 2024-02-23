@@ -39,7 +39,7 @@ public class Loader {
     private final Collection<Thread> pool = new ArrayList<>();
     private final AtomicInteger busy = new AtomicInteger(0);
 
-    public class Future<T> {
+    public class Future<T> implements haven.Future<T> {
 	public final Supplier<T> task;
 	private final boolean capex;
 	private final Object runmon = new Object();

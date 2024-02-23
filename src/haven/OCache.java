@@ -268,6 +268,20 @@ public class OCache implements Iterable<Gob> {
 	}
     }
 
+    public static class OlSprite implements Sprite.Mill<Sprite> {
+	public final Indir<Resource> res;
+	public Message sdt;
+
+	public OlSprite(Indir<Resource> res, Message sdt) {
+	    this.res = res;
+	    this.sdt = sdt;
+	}
+
+	public Sprite create(Sprite.Owner owner) {
+	    return(Sprite.create(owner, res.get(), sdt));
+	}
+    }
+
     @DeltaType(OD_OVERLAY)
     public static class $overlay implements Delta {
 	public void apply(Gob g, AttrDelta msg) {
@@ -294,14 +308,20 @@ public class OCache implements Iterable<Gob> {
 		sdt = new MessageBuf(sdt);
 		Gob.Overlay nol = null;
 		if(ol == null) {
-		    g.addol(nol = new Gob.Overlay(g, olid, res, sdt), false);
-		} else if(!ol.sdt.equals(sdt)) {
-		    if(ol.spr instanceof Sprite.CUpd) {
+		    nol = new Gob.Overlay(g, olid, new OlSprite(res, sdt));
+		    nol.old = msg.old;
+		    g.addol(nol, false);
+		} else {
+		    OlSprite os = (ol.sm instanceof OlSprite) ? (OlSprite)ol.sm : null;
+		    if((os != null) && Utils.eq(os.sdt, sdt)) {
+		    } else if((os != null) && (ol.spr instanceof Sprite.CUpd)) {
 			MessageBuf copy = new MessageBuf(sdt);
 			((Sprite.CUpd)ol.spr).update(copy);
-			ol.sdt = copy;
+			os.sdt = copy;
 		    } else {
-			g.addol(nol = new Gob.Overlay(g, olid, res, sdt), false);
+			nol = new Gob.Overlay(g, olid, new OlSprite(res, sdt));
+			nol.old = msg.old;
+			g.addol(nol, false);
 			ol.remove(false);
 		    }
 		}
@@ -435,6 +455,7 @@ public class OCache implements Iterable<Gob> {
 
     public static class ObjDelta {
 	public int fl, frame;
+	public int initframe;
 	public long id;
 	public final List<AttrDelta> attrs = new LinkedList<>();
 	public boolean rem = false;
@@ -469,8 +490,8 @@ public class OCache implements Iterable<Gob> {
 	if(delta.rem)
 	    return(netremove(delta.id, delta.frame - 1));
 	synchronized(netinfo) {
-	    if((delta.fl & 1) != 0)
-		netremove(delta.id, delta.frame - 1);
+	    if(delta.initframe > 0)
+		netremove(delta.id, delta.initframe - 1);
 	    GobInfo ng = netget(delta.id, delta.frame);
 	    if(ng != null) {
 		synchronized(ng) {

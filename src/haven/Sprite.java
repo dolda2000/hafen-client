@@ -47,16 +47,18 @@ public abstract class Sprite implements RenderTree.Node {
 
     public interface Owner extends OwnerContext {
 	public Random mkrandoom();
-	public Resource getres();
+	@Deprecated public Resource getres();
     }
 
-    public class RecOwner implements Owner, Skeleton.HasPose {
+    public class RecOwner implements Owner {
 	public Random mkrandoom() {return(owner.mkrandoom());}
 	public <T> T context(Class<T> cl) {return(owner.context(cl));}
 
 	public Resource getres() {return(res);}
 
-	public Skeleton.Pose getpose() {return(Skeleton.getpose(Sprite.this));}
+	public String toString() {
+	    return(String.format("#<rec-owner of %s, owned by %s>", Sprite.this, owner));
+	}
     }
 
     public static interface CDel {
@@ -82,6 +84,10 @@ public abstract class Sprite implements RenderTree.Node {
     @Resource.PublishedCode(name = "spr", instancer = FactMaker.class)
     public interface Factory {
 	public Sprite create(Owner owner, Resource res, Message sdt);
+    }
+
+    public interface Mill<S extends Sprite> {
+	public S create(Owner owner);
     }
 
     public static class ResourceException extends RuntimeException {
@@ -140,6 +146,13 @@ public abstract class Sprite implements RenderTree.Node {
     public void gtick(Render g) {
     }
 
+    public void age() {
+    }
+
     public void dispose() {
+    }
+
+    public String toString() {
+	return(String.format("#<%s %s of %s>", this.getClass().getSimpleName(), (res == null) ? null : res.name, owner));
     }
 }

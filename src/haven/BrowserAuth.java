@@ -39,7 +39,7 @@ public abstract class BrowserAuth extends AuthClient.Credentials {
 	String stat = rpl.string();
 	URL url;
 	if(stat.equals("ok")) {
-	    url = new URL(rpl.string());
+	    url = Utils.url(rpl.string());
 	} else if(stat.equals("no")) {
 	    throw(new AuthException(rpl.string()));
 	} else {

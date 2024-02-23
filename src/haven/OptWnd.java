@@ -415,6 +415,25 @@ public class OptWnd extends Window {
 			ui.audio.amb.setvolume(val / 1000.0);
 		    }
 		}, prev.pos("bl").adds(0, 2));
+	    prev = add(new Label("Audio latency"), prev.pos("bl").adds(0, 15));
+	    {
+		Label dpy = new Label("");
+		addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
+		       prev = new HSlider(UI.scale(160), 128, Math.round(Audio.fmt.getSampleRate() / 4), Audio.bufsize()) {
+			       protected void added() {
+				   dpy();
+			       }
+			       void dpy() {
+				   dpy.settext(Math.round((this.val * 1000) / Audio.fmt.getSampleRate()) + " ms");
+			       }
+			       public void changed() {
+				   Audio.bufsize(val, true);
+				   dpy();
+			       }
+			   }, dpy);
+		prev.settip("Sets the size of the audio buffer. Smaller sizes are better, " +
+			    "but larger sizes can fix issues with broken sound.", true);
+	    }
 	    add(new PButton(UI.scale(200), "Back", 27, back), prev.pos("bl").adds(0, 30));
 	    pack();
 	}
@@ -425,8 +444,9 @@ public class OptWnd extends Window {
 	    Widget prev = add(new Label("Interface scale (requires restart)"), 0, 0);
 	    {
 		Label dpy = new Label("");
-		final double smin = 1, smax = Math.floor(UI.maxscale() / 0.25) * 0.25;
-		final int steps = (int)Math.round((smax - smin) / 0.25);
+		final double gran = 0.05;
+		final double smin = 1, smax = Math.floor(UI.maxscale() / gran) * gran;
+		final int steps = (int)Math.round((smax - smin) / gran);
 		addhlp(prev.pos("bl").adds(0, 2), UI.scale(5),
 		       prev = new HSlider(UI.scale(160), 0, steps, (int)Math.round(steps * (Utils.getprefd("uiscale", 1.0) - smin) / (smax - smin))) {
 			       protected void added() {

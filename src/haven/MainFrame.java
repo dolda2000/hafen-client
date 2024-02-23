@@ -404,8 +404,10 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
     }
 
     public static void status(String state) {
-	if(status.get())
+	if(status.get()) {
 	    System.out.println("hafen:status:" + state);
+	    System.out.flush();
+	}
     }
 
     private static void main2(String[] args) {
@@ -439,10 +441,12 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
     public static void main(final String[] args) {
 	/* Set up the error handler as early as humanly possible. */
 	ThreadGroup g = new ThreadGroup("Haven main group");
-	String ed;
-	if(!(ed = Utils.getprop("haven.errorurl", "")).equals("")) {
+	String ed = Utils.getprop("haven.errorurl", "");
+	if(ed.equals("stderr")) {
+	    g = new haven.error.SimpleHandler("Haven main group", true);
+	} else if(!ed.equals("")) {
 	    try {
-		final haven.error.ErrorHandler hg = new haven.error.ErrorHandler(new java.net.URL(ed));
+		final haven.error.ErrorHandler hg = new haven.error.ErrorHandler(new java.net.URI(ed).toURL());
 		hg.sethandler(new haven.error.ErrorGui(null) {
 			public void errorsent() {
 			    hg.interrupt();
@@ -450,7 +454,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 		    });
 		g = hg;
 		new DeadlockWatchdog(hg).start();
-	    } catch(java.net.MalformedURLException e) {
+	    } catch(java.net.MalformedURLException | java.net.URISyntaxException e) {
 	    }
 	}
 	Thread main = new HackThread(g, () -> main2(args), "Haven main thread");

@@ -59,7 +59,7 @@ public class SpriteLink extends Resource.Layer {
 	}
 
 	public Sprite create(Owner owner, Resource res, Message sdt) {
-	    Gob gob = (Gob)owner;
+	    Gob gob = owner.context(Gob.class);
 	    Glob glob = gob.glob;
 	    Tileset t = glob.map.tileset(glob.map.gettile(new Coord2d(gob.getc()).floor(MCache.tilesz)));
 	    for(int i = 0; i < tag.length; i++) {

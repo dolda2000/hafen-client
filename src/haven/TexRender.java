@@ -142,7 +142,10 @@ public abstract class TexRender implements Tex, Disposable {
 	    int a = 0;
 	    if(args[a] instanceof String) {
 		tres = res.pool.load((String)args[a], (Integer)args[a + 1]);
-		tid = (Integer)args[a + 2];
+		if(args.length > a + 2)
+		    tid = (Integer)args[a + 2];
+		else
+		    tid = -1;
 		a += 3;
 	    } else {
 		tres = res.indir();
@@ -161,7 +164,11 @@ public abstract class TexRender implements Tex, Disposable {
 	    return(new Material.Res.Resolver() {
 		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
 			TexRender tex;
-			TexR rt = tres.get().layer(TexR.class, tid);
+			TexR rt;
+			if(tid >= 0)
+			    rt = tres.get().layer(TexR.class, tid);
+			else
+			    rt = tres.get().layer(TexR.class);
 			if(rt != null) {
 			    tex = rt.tex();
 			} else {

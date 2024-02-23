@@ -261,15 +261,10 @@ public abstract class Tiler {
 
     private static final Map<String, Factory> rnames = new TreeMap<String, Factory>();
     static {
-	java.security.AccessController.doPrivileged(new java.security.PrivilegedAction<Object>() {
-		public Object run() {
-		    for(Class<?> cl : dolda.jglob.Loader.get(ResName.class).classes()) {
-			String nm = cl.getAnnotation(ResName.class).value();
-			rnames.put(nm, Utils.construct(cl.asSubclass(Factory.class)));
-		    }
-		    return(null);
-		}
-	    });
+	for(Class<?> cl : dolda.jglob.Loader.get(ResName.class).classes()) {
+	    String nm = cl.getAnnotation(ResName.class).value();
+	    rnames.put(nm, Utils.construct(cl.asSubclass(Factory.class)));
+	}
     }
 
     public static Factory byname(String name) {

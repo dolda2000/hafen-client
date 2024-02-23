@@ -15,9 +15,18 @@ public class Test {
     volatile boolean done = false;
     LWJGLEnvironment env;
 
-    class TestPanel extends AWTGLCanvas {
+    static class TestPanel extends AWTGLCanvas {
 	TestPanel() {
+	    super(mkcaps());
 	    setSize(1024, 768);
+	}
+
+	static GLData mkcaps() {
+	    GLData caps = new GLData();
+	    caps.profile = GLData.Profile.CORE;
+	    caps.majorVersion = 3;
+	    caps.minorVersion = 2;
+	    return(caps);
 	}
 
 	public void initGL() {}
@@ -25,7 +34,7 @@ public class Test {
 
 	public LWJGLEnvironment mkenv() {
 	    org.lwjgl.opengl.GL.createCapabilities();
-	    return(new LWJGLEnvironment(effective, Area.sized(Coord.of(getWidth(), getHeight()))));
+	    return(new LWJGLEnvironment(Area.sized(Coord.of(getWidth(), getHeight()))));
 	}
     }
 

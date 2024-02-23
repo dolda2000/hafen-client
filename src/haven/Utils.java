@@ -85,7 +85,25 @@ public class Utils {
 	}
     }
 
+    public static URI uri(String uri) {
+	try {
+	    return(new URI(uri));
+	} catch(URISyntaxException e) {
+	    throw(new IllegalArgumentException(uri, e));
+	}
+    }
+
+    public static URL url(String url) {
+	try {
+	    return(uri(url).toURL());
+	} catch(MalformedURLException e) {
+	    throw(new IllegalArgumentException(url, e));
+	}
+    }
+
     public static Path path(String path) {
+	if(path == null)
+	    return(null);
 	return(FileSystems.getDefault().getPath(path));
     }
 
@@ -426,12 +444,62 @@ public class Utils {
 	return(((Number)arg).intValue());
     }
 
+    public static long uiv(Object arg) {
+	return(uint32(iv(arg)));
+    }
+
     public static float fv(Object arg) {
 	return(((Number)arg).floatValue());
     }
 
     public static double dv(Object arg) {
 	return(((Number)arg).doubleValue());
+    }
+
+    public static boolean bv(Object arg) {
+	return(iv(arg) != 0);
+    }
+
+    /* Nested format: [[KEY, VALUE], [KEY, VALUE], ...] */
+    public static <K, V> Map<K, V> mapdecn(Object ob, Class<K> kt, Class<V> vt) {
+	Map<K, V> ret = new HashMap<>();
+	Object[] enc = (Object[])ob;
+	for(Object sob : enc) {
+	    Object[] ent = (Object[])sob;
+	    ret.put(kt.cast(ent[0]), vt.cast(ent[1]));
+	}
+	return(ret);
+    }
+    public static Map<Object, Object> mapdecn(Object ob) {
+	return(mapdecn(ob, Object.class, Object.class));
+    }
+    public static Object mapencn(Map<?, ?> map) {
+	Object[] ret = new Object[map.size()];
+	int a = 0;
+	for(Map.Entry<?, ?> ent : map.entrySet())
+	    ret[a++] = new Object[] {ent.getKey(), ent.getValue()};
+	return(ret);
+    }
+
+    /* Flat format: [KEY, VALUE, KEY, VALUE, ...] */
+    public static <K, V> Map<K, V> mapdecf(Object ob, Class<K> kt, Class<V> vt) {
+	Map<K, V> ret = new HashMap<>();
+	Object[] enc = (Object[])ob;
+	for(int a = 0; a < enc.length - 1; a += 2)
+	    ret.put(kt.cast(enc[a]), vt.cast(enc[a + 1]));
+	return(ret);
+    }
+    public static Map<Object, Object> mapdecf(Object ob) {
+	return(mapdecf(ob, Object.class, Object.class));
+    }
+    public static Object mapencf(Map<?, ?> map) {
+	Object[] ret = new Object[map.size() * 2];
+	int a = 0;
+	for(Map.Entry<?, ?> ent : map.entrySet()) {
+	    ret[a + 0] = ent.getKey();
+	    ret[a + 1] = ent.getValue();
+	}
+	return(ret);
     }
 
     public static int sb(int n, int b) {
@@ -1034,12 +1102,12 @@ public class Utils {
     public static Color contrast(Color col) {
 	int max = Math.max(col.getRed(), Math.max(col.getGreen(), col.getBlue()));
 	if(max > 128) {
-	    return(new Color(col.getRed() / 2, col.getGreen() / 2, col.getBlue() / 2, col.getAlpha()));
+	    return(new Color(col.getRed() / 4, col.getGreen() / 4, col.getBlue() / 4, col.getAlpha()));
 	} else if(max == 0) {
 	    return(Color.WHITE);
 	} else {
-	    int f = 128 / max;
-	    return(new Color(col.getRed() * f, col.getGreen() * f, col.getBlue() * f, col.getAlpha()));
+	    int f = 65025 / max;
+	    return(new Color((col.getRed() * f) / 255, (col.getGreen() * f) / 255, (col.getBlue() * f) / 255, col.getAlpha()));
 	}
     }
 
@@ -1213,6 +1281,10 @@ public class Utils {
 	    b = c;
 	}
 	return(a);
+    }
+
+    public static float smoothstep(float d) {
+	return(d * d * (3 - (2 * d)));
     }
 
     public static double smoothstep(double d) {
@@ -1677,27 +1749,20 @@ public class Utils {
 	return(buf.toString());
     }
 
-    public static URL urlparam(URL base, String... pars) {
-	/* Why is Java so horribly bad? */
-	String file = base.getFile();
-	int p = file.indexOf('?');
+    public static URI uriparam(URI base, String... pars) {
 	StringBuilder buf = new StringBuilder();
-	if(p >= 0) {
-	    /* For now, only add; don't augment. Since Java sucks. */
-	    buf.append('&');
-	} else {
-	    buf.append('?');
-	}
+	if(base.getQuery() != null)
+	    buf.append(base.getQuery());
 	for(int i = 0; i < pars.length; i += 2) {
-	    if(i > 0)
+	    if(buf.length() > 0)
 		buf.append('&');
 	    buf.append(urlencode(pars[i]));
 	    buf.append('=');
 	    buf.append(urlencode(pars[i + 1]));
 	}
 	try {
-	    return(new URL(base.getProtocol(), base.getHost(), base.getPort(), file + buf.toString()));
-	} catch(java.net.MalformedURLException e) {
+	    return(new URI(base.getScheme(), base.getAuthority(), base.getPath(), buf.toString(), base.getFragment()));
+	} catch(URISyntaxException e) {
 	    throw(new RuntimeException(e));
 	}
     }
@@ -1737,7 +1802,7 @@ public class Utils {
 	}
     }
 
-    public static class Range extends AbstractCollection<Integer> {
+    public static class Range extends AbstractList<Integer> {
 	public final int min, max, step;
 
 	public Range(int min, int max, int step) {
@@ -1750,28 +1815,17 @@ public class Utils {
 	    return(Math.max((max - min + step - 1) / step, 0));
 	}
 
-	public Iterator<Integer> iterator() {
-	    return(new Iterator<Integer>() {
-		    private int cur = min;
-
-		    public boolean hasNext() {
-			return((step > 0) ? (cur < max) : (cur > max));
-		    }
-
-		    public Integer next() {
-			if(!hasNext())
-			    throw(new NoSuchElementException());
-			int ret = cur;
-			cur += step;
-			return(ret);
-		    }
-		});
+	public Integer get(int idx) {
+	    int rv = min + (step * idx);
+	    if((rv < min) || (rv >= max))
+		throw(new NoSuchElementException());
+	    return(rv);
 	}
     }
 
-    public static Collection<Integer> range(int min, int max, int step) {return(new Range(min, max, step));}
-    public static Collection<Integer> range(int min, int max) {return(range(min, max, 1));}
-    public static Collection<Integer> range(int max) {return(range(0, max));}
+    public static List<Integer> range(int min, int max, int step) {return(new Range(min, max, step));}
+    public static List<Integer> range(int min, int max) {return(range(min, max, 1));}
+    public static List<Integer> range(int max) {return(range(0, max));}
 
     public static <T> Indir<T> cache(Indir<T> src) {
 	return(new Indir<T>() {
@@ -1784,6 +1838,23 @@ public class Utils {
 			has = true;
 		    }
 		    return(val);
+		}
+	    });
+    }
+
+    public static <V, R> Indir<R> transform(Supplier<? extends V> val, Function<? super V, ? extends R> xf) {
+	return(new Indir<R>() {
+		private V last;
+		private R res;
+		private boolean has = false;
+
+		public R get() {
+		    V v = val.get();
+		    if(!has || !Utils.eq(last, v)) {
+			res = xf.apply(v);
+			last = v;
+		    }
+		    return(res);
 		}
 	    });
     }

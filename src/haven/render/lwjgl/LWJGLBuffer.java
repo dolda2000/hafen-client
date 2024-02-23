@@ -32,12 +32,12 @@ import haven.render.gl.*;
 import org.lwjgl.system.*;
 
 public class LWJGLBuffer extends GLObject implements SysBuffer {
-    public static final boolean LEAK_CAUSE = false;
+    public static final boolean LEAK_CHECK = false;
     private ByteBuffer data;
     private final Cleanup clean;
 
     private static class Cleanup implements Finalizer.Cleaner, Disposable {
-	private final Throwable init = LEAK_CAUSE ? new Throwable() : null;
+	private final Throwable init = LEAK_CHECK ? new Throwable() : null;
 	private final ByteBuffer data;
 	private final Runnable fin;
 	private boolean clean;
@@ -48,7 +48,7 @@ public class LWJGLBuffer extends GLObject implements SysBuffer {
 	}
 
 	public void clean() {
-	    if(!clean)
+	    if(LEAK_CHECK && !clean)
 		new Warning(init , "LWJGL buffer leaked (" + data.capacity() + " bytes)").issue();
 	    MemoryUtil.memFree(data);
 	}
@@ -79,4 +79,6 @@ public class LWJGLBuffer extends GLObject implements SysBuffer {
 	data = null;
 	clean.dispose();
     }
+
+    protected boolean leakcheck() {return(false);}
 }

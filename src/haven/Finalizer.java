@@ -164,15 +164,13 @@ public class Finalizer {
 
     private static final Map<ThreadGroup, Finalizer> groups = new WeakHashMap<>();
     public static Finalizer get() {
-	return(AccessController.doPrivileged((PrivilegedAction<Finalizer>)() -> {
-		    ThreadGroup tg = Thread.currentThread().getThreadGroup();
-		    synchronized(groups) {
-			Finalizer ret = groups.get(tg);
-			if(ret == null)
-			    groups.put(tg, ret = new Finalizer(tgt -> new HackThread(tg, tgt, "Finalization thread")));
-			return(ret);
-		    }
-		}));
+	ThreadGroup tg = Thread.currentThread().getThreadGroup();
+	synchronized(groups) {
+	    Finalizer ret = groups.get(tg);
+	    if(ret == null)
+		groups.put(tg, ret = new Finalizer(tgt -> new HackThread(tg, tgt, "Finalization thread")));
+	    return(ret);
+	}
     }
 
     public static Runnable finalize(Object x, Cleaner action) {

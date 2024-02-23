@@ -32,6 +32,11 @@ import haven.render.*;
 public class SprDrawable extends Drawable {
     public final Sprite spr;
 
+    public SprDrawable(Gob gob, Sprite.Mill<?> mk) {
+	super(gob);
+	this.spr = mk.create(gob);
+    }
+
     public SprDrawable(Gob gob, Sprite spr) {
 	super(gob);
 	this.spr = spr;

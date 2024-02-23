@@ -68,9 +68,13 @@ public class Inventory extends Widget implements DTarget {
 	int mo = 0;
 	for(c.y = 0; c.y < isz.y; c.y++) {
 	    for(c.x = 0; c.x < isz.x; c.x++) {
-		if((sqmask != null) && sqmask[mo++])
-		    continue;
-		g.image(invsq, c.mul(sqsz));
+		if((sqmask != null) && sqmask[mo++]) {
+		    g.chcolor(64, 64, 64, 255);
+		    g.image(invsq, c.mul(sqsz));
+		    g.chcolor();
+		} else {
+		    g.image(invsq, c.mul(sqsz));
+		}
 	    }
 	}
 	super.draw(g);

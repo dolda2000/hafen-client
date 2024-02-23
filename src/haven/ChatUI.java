@@ -35,7 +35,7 @@ import java.awt.font.TextHitInfo;
 import java.awt.image.BufferedImage;
 import java.text.*;
 import java.text.AttributedCharacterIterator.Attribute;
-import java.net.URL;
+import java.net.URI;
 import java.util.regex.*;
 import java.io.IOException;
 import java.awt.datatransfer.*;
@@ -79,19 +79,6 @@ public class ChatUI extends Widget {
 	public static final Attribute HYPERLINK = new ChatAttribute("hyperlink");
     }
 
-    public static class FuckMeGentlyWithAChainsaw {
-	/* This wrapper class exists to work around the possibly most
-	 * stupid Java bug ever (and that's saying a lot): That
-	 * URL.equals and URL.hashCode do DNS lookups and
-	 * block. Which, of course, not only sucks performance-wise
-	 * but also breaks actual correct URL equality. */
-	public final URL url;
-
-	public FuckMeGentlyWithAChainsaw(URL url) {
-	    this.url = url;
-	}
-    }
-
     public static class ChatParser extends RichText.Parser {
 	public static final Pattern urlpat = Pattern.compile("\\b((https?://)|(www\\.[a-z0-9_.-]+\\.[a-z0-9_.-]+))[a-z0-9/_.~#%+?&:*=-]*", Pattern.CASE_INSENSITIVE);
 	public static final Map<? extends Attribute, ?> urlstyle = RichText.fillattrs(TextAttribute.FOREGROUND, new Color(64, 64, 255),
@@ -108,13 +95,13 @@ public class ChatUI extends Widget {
 		Matcher m = urlpat.matcher(text);
 		if(!m.find(p))
 		    break;
-		URL url;
+		URI uri;
 		try {
 		    String su = text.substring(m.start(), m.end());
 		    if(su.indexOf(':') < 0)
 			su = "http://" + su;
-		    url = new URL(su);
-		} catch(java.net.MalformedURLException e) {
+		    uri = Utils.uri(su);
+		} catch(IllegalArgumentException e) {
 		    p = m.end();
 		    continue;
 		}
@@ -122,7 +109,7 @@ public class ChatUI extends Widget {
 		if(ret == null) ret = lead; else ret.append(lead);
 		Map<Attribute, Object> na = new HashMap<Attribute, Object>(attrs);
 		na.putAll(urlstyle);
-		na.put(ChatAttribute.HYPERLINK, new FuckMeGentlyWithAChainsaw(url));
+		na.put(ChatAttribute.HYPERLINK, uri);
 		ret.append(new RichText.TextPart(text.substring(m.start(), m.end()), na));
 		p = m.end();
 	    }
@@ -657,10 +644,12 @@ public class ChatUI extends Widget {
 	protected void clicked(CharPos pos) {
 	    AttributedCharacterIterator inf = pos.part.ti();
 	    inf.setIndex(pos.ch.getCharIndex() + pos.part.start);
-	    FuckMeGentlyWithAChainsaw url = (FuckMeGentlyWithAChainsaw)inf.getAttribute(ChatAttribute.HYPERLINK);
-	    if((url != null) && (WebBrowser.self != null)) {
+	    URI uri = (URI)inf.getAttribute(ChatAttribute.HYPERLINK);
+	    if(uri != null) {
 		try {
-		    WebBrowser.self.show(url.url);
+		    WebBrowser.sshow(uri.toURL());
+		} catch(java.net.MalformedURLException e) {
+		    getparent(GameUI.class).error("Could not follow link.");
 		} catch(WebBrowser.BrowserException e) {
 		    getparent(GameUI.class).error("Could not launch web browser.");
 		}

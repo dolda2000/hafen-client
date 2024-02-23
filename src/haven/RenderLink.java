@@ -146,12 +146,30 @@ public interface RenderLink {
 	}
     }
 
+    public static class ResSprite implements RenderLink {
+	public final Indir<Resource> res;
+
+	public ResSprite(Indir<Resource> res) {
+	    this.res = res;
+	}
+
+	public static ResSprite parse(Resource res, Message buf) {
+	    String nm = buf.string();
+	    int ver = buf.uint16();
+	    return(new ResSprite(res.pool.load(nm, ver)));
+	}
+
+	public Node make(Owner owner) {
+	    return(Sprite.create(owner, res.get(), Message.nil));
+	}
+    }
+
     public static class Parameters implements RenderLink {
 	public final Resource from;
 	public final Indir<Resource> res;
 	public final Object[] args;
 	private Resource lres;
-	private ArgLink link = null;
+	private RenderLink link = null;
 
 	public Parameters(Resource from, Indir<Resource> res, Object[] args) {
 	    this.from = from;
@@ -168,11 +186,15 @@ public interface RenderLink {
 
 	public Node make(Owner owner) {
 	    if(link == null) {
-		if(lres == null)
-		    lres = res.get();
-		link = lres.getcode(ArgLink.class, true);
+		synchronized(this) {
+		    if(link == null) {
+			if(lres == null)
+			    lres = res.get();
+			link = lres.getcode(ArgLink.class, true).parse(from, args);
+		    }
+		}
 	    }
-	    return(link.create(owner, from, args));
+	    return(link.make(owner));
 	}
     }
 
@@ -180,6 +202,26 @@ public interface RenderLink {
 	public ArgMaker() {
 	    super(ArgLink.class);
 	    add(new Direct<>(ArgLink.class));
+	    add(new StaticCall<>(ArgLink.class, "mkrlink", RenderLink.class, new Class<?>[] {Resource.class, Object[].class},
+				 (make) -> new ArgLink() {
+					 @Override public RenderLink parse(Resource res, Object... args) {
+					     return(make.apply(new Object[] {res, args}));
+					 }
+
+					 public Node create(Owner owner, Resource res, Object... args) {
+					     throw(new RuntimeException("unimplemented ArgLink.create() called"));
+					 }
+				     }));
+	    add(new Construct<>(ArgLink.class, RenderLink.class, new Class<?>[] {Resource.class, Object[].class},
+				(cons) -> new ArgLink() {
+					@Override public RenderLink parse(Resource res, Object... args) {
+					    return(cons.apply(new Object[] {res, args}));
+					}
+
+					public Node create(Owner owner, Resource res, Object... args) {
+					    throw(new RuntimeException("unimplemented ArgLink.create() called"));
+					}
+				    }));
 	    add(new StaticCall<>(ArgLink.class, "mkrlink", Node.class, new Class<?>[] {Owner.class, Resource.class, Object[].class},
 				 (make) -> (owner, res, args) -> make.apply(new Object[] {owner, res, args})));
 	    add(new Construct<>(ArgLink.class, Node.class, new Class<?>[] {Owner.class, Resource.class, Object[].class},
@@ -189,6 +231,10 @@ public interface RenderLink {
 
     @Resource.PublishedCode(name = "rlink", instancer = ArgMaker.class)
     public interface ArgLink {
+	public default RenderLink parse(Resource res, Object... args) {
+	    return(owner -> this.create(owner, res, args));
+	}
+	@Deprecated
 	public Node create(Owner owner, Resource res, Object... args);
     }
 
@@ -218,6 +264,8 @@ public interface RenderLink {
 		l = Collect.parse(res, buf);
 	    } else if(t == 3) {
 		l = Parameters.parse(res, buf);
+	    } else if(t == 4) {
+		l = ResSprite.parse(res, buf);
 	    } else {
 		throw(new Resource.LoadException("Invalid renderlink type: " + t, res));
 	    }

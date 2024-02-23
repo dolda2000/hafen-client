@@ -26,7 +26,7 @@
 
 package haven;
 
-import java.net.URL;
+import java.net.URI;
 import java.io.PrintStream;
 import java.util.Properties;
 import java.util.function.*;
@@ -95,14 +95,10 @@ public class Config {
 	return(Utils.path(p));
     }
 
-    public static final URL parseurl(String url) {
+    public static final URI parseuri(String url) {
 	if((url == null) || url.equals(""))
 	    return(null);
-	try {
-	    return(new URL(url));
-	} catch(java.net.MalformedURLException e) {
-	    throw(new RuntimeException(e));
-	}
+	return(Utils.uri(url));
     }
 
     public static void parsesvcaddr(String spec, Consumer<String> host, Consumer<Integer> port) {
@@ -185,11 +181,11 @@ public class Config {
 	public static Variable<byte[]> propb(String name, byte[] defval) {
 	    return(prop(name, Utils::hex2byte, () -> defval));
 	}
-	public static Variable<URL> propu(String name, URL defval) {
-	    return(prop(name, Config::parseurl, () -> defval));
+	public static Variable<URI> propu(String name, URI defval) {
+	    return(prop(name, Config::parseuri, () -> defval));
 	}
-	public static Variable<URL> propu(String name, String defval) {
-	    return(propu(name, parseurl(defval)));
+	public static Variable<URI> propu(String name, String defval) {
+	    return(propu(name, parseuri(defval)));
 	}
 	public static Variable<Path> propp(String name, Path defval) {
 	    return(prop(name, Config::parsepath, () -> defval));
@@ -247,8 +243,8 @@ public class Config {
 		break;
 	    case 'U':
 		try {
-		    Resource.resurl.set(new URL(opt.arg));
-		} catch(java.net.MalformedURLException e) {
+		    Resource.resurl.set(Utils.uri(opt.arg));
+		} catch(IllegalArgumentException e) {
 		    System.err.println(e);
 		    System.exit(1);
 		}

@@ -138,10 +138,6 @@ public class Composite extends Drawable implements EquipTarget {
     public Resource getres() {
 	return(baseres);
     }
-    
-    public Pose getpose() {
-	return(comp.pose);
-    }
 
     public Supplier<Pipe.Op> eqpoint(String nm, Message dat) {
 	Skeleton.BoneOffset bo = baseres.layer(Skeleton.BoneOffset.class, nm);

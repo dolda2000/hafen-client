@@ -29,6 +29,7 @@ package haven;
 public class Scrollbar extends Widget {
     public static final Tex schain = Resource.loadtex("gfx/hud/schain");
     public static final Tex sflarp = Resource.loadtex("gfx/hud/sflarp");
+    public static final int chcut = UI.scale(7);
     public static final int width = sflarp.sz().x;
     public Scrollable ctl;
     public int val, min, max;
@@ -62,8 +63,10 @@ public class Scrollbar extends Widget {
 	}
 	if(vis()) {
 	    int cx = (sflarp.sz().x / 2) - (schain.sz().x / 2);
-	    for(int y = 0; y < sz.y; y += schain.sz().y - 1)
-		g.image(schain, new Coord(cx, y));
+	    int eh = sz.y + chcut, ch = schain.sz().y;
+	    int n = Math.max((eh + ch - 1) / ch, 2);
+	    for(int i = 0; i < n; i++)
+		g.image(schain, Coord.of(cx, ((eh - ch) * i) / (n - 1)));
 	    double a = (double)val / (double)(max - min);
 	    int fy = (int)((sz.y - sflarp.sz().y) * a);
 	    g.image(sflarp, new Coord(0, fy));

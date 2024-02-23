@@ -95,6 +95,14 @@ public class FColor {
 			  (this.a * A) + (that.a * B)));
     }
 
+    public FColor preblend(FColor that) {
+	float ac = this.a + that.a - (this.a * that.a);
+	return(new FColor((((that.r * that.a) - (this.r * that.a)) / ac) + this.r,
+			  (((that.g * that.a) - (this.g * that.a)) / ac) + this.g,
+			  (((that.b * that.a) - (this.b * that.a)) / ac) + this.b,
+			  ac));
+    }
+
     public int hashCode() {
 	return(((((((Float.floatToIntBits(r)) * 31) +
 		   Float.floatToIntBits(g)) * 31) +
@@ -121,5 +129,22 @@ public class FColor {
     public FColor srgb2lin() {
 	float F = 2.2f;
 	return(new FColor((float)Math.pow(r, F), (float)Math.pow(g, F), (float)Math.pow(b, F), a));
+    }
+
+    /* These treat the color as a combination of a "pure color" (with
+     * maximum component == 1.0) and a multiplicative factor, and
+     * convert only the pure color, leaving the factor constant. */
+    public FColor lin2srgbf() {
+	float F = 1.0f / 2.2f, m = Math.max(Math.max(r, g), b), M = 1.0f / m;
+	if(m == 0)
+	    return(new FColor(0, 0, 0, a));
+	return(new FColor((float)Math.pow(r * M, F) * m, (float)Math.pow(g * M, F) * m, (float)Math.pow(b * M, F) * m, a));
+    }
+
+    public FColor srgb2linf() {
+	float F = 2.2f, m = Math.max(Math.max(r, g), b), M = 1.0f / m;
+	if(m == 0)
+	    return(new FColor(0, 0, 0, a));
+	return(new FColor((float)Math.pow(r * M, F) * m, (float)Math.pow(g * M, F) * m, (float)Math.pow(b * M, F) * m, a));
     }
 }

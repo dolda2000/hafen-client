@@ -40,7 +40,7 @@ import javax.imageio.*;
 import java.awt.image.BufferedImage;
 
 public class Resource implements Serializable {
-    public static final Config.Variable<URL> resurl = Config.Variable.propu("haven.resurl", "");
+    public static final Config.Variable<URI> resurl = Config.Variable.propu("haven.resurl", "");
     public static final Config.Variable<Path> resdir = Config.Variable.propp("haven.resdir", System.getenv("HAFEN_RESDIR"));
     private static ResCache prscache;
     public static ThreadGroup loadergroup = null;
@@ -132,6 +132,18 @@ public class Resource implements Serializable {
 
     public static interface Resolver {
 	public Indir<Resource> getres(int id);
+
+	public default Indir<Resource> getresv(Object desc) {
+	    if(desc == null)
+		return(null);
+	    if(desc instanceof Number) {
+		int id = ((Number)desc).intValue();
+		if(id < 0)
+		    return(null);
+		return(this.getres(((Number)desc).intValue()));
+	    }
+	    throw(new ClassCastException("unknown type for resource id: " + desc));
+	}
 
 	public class ResourceMap implements Resource.Resolver {
 	    public final Resource.Resolver bk;
@@ -313,7 +325,7 @@ public class Resource implements Serializable {
     public static class HttpSource implements ResSource, Serializable {
 	public static final String USER_AGENT;
 	private final transient SslHelper ssl;
-	public URL baseurl;
+	public URI base;
 
 	static {
 	    StringBuilder buf = new StringBuilder();
@@ -338,22 +350,22 @@ public class Resource implements Serializable {
 	    ssl.ignoreName();
 	}
 	
-	public HttpSource(URL baseurl) {
-	    this.baseurl = baseurl;
+	public HttpSource(URI base) {
+	    this.base = base;
 	}
 		
-	private URL encodeurl(URL raw) throws IOException {
-	    /* This is "kinda" ugly. It is, actually, how the Java
-	     * documentation recommend that it be done, though... */
+	private URI encodeuri(URI raw) throws IOException {
+	    /* This is kinda crazy, but it is, actually, how the Java
+	     * documentation recommends that it be done... */
 	    try {
-		return(new URL(new URI(raw.getProtocol(), raw.getHost(), raw.getPath(), raw.getRef()).toASCIIString()));
+		return(new URI(new URI(raw.getScheme(), raw.getAuthority(), raw.getPath(), raw.getFragment()).toASCIIString()));
 	    } catch(URISyntaxException e) {
 		throw(new IOException(e));
 	    }
 	}
 
 	public InputStream get(String name) throws IOException {
-	    URL resurl = encodeurl(new URL(baseurl, name + ".res"));
+	    URL resurl = encodeuri(base.resolve(name + ".res")).toURL();
 	    RetryingInputStream ret = new RetryingInputStream() {
 		    protected InputStream create() throws IOException {
 			URLConnection c;
@@ -374,7 +386,7 @@ public class Resource implements Serializable {
 	}
 
 	public String toString() {
-	    return("HTTP res source (" + baseurl + ")");
+	    return("HTTP res source (" + base + ")");
 	}
     }
 
@@ -669,11 +681,7 @@ public class Resource implements Serializable {
 	    synchronized(loaders) {
 		while(loaders.size() < Math.min(nloaders, qsz)) {
 		    final Loader n = new Loader();
-		    Thread th = AccessController.doPrivileged(new PrivilegedAction<Thread>() {
-			    public Thread run() {
-				return(new HackThread(loadergroup, n, "Haven resource loader"));
-			    }
-			});
+		    Thread th = new HackThread(loadergroup, n, "Haven resource loader");
 		    th.setDaemon(true);
 		    th.start();
 		    while(!n.added) {
@@ -832,8 +840,8 @@ public class Resource implements Serializable {
 	return(_remote);
     }
 
-    public static void addurl(URL url) {
-	ResSource src = new HttpSource(url);
+    public static void addurl(URI uri) {
+	ResSource src = new HttpSource(uri);
 	if(prscache != null) {
 	    class Caching extends TeeSource {
 		private final transient ResCache cache;
@@ -936,7 +944,8 @@ public class Resource implements Serializable {
     }
 
     public static void addltype(String name, LayerFactory<?> cons) {
-	ltypes.put(name, cons);
+	if(ltypes.put(name, cons) != null)
+	   Warning.warn("duplicated layer name: " + name);
     }
     
     public static <T extends Layer> void addltype(String name, Class<T> cl) {
@@ -976,26 +985,10 @@ public class Resource implements Serializable {
     }
 
     public static BufferedImage readimage(InputStream fp) throws IOException {
-	try {
-	    /* This can crash if not privileged due to ImageIO
-	     * creating tempfiles without doing that privileged
-	     * itself. It can very much be argued that this is a bug
-	     * in ImageIO. */
-	    return(AccessController.doPrivileged(new PrivilegedExceptionAction<BufferedImage>() {
-		    public BufferedImage run() throws IOException {
-			BufferedImage ret;
-			ret = ImageIO.read(fp);
-			if(ret == null)
-			    throw(new ImageReadException());
-			return(ret);
-		    }
-		}));
-	} catch(PrivilegedActionException e) {
-	    Throwable c = e.getCause();
-	    if(c instanceof IOException)
-		throw((IOException)c);
-	    throw(new AssertionError(c));
-	}
+	BufferedImage ret = ImageIO.read(fp);
+	if(ret == null)
+	    throw(new ImageReadException());
+	return(ret);
     }
 
     @LayerName("image")
@@ -1020,6 +1013,7 @@ public class Resource implements Serializable {
 	    id = buf.int16();
 	    o = cdec(buf);
 	    so = UI.scale(o);
+	    boolean hasscale = false;
 	    Map<String, byte[]> kvdata = new HashMap<>();
 	    if((fl & 4) != 0) {
 		while(true) {
@@ -1035,6 +1029,7 @@ public class Resource implements Serializable {
 			tsz = val.coord();
 		    } else if(key.equals("scale")) {
 			scale = val.float32();
+			hasscale = true;
 		    } else {
 			kvdata.put(key, data);
 		    }
@@ -1058,6 +1053,8 @@ public class Resource implements Serializable {
 		so = new Coord(Math.min(so.x, tsz.x - ssz.x), Math.min(so.y, sz.y - ssz.y));
 	    }
 	    scaled = PUtils.uiscale(img, ssz);
+	    if(false && !hasscale)
+		scaled = PUtils.monochromize(PUtils.coercergba(scaled), java.awt.Color.RED);
 	}
 
 	public BufferedImage scaled() {
@@ -1576,21 +1573,17 @@ public class Resource implements Serializable {
 	public ClassLoader loader() {
 	    synchronized(CodeEntry.this) {
 		if(this.loader == null) {
-		    this.loader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-			    public ClassLoader run() {
-				ClassLoader ret = Resource.class.getClassLoader();
-				if(classpath.size() > 0) {
-				    Collection<ClassLoader> loaders = new LinkedList<ClassLoader>();
-				    for(Indir<Resource> res : classpath) {
-					loaders.add(res.get().flayer(CodeEntry.class).loader());
-				    }
-				    ret = new LibClassLoader(ret, loaders);
-				}
-				if(clmap.size() > 0)
-				    ret = new ResClassLoader(ret, CodeEntry.this);
-				return(ret);
-			    }
-			});
+		    ClassLoader loader = Resource.class.getClassLoader();
+		    if(classpath.size() > 0) {
+			Collection<ClassLoader> loaders = new LinkedList<ClassLoader>();
+			for(Indir<Resource> res : classpath) {
+			    loaders.add(res.get().flayer(CodeEntry.class).loader());
+			}
+			loader = new LibClassLoader(loader, loaders);
+		    }
+		    if(clmap.size() > 0)
+			loader = new ResClassLoader(loader, CodeEntry.this);
+		    this.loader = loader;
 		}
 	    }
 	    return(this.loader);
@@ -1646,18 +1639,16 @@ public class Resource implements Serializable {
 		    if(acl == null)
 			return(null);
 		    Object[] args = pa.getOrDefault(entry.name(), new Object[0]);
-		    inst = AccessController.doPrivileged((PrivilegedAction<Object>)() -> {
-			    PublishedCode.Instancer<?> mk;
-			    synchronized(PublishedCode.instancers) {
-				mk = PublishedCode.instancers.computeIfAbsent(entry, k -> {
-					if(k.instancer() == PublishedCode.Instancer.class)
-					    return(PublishedCode.Instancer.simple);
-					else
-					    return(Utils.construct(k.instancer()));
-				    });
-			    }
-			    return(mk.make(acl, Resource.this, args));
-			});
+		    PublishedCode.Instancer<?> mk;
+		    synchronized(PublishedCode.instancers) {
+			mk = PublishedCode.instancers.computeIfAbsent(entry, k -> {
+				if(k.instancer() == PublishedCode.Instancer.class)
+				    return(PublishedCode.Instancer.simple);
+				else
+				    return(Utils.construct(k.instancer()));
+			    });
+		    }
+		    inst = mk.make(acl, Resource.this, args);
 		    ipe.put(entry.name(), inst);
 		}
 		try {
@@ -1674,22 +1665,18 @@ public class Resource implements Serializable {
     }
 
     public static Resource classres(final Class<?> cl) {
-	return(AccessController.doPrivileged(new PrivilegedAction<Resource>() {
-		    public Resource run() {
-			ClassLoader l = cl.getClassLoader();
-			if(l instanceof ResClassLoader)
-			    return(((ResClassLoader)l).getres());
-			FromResource src = ResClassLoader.getsource(cl);
-			if(src != null) {
-			    /* XXX? This feels like a hack, but I can't think of
-			     * any better way to let resource code that has been
-			     * downloaded with `get-code' reference data in its
-			     * originating resource. */
-			    return(remote().loadwait(src.name(), src.version()));
-			}
-			throw(new RuntimeException("Cannot fetch resource of non-resloaded class " + cl));
-		    }
-		}));
+	ClassLoader l = cl.getClassLoader();
+	if(l instanceof ResClassLoader)
+	    return(((ResClassLoader)l).getres());
+	FromResource src = ResClassLoader.getsource(cl);
+	if(src != null) {
+	    /* XXX? This feels like a hack, but I can't think of
+	     * any better way to let resource code that has been
+	     * downloaded with `get-code' reference data in its
+	     * originating resource. */
+	    return(remote().loadwait(src.name(), src.version()));
+	}
+	throw(new RuntimeException("Cannot fetch resource of non-resloaded class " + cl));
     }
 
     public <T> T getcode(Class<T> cl, boolean fail) {
@@ -2012,7 +1999,7 @@ public class Resource implements Serializable {
     }
 
     public static void cmd_getcode(String[] args) {
-	URL url = null;
+	URI url = null;
 	PosixArgs opt = PosixArgs.getopt(args, "hqo:U:");
 	if(opt == null) {
 	    usage_getcode(System.err);
@@ -2034,8 +2021,8 @@ public class Resource implements Serializable {
 		break;
 	    case 'U':
 		try {
-		    url = new URL(opt.arg);
-		} catch(MalformedURLException e) {
+		    url = Utils.uri(opt.arg);
+		} catch(IllegalArgumentException e) {
 		    System.err.println("get-code: malformed url: " + opt.arg);
 		    System.exit(1);
 		}
@@ -2131,7 +2118,7 @@ public class Resource implements Serializable {
     }
 
     public static void cmd_findupdates(String[] args) {
-	URL url = null;
+	URI url = null;
 	PosixArgs opt = PosixArgs.getopt(args, "hU:");
 	if(opt == null) {
 	    usage_findupdates(System.err);
@@ -2145,8 +2132,8 @@ public class Resource implements Serializable {
 		break;
 	    case 'U':
 		try {
-		    url = new URL(opt.arg);
-		} catch(MalformedURLException e) {
+		    url = Utils.uri(opt.arg);
+		} catch(IllegalArgumentException e) {
 		    System.err.println("get-code: malformed url: " + opt.arg);
 		    System.exit(1);
 		}

@@ -70,34 +70,102 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
     public final Map<Integer, String> polowners = new HashMap<Integer, String>();
     public Bufflist buffs;
 
-    private static final OwnerContext.ClassResolver<BeltSlot> beltctxr = new OwnerContext.ClassResolver<BeltSlot>()
+    public static abstract class BeltSlot {
+	public final int idx;
+
+	public BeltSlot(int idx) {
+	    this.idx = idx;
+	}
+
+	public abstract void draw(GOut g);
+	public abstract void use(MenuGrid.Interaction iact);
+    }
+
+    private static final OwnerContext.ClassResolver<ResBeltSlot> beltctxr = new OwnerContext.ClassResolver<ResBeltSlot>()
 	.add(GameUI.class, slot -> slot.wdg())
 	.add(Glob.class, slot -> slot.wdg().ui.sess.glob)
 	.add(Session.class, slot -> slot.wdg().ui.sess);
-    public class BeltSlot implements GSprite.Owner {
-	public final int idx, lst;
-	public final Indir<Resource> res;
-	public final Message sdt;
+    public class ResBeltSlot extends BeltSlot implements GSprite.Owner {
+	public final ResData rdt;
 
-	public BeltSlot(int idx, Indir<Resource> res, Message sdt, int lst) {
-	    this.idx = idx;
-	    this.res = res;
-	    this.sdt = sdt;
-	    this.lst = lst;
+	public ResBeltSlot(int idx, ResData rdt) {
+	    super(idx);
+	    this.rdt = rdt;
 	}
 
 	private GSprite spr = null;
 	public GSprite spr() {
 	    GSprite ret = this.spr;
 	    if(ret == null)
-		ret = this.spr = GSprite.create(this, res.get(), new MessageBuf(sdt));
+		ret = this.spr = GSprite.create(this, rdt.res.get(), new MessageBuf(rdt.sdt));
 	    return(ret);
 	}
 
-	public Resource getres() {return(res.get());}
+	public void draw(GOut g) {
+	    try {
+		spr().draw(g);
+	    } catch(Loading l) {}
+	}
+
+	public void use(MenuGrid.Interaction iact) {
+	    Object[] args = {idx, iact.btn, iact.modflags};
+	    if(iact.mc != null) {
+		args = Utils.extend(args, iact.mc.floor(OCache.posres));
+		if(iact.click != null)
+		    args = Utils.extend(args, iact.click.clickargs());
+	    }
+	    GameUI.this.wdgmsg("belt", args);
+	}
+
+	public Resource getres() {return(rdt.res.get());}
 	public Random mkrandoom() {return(new Random(System.identityHashCode(this)));}
 	public <T> T context(Class<T> cl) {return(beltctxr.context(cl, this));}
 	private GameUI wdg() {return(GameUI.this);}
+    }
+
+    public static class PagBeltSlot extends BeltSlot {
+	public final MenuGrid.Pagina pag;
+
+	public PagBeltSlot(int idx, MenuGrid.Pagina pag) {
+	    super(idx);
+	    this.pag = pag;
+	}
+
+	public void draw(GOut g) {
+	    try {
+		MenuGrid.PagButton btn = pag.button();
+		btn.draw(g, btn.spr());
+	    } catch(Loading l) {
+	    }
+	}
+
+	public void use(MenuGrid.Interaction iact) {
+	    try {
+		pag.scm.use(pag.button(), iact, false);
+	    } catch(Loading l) {
+	    }
+	}
+
+	public static MenuGrid.Pagina resolve(MenuGrid scm, Indir<Resource> resid) {
+	    Resource res = resid.get();
+	    Resource.AButton act = res.layer(Resource.action);
+	    /* XXX: This is quite a hack. Is there a better way? */
+	    if((act != null) && (act.ad.length == 0))
+		return(scm.paginafor(res.indir()));
+	    return(scm.paginafor(resid));
+	}
+    }
+
+    /* XXX: Remove me */
+    public BeltSlot mkbeltslot(int idx, ResData rdt) {
+	Resource res = rdt.res.get();
+	Resource.AButton act = res.layer(Resource.action);
+	if(act != null) {
+	    if(act.ad.length == 0)
+		return(new PagBeltSlot(idx, menu.paginafor(res.indir())));
+	    return(new PagBeltSlot(idx, menu.paginafor(rdt.res)));
+	}
+	return(new ResBeltSlot(idx, rdt));
     }
 
     public abstract class Belt extends Widget implements DTarget, DropTarget {
@@ -106,44 +174,8 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	}
 
 	public void act(int idx, MenuGrid.Interaction iact) {
-	    BeltSlot slot = belt[idx];
-	    boolean local = false;
-	    Resource res = null;
-	    if(slot != null) {
-		if(slot.lst == 1) {
-		    local = true;
-		} else if(slot.lst < 0) {
-		    try {
-			res = slot.res.get();
-			local = res.layer(Resource.action) != null;
-		    } catch(Loading l) {
-		    }
-		}
-	    }
-	    if(local && (menu != null)) {
-		if(res != null) {
-		    MenuGrid.Pagina pag;
-		    /* XXX: This is a hack. The pagina system needs to be remade. */
-		    if(res != null)
-			pag = menu.paginafor(res.indir());
-		    else
-			pag = menu.paginafor(slot.res);
-		    try {
-			MenuGrid.PagButton btn = pag.button();
-			menu.use(btn, iact, false);
-		    } catch(Loading l) {
-		    }
-		}
-	    } else {
-		Object[] args = {idx, iact.btn, iact.modflags};
-		if(iact.mc != null) {
-		    args = Utils.extend(args, iact.mc.floor(OCache.posres));
-		    if(iact.click != null)
-			args = Utils.extend(args, iact.click.clickargs());
-		}
-		GameUI.this.wdgmsg("belt", args);
-		return;
-	    }
+	    if(belt[idx] != null)
+		belt[idx].use(iact);
 	}
 
 	public void keyact(int slot) {
@@ -192,12 +224,16 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	public boolean dropthing(Coord c, Object thing) {
 	    int slot = beltslot(c);
 	    if(slot != -1) {
-		if(thing instanceof Resource) {
-		    Resource res = (Resource)thing;
-		    if(res.layer(Resource.action) != null) {
-			GameUI.this.wdgmsg("setbelt", slot, res.name);
-			return(true);
+		if(thing instanceof MenuGrid.Pagina) {
+		    MenuGrid.Pagina pag = (MenuGrid.Pagina)thing;
+		    try {
+			if(pag.id instanceof Indir)
+			    GameUI.this.wdgmsg("setbelt", slot, pag.res().name);
+			else
+			    GameUI.this.wdgmsg("setbelt", slot, "pag", pag.id);
+		    } catch(Loading l) {
 		    }
+		    return(true);
 		}
 	    }
 	    return(false);
@@ -756,12 +792,8 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		mapfile = null;
 	    }
 	    ResCache mapstore = ResCache.global;
-	    if(MapFile.mapbase.get() != null) {
-		try {
-		    mapstore = HashDirCache.get(MapFile.mapbase.get().toURI());
-		} catch(java.net.URISyntaxException e) {
-		}
-	    }
+	    if(MapFile.mapbase.get() != null)
+		mapstore = HashDirCache.get(MapFile.mapbase.get());
 	    if(mapstore != null) {
 		MapFile file;
 		try {
@@ -1003,9 +1035,9 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	}
     }
     
-    private String iconconfname() {
+    private String iconconfname(String ver) {
 	StringBuilder buf = new StringBuilder();
-	buf.append("data/mm-icons");
+	buf.append("data/mm-icons" + ver);
 	if(genus != null)
 	    buf.append("/" + genus);
 	if(ui.sess != null)
@@ -1017,22 +1049,29 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	if(ResCache.global == null)
 	    return(new GobIcon.Settings());
 	try {
-	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(iconconfname()))) {
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(iconconfname("-2")))) {
 		return(GobIcon.Settings.load(fp));
 	    }
 	} catch(java.io.FileNotFoundException e) {
-	    return(new GobIcon.Settings());
 	} catch(Exception e) {
 	    new Warning(e, "failed to load icon-conf").issue();
-	    return(new GobIcon.Settings());
 	}
+	try {
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(iconconfname("")))) {
+		return(GobIcon.Settings.loadold(fp));
+	    }
+	} catch(java.io.FileNotFoundException e) {
+	} catch(Exception e) {
+	    new Warning(e, "failed to load old icon-conf").issue();
+	}
+	return(new GobIcon.Settings());
     }
 
     public void saveiconconf() {
 	if(ResCache.global == null)
 	    return;
 	try {
-	    try(StreamMessage fp = new StreamMessage(ResCache.global.store(iconconfname()))) {
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.store(iconconfname("-2")))) {
 		iconconf.save(fp);
 	    }
 	} catch(Exception e) {
@@ -1052,7 +1091,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 
 	public boolean clickmarker(DisplayMarker mark, Location loc, int button, boolean press) {
 	    if(mark.m instanceof MapFile.SMarker) {
-		Gob gob = MarkerID.find(ui.sess.glob.oc, ((MapFile.SMarker)mark.m).oid);
+		Gob gob = MarkerID.find(ui.sess.glob.oc, (MapFile.SMarker)mark.m);
 		if(gob != null)
 		    mvclick(map, null, loc, gob, button);
 	    }
@@ -1182,10 +1221,38 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		Message sdt = Message.nil;
 		if(args.length > 2)
 		    sdt = new MessageBuf((byte[])args[2]);
-		int lst = -1;
-		if(args.length > 3)
-		    lst = (Integer)args[3];
-		belt[slot] = new BeltSlot(slot, res, sdt, lst);
+		ResData rdt = new ResData(res, sdt);
+		ui.sess.glob.loader.defer(() -> {
+			belt[slot] = mkbeltslot(slot, rdt);
+		    }, null);
+	    }
+	} else if(msg == "setbelt2") {
+	    int slot = Utils.iv(args[0]);
+	    if(args.length < 2) {
+		belt[slot] = null;
+	    } else {
+		switch((String)args[1]) {
+		case "p": {
+		    Object id = args[2];
+		    belt[slot] = new PagBeltSlot(slot, menu.paginafor(id, null));
+		    break;
+		}
+		case "r": {
+		    Indir<Resource> res = ui.sess.getresv(args[2]);
+		    ui.sess.glob.loader.defer(() -> {
+			    belt[slot] = new PagBeltSlot(slot, PagBeltSlot.resolve(menu, res));
+			}, null);
+		    break;
+		}
+		case "d": {
+		    Indir<Resource> res = ui.sess.getresv(args[2]);
+		    Message sdt = Message.nil;
+		    if(args.length > 2)
+			sdt = new MessageBuf((byte[])args[3]);
+		    belt[slot] = new ResBeltSlot(slot, new ResData(res, sdt));
+		    break;
+		}
+		}
 	    }
 	} else if(msg == "polowner") {
 	    int id = (Integer)args[0];
@@ -1564,7 +1631,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		g.image(invsq, beltc(i));
 		try {
 		    if(belt[slot] != null)
-			belt[slot].spr().draw(g.reclip(c.add(UI.scale(1), UI.scale(1)), invsq.sz().sub(UI.scale(2), UI.scale(2))));
+			belt[slot].draw(g.reclip(c.add(UI.scale(1), UI.scale(1)), invsq.sz().sub(UI.scale(2), UI.scale(2))));
 		} catch(Loading e) {}
 		g.chcolor(156, 180, 158, 255);
 		FastText.aprintf(g, c.add(invsq.sz().sub(UI.scale(2), 0)), 1, 1, "F%d", i + 1);
@@ -1645,7 +1712,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		g.image(invsq, beltc(i));
 		try {
 		    if(belt[slot] != null) {
-			belt[slot].spr().draw(g.reclip(c.add(UI.scale(1), UI.scale(1)), invsq.sz().sub(UI.scale(2), UI.scale(2))));
+			belt[slot].draw(g.reclip(c.add(UI.scale(1), UI.scale(1)), invsq.sz().sub(UI.scale(2), UI.scale(2))));
 		    }
 		} catch(Loading e) {}
 		g.chcolor(156, 180, 158, 255);

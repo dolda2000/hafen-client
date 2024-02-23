@@ -50,7 +50,13 @@ public class Connection {
 	this.username = username;
 	try {
 	    this.sk = DatagramChannel.open();
-	    sk.connect(server);
+	    try {
+		sk.connect(server);
+	    } catch(SocketException e) {
+		/* Apparently, connect() can throw, among other
+		 * things, NoRouteToHostException. */
+		throw(new SessionConnError());
+	    }
 	    sk.configureBlocking(false);
 
 	    sel = Selector.open();
@@ -194,7 +200,10 @@ public class Connection {
 	private Connect(byte[] cookie, Object... args) {
 	    msg = new PMessage(Session.MSG_SESS);
 	    msg.adduint16(2);
-	    msg.addstring("Hafen");
+	    String protocol = "Hafen";
+	    if(!Config.confid.equals(""))
+		protocol += "/" + Config.confid;
+	    msg.addstring(protocol);
 	    msg.adduint16(Session.PVER);
 	    msg.addstring(username);
 	    msg.adduint16(cookie.length);
@@ -232,7 +241,7 @@ public class Connection {
 				}
 			    }
 			}
-		    } catch(ClosedByInterruptException e) {
+		    } catch(ClosedByInterruptException | CancelledKeyException e) {
 			return(null);
 		    } catch(IOException e) {
 			result = Session.SESSERR_CONN;
@@ -347,6 +356,10 @@ public class Connection {
 		long id = msg.uint32();
 		int fr = msg.int32();
 		OCache.ObjDelta delta = new OCache.ObjDelta(fl, id, fr);
+		if((fl & 1) != 0)
+		    delta.initframe = fr;
+		if((fl & 8) != 0)
+		    delta.initframe = msg.int32();
 		while(true) {
 		    int afl = 0, len, type = msg.uint8();
 		    if(type == OCache.OD_END)
@@ -366,10 +379,11 @@ public class Connection {
 			}
 		    }
 		    OCache.AttrDelta attr = new OCache.AttrDelta(delta, type, msg, len);
-		    if(type == OCache.OD_REM)
+		    if(type == OCache.OD_REM) {
 			delta.rem = true;
-		    else
+		    } else {
 			delta.attrs.add(attr);
+		    }
 		}
 		for(Callback cb : cbs)
 		    cb.handle(delta);
@@ -377,9 +391,10 @@ public class Connection {
 		if(ack == null) {
 		    objacks.put(id, ack = new ObjAck(id, fr, now));
 		} else {
-		    if(fr > ack.frame)
+		    if(fr > ack.frame) {
 			ack.frame = fr;
-		    ack.lrecv = now;
+			ack.lrecv = now;
+		    }
 		}
 	    }
 	}
@@ -503,8 +518,10 @@ public class Connection {
 			    handlemsg(msg);
 			}
 		    }
-		} catch(ClosedByInterruptException | InterruptedException e) {
+		} catch(ClosedByInterruptException | CancelledKeyException | InterruptedException e) {
 		    return(new Close(false));
+		} catch(PortUnreachableException e) {
+		    return(null);
 		} catch(IOException e) {
 		    new Warning(e, "connection error").issue();
 		    return(null);
@@ -548,8 +565,15 @@ public class Connection {
 			if((msg != null) && (msg.type == Session.MSG_CLOSE))
 			    sawclose = true;
 		    }
-		} catch(ClosedByInterruptException e) {
-		    continue;
+		} catch(ClosedByInterruptException | CancelledKeyException e) {
+		    /* XXX: I'm not really sure what causes
+		     * CancelledKeyExceptions to occur here, but they
+		     * seem to be somewhat common in practice. As far
+		     * as my understanding goes, the channel should
+		     * not be closed by interrupts so long as it is
+		     * non-blocking, and interrupting a selecting
+		     * thread shouldn't cause any channel closure. */
+		    return(null);
 		} catch(IOException e) {
 		    return(null);
 		}

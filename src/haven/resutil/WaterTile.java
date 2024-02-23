@@ -37,11 +37,165 @@ import haven.Surface.Vertex;
 import haven.Surface.MeshVertex;
 import haven.render.TextureCube.SamplerCube;
 import static haven.render.sl.Cons.*;
+import static haven.Coord.upcw;
 
 public class WaterTile extends Tiler {
     public final int depth;
-    private static final Pipe.Op bcol = new Light.PhongLight(true, new Color(128, 128, 128), new Color(255, 255, 255), new Color(0, 0, 0), new Color(0, 0, 0), 0);
     public final Tiler.MCons bottom;
+
+    public static class FlowData {
+	public static final float[] nxpcw, nypcw;
+	public static final int I = 10;
+	public final float[] xv, yv;
+	public final Scan vs;
+
+	static {
+	    nxpcw = new float[8];
+	    nypcw = new float[8];
+	    for(int v = 0; v < 8; v++) {
+		float l = (float)Math.hypot(upcw[v].x, upcw[v].y);
+		nxpcw[v] = upcw[v].x / l;
+		nypcw[v] = upcw[v].y / l;
+	    }
+	}
+
+	public class Field {
+	    public final MapMesh m;
+	    public final MCache map;
+	    public final float[] xs, ys;
+	    public float[] xv, yv;
+	    public final boolean[] wv;
+	    public final Scan vs, fs, ts;
+
+	    public Field(MapMesh m) {
+		this.m = m;
+		map = m.map;
+		vs = new Scan(Coord.z, m.sz.add(1, 1));
+		fs = new Scan(Coord.of(-I, -I), m.sz.add(1 + (I * 2), 1 + (I * 2)));
+		ts = new Scan(Coord.of(-I - 1, -I - 1), m.sz.add(3 + (I * 2), 3 + (I * 2)));
+		xs = new float[fs.l];
+		ys = new float[fs.l];
+		xv = new float[fs.l];
+		yv = new float[fs.l];
+		wv = new boolean[ts.l];
+	    }
+
+	    public void calc() {
+		water();
+		slopes();
+		for(int i = 0; i < I; i++)
+		    iter();
+	    }
+
+	    private void water() {
+		for(int y = -I - 1; y < m.sz.y + I + 1; y++) {
+		    for(int x = -I - 1; x < m.sz.x + I + 1; x++) {
+			if(map.tiler(map.gettile(m.ul.add(x, y))) instanceof WaterTile) {
+			    wv[ts.o(x + 0, y + 0)] = true;
+			    wv[ts.o(x + 1, y + 0)] = true;
+			    wv[ts.o(x + 1, y + 1)] = true;
+			    wv[ts.o(x + 0, y + 1)] = true;
+			}
+		    }
+		}
+	    }
+
+	    private void slopes() {
+		for(int y = -I; y <= m.sz.y + I; y++) {
+		    for(int x = -I; x <= m.sz.x + I; x++) {
+			if(!wv[ts.o(x, y)])
+			    continue;
+			double tz = map.getfz(m.ul.add(x, y));
+			if(wv[ts.o(x - 1, y)])
+			    xs[fs.o(x, y)] += map.getfz(m.ul.add(x - 1, y)) - tz;
+			if(wv[ts.o(x + 1, y)])
+			    xs[fs.o(x, y)] += tz - map.getfz(m.ul.add(x + 1, y));
+			if(wv[ts.o(x, y - 1)])
+			    ys[fs.o(x, y)] += map.getfz(m.ul.add(x, y - 1)) - tz;
+			if(wv[ts.o(x, y + 1)])
+			    ys[fs.o(x, y)] += tz - map.getfz(m.ul.add(x, y + 1));
+		    }
+		}
+	    }
+
+	    private void iter() {
+		float[] nxv = new float[fs.l];
+		float[] nyv = new float[fs.l];
+		float[] p = new float[fs.l];
+		for(int y = -I; y <= m.sz.y + I; y++) {
+		    for(int x = -I; x <= m.sz.x + I; x++) {
+			int O = fs.o(x, y);
+			if(!wv[ts.o(x, y)])
+			    continue;
+			float xs = Utils.clip(this.xs[O], -25f, 25f), ys = Utils.clip(this.ys[O], -25f, 25f);
+			nxv[O] = xv[O] + xs;
+			nyv[O] = yv[O] + ys;
+			float nv = (float)Math.hypot(nxv[O], nyv[O]);
+			float mv = Math.max((float)Math.hypot(xs, ys),
+					    (float)Math.hypot(xv[O], yv[O]));
+			if(nv > mv) {
+			    nxv[O] *= mv / nv;
+			    nyv[O] *= mv / nv;
+			}
+		    }
+		}
+		for(int y = -I; y <= m.sz.y + I; y++) {
+		    for(int x = -I; x <= m.sz.x + I; x++) {
+			int O = fs.o(x, y);
+			if(!wv[ts.o(x, y)])
+			    continue;
+			for(int i = 0; i < 8; i++) {
+			    int X = x + upcw[i].x, Y = y + upcw[i].y;
+			    if(fs.has(X, Y) && wv[ts.o(X, Y)])
+				p[O] += (nxv[fs.o(X, Y)] * -nxpcw[i]) + (nyv[fs.o(X, Y)] * -nypcw[i]);
+			}
+		    }
+		}
+		float PF = 0.75f;
+		for(int y = -I; y <= m.sz.y + I; y++) {
+		    for(int x = -I; x <= m.sz.x + I; x++) {
+			int O = fs.o(x, y);
+			if(!wv[ts.o(x, y)])
+			    continue;
+			int n = 0;
+			for(int i = 0; i < 8; i++) {
+			    if(wv[ts.o(upcw[i].add(x, y))])
+				n++;
+			}
+			for(int i = 0; i < 8; i++) {
+			    int X = x + upcw[i].x, Y = y + upcw[i].y;
+			    if(fs.has(X, Y) && wv[ts.o(X, Y)]) {
+				nxv[fs.o(X, Y)] += p[O] * PF * nxpcw[i] / n;
+				nyv[fs.o(X, Y)] += p[O] * PF * nypcw[i] / n;
+			    }
+			}
+		    }
+		}
+		xv = nxv;
+		yv = nyv;
+	    }
+	}
+
+	public FlowData(MapMesh m) {
+	    Field f = new Field(m);
+	    f.calc();
+	    this.vs = f.vs;
+	    this.xv = new float[vs.l];
+	    this.yv = new float[vs.l];
+	    for(int y = 0; y <= m.sz.y; y++) {
+		for(int x = 0; x <= m.sz.x; x++) {
+		    xv[vs.o(x, y)] = f.xv[f.fs.o(x, y)];
+		    yv[vs.o(x, y)] = f.yv[f.fs.o(x, y)];
+		}
+	    }
+	}
+
+	public Coord3f vel(Coord tc) {
+	    return(Coord3f.of(xv[vs.o(tc)], -yv[vs.o(tc)], 0));
+	}
+
+	public static final MapMesh.DataID<FlowData> id = MapMesh.makeid(FlowData.class);
+    }
 
     public static class BottomData implements MapMesh.ConsHooks {
 	public final float[] depth;
@@ -198,21 +352,19 @@ public class WaterTile extends Tiler {
 	}
     }
 
-    static final SamplerCube sky;
-    static final TexRender nrm;
-    static {
-	sky = new SamplerCube(new RUtils.CubeFill(() -> Resource.local().load("gfx/tiles/skycube").get().layer(Resource.imgc).img).mktex());
-	nrm = Resource.local().loadwait("gfx/tiles/wnrm").layer(TexR.class).tex();
-    }
+    static final SamplerCube sky = new SamplerCube(new RUtils.CubeFill(() -> Resource.local().load("gfx/tiles/skycube").get().layer(Resource.imgc).img).mktex());
+    static final TexRender nrm = Resource.local().loadwait("gfx/tiles/wnrm").layer(TexR.class).tex();
+    static final TexRender flow = Resource.local().loadwait("gfx/tiles/wfoam").layer(TexR.class).tex();
 
     private static final State.Slot<State> surfslot = new State.Slot<>(State.Slot.Type.DRAW, State.class);
-    private static final Pipe.Op surfextra = Pipe.Op.compose(new States.DepthBias(2, 2), FragColor.blend(new BlendMode(BlendMode.Factor.ONE, BlendMode.Factor.ONE)));
-    public static class BetterSurface extends State {
+    private static final Pipe.Op surfextra = Pipe.Op.compose(new States.DepthBias(2, 2), new States.Facecull());
+    private static final Pipe.Op baseextra = Pipe.Op.compose(surfextra, FragColor.blend(new BlendMode(BlendMode.Factor.ONE, BlendMode.Factor.ONE)));
+    public static class BaseSurface extends State {
 	private final Uniform ssky = new Uniform(Type.SAMPLERCUBE, p -> sky);
 	private final Uniform snrm = new Uniform(Type.SAMPLER2D, p -> nrm.img);
 	private final Uniform icam = new Uniform(Type.MAT3, p -> Homo3D.camxf(p).transpose(), Homo3D.cam);
 
-	private BetterSurface() {
+	private BaseSurface() {
 	}
 
 	private ShaderMacro shader = new ShaderMacro() {
@@ -227,14 +379,14 @@ public class WaterTile extends Tiler {
 			    public Expression root() {
 				/*
 				return(mul(sub(mix(pick(texture2D(snrm.ref(),
-								  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
-								      mul(Cons.mod(MiscLib.time.ref(), l(2.0)), vec2(l(0.025), l(0.035))))),
+								  add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
+								      mul(Cons.mod(FrameInfo.time(), l(2.0)), vec2(l(0.025), l(0.035))))),
 							"rgb"),
 						   pick(texture2D(snrm.ref(),
-								  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
-								      mul(Cons.mod(add(MiscLib.time.ref(), l(1.0)), l(2.0)), vec2(l(-0.035), l(-0.025))))),
+								  add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
+								      mul(Cons.mod(add(FrameInfo.time(), l(1.0)), l(2.0)), vec2(l(-0.035), l(-0.025))))),
 							"rgb"),
-						   abs(sub(Cons.mod(MiscLib.time.ref(), l(2.0)), l(1.0)))),
+						   abs(sub(Cons.mod(FrameInfo.time(), l(2.0)), l(1.0)))),
 					       l(0.5)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
 				*/
 				return(mul(sub(mix(add(pick(texture2D(snrm.ref(),
@@ -257,18 +409,18 @@ public class WaterTile extends Tiler {
 					       l(0.5 * 2)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
 				/*
 				return(mul(sub(add(pick(texture2D(snrm.ref(),
-								  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
-								      mul(MiscLib.time.ref(), vec2(l(0.025), l(0.035))))),
+								  add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(0.01), l(0.012))),
+								      mul(FrameInfo.time(), vec2(l(0.025), l(0.035))))),
 							"rgb"),
 						   pick(texture2D(snrm.ref(),
-								  add(mul(pick(MiscLib.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
-								      mul(MiscLib.time.ref(), vec2(l(-0.035), l(-0.025))))),
+								  add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(0.019), l(0.018))),
+								      mul(FrameInfo.time(), vec2(l(-0.035), l(-0.025))))),
 							"rgb")),
 					       l(0.5 * 2)), vec3(l(1.0 / 16), l(1.0 / 16), l(1.0))));
 				*/
 				/*
 				return(mul(sub(pick(texture2D(snrm.ref(),
-							      mul(pick(MiscLib.fragmapv.ref(), "st"), l(0.005))),
+							      mul(pick(Homo3D.fragmapv.ref(), "st"), l(0.005))),
 						    "rgb"),
 					       l(0.5)), vec3(l(1.0 / 32), l(1.0 / 32), l(1.0))));
 				*/
@@ -281,12 +433,12 @@ public class WaterTile extends Tiler {
 				       mul(pick(m, "y"), vec3(l(0.0), l(1.0), l(0.0))),
 				       mul(pick(m, "z"), in)));
 			}, -10);
-		    FragColor.fragcol(prog.fctx).
-			mod(in -> mul(in, textureCube(ssky.ref(),
-						      neg(mul(icam.ref(), reflect(Homo3D.fragedir(prog.fctx).depref(),
-										  Homo3D.frageyen(prog.fctx).depref())))),
-				      l(0.4))
-			    , 0);
+		    FragColor.fragcol(prog.fctx)
+			.mod(in -> mul(in, textureCube(ssky.ref(),
+						       neg(mul(icam.ref(), reflect(Homo3D.fragedir(prog.fctx).depref(),
+										   Homo3D.frageyen(prog.fctx).depref())))),
+				       l(0.4)),
+			     0);
 		}
 	    };
 
@@ -294,11 +446,96 @@ public class WaterTile extends Tiler {
 
 	public void apply(Pipe buf) {
 	    buf.put(surfslot, this);
-	    surfextra.apply(buf);
+	    baseextra.apply(buf);
 	}
     }
+    public static final Pipe.Op surfmat = Pipe.Op.compose(new BaseSurface(), new Rendered.Order.Default(6000));
 
-    public static final Pipe.Op surfmat = Pipe.Op.compose(new BetterSurface(), new Rendered.Order.Default(6000));
+    private static final Pipe.Op foamextra = Pipe.Op.compose(surfextra, FragColor.blend(new BlendMode(BlendMode.Factor.ONE, BlendMode.Factor.ONE)),
+							     new Light.PhongLight(true, new Color(255, 255, 255), new Color(128, 128, 128), new Color(0, 0, 0), new Color(0, 0, 0), 0),
+							     ShadowMap.maskshadow);
+    public static class FoamSurface extends State {
+	public static final Attribute[] vertv = new Attribute[4];
+	@SuppressWarnings("unchecked")
+	public static final MeshBuf.LayerID<MeshBuf.Vec2Layer>[] lvertv = new MeshBuf.LayerID[4];
+	public static final AutoVarying[] vvertv = new AutoVarying[4];
+	public static final AutoVarying[] vverti = new AutoVarying[4];
+	public static final Attribute vipol = new Attribute(Type.VEC2);
+	public static final MeshBuf.LayerID<MeshBuf.Vec2Layer> lvipol = new MeshBuf.V2LayerID(vipol);
+	private final Uniform ssky = new Uniform(Type.SAMPLERCUBE, p -> sky);
+	private final Uniform snrm = new Uniform(Type.SAMPLER2D, p -> nrm.img);
+	private final Uniform sflow = new Uniform(Type.SAMPLER2D, p -> flow.img);
+	private final Uniform icam = new Uniform(Type.MAT3, p -> Homo3D.camxf(p).transpose(), Homo3D.cam);
+
+	static {
+	    for(int I = 0; I < 4; I++) {
+		int i = I;
+		vertv[i] = new Attribute(Type.VEC2);
+		lvertv[i] = new MeshBuf.V2LayerID(vertv[i]);
+		vvertv[i] = new AutoVarying(Type.VEC2) {
+			public Expression root(VertexContext vctx) {
+			    return(vertv[i].ref());
+			}
+		    };
+		vverti[i] = new AutoVarying(Type.FLOAT) {
+			public Expression root(VertexContext vctx) {
+			    return(min(mul(length(vertv[i].ref()), l(0.06)), l(1.0)));
+			}
+		    };
+	    }
+	}
+
+	private FoamSurface() {
+	}
+
+	private ShaderMacro shader = new ShaderMacro() {
+		final AutoVarying skyc = new AutoVarying(Type.VEC3) {
+			protected Expression root(VertexContext vctx) {
+			    return(mul(icam.ref(), reflect(Homo3D.vertedir(vctx).depref(), Homo3D.get(vctx.prog).eyen.depref())));
+			}
+		    };
+		AutoVarying vvipol = new AutoVarying(Type.VEC2) {
+			protected Expression root(VertexContext vctx) {return(vipol.ref());}
+		    };
+		public void modify(final ProgramContext prog) {
+		    double fres = 0.1;
+		    FragColor.fragcol(prog.fctx)
+			.mod(in -> mul(in, vec4(vec3(mix(mix(mul(pick(texture2D(sflow.ref(),
+									    add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(fres), l(fres))),
+										mul(FrameInfo.time(), mul(vvertv[0].ref(), l(-0.1))))),
+								      "r"),
+								 vverti[0].ref()),
+							     mul(pick(texture2D(sflow.ref(),
+										add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(fres), l(fres))),
+										    mul(FrameInfo.time(), mul(vvertv[1].ref(), l(-0.1))))),
+								      "r"),
+								 vverti[1].ref()),
+							     pick(vvipol.ref(), "x")),
+							 mix(mul(pick(texture2D(sflow.ref(),
+										add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(fres), l(fres))),
+										    mul(FrameInfo.time(), mul(vvertv[3].ref(), l(-0.1))))),
+								      "r"),
+								 vverti[3].ref()),
+							     mul(pick(texture2D(sflow.ref(),
+										add(mul(pick(Homo3D.fragmapv.ref(), "st"), vec2(l(fres), l(fres))),
+										    mul(FrameInfo.time(), mul(vvertv[2].ref(), l(-0.1))))),
+								      "r"),
+								 vverti[2].ref()),
+							     pick(vvipol.ref(), "x")),
+							 pick(vvipol.ref(), "y"))), l(1.0))),
+			     0);
+		}
+	    };
+
+	public ShaderMacro shader() {return(shader);}
+
+
+	public void apply(Pipe buf) {
+	    buf.put(surfslot, this);
+	    foamextra.apply(buf);
+	}
+    }
+    public static final Pipe.Op foammat = Pipe.Op.compose(new FoamSurface(), new Rendered.Order.Default(6001));
 
     public static final MeshBuf.LayerID<MeshBuf.Vec1Layer> depthlayer = new MeshBuf.V1LayerID(BottomFog.depth);
 
@@ -409,11 +646,42 @@ public class WaterTile extends Tiler {
 
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	MapMesh.MapSurface ms = m.data(MapMesh.gnd);
-	SModel smod = SModel.get(m, surfmat, VertFactory.id);
 	MPart d = MPart.splitquad(lc, gc, ms.fortilea(lc), ms.split[ms.ts.o(lc)]);
-	MeshVertex[] v = smod.get(d);
-	smod.new Face(v[d.f[0]], v[d.f[1]], v[d.f[2]]);
-	smod.new Face(v[d.f[3]], v[d.f[4]], v[d.f[5]]);
+
+	{
+	    MeshBuf mesh = MapMesh.Model.get(m, surfmat);
+	    MeshVertex[] mv = new MeshVertex[d.v.length];
+	    for(int i = 0; i < d.v.length; i++)
+		mv[i] = new MeshVertex(mesh, d.v[i]);
+	    for(int i = 0; i < d.f.length; i += 3)
+		mesh.new Face(mv[d.f[i]], mv[d.f[i + 1]], mv[d.f[i + 2]]);
+	}
+
+	foam: {
+	    FlowData sd = m.data(FlowData.id);
+	    skip: {
+		for(int i = 0; i < 4; i++) {
+		    if(!sd.vel(d.lc.add(Coord.uccw[i])).equals(Coord3f.o))
+			break skip;
+		}
+		break foam;
+	    }
+	    MeshBuf mesh = MapMesh.Model.get(m, foammat);
+	    MeshVertex[] mv = new MeshVertex[d.v.length];
+	    MeshBuf.Vec2Layer[] vertv = new MeshBuf.Vec2Layer[4];
+	    for(int i = 0; i < 4; i++)
+		vertv[i] = mesh.layer(FoamSurface.lvertv[i]);
+	    MeshBuf.Vec2Layer vipol = mesh.layer(FoamSurface.lvipol);
+	    for(int i = 0; i < d.v.length; i++) {
+		mv[i] = new MeshVertex(mesh, d.v[i]);
+		for(int o = 0; o < 4; o++)
+		    vertv[o].set(mv[i], sd.vel(d.lc.add(Coord.uccw[o])));
+		vipol.set(mv[i], Coord3f.of(d.tcx[i], d.tcy[i], 0));
+	    }
+	    for(int i = 0; i < d.f.length; i += 3)
+		mesh.new Face(mv[d.f[i]], mv[d.f[i + 1]], mv[d.f[i + 2]]);
+	}
+
 	Bottom b = m.data(Bottom.id);
 	MPart bd = MPart.splitquad(lc, gc, b.fortilea(lc), ms.split[ms.ts.o(lc)]);
 	bd.mat = botmat;

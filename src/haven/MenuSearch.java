@@ -112,7 +112,7 @@ public class MenuSearch extends Window {
 		    if(root == null) {
 			found.add(pag.button());
 		    } else {
-			for(Pagina parent = pag; parent != null; parent = menu.paginafor(parent.act().parent)) {
+			for(Pagina parent = pag; parent != null; parent = parent.parent()) {
 			    if(parent == root) {
 				found.add(pag.button());
 				break;

@@ -26,10 +26,11 @@
 
 package haven;
 
+import java.util.*;
+import haven.render.*;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.util.*;
 
 public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owner {
     public Indir<Resource> res;
@@ -56,8 +57,20 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	}
     }
 
-    public interface ColorInfo {
+    public interface RStateInfo {
+	public Pipe.Op rstate();
+    }
+
+    public interface ColorInfo extends RStateInfo {
 	public Color olcol();
+
+	public default Pipe.Op rstate() {
+	    return(buf -> {
+		    Color col = olcol();
+		    if(col != null)
+			new ColorMask(col).apply(buf);
+		});
+	}
     }
 
     public interface OverlayInfo<T> {

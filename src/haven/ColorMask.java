@@ -51,6 +51,11 @@ public class ColorMask extends State {
     public ShaderMacro shader() {return(sh);}
 
     public void apply(Pipe buf) {
-	buf.put(slot, this);
+	ColorMask prev = buf.get(slot);
+	if(prev == null) {
+	    buf.put(slot, this);
+	} else {
+	    buf.put(slot, new ColorMask(prev.col.preblend(this.col)));
+	}
     }
 }

@@ -109,9 +109,8 @@ public class Defer extends ThreadGroup {
 	}
     }
 
-    public class Future<T> implements Runnable, Prioritized {
+    public class Future<T> implements Runnable, Prioritized, haven.Future<T> {
 	public final Callable<T> task;
-	private final AccessControlContext secctx;
 	private final Waitable.Queue wq = new Waitable.Queue();
 	private int prio = -1;
 	private T val;
@@ -122,7 +121,6 @@ public class Defer extends ThreadGroup {
 	
 	private Future(Callable<T> task) {
 	    this.task = task;
-	    this.secctx = AccessController.getContext();
 	}
 
 	public void cancel() {
@@ -151,15 +149,7 @@ public class Defer extends ThreadGroup {
 	    }
 	    try {
 		busy.getAndIncrement();
-		try {
-		    val = AccessController.doPrivileged(new PrivilegedExceptionAction<T>() {
-			    public T run() throws InterruptedException {return(task.call());}
-			}, secctx);
-		} catch(PrivilegedActionException we) {
-		    if(we.getException() instanceof InterruptedException)
-			throw((InterruptedException)we.getException());
-		    throw(new RuntimeException(we.getException()));
-		}
+		val = task.call();;
 		lastload = null;
 		chstate("done");
 	    } catch(InterruptedException exc) {
@@ -285,13 +275,8 @@ public class Defer extends ThreadGroup {
 	    queue.add(f);
 	    queue.notify();
 	    if((pool.isEmpty() || !e) && (pool.size() < maxthreads)) {
-		Thread n = AccessController.doPrivileged(new PrivilegedAction<Thread>() {
-			public Thread run() {
-			    Thread ret = new Worker();
-			    ret.start();
-			    return(ret);
-			}
-		    });
+		Thread n = new Worker();
+		n.start();
 		pool.add(n);
 	    }
 	}
@@ -304,19 +289,15 @@ public class Defer extends ThreadGroup {
     }
 
     private static Defer getgroup() {
-	return(AccessController.doPrivileged(new PrivilegedAction<Defer>() {
-		public Defer run() {
-		    ThreadGroup tg = Thread.currentThread().getThreadGroup();
-		    if(tg instanceof Defer)
-			return((Defer)tg);
-		    Defer d;
-		    synchronized(groups) {
-			if((d = groups.get(tg)) == null)
-			    groups.put(tg, d = new Defer(tg));
-		    }
-		    return(d);
-		}
-	    }));
+	ThreadGroup tg = Thread.currentThread().getThreadGroup();
+	if(tg instanceof Defer)
+	    return((Defer)tg);
+	Defer d;
+	synchronized(groups) {
+	    if((d = groups.get(tg)) == null)
+		groups.put(tg, d = new Defer(tg));
+	}
+	return(d);
     }
 
     public static <T> Future<T> later(Callable<T> task) {

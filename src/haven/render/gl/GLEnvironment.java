@@ -68,14 +68,14 @@ public abstract class GLEnvironment implements Environment {
 	public final float anisotropy;
 	public final float linemin, linemax;
 
-	private static int glgeti(GL gl, int param) {
+	public static int glgeti(GL gl, int param) {
 	    int[] buf = {0};
 	    gl.glGetIntegerv(param, buf);
 	    GLException.checkfor(gl, null);
 	    return(buf[0]);
 	}
 
-	private static int glcondi(GL gl, int param, int def) {
+	public static int glcondi(GL gl, int param, int def) {
 	    GLException.checkfor(gl, null);
 	    int[] buf = {0};
 	    gl.glGetIntegerv(param, buf);
@@ -84,7 +84,7 @@ public abstract class GLEnvironment implements Environment {
 	    return(buf[0]);
 	}
 
-	private static float glgetf(GL gl, int param) {
+	public static float glgetf(GL gl, int param) {
 	    float[] buf = {0};
 	    gl.glGetFloatv(param, buf);
 	    GLException.checkfor(gl, null);
@@ -449,6 +449,20 @@ public abstract class GLEnvironment implements Environment {
 		return(stb.new Fill());
 	}
 	return(new FillBuffers.Array(this, to - from));
+    }
+
+    public FillBuffer fillbuf(DataBuffer target) {
+	if(target instanceof Texture.Image) {
+	    /* XXX: This seems to be a buf with JOGL and buffer-space
+	     * checking for mip-mapped 3D textures. This should be
+	     * entirely unnecessary. */
+	    Texture.Image<?> img = (Texture.Image<?>)target;
+	    if(img.tex instanceof Texture3D) {
+		if(img.size() < 14)
+		    return(fillbuf(target, 0, 14));
+	    }
+	}
+	return(Environment.super.fillbuf(target));
     }
 
     GLRender prepare() {

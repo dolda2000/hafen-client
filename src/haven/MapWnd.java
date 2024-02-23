@@ -258,9 +258,9 @@ public class MapWnd extends Window implements Console.Directory {
 	    smbtn.c = new Coord(sz.x - btnw, tobtn.c.y - UI.scale(5) - smbtn.sz.y);
 	    if(namesel != null) {
 		namesel.c = listf.c.add(0, listf.sz.y + UI.scale(10));
+		mremove.c = pmbtn.c.sub(0, mremove.sz.y + UI.scale(10));
 		if(colsel != null) {
 		    colsel.c = namesel.c.add(0, namesel.sz.y + UI.scale(10));
-		    mremove.c = colsel.c.add(0, colsel.sz.y + UI.scale(10));
 		}
 	    }
 	}
@@ -297,7 +297,7 @@ public class MapWnd extends Window implements Console.Directory {
 		    return(true);
 		}
 	    } else if(mark.m instanceof SMarker) {
-		Gob gob = MarkerID.find(ui.sess.glob.oc, ((SMarker)mark.m).oid);
+		Gob gob = MarkerID.find(ui.sess.glob.oc, mark.m);
 		if(gob != null)
 		    mvclick(mv, null, loc, gob, button);
 	    }
@@ -363,6 +363,7 @@ public class MapWnd extends Window implements Console.Directory {
 		i.remove();
 	    }
 	}
+	view.markobjs();
 	if(visible && (markerseq != view.file.markerseq)) {
 	    if(view.file.lock.readLock().tryLock()) {
 		try {
@@ -624,11 +625,11 @@ public class MapWnd extends Window implements Console.Directory {
 	    if(tool.namesel != null) {
 		ui.destroy(tool.namesel);
 		tool.namesel = null;
+		ui.destroy(mremove);
+		mremove = null;
 		if(colsel != null) {
 		    ui.destroy(colsel);
 		    colsel = null;
-		    ui.destroy(mremove);
-		    mremove = null;
 		}
 	    }
 
@@ -656,13 +657,13 @@ public class MapWnd extends Window implements Console.Directory {
 				view.file.update(mark);
 			    }
 			});
-		    mremove = tool.add(new Button(UI.scale(200), "Remove", false) {
-			    public void click() {
-				view.file.remove(mark);
-				change2(null);
-			    }
-			});
 		}
+		mremove = tool.add(new Button(UI.scale(200), "Remove", false) {
+			public void click() {
+			    view.file.remove(mark);
+			    change2(null);
+			}
+		    });
 		MapWnd.this.resize(csz());
 	    }
 	}
@@ -737,11 +738,9 @@ public class MapWnd extends Window implements Console.Directory {
 				throw(new Loading());
 			    return;
 			}
-			synchronized(gob) {
-			    gob.setattr(new MarkerID(gob, oid));
-			}
 			Coord tc = gob.rc.floor(tilesz);
 			MCache.Grid obg = ui.sess.glob.map.getgrid(tc.div(cmaps));
+			SMarker mark;
 			if(!view.file.lock.writeLock().tryLock())
 			    throw(new Loading());
 			try {
@@ -749,10 +748,12 @@ public class MapWnd extends Window implements Console.Directory {
 			    if(info == null)
 				throw(new Loading());
 			    Coord sc = tc.add(info.sc.sub(obg.gc).mul(cmaps));
-			    SMarker prev = view.file.smarkers.get(oid);
+			    SMarker prev = view.file.smarker(res.name, info.seg, sc);
 			    if(prev == null) {
-				view.file.add(new SMarker(info.seg, sc, rnm, oid, new Resource.Spec(Resource.remote(), res.name, res.ver)));
+				mark = new SMarker(info.seg, sc, rnm, oid, new Resource.Spec(Resource.remote(), res.name, res.ver));
+				view.file.add(mark);
 			    } else {
+				mark = prev;
 				if((prev.seg != info.seg) || !eq(prev.tc, sc) || !eq(prev.nm, rnm)) {
 				    prev.seg = info.seg;
 				    prev.tc = sc;
@@ -762,6 +763,9 @@ public class MapWnd extends Window implements Console.Directory {
 			    }
 			} finally {
 			    view.file.lock.writeLock().unlock();
+			}
+			synchronized(gob) {
+			    gob.setattr(new MarkerID(gob, mark));
 			}
 		    }
 		});
