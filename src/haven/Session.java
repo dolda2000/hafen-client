@@ -34,7 +34,7 @@ import java.nio.*;
 import java.lang.ref.*;
 
 public class Session implements Resource.Resolver {
-    public static final int PVER = 27;
+    public static final int PVER = 28;
 
     public static final int MSG_SESS = 0;
     public static final int MSG_REL = 1;
