@@ -245,7 +245,7 @@ public class UI {
 	}
     }
 
-    private static final boolean cmdjitter = true;
+    private static final boolean cmdjitter = false;
     private static final boolean cmddump = false;
     public class CommandQueue {
 	private final Map<Integer, Command> score = new HashMap<>();
