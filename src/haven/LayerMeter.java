@@ -67,17 +67,8 @@ public abstract class LayerMeter extends Widget implements ItemInfo.Owner {
 	if(args.length == s)
 	    return(Collections.emptyList());
 	ArrayList<Meter> buf = new ArrayList<>();
-	if(args[s] instanceof Number) {
-	    for(int a = s; a < args.length; a += 2)
-		buf.add(new Meter(av(args[a]), (Color)args[a + 1]));
-	} else {
-	    /* XXX: To be considered deprecated, but is was the
-	     * traditional argument layout of IMeter, so let clients
-	     * with the newer convention spread before converting the
-	     * server. */
-	    for(int a = s; a < args.length; a += 2)
-		buf.add(new Meter(av(args[a + 1]), (Color)args[a]));
-	}
+	for(int a = s; a < args.length; a += 2)
+	    buf.add(new Meter(av(args[a]), (Color)args[a + 1]));
 	buf.trimToSize();
 	return(buf);
     }
