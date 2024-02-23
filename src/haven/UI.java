@@ -35,6 +35,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.InputEvent;
 import java.awt.image.BufferedImage;
+import java.io.Serializable;
 import static haven.Utils.el;
 import haven.render.Environment;
 import haven.render.Render;
@@ -194,20 +195,20 @@ public class UI {
 	}
     }
 
-    private static class Command {
-	static final java.util.concurrent.atomic.AtomicInteger nextid = new java.util.concurrent.atomic.AtomicInteger(0);
-	final int id = nextid.getAndIncrement();
-	final Collection<Integer> deps = new ArrayList<>();
-	final Collection<Integer> bars  = new ArrayList<>();
-	final Collection<Command> next = new ArrayList<>();
-	final Collection<Command> wait = new ArrayList<>();
-	final Runnable action;
+    public static class Command implements Serializable {
+	private static final java.util.concurrent.atomic.AtomicInteger nextid = new java.util.concurrent.atomic.AtomicInteger(0);
+	public final int id = nextid.getAndIncrement();
+	public final Collection<Integer> deps = new ArrayList<>();
+	public final Collection<Integer> bars  = new ArrayList<>();
+	public final Collection<Command> next = new ArrayList<>();
+	public final Collection<Command> wait = new ArrayList<>();
+	public final Runnable action;
 
-	Command(Runnable action) {
+	public Command(Runnable action) {
 	    this.action = action;
 	}
 
-	Command dep(int id, boolean bar) {
+	public Command dep(int id, boolean bar) {
 	    deps.add(id);
 	    if(bar)
 		bars.add(id);
@@ -231,7 +232,20 @@ public class UI {
 	}
     }
 
-    private static final boolean cmdjitter = false;
+    public static class CommandException extends RuntimeException {
+	public final Command cmd;
+
+	public CommandException(Command cmd, Throwable cause) {
+	    super(cause);
+	    this.cmd = cmd;
+	}
+
+	public String getMessage() {
+	    return(String.format("error during ui command-handling: " + cmd));
+	}
+    }
+
+    private static final boolean cmdjitter = true;
     private static final boolean cmddump = false;
     public class CommandQueue {
 	private final Map<Integer, Command> score = new HashMap<>();
@@ -246,7 +260,13 @@ public class UI {
 		    Thread.currentThread().interrupt();
 		}
 	    }
-	    cmd.action.run();
+	    try {
+		cmd.action.run();
+	    } catch(Loading l) {
+		throw(l);
+	    } catch(RuntimeException | Error e) {
+		throw(new CommandException(cmd, e));
+	    }
 	    finish(cmd);
 	}
 
@@ -375,25 +395,26 @@ public class UI {
 	queue.submit(cmd);
     }
 
-    private class NewWidget implements Runnable {
-	final int id;
-	Widget.Factory type;
-	String typenm;
-	final Object[] cargs;
+    public class NewWidget implements Runnable, Serializable {
+	public final int id;
+	public final String typenm;
+	public final Object[] cargs;
+	private transient Widget.Factory type;
 
-	NewWidget(int id, Widget.Factory type, Object... cargs) {
+	private NewWidget(int id, Widget.Factory type, Object... cargs) {
 	    this.id = id;
 	    this.type = type;
+	    this.typenm = null;
 	    this.cargs = cargs;
 	}
 
-	NewWidget(int id, String type, Object... cargs) {
+	private NewWidget(int id, String type, Object... cargs) {
 	    this.id = id;
 	    this.typenm = type;
 	    this.cargs = cargs;
 	}
 
-	Widget wdg = null;
+	private transient Widget wdg = null;
 	public void run() {
 	    if((type == null) && ((type = Widget.gettype3(typenm)) == null))
 		throw(new UIException("Bad widget name", typenm, cargs));
@@ -421,30 +442,40 @@ public class UI {
     private final MultiMap<Integer, Integer> shadowchildren = new HashMultiMap<>();
     private final Map<Integer, Integer> shadowparents = new HashMap<>();
 
+    public class AddWidget implements Runnable, Serializable {
+	public final int id, parent;
+	public final Object[] pargs;
+
+	private AddWidget(int id, int parent, Object... pargs) {
+	    this.id = id;
+	    this.parent = parent;
+	    this.pargs = pargs;
+	}
+
+	public void run() {
+	    synchronized(UI.this) {
+		Widget wdg = getwidget(id);
+		Widget pwdg = getwidget(parent);
+		if(wdg == null)
+		    throw(new UIException(String.format("Null child widget %d added to %d (%s)", id, parent, pwdg), null, pargs));
+		if(pwdg == null)
+		    throw(new UIException(String.format("Null parent widget %d for %d (%s)", parent, id, wdg), null, pargs));
+		pwdg.addchild(wdg, pargs);
+	    }
+	}
+
+	public String toString() {
+	    return(String.format("#<addwdg %d @ %d %s>", id, parent, Arrays.asList(pargs)));
+	}
+    }
+
     public void addwidget(int id, int parent, Object... pargs) {
 	synchronized(shadowchildren) {
 	    Integer prev = shadowparents.put(id, parent);
 	    if(prev != null)
 		throw(new RuntimeException(String.format("widget %d already has parent %d when adding it to %d", id, prev, parent)));
 	    shadowchildren.put(parent, id);
-	    Runnable act = new Runnable() {
-		    public void run() {
-			synchronized(UI.this) {
-			    Widget wdg = getwidget(id);
-			    Widget pwdg = getwidget(parent);
-			    if(wdg == null)
-				throw(new UIException(String.format("Null child widget %d added to %d (%s)", id, parent, pwdg), null, pargs));
-			    if(pwdg == null)
-				throw(new UIException(String.format("Null parent widget %d for %d (%s)", parent, id, wdg), null, pargs));
-			    pwdg.addchild(wdg, pargs);
-			}
-		    }
-
-		    public String toString() {
-			return(String.format("#<addwdg %d @ %d %s>", id, parent, Arrays.asList(pargs)));
-		    }
-	    };
-	    submitcmd(new Command(act).dep(id, true).dep(parent, true));
+	    submitcmd(new Command(new AddWidget(id, parent, pargs)).dep(id, true).dep(parent, true));
 	}
     }
 
@@ -525,6 +556,26 @@ public class UI {
 	wdg.reqdestroy();
     }
 
+    public class DstWidget implements Runnable, Serializable {
+	public final int id;
+
+	private DstWidget(int id) {
+	    this.id = id;
+	}
+
+	public void run() {
+	    synchronized(UI.this) {
+		Widget wdg = getwidget(id);
+		if(wdg != null)
+		    destroy(wdg);
+	    }
+	}
+
+	public String toString() {
+	    return(String.format("#<dstwdg %d>", id));
+	}
+    }
+
     public void destroy(int id) {
 	synchronized(shadowchildren) {
 	    Integer parent = shadowparents.remove(id);
@@ -535,20 +586,7 @@ public class UI {
 	    for(Integer child : new ArrayList<>(shadowchildren.getall(id))) {
 		destroy(child);
 	    }
-	    Runnable act = new Runnable() {
-		    public void run() {
-			synchronized(UI.this) {
-			    Widget wdg = getwidget(id);
-			    if(wdg != null)
-				destroy(wdg);
-			}
-		    }
-
-		    public String toString() {
-			return(String.format("#<dstwdg %d>", id));
-		    }
-		};
-	    Command cmd = new Command(act).dep(id, true);
+	    Command cmd = new Command(new DstWidget(id)).dep(id, true);
 	    if(parent != null)
 		cmd.dep(parent, true);
 	    submitcmd(cmd);
@@ -565,24 +603,35 @@ public class UI {
 	    rcvr.rcvmsg(id, msg, args);
     }
 	
-    public void uimsg(int id, String msg, Object... args) {
-	Runnable act = new Runnable() {
-		public void run() {
-		    Widget wdg = getwidget(id);
-		    if(wdg != null) {
-			synchronized(UI.this) {
-			    wdg.uimsg(msg.intern(), args);
-			}
-		    } else {
-			throw(new UIException("Uimsg to non-existent widget " + id, msg, args));
-		    }
-		}
+    public class UiMessage implements Runnable, Serializable {
+	public final int id;
+	public final String msg;
+	public final Object[] args;
 
-		public String toString() {
-		    return(String.format("#<wdgmsg %d %s %s>", id, msg, Arrays.asList(args)));
+	private UiMessage(int id, String msg, Object[] args) {
+	    this.id = id;
+	    this.msg = msg;
+	    this.args = args;
+	}
+
+	public void run() {
+	    Widget wdg = getwidget(id);
+	    if(wdg != null) {
+		synchronized(UI.this) {
+		    wdg.uimsg(msg.intern(), args);
 		}
-	    };
-	submitcmd(new Command(act).dep(id, true));
+	    } else {
+		throw(new UIException("Uimsg to non-existent widget " + id, msg, args));
+	    }
+	}
+
+	public String toString() {
+	    return(String.format("#<wdgmsg %d %s %s>", id, msg, Arrays.asList(args)));
+	}
+    }
+
+    public void uimsg(int id, String msg, Object... args) {
+	submitcmd(new Command(new UiMessage(id, msg, args)).dep(id, true));
     }
 	
     public static interface MessageWidget {
