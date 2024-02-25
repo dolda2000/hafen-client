@@ -67,7 +67,7 @@ public abstract class ACheckBox extends Widget {
 
     public void uimsg(String msg, Object... args) {
 	if(msg == "ch") {
-	    this.a = ((Integer)args[0]) != 0;
+	    this.a = Utils.bv(args[0]);
 	} else {
 	    super.uimsg(msg, args);
 	}

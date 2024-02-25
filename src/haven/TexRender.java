@@ -141,15 +141,15 @@ public abstract class TexRender implements Tex, Disposable {
 	    final int tid;
 	    int a = 0;
 	    if(args[a] instanceof String) {
-		tres = res.pool.load((String)args[a], (Integer)args[a + 1]);
+		tres = res.pool.load((String)args[a], Utils.iv(args[a + 1]));
 		if(args.length > a + 2)
-		    tid = (Integer)args[a + 2];
+		    tid = Utils.iv(args[a + 2]);
 		else
 		    tid = -1;
 		a += 3;
 	    } else {
 		tres = res.indir();
-		tid = (Integer)args[a];
+		tid = Utils.iv(args[a]);
 		a += 1;
 	    }
 	    boolean tclip = defclip;

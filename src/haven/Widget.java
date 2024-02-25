@@ -650,15 +650,15 @@ public class Widget {
 	
     public void uimsg(String msg, Object... args) {
 	if(msg == "tabfocus") {
-	    setfocustab(((Integer)args[0] != 0));
+	    setfocustab(Utils.bv(args[0]));
 	} else if(msg == "act") {
-	    canactivate = (Integer)args[0] != 0;
+	    canactivate = Utils.bv(args[0]);
 	} else if(msg == "cancel") {
-	    cancancel = (Integer)args[0] != 0;
+	    cancancel = Utils.bv(args[0]);
 	} else if(msg == "autofocus") {
-	    autofocus = (Integer)args[0] != 0;
+	    autofocus = Utils.bv(args[0]);
 	} else if(msg == "focus") {
-	    int tid = (Integer)args[0];
+	    int tid = Utils.iv(args[0]);
 	    if(tid < 0) {
 		setfocus(null);
 	    } else {
@@ -671,29 +671,29 @@ public class Widget {
 	} else if(msg == "pack") {
 	    pack();
 	} else if(msg == "z") {
-	    z((Integer)args[0]);
+	    z(Utils.iv(args[0]));
 	} else if(msg == "show") {
-	    show((Integer)args[0] != 0);
+	    show(Utils.bv(args[0]));
 	} else if(msg == "curs") {
 	    if(args.length == 0)
 		cursor = null;
 	    else
-		cursor = Resource.remote().load((String)args[0], (Integer)args[1]);
+		cursor = Resource.remote().load((String)args[0], Utils.iv(args[1]));
 	} else if(msg == "tip") {
 	    int a = 0;
 	    Object tt = args[a++];
 	    if(tt instanceof String) {
 		settip((String)tt);
 	    } else if(tt instanceof Integer) {
-		tooltip = new PaginaTip(ui.sess.getres((Integer)tt));
+		tooltip = new PaginaTip(ui.sess.getresv(tt));
 	    }
 	} else if(msg == "gk") {
 	    if(args[0] instanceof Integer) {
-		KeyMatch key = gkeymatch((Integer)args[0]);
+		KeyMatch key = gkeymatch(Utils.iv(args[0]));
 		if(args.length > 1) {
 		    int modign = 0;
 		    if(args.length > 2)
-			modign = (Integer)args[2];
+			modign = Utils.iv(args[2]);
 		    setgkey(KeyBinding.get("wgk/" + (String)args[1], key, modign));
 		} else {
 		    gkey = key;

@@ -232,7 +232,7 @@ public class FlowerMenu extends Widget {
 	    mg.remove();
 	    kg.remove();
 	} else if(msg == "act") {
-	    new Chosen(opts[(Integer)args[0]]);
+	    new Chosen(opts[Utils.iv(args[0])]);
 	    mg.remove();
 	    kg.remove();
 	}

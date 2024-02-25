@@ -244,7 +244,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     @RName("grp")
     public static class $grp implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(new GroupSelector((Integer)args[0]) {
+	    return(new GroupSelector(Utils.iv(args[0])) {
 		    public void changed(int group) {
 			wdgmsg("ch", group);
 		    }
@@ -537,11 +537,11 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
     
     public void uimsg(String msg, Object... args) {
 	if(msg == "add") {
-	    int id = (Integer)args[0];
+	    int id = Utils.iv(args[0]);
 	    String name = ((String)args[1]).intern();
-	    int online = (Integer)args[2];
-	    int group = (Integer)args[3];
-	    boolean seen = ((Integer)args[4]) != 0;
+	    int online = Utils.iv(args[2]);
+	    int group = Utils.iv(args[3]);
+	    boolean seen = Utils.bv(args[4]);
 	    Buddy b = new Buddy(id, name, online, group, seen);
 	    synchronized(buddies) {
 		buddies.add(b);
@@ -550,7 +550,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    }
 	    serial++;
 	} else if(msg == "rm") {
-	    int id = (Integer)args[0];
+	    int id = Utils.iv(args[0]);
 	    Buddy b;
 	    synchronized(buddies) {
 		b = idmap.get(id);
@@ -561,18 +561,18 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    }
 	    serial++;
 	} else if(msg == "chst") {
-	    int id = (Integer)args[0];
-	    int online = (Integer)args[1];
+	    int id = Utils.iv(args[0]);
+	    int online = Utils.iv(args[1]);
 	    Buddy b = find(id);
 	    b.chstatus(online);
 	    if((info != null) && (info.buddy == b))
 		info.update();
 	} else if(msg == "upd") {
-	    int id = (Integer)args[0];
+	    int id = Utils.iv(args[0]);
 	    String name = (String)args[1];
-	    int online = (Integer)args[2];
-	    int grp = (Integer)args[3];
-	    boolean seen = ((Integer)args[4]) != 0;
+	    int online = Utils.iv(args[2]);
+	    int grp = Utils.iv(args[3]);
+	    boolean seen = Utils.bv(args[4]);
 	    Buddy b = find(id);
 	    synchronized(b) {
 		b.name = name;
@@ -584,7 +584,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 		info.update();
 	    serial++;
 	} else if(msg == "sel") {
-	    int id = (Integer)args[0];
+	    int id = Utils.iv(args[0]);
 	    Window p = getparent(Window.class);
 	    if(p != null) {
 		p.show();
@@ -600,7 +600,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    pname.buf.point(pname.buf.length());
 	    pname.commit();
 	} else if(msg == "i-set") {
-	    Buddy b = (args[0] == null) ? null : find((Integer)args[0]);
+	    Buddy b = (args[0] == null) ? null : find(Utils.iv(args[0]));
 	    bl.sel = b;
 	    if((info == null) || (info.buddy != b)) {
 		if(info != null) {

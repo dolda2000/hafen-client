@@ -54,7 +54,7 @@ public class Avaview extends PView {
 	    boolean inner = false;
 	    String camnm = "avacam";
 	    if(args[0] != null)
-		avagob = Utils.uint32((Integer)args[0]);
+		avagob = Utils.uiv(args[0]);
 	    if((args.length > 1) && (args[1] != null)) {
 		sz = UI.scale((Coord)args[1]);
 		inner = true;
@@ -84,7 +84,7 @@ public class Avaview extends PView {
 	    if(args[0] == null)
 		this.avagob = -1;
 	    else
-		this.avagob = Utils.uint32((Integer)args[0]);
+		this.avagob = Utils.uiv(args[0]);
 	    this.avadesc = null;
 	} else if(msg == "pop") {
 	    pop(Desc.decode(ui.sess, args));

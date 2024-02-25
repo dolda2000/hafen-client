@@ -60,7 +60,7 @@ public abstract class LayerMeter extends Widget implements ItemInfo.Owner {
 	if(arg instanceof Integer)
 	    return(((Integer)arg).doubleValue() * 0.01);
 	else
-	    return(((Number)arg).doubleValue());
+	    return(Utils.dv(arg));
     }
 
     public static List<Meter> decmeters(Object[] args, int s) {

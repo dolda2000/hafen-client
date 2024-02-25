@@ -380,14 +380,14 @@ public class Composited implements RenderTree.Node, EquipTarget {
 
 	public static Desc decode(Session sess, Object[] args) {
 	    Desc ret = new Desc();
-	    ret.base = sess.getres((Integer)args[0]);
+	    ret.base = sess.getresv(args[0]);
 	    Object[] ma = (Object[])args[1];
 	    for(int i = 0; i < ma.length; i += 2) {
 		List<ResData> tex = new ArrayList<ResData>();
-		Indir<Resource> mod = sess.getres((Integer)ma[i]);
+		Indir<Resource> mod = sess.getresv(ma[i]);
 		Object[] ta = (Object[])ma[i + 1];
 		for(int o = 0; o < ta.length; o++) {
-		    Indir<Resource> tr = sess.getres((Integer)ta[o]);
+		    Indir<Resource> tr = sess.getresv(ta[o]);
 		    Message sdt = Message.nil;
 		    if((ta.length > o + 1) && (ta[o + 1] instanceof byte[]))
 			sdt = new MessageBuf((byte[])ta[++o]);
@@ -399,13 +399,13 @@ public class Composited implements RenderTree.Node, EquipTarget {
 	    for(int i = 0; i < ea.length; i++) {
 		Object[] qa = (Object[])ea[i];
 		int n = 0;
-		int t = (Integer)qa[n++];
+		int t = Utils.iv(qa[n++]);
 		String at = (String)qa[n++];
-		Indir<Resource> res = sess.getres((Integer)qa[n++]);
+		Indir<Resource> res = sess.getresv(qa[n++]);
 		Message sdt = Message.nil;
 		if(qa[n] instanceof byte[])
 		    sdt = new MessageBuf((byte[])qa[n++]);
-		Coord3f off = new Coord3f(((Number)qa[n + 0]).floatValue(), ((Number)qa[n + 1]).floatValue(), ((Number)qa[n + 2]).floatValue());
+		Coord3f off = new Coord3f(Utils.fv(qa[n + 0]), Utils.fv(qa[n + 1]), Utils.fv(qa[n + 2]));
 		ret.equ.add(new ED(t, at, new ResData(res, sdt), off));
 	    }
 	    return(ret);

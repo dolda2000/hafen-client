@@ -43,8 +43,8 @@ public class ISBox extends Widget implements DTarget {
 	    if(args[0] instanceof String)
 		res = Resource.remote().load((String)args[0]);
 	    else
-		res = ui.sess.getres((Integer)args[0]);
-	    return(new ISBox(res, (Integer)args[1], (Integer)args[2], (Integer)args[3]));
+		res = ui.sess.getresv(args[0]);
+	    return(new ISBox(res, Utils.iv(args[1]), Utils.iv(args[2]), Utils.iv(args[3])));
 	}
     }
     
@@ -110,7 +110,7 @@ public class ISBox extends Widget implements DTarget {
     
     public void uimsg(String msg, Object... args) {
         if(msg == "chnum") {
-            setlabel((Integer)args[0], (Integer)args[1], (Integer)args[2]);
+            setlabel(Utils.iv(args[0]), Utils.iv(args[1]), Utils.iv(args[2]));
         } else {
             super.uimsg(msg, args);
         }

@@ -100,14 +100,14 @@ public class AvaRender {
 		for(int i = 0; i < aequ.length;) {
 		    if(aequ[i] instanceof Object[]) {
 			Object[] cequ = (Object[])aequ[i];
-			int t = (Integer)cequ[0];
+			int t = Utils.iv(cequ[0]);
 			String at = (String)cequ[1];
 			Indir<Resource> er = Resource.local().load((String)cequ[2]);
 			byte[] sdt = (byte[])cequ[3];
 			Coord3f off = new Coord3f(Utils.fv(cequ[4]), Utils.fv(cequ[5]), Utils.fv(cequ[6]));
 			equ.add(new ED(t, at, new ResData(er, new MessageBuf(sdt)), off));
 		    } else {
-			int t = (Integer)aequ[i++];
+			int t = Utils.iv(aequ[i++]);
 			String at = (String)aequ[i++];
 			Indir<Resource> er = Resource.local().load((String)aequ[i++]);
 			Coord3f off = new Coord3f(Utils.fv(aequ[i++]), Utils.fv(aequ[i++]), Utils.fv(aequ[i++]));

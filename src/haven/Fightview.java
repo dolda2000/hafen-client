@@ -208,10 +208,10 @@ public class Fightview extends Widget {
 	    if(args[1] == null)
 		p = buffs;
 	    else
-		p = getrel((Integer)args[1]).buffs;
+		p = getrel(Utils.uiv(args[1])).buffs;
 	    p.addchild(child);
 	} else if(args[0].equals("relbuff")) {
-	    getrel((Integer)args[1]).relbuffs.addchild(child);
+	    getrel(Utils.uiv(args[1])).relbuffs.addchild(child);
 	} else {
 	    super.addchild(child, args);
 	}
@@ -307,23 +307,17 @@ public class Fightview extends Widget {
         throw(new Notfound(gobid));
     }
 
-    private Indir<Resource> n2r(int num) {
-	if(num < 0)
-	    return(null);
-	return(ui.sess.getres(num));
-    }
-
     public void uimsg(String msg, Object... args) {
         if(msg == "new") {
-            Relation rel = new Relation(uint32((Integer)args[0]));
-	    rel.give((Integer)args[1]);
-	    rel.ip = (Integer)args[2];
-	    rel.oip = (Integer)args[3];
+            Relation rel = new Relation(Utils.uiv(args[0]));
+	    rel.give(Utils.iv(args[1]));
+	    rel.ip = Utils.iv(args[2]);
+	    rel.oip = Utils.iv(args[3]);
             lsrel.addFirst(rel);
 	    updrel();
             return;
         } else if(msg == "del") {
-            Relation rel = getrel(uint32((Integer)args[0]));
+            Relation rel = getrel(Utils.uiv(args[0]));
 	    rel.remove();
             lsrel.remove(rel);
 	    if(rel == current)
@@ -331,21 +325,21 @@ public class Fightview extends Widget {
 	    updrel();
             return;
         } else if(msg == "upd") {
-            Relation rel = getrel(uint32((Integer)args[0]));
-	    rel.give((Integer)args[1]);
-	    rel.ip = (Integer)args[2];
-	    rel.oip = (Integer)args[3];
+            Relation rel = getrel(Utils.uiv(args[0]));
+	    rel.give(Utils.iv(args[1]));
+	    rel.ip = Utils.iv(args[2]);
+	    rel.oip = Utils.iv(args[3]);
             return;
 	} else if(msg == "used") {
-	    use((args[0] == null)?null:ui.sess.getres((Integer)args[0]));
+	    use((args[0] == null) ? null : ui.sess.getresv(args[0]));
 	    return;
 	} else if(msg == "ruse") {
-	    Relation rel = getrel(uint32((Integer)args[0]));
-	    rel.use((args[1] == null)?null:ui.sess.getres((Integer)args[1]));
+	    Relation rel = getrel(Utils.uiv(args[0]));
+	    rel.use((args[1] == null) ? null : ui.sess.getresv(args[1]));
 	    return;
         } else if(msg == "cur") {
             try {
-                Relation rel = getrel(uint32((Integer)args[0]));
+                Relation rel = getrel(Utils.uiv(args[0]));
                 lsrel.remove(rel);
                 lsrel.addFirst(rel);
 		setcur(rel);
@@ -355,14 +349,14 @@ public class Fightview extends Widget {
             return;
 	} else if(msg == "atkc") {
 	    atkcs = Utils.rtime();
-	    atkct = atkcs + (((Number)args[0]).doubleValue() * 0.06);
+	    atkct = atkcs + (Utils.dv(args[0]) * 0.06);
 	    return;
 	} else if(msg == "blk") {
-	    blk = n2r((Integer)args[0]);
+	    blk = ui.sess.getresv(args[0]);
 	    return;
 	} else if(msg == "atk") {
-	    batk = n2r((Integer)args[0]);
-	    iatk = n2r((Integer)args[1]);
+	    batk = ui.sess.getresv(args[0]);
+	    iatk = ui.sess.getresv(args[1]);
 	    return;
 	}
         super.uimsg(msg, args);

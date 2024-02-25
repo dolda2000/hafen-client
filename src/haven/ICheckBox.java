@@ -36,10 +36,10 @@ public class ICheckBox extends ACheckBox {
     @RName("ichk")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    Tex up = Loading.waitfor(ui.sess.getres((Integer)args[0])).flayer(Resource.imgc).tex();
-	    Tex down = Loading.waitfor(ui.sess.getres((Integer)args[1])).flayer(Resource.imgc).tex();
-	    Tex hoverup = (args.length > 2) ? Loading.waitfor(ui.sess.getres((Integer)args[1])).flayer(Resource.imgc).tex() : up;
-	    Tex hoverdown = (args.length > 3) ? Loading.waitfor(ui.sess.getres((Integer)args[1])).flayer(Resource.imgc).tex() : down;
+	    Tex up = Loading.waitfor(ui.sess.getresv(args[0])).flayer(Resource.imgc).tex();
+	    Tex down = Loading.waitfor(ui.sess.getresv(args[1])).flayer(Resource.imgc).tex();
+	    Tex hoverup = (args.length > 2) ? Loading.waitfor(ui.sess.getresv(args[1])).flayer(Resource.imgc).tex() : up;
+	    Tex hoverdown = (args.length > 3) ? Loading.waitfor(ui.sess.getresv(args[1])).flayer(Resource.imgc).tex() : down;
 	    ICheckBox ret = new ICheckBox(up, down, hoverup, hoverdown);
 	    ret.canactivate = true;
 	    return(ret);

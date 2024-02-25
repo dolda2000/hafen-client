@@ -245,11 +245,11 @@ public class Material implements Pipe.Op {
 	    final Indir<Resource> lres;
 	    final int id;
 	    if(args[0] instanceof String) {
-		lres = res.pool.load((String)args[0], (Integer)args[1]);
-		id = (args.length > 2)?(Integer)args[2]:-1;
+		lres = res.pool.load((String)args[0], Utils.iv(args[1]));
+		id = (args.length > 2) ? Utils.iv(args[2]) : -1;
 	    } else {
 		lres = res.indir();
-		id = (Integer)args[0];
+		id = Utils.iv(args[0]);
 	    }
 	    return(new Res.Resolver() {
 		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
