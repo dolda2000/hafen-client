@@ -62,7 +62,7 @@ public class Fightsess extends Widget {
     @RName("fsess")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    int nact = (Integer)args[0];
+	    int nact = Utils.iv(args[0]);
 	    return(new Fightsess(nact));
 	}
     }
@@ -350,21 +350,21 @@ public class Fightsess extends Widget {
 
     public void uimsg(String msg, Object... args) {
 	if(msg == "act") {
-	    int n = (Integer)args[0];
+	    int n = Utils.iv(args[0]);
 	    if(args.length > 1) {
-		Indir<Resource> res = ui.sess.getres((Integer)args[1]);
+		Indir<Resource> res = ui.sess.getresv(args[1]);
 		actions[n] = new Action(res);
 	    } else {
 		actions[n] = null;
 	    }
 	} else if(msg == "acool") {
-	    int n = (Integer)args[0];
+	    int n = Utils.iv(args[0]);
 	    double now = Utils.rtime();
 	    actions[n].cs = now;
-	    actions[n].ct = now + (((Number)args[1]).doubleValue() * 0.06);
+	    actions[n].ct = now + (Utils.dv(args[1]) * 0.06);
 	} else if(msg == "use") {
-	    this.use = (Integer)args[0];
-	    this.useb = (args.length > 1) ? ((Integer)args[1]) : -1;
+	    this.use = Utils.iv(args[0]);
+	    this.useb = (args.length > 1) ? Utils.iv(args[1]) : -1;
 	} else if(msg == "used") {
 	} else {
 	    super.uimsg(msg, args);

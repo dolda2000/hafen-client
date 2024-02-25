@@ -38,7 +38,7 @@ public class IMeter extends LayerMeter {
     @RName("im")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    Indir<Resource> bg = ui.sess.getres((Integer)args[0]);
+	    Indir<Resource> bg = ui.sess.getresv(args[0]);
 	    List<Meter> meters = decmeters(args, 1);
 	    return(new IMeter(bg, meters));
 	}

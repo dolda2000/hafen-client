@@ -358,14 +358,12 @@ public abstract class ItemInfo {
 		    inf = ((InfoFactory)a[0]).build(owner, raw, a);
 		} else {
 		    Resource ttres;
-		    if(a[0] instanceof Integer) {
-			ttres = rr.getres((Integer)a[0]).get();
-		    } else if(a[0] instanceof Resource) {
+		    if(a[0] instanceof Resource) {
 			ttres = (Resource)a[0];
 		    } else if(a[0] instanceof Indir) {
 			ttres = (Resource)((Indir)a[0]).get();
 		    } else {
-			throw(new ClassCastException("Unexpected info specification " + a[0].getClass()));
+			ttres = rr.getresv(a[0]).get();
 		    }
 		    InfoFactory f = ttres.getcode(InfoFactory.class, true);
 		    inf = f.build(owner, raw, a);

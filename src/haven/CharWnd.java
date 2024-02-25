@@ -278,8 +278,8 @@ public class CharWnd extends Window {
 	    int a = 0;
 	    while(a < args.length) {
 		String attr = (String)args[a++];
-		int base = (Integer)args[a++];
-		int comp = (Integer)args[a++];
+		int base = Utils.iv(args[a++]);
+		int comp = Utils.iv(args[a++]);
 		ui.sess.glob.cattr(attr, base, comp);
 	    }
 	} else if(nm == "exp") {

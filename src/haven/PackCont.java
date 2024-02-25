@@ -114,11 +114,11 @@ public abstract class PackCont extends Widget {
 	    if(args.length == 0) {
 		last(child, 0);
 	    } else if(args[0] instanceof Integer) {
-		switch(((Integer)args[0]).intValue()) {
-		case (int)'l': last(child, (Integer)args[1]); break;
-		case (int)'i': insert(child, (Integer)args[1], (Integer)args[2]); break;
-		case (int)'a': after(child, ui.getwidget((Integer)args[1]), (Integer)args[2]); break;
-		case (int)'b': before(child, ui.getwidget((Integer)args[1]), (Integer)args[2]); break;
+		switch(Utils.iv(args[0])) {
+		case (int)'l': last(child, Utils.iv(args[1])); break;
+		case (int)'i': insert(child, Utils.iv(args[1]), Utils.iv(args[2])); break;
+		case (int)'a': after(child, ui.getwidget(Utils.iv(args[1])), Utils.iv(args[2])); break;
+		case (int)'b': before(child, ui.getwidget(Utils.iv(args[1])), Utils.iv(args[2])); break;
 		default:
 		    throw(new UI.UIException("Unknown child widget creation specification.", null, args));
 		}
@@ -154,9 +154,9 @@ public abstract class PackCont extends Widget {
 	@RName("linpack")
 	public static class $linpack implements Factory {
 	    public Widget create(UI ui, Object[] args) {
-		LinPack ret = (((Integer)args[0]) == 0) ? new VPack() : new HPack();
+		LinPack ret = Utils.bv(args[0]) ? new HPack() : new VPack();
 		if(args.length > 1)
-		    ret.margin(UI.scale((Integer)args[1]));
+		    ret.margin(UI.scale(Utils.iv(args[1])));
 		return(ret);
 	    }
 	}

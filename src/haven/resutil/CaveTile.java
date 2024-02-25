@@ -75,9 +75,9 @@ public class CaveTile extends Tiler {
 		Object[] desc = (Object[])rdesc;
 		String p = (String)desc[0];
 		if(p.equals("wmat")) {
-		    wtex = set.getres().flayer(Material.Res.class, (Integer)desc[1]).get();
+		    wtex = set.getres().flayer(Material.Res.class, Utils.iv(desc[1])).get();
 		} else if(p.equals("gnd")) {
-		    Resource gres = set.getres().pool.load((String)desc[1], (Integer)desc[2]).get();
+		    Resource gres = set.getres().pool.load((String)desc[1], Utils.iv(desc[2])).get();
 		    Tileset ts = gres.flayer(Tileset.class);
 		    ground = ts.tfac().create(id, ts);
 		}

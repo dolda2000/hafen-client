@@ -140,7 +140,7 @@ public class Resource implements Serializable {
 		int id = ((Number)desc).intValue();
 		if(id < 0)
 		    return(null);
-		return(this.getres(((Number)desc).intValue()));
+		return(this.getres(id));
 	    }
 	    throw(new ClassCastException("unknown type for resource id: " + desc));
 	}
@@ -177,7 +177,7 @@ public class Resource implements Serializable {
 		    return(Collections.emptyMap());
 		Map<Integer, Integer> ret = new HashMap<>();
 		for(int a = 0; a < args.length; a += 2)
-		    ret.put((Integer)args[a], (Integer)args[a + 1]);
+		    ret.put(Utils.iv(args[a]), Utils.iv(args[a + 1]));
 		return(ret);
 	    }
 

@@ -244,7 +244,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    String chrid = (String)args[0];
-	    long plid = Utils.uint32((Integer)args[1]);
+	    long plid = Utils.uiv(args[1]);
 	    String genus = "";
 	    if(args.length > 2)
 		genus = (String)args[2];
@@ -1201,7 +1201,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    msg(text);
 	} else if(msg == "prog") {
 	    if(args.length > 0) {
-		double p = ((Number)args[0]).doubleValue() / 100.0;
+		double p = Utils.dv(args[0]) / 100.0;
 		if(prog == null)
 		    prog = adda(new Progress(p), 0.5, 0.35);
 		else
@@ -1213,11 +1213,11 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		}
 	    }
 	} else if(msg == "setbelt") {
-	    int slot = (Integer)args[0];
+	    int slot = Utils.iv(args[0]);
 	    if(args.length < 2) {
 		belt[slot] = null;
 	    } else {
-		Indir<Resource> res = ui.sess.getres((Integer)args[1]);
+		Indir<Resource> res = ui.sess.getresv(args[1]);
 		Message sdt = Message.nil;
 		if(args.length > 2)
 		    sdt = new MessageBuf((byte[])args[2]);
@@ -1255,9 +1255,9 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		}
 	    }
 	} else if(msg == "polowner") {
-	    int id = (Integer)args[0];
+	    int id = Utils.iv(args[0]);
 	    String o = (String)args[1];
-	    boolean n = ((Integer)args[2]) != 0;
+	    boolean n = Utils.bv(args[2]);
 	    if(o != null)
 		o = o.intern();
 	    String cur = polowners.get(id);
@@ -1270,29 +1270,29 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    }
 	    polowners.put(id, o);
 	} else if(msg == "showhelp") {
-	    Indir<Resource> res = ui.sess.getres((Integer)args[0]);
+	    Indir<Resource> res = ui.sess.getresv(args[0]);
 	    if(help == null)
 		help = adda(new HelpWnd(res), 0.5, 0.25);
 	    else
 		help.res = res;
 	} else if(msg == "map-mark") {
-	    long gobid = Utils.uint32((Integer)args[0]);
+	    long gobid = Utils.uiv(args[0]);
 	    long oid = ((Number)args[1]).longValue();
-	    Indir<Resource> res = ui.sess.getres((Integer)args[2]);
+	    Indir<Resource> res = ui.sess.getresv(args[2]);
 	    String nm = (String)args[3];
 	    if(mapfile != null)
 		mapfile.markobj(gobid, oid, res, nm);
 	} else if(msg == "map-icons") {
 	    GobIcon.Settings conf = this.iconconf;
-	    int tag = (Integer)args[0];
+	    int tag = Utils.iv(args[0]);
 	    if(args.length < 2) {
 		if(conf.tag != tag)
 		    wdgmsg("map-icons", conf.tag);
 	    } else if(args[1] instanceof String) {
-		Resource.Spec res = new Resource.Spec(null, (String)args[1], (Integer)args[2]);
+		Resource.Spec res = new Resource.Spec(null, (String)args[1], Utils.iv(args[2]));
 		GobIcon.Setting cset = new GobIcon.Setting(res);
 		boolean has = conf.settings.containsKey(res.name);
-		cset.show = cset.defshow = ((Integer)args[3]) != 0;
+		cset.show = cset.defshow = Utils.bv(args[3]);
 		conf.receive(tag, new GobIcon.Setting[] {cset});
 		saveiconconf();
 		if(!has && conf.notify) {
@@ -1309,8 +1309,8 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		Collection<GobIcon.Setting> csets = new ArrayList<>();
 		while(a < sub.length) {
 		    String resnm = (String)sub[a++];
-		    int resver = (Integer)sub[a++];
-		    int fl = (Integer)sub[a++];
+		    int resver = Utils.iv(sub[a++]);
+		    int fl = Utils.iv(sub[a++]);
 		    Resource.Spec res = new Resource.Spec(null, resnm, resver);
 		    GobIcon.Setting cset = new GobIcon.Setting(res);
 		    cset.show = cset.defshow = ((fl & 1) != 0);

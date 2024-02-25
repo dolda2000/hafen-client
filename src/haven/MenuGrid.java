@@ -606,12 +606,12 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    if(args[0] == null)
 		change(null);
 	    else
-		change(paginafor(ui.sess.getres((Integer)args[0])));
+		change(paginafor(ui.sess.getresv(args[0])));
 	} else if(msg == "fill") {
 	    synchronized(paginae) {
 		int a = 0;
 		while(a < args.length) {
-		    int fl = (Integer)args[a++];
+		    int fl = Utils.iv(args[a++]);
 		    Pagina pag;
 		    Object id;
 		    if((fl & 2) != 0)

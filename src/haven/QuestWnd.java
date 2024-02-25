@@ -447,7 +447,7 @@ public class QuestWnd extends Widget {
 			}
 		    }
 		    if(cond[i].wdata != null) {
-			Indir<Resource> wres = ui.sess.getres((Integer)cond[i].wdata[0]);
+			Indir<Resource> wres = ui.sess.getresv(cond[i].wdata[0]);
 			nw[i] = (CondWidget)wres.get().getcode(Widget.Factory.class, true).create(ui, new Object[] {cond[i]});
 		    } else {
 			nw[i] = new DefaultCond(cond[i]);
@@ -511,7 +511,7 @@ public class QuestWnd extends Widget {
 	public static class $quest implements Factory {
 	    public Widget create(UI ui, Object[] args) {
 		int id = Utils.iv(args[0]);
-		Indir<Resource> res = ui.sess.getres((Integer)args[1]);
+		Indir<Resource> res = ui.sess.getresv(args[1]);
 		String title = (args.length > 2) ? (String)args[2] : null;
 		return(new DefaultBox(id, res, title));
 	    }
@@ -682,9 +682,8 @@ public class QuestWnd extends Widget {
 	if(nm == "quests") {
 	    for(int i = 0; i < args.length;) {
 		int id = Utils.iv(args[i++]);
-		Integer resid = (Integer)args[i++];
-		if(resid != null) {
-		    Indir<Resource> res = ui.sess.getres(resid);
+		Indir<Resource> res = ui.sess.getresv(args[i++]);
+		if(res != null) {
 		    int st = Utils.iv(args[i++]);
 		    int mtime = Utils.iv(args[i++]);
 		    String title = null;

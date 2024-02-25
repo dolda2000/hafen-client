@@ -53,7 +53,7 @@ public class TextEntry extends Widget implements ReadLine.Owner {
     @RName("text")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(new TextEntry(UI.scale((Integer)args[0]), (String)args[1]));
+	    return(new TextEntry(UI.scale(Utils.iv(args[0])), (String)args[1]));
 	}
     }
 
@@ -79,16 +79,16 @@ public class TextEntry extends Widget implements ReadLine.Owner {
 	    if(args.length == 0) {
 		buf.select(0, buf.length());
 	    } else {
-		int f = (args[0] == null) ? buf.length() : Utils.clip((Integer)args[0], 0, buf.length());
-		int t = (args[1] == null) ? buf.length() : Utils.clip((Integer)args[1], 0, buf.length());
+		int f = (args[0] == null) ? buf.length() : Utils.clip(Utils.iv(args[0]), 0, buf.length());
+		int t = (args[1] == null) ? buf.length() : Utils.clip(Utils.iv(args[1]), 0, buf.length());
 		buf.select(f, t);
 	    }
 	} else if(name == "get") {
 	    wdgmsg("text", buf.line());
 	} else if(name == "pw") {
-	    pw = ((Integer)args[0]) != 0;
+	    pw = Utils.bv(args[0]);
 	} else if(name == "dshow") {
-	    dshow = ((Integer)args[0]) != 0;
+	    dshow = Utils.bv(args[0]);
 	} else if(name == "cmt") {
 	    commit();
 	} else {

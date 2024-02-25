@@ -587,7 +587,8 @@ public class PUtils {
             return(convolvedown(img, tsz, filter));
         if((tsz.x >= img.getWidth()) && (tsz.y >= img.getHeight()))
             return(convolveup(img, tsz, filter));
-        throw(new IllegalArgumentException("Can only scale images up or down in both dimensions"));
+        throw(new IllegalArgumentException(String.format("Can only scale images up or down in both dimensions: (%d, %d) -> (%d, %d)",
+							 img.getWidth(), img.getHeight(), tsz.x, tsz.y)));
     }
     public static BufferedImage convolve(BufferedImage img, Coord tsz, Convolution filter) {
 	return(new BufferedImage(img.getColorModel(), convolve(img.getRaster(), tsz, filter), false, null));

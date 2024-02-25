@@ -32,7 +32,7 @@ public class Progress extends Widget {
     @RName("prog")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(new Progress((Integer)args[0]));
+	    return(new Progress(Utils.iv(args[0])));
 	}
     }
 
@@ -47,7 +47,7 @@ public class Progress extends Widget {
 
     public void uimsg(String msg, Object... args) {
 	if(msg == "p") {
-	    text = Text.renderf(FlowerMenu.pink, "%d%%", (Integer)args[0]);
+	    text = Text.renderf(FlowerMenu.pink, "%d%%", Utils.iv(args[0]));
 	} else {
 	    super.uimsg(msg, args);
 	}
