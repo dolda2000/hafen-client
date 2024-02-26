@@ -1347,7 +1347,7 @@ public class Widget {
 			    else
 				text = title + "\n\n" + pag.text;
 			}
-			rend = RichText.render(text, 300).tex();
+			rend = RichText.render(text, UI.scale(300)).tex();
 		    } catch(Loading l) {
 			return(null);
 		    }
