@@ -35,6 +35,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.InputEvent;
 import java.awt.image.BufferedImage;
+import java.io.Serializable;
 import static haven.Utils.el;
 import haven.render.Environment;
 import haven.render.Render;
@@ -59,6 +60,8 @@ public class UI {
     public GSettings gprefs = GSettings.load(true);
     private boolean gprefsdirty = false;
     public final ActAudio.Root audio = new ActAudio.Root();
+    public final Loader loader;
+    public final CommandQueue queue = new CommandQueue();
     private static final double scalef;
     
     {
@@ -159,6 +162,11 @@ public class UI {
 	    this.mname = mname;
 	    this.args = args;
 	}
+
+	public void printStackTrace(java.io.PrintStream out) {
+	    super.printStackTrace(out);
+	    out.printf("Message: %s; Arguments: %s\n", mname, Arrays.asList(args));
+	}
     }
 
     public static class UIWarning extends Warning {
@@ -179,6 +187,138 @@ public class UI {
 	rwidgets.put(root, 0);
 	if(fun != null)
 	    fun.init(this);
+	if(sess == null) {
+	    loader = new Loader();
+	} else {
+	    if((loader = sess.glob.loader) == null)
+		throw(new NullPointerException());
+	}
+    }
+
+    public static class Command implements Serializable {
+	private static final java.util.concurrent.atomic.AtomicInteger nextid = new java.util.concurrent.atomic.AtomicInteger(0);
+	public final int id = nextid.getAndIncrement();
+	public final Collection<Integer> deps = new ArrayList<>();
+	public final Collection<Integer> bars  = new ArrayList<>();
+	public final Collection<Command> next = new ArrayList<>();
+	public final Collection<Command> wait = new ArrayList<>();
+	public final Runnable action;
+
+	public Command(Runnable action) {
+	    this.action = action;
+	}
+
+	public Command dep(int id, boolean bar) {
+	    deps.add(id);
+	    if(bar)
+		bars.add(id);
+	    return(this);
+	}
+
+	private String fl(String id, Collection<?> l) {
+	    if(l.isEmpty())
+		return("");
+	    StringBuilder buf = new StringBuilder();
+	    buf.append(" (");
+	    buf.append(id);
+	    for(Object x : l)
+		buf.append(" " + x);
+	    buf.append(")");
+	    return(buf.toString());
+	}
+
+	public String toString() {
+	    return(String.format("#<cmd %d %s%s%s>", this.id, action, fl("deps", deps), fl("bars", bars)));
+	}
+    }
+
+    public static class CommandException extends RuntimeException {
+	public final Command cmd;
+
+	public CommandException(Command cmd, Throwable cause) {
+	    super(cause);
+	    this.cmd = cmd;
+	}
+
+	public String getMessage() {
+	    return(String.format("error during ui command-handling: " + cmd));
+	}
+    }
+
+    private static final boolean cmdjitter = false;
+    private static final boolean cmddump = false;
+    public class CommandQueue {
+	private final Map<Integer, Command> score = new HashMap<>();
+
+	private CommandQueue() {}
+
+	private void run(Command cmd) {
+	    if(cmdjitter) {
+		try {
+		    Thread.sleep((int)(Math.random() * 200));
+		} catch(InterruptedException e) {
+		    Thread.currentThread().interrupt();
+		}
+	    }
+	    try {
+		cmd.action.run();
+	    } catch(Loading l) {
+		throw(l);
+	    } catch(RuntimeException | Error e) {
+		throw(new CommandException(cmd, e));
+	    }
+	    finish(cmd);
+	}
+
+	private void execute(Command cmd) {
+	    if(cmddump)
+		System.err.printf("exec: %s\n", cmd);
+	    loader.defer(() -> run(cmd), null);
+	}
+
+	public void submit(Command cmd) {
+	    boolean ready = true;
+	    synchronized(this) {
+		for(Integer dep : cmd.deps) {
+		    Command last = score.get(dep);
+		    if(last != null) {
+			last.next.add(cmd);
+			cmd.wait.add(last);
+			ready = false;
+		    }
+		}
+		for(Integer bar : cmd.bars) {
+		    score.put(bar, cmd);
+		}
+		if(cmddump && !ready) {
+		    ArrayList<Integer> wait = new ArrayList<>();
+		    for(Command p : cmd.wait)
+			wait.add(p.id);
+		    System.err.printf("wait: %s on %s\n", cmd, wait);
+		}
+	    }
+	    if(ready)
+		execute(cmd);
+	}
+
+	public void finish(Command cmd) {
+	    if(cmddump)
+		System.err.printf("done: %s\n", cmd);
+	    Collection<Command> ready = new ArrayList<>();
+	    synchronized(this) {
+		for(Command next : cmd.next) {
+		    next.wait.remove(cmd);
+		    if(next.wait.isEmpty())
+			ready.add(next);
+		}
+		for(Integer bar : cmd.bars) {
+		    if(score.get(bar) == cmd)
+			score.remove(bar);
+		}
+	    }
+	    for(Command next : ready)
+		execute(next);
+	}
     }
 
     public void setreceiver(Receiver rcvr) {
@@ -236,34 +376,126 @@ public class UI {
 	    afterdraws.clear();
 	}
     }
-	
-    public void newwidget(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
-	Widget.Factory f = Widget.gettype2(type);
-	if(f == null)
-	    throw(new UIException("Bad widget name", type, cargs));
-	synchronized(this) {
-	    Widget wdg = f.create(this, cargs);
-	    wdg.attach(this);
-	    if(parent != -1) {
-		Widget pwdg = getwidget(parent);
-		if(pwdg == null)
-		    throw(new UIException("Null parent widget " + parent + " for " + id, type, cargs));
-		pwdg.addchild(wdg, pargs);
+
+    private Collection<Integer> or_deps = null, or_bars = null;
+
+    private void submitcmd(Command cmd) {
+	synchronized(queue) {
+	    if(or_deps != null) {
+		cmd.deps.clear();
+		cmd.deps.addAll(or_deps);
+		or_deps = null;
 	    }
-	    bind(wdg, id);
+	    if(or_bars != null) {
+		cmd.bars.clear();
+		cmd.bars.addAll(or_bars);
+		or_bars = null;
+	    }
+	}
+	queue.submit(cmd);
+    }
+
+    public class NewWidget implements Runnable, Serializable {
+	public final int id;
+	public final String typenm;
+	public final Object[] cargs;
+	private transient Widget.Factory type;
+
+	private NewWidget(int id, Widget.Factory type, Object... cargs) {
+	    this.id = id;
+	    this.type = type;
+	    this.typenm = null;
+	    this.cargs = cargs;
+	}
+
+	private NewWidget(int id, String type, Object... cargs) {
+	    this.id = id;
+	    this.typenm = type;
+	    this.cargs = cargs;
+	}
+
+	private transient Widget wdg = null;
+	public void run() {
+	    if((type == null) && ((type = Widget.gettype3(typenm)) == null))
+		throw(new UIException("Bad widget name", typenm, cargs));
+	    if(wdg == null)
+		wdg = type.create(UI.this, cargs);
+	    synchronized(UI.this) {
+		wdg.attach(UI.this);
+		bind(wdg, id);
+	    }
+	}
+
+	public String toString() {
+	    return(String.format("#<newwdg %d %s %s>", id, (typenm == null) ? type : typenm, Arrays.asList(cargs)));
 	}
     }
 
-    public void addwidget(int id, int parent, Object[] pargs) {
-	synchronized(this) {
-	    Widget wdg = getwidget(id);
-	    if(wdg == null)
-		throw(new UIException("Null child widget " + id + " added to " + parent, null, pargs));
-	    Widget pwdg = getwidget(parent);
-	    if(pwdg == null)
-		throw(new UIException("Null parent widget " + parent + " for " + id, null, pargs));
-	    pwdg.addchild(wdg, pargs);
+    public void newwidget(int id, Widget.Factory type, Object... cargs) {
+	submitcmd(new Command(new NewWidget(id, type, cargs)).dep(id, true));
+    }
+
+    public void newwidget(int id, String type, Object... cargs) throws InterruptedException {
+	submitcmd(new Command(new NewWidget(id, type, cargs)).dep(id, true));
+    }
+
+    private final MultiMap<Integer, Integer> shadowchildren = new HashMultiMap<>();
+    private final Map<Integer, Integer> shadowparents = new HashMap<>();
+
+    public class AddWidget implements Runnable, Serializable {
+	public final int id, parent;
+	public final Object[] pargs;
+
+	private AddWidget(int id, int parent, Object... pargs) {
+	    this.id = id;
+	    this.parent = parent;
+	    this.pargs = pargs;
 	}
+
+	public void run() {
+	    synchronized(UI.this) {
+		Widget wdg = getwidget(id);
+		Widget pwdg = getwidget(parent);
+		if(wdg == null)
+		    throw(new UIException(String.format("Null child widget %d added to %d (%s)", id, parent, pwdg), null, pargs));
+		if(pwdg == null)
+		    throw(new UIException(String.format("Null parent widget %d for %d (%s)", parent, id, wdg), null, pargs));
+		pwdg.addchild(wdg, pargs);
+	    }
+	}
+
+	public String toString() {
+	    return(String.format("#<addwdg %d @ %d %s>", id, parent, Arrays.asList(pargs)));
+	}
+    }
+
+    public void addwidget(int id, int parent, Object... pargs) {
+	synchronized(shadowchildren) {
+	    Integer prev = shadowparents.put(id, parent);
+	    if(prev != null)
+		throw(new RuntimeException(String.format("widget %d already has parent %d when adding it to %d", id, prev, parent)));
+	    shadowchildren.put(parent, id);
+	    submitcmd(new Command(new AddWidget(id, parent, pargs)).dep(id, true).dep(parent, true));
+	}
+    }
+
+    public void wdgbarrier(Collection<Integer> deps, Collection<Integer> bars) {
+	synchronized(queue) {
+	    or_deps = deps;
+	    or_bars = (bars == null) ? deps : bars;
+	}
+    }
+
+    public void newwidgetp(int id, Widget.Factory type, int parent, Object[] pargs, Object... cargs) {
+	newwidget(id, type, cargs);
+	if(parent != -1)
+	    addwidget(id, parent, pargs);
+    }
+
+    public void newwidgetp(int id, String type, int parent, Object[] pargs, Object... cargs) throws InterruptedException {
+	newwidget(id, type, cargs);
+	if(parent != -1)
+	    addwidget(id, parent, pargs);
     }
 
     public abstract class Grab {
@@ -323,12 +555,41 @@ public class UI {
 	removeid(wdg);
 	wdg.reqdestroy();
     }
-    
+
+    public class DstWidget implements Runnable, Serializable {
+	public final int id;
+
+	private DstWidget(int id) {
+	    this.id = id;
+	}
+
+	public void run() {
+	    synchronized(UI.this) {
+		Widget wdg = getwidget(id);
+		if(wdg != null)
+		    destroy(wdg);
+	    }
+	}
+
+	public String toString() {
+	    return(String.format("#<dstwdg %d>", id));
+	}
+    }
+
     public void destroy(int id) {
-	synchronized(this) {
-	    Widget wdg = getwidget(id);
-	    if(wdg != null)
-		destroy(wdg);
+	synchronized(shadowchildren) {
+	    Integer parent = shadowparents.remove(id);
+	    if(parent != null) {
+		if(shadowchildren.remove(parent, id) == null)
+		    throw(new AssertionError(String.format("mismatched shadow-tree indices when removing %d from %d", id, parent)));
+	    }
+	    for(Integer child : new ArrayList<>(shadowchildren.getall(id))) {
+		destroy(child);
+	    }
+	    Command cmd = new Command(new DstWidget(id)).dep(id, true);
+	    if(parent != null)
+		cmd.dep(parent, true);
+	    submitcmd(cmd);
 	}
     }
 	
@@ -342,15 +603,35 @@ public class UI {
 	    rcvr.rcvmsg(id, msg, args);
     }
 	
-    public void uimsg(int id, String msg, Object... args) {
-	Widget wdg = getwidget(id);
-	if(wdg != null) {
-	    synchronized(this) {
-		wdg.uimsg(msg.intern(), args);
-	    }
-	} else {
-	    throw(new UIException("Uimsg to non-existent widget " + id, msg, args));
+    public class UiMessage implements Runnable, Serializable {
+	public final int id;
+	public final String msg;
+	public final Object[] args;
+
+	private UiMessage(int id, String msg, Object[] args) {
+	    this.id = id;
+	    this.msg = msg;
+	    this.args = args;
 	}
+
+	public void run() {
+	    Widget wdg = getwidget(id);
+	    if(wdg != null) {
+		synchronized(UI.this) {
+		    wdg.uimsg(msg.intern(), args);
+		}
+	    } else {
+		throw(new UIException("Uimsg to non-existent widget " + id, msg, args));
+	    }
+	}
+
+	public String toString() {
+	    return(String.format("#<wdgmsg %d %s %s>", id, msg, Arrays.asList(args)));
+	}
+    }
+
+    public void uimsg(int id, String msg, Object... args) {
+	submitcmd(new Command(new UiMessage(id, msg, args)).dep(id, true));
     }
 	
     public static interface MessageWidget {

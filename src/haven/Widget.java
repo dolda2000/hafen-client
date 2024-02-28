@@ -166,7 +166,7 @@ public class Widget {
 	}
     }
 
-    public static Factory gettype2(String name) throws InterruptedException {
+    public static Factory gettype3(String name) {
 	if(name.indexOf('/') < 0) {
 	    synchronized(types) {
 		return(types.get(name));
@@ -177,9 +177,13 @@ public class Widget {
 		ver = Integer.parseInt(name.substring(p + 1));
 		name = name.substring(0, p);
 	    }
-	    Indir<Resource> res = Resource.remote().load(name, ver, 10);
-	    return(Loading.waitforint(() -> res.get().getcode(Factory.class, true)));
+	    Indir<Resource> res = Resource.remote().load(name, ver);
+	    return(res.get().getcode(Factory.class, true));
 	}
+    }
+
+    public static Factory gettype2(String name) throws InterruptedException {
+	return(Loading.waitforint(() -> gettype3(name)));
     }
 
     public static Factory gettype(String name) {
