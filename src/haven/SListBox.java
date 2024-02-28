@@ -176,6 +176,10 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> im
 	super.draw(g);
     }
 
+    public int slotat(Coord c) {
+	return((c.y + cury) / (itemh + marg));
+    }
+
     public boolean mousewheel(Coord c, int amount) {
 	if(super.mousewheel(c, amount))
 	    return(true);
@@ -193,8 +197,15 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> im
 	return(true);
     }
 
+    protected boolean slotclick(Coord c, int slot, int button) {
+	return(false);
+    }
+
     public boolean mousedown(Coord c, int button) {
 	if(super.mousedown(c, button))
+	    return(true);
+	int slot = slotat(c);
+	if((slot >= 0) && slotclick(c, slotat(c), button))
 	    return(true);
 	return(unselect(button));
     }
