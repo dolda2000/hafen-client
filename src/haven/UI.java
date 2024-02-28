@@ -633,33 +633,31 @@ public class UI {
     public void uimsg(int id, String msg, Object... args) {
 	submitcmd(new Command(new UiMessage(id, msg, args)).dep(id, true));
     }
-	
-    public static interface MessageWidget {
-	public void msg(String msg);
-	public void error(String msg);
 
-	public static MessageWidget find(Widget w) {
-	    for(Widget ch = w.child; ch != null; ch = ch.next) {
-		MessageWidget ret = find(ch);
-		if(ret != null)
-		    return(ret);
-	    }
-	    if(w instanceof MessageWidget)
-		return((MessageWidget)w);
-	    return(null);
+    public final Map<Resource, Double> lastmsgsfx = new HashMap<>();
+    public void msg(UIMessage msg) {
+	UIMessage.RWidget h = UIMessage.RWidget.find(root);
+	if(h != null)
+	    h.msg(msg);
+    }
+
+    public void msg(Indir<Resource> res, Object... args) {
+	UIMessage.RWidget h = UIMessage.RWidget.find(root);
+	if(h != null) {
+	    loader.defer(() -> {
+		    UIMessage.Factory fmt = res.get().getcode(UIMessage.Factory.class, true);
+		    UIMessage msg = fmt.format(Widget.wdgctx.curry((Widget)h), args);
+		    h.msg(msg);
+		}, null);
 	}
     }
 
     public void error(String msg) {
-	MessageWidget h = MessageWidget.find(root);
-	if(h != null)
-	    h.error(msg);
+	msg(new UIMessage.Error(msg));
     }
 
     public void msg(String msg) {
-	MessageWidget h = MessageWidget.find(root);
-	if(h != null)
-	    h.msg(msg);
+	msg(new UIMessage.Info(msg));
     }
 
     private void setmods(InputEvent ev) {

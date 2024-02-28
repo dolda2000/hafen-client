@@ -29,11 +29,8 @@ package haven;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 
-public class RootWidget extends ConsoleHost implements UI.MessageWidget {
+public class RootWidget extends ConsoleHost implements UIMessage.RWidget {
     public static final Resource defcurs = Resource.local().loadwait("gfx/hud/curs/arw");
-    public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
-    public static final Resource errsfx = Resource.local().loadwait("sfx/error");
-    public static final Resource msgsfx = Resource.local().loadwait("sfx/msg");
     public boolean modtip = false;
     Profile guprof, grprof, ggprof;
     private Text lastmsg;
@@ -92,6 +89,8 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget {
 	    ui.error((String)args[0]);
 	} else if(msg == "msg") {
 	    ui.msg((String)args[0]);
+	} else if(msg == "msg2") {
+	    ui.msg(ui.sess.getresv(args[0]), Utils.splice(args, 1));
 	} else if(msg == "sfx") {
 	    int a = 0;
 	    Indir<Resource> resid = ui.sess.getresv(args[a++]);
@@ -121,28 +120,25 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget {
     }
 
     public void msg(String msg, Color color) {
-	lastmsg = msgfoundry.render(msg, color);
+	lastmsg = UIMessage.msgfoundry.render(msg, color);
 	msgtime = Utils.rtime();
     }
 
-    private double lasterrsfx = 0;
-    public void error(String msg) {
-	msg(msg, new Color(192, 0, 0));
-	double now = Utils.rtime();
-	if(now - lasterrsfx > 0.1) {
-	    ui.sfx(errsfx);
-	    lasterrsfx = now;
+    public void msg(UIMessage msg) {
+	msg(msg.text(), msg.color());
+	Resource sfx = msg.sfx();
+	if(sfx != null) {
+	    double now = Utils.rtime();
+	    Double last = ui.lastmsgsfx.get(sfx);
+	    if((last == null) || (now - last > 0.1)) {
+		ui.sfx(sfx);
+		ui.lastmsgsfx.put(sfx, now);
+	    }
 	}
     }
 
-    private double lastmsgsfx = 0;
-    public void msg(String msg) {
-	msg(msg, Color.WHITE);
-	double now = Utils.rtime();
-	if(now - lastmsgsfx > 0.1) {
-	    ui.sfx(msgsfx);
-	    lastmsgsfx = now;
-	}
+    public void error(String msg) {
+	msg(new UIMessage.Error(msg));
     }
 
     public Object tooltip(Coord c, Widget prev) {
