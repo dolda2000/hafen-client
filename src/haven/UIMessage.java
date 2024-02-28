@@ -33,7 +33,7 @@ public interface UIMessage {
 
     public String text();
     public default Color color() {return(Color.WHITE);}
-    public default Audio.Clip sfx() {return(null);}
+    public default Audio.Clip sfx() {return(Info.sfx);}
 
     public static interface RWidget {
 	public void msg(UIMessage msg);
