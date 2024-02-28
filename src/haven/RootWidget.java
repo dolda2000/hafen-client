@@ -126,7 +126,7 @@ public class RootWidget extends ConsoleHost implements UIMessage.RWidget {
 
     public void msg(UIMessage msg) {
 	msg(msg.text(), msg.color());
-	Resource sfx = msg.sfx();
+	Audio.Clip sfx = msg.sfx();
 	if(sfx != null) {
 	    double now = Utils.rtime();
 	    Double last = ui.lastmsgsfx.get(sfx);

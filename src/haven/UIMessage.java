@@ -33,7 +33,7 @@ public interface UIMessage {
 
     public String text();
     public Color color();
-    public Resource sfx();
+    public Audio.Clip sfx();
 
     public static interface RWidget {
 	public void msg(UIMessage msg);
@@ -66,7 +66,7 @@ public interface UIMessage {
 
     public static class Error implements UIMessage {
 	public static final Color color = new Color(192, 0, 0);
-	public static final Resource sfx = Resource.local().loadwait("sfx/error");
+	public static final Audio.Clip sfx = Audio.resclip(Resource.local().loadwait("sfx/error"));
 	public final String text;
 
 	public Error(String text) {
@@ -75,12 +75,12 @@ public interface UIMessage {
 
 	public String text() {return(text);}
 	public Color color() {return(color);}
-	public Resource sfx() {return(sfx);}
+	public Audio.Clip sfx() {return(sfx);}
     }
 
     public static class Info implements UIMessage {
 	public static final Color color = Color.WHITE;
-	public static final Resource sfx = Resource.local().loadwait("sfx/msg");
+	public static final Audio.Clip sfx = Audio.resclip(Resource.local().loadwait("sfx/msg"));
 	public final String text;
 
 	public Info(String text) {
@@ -89,6 +89,6 @@ public interface UIMessage {
 
 	public String text() {return(text);}
 	public Color color() {return(color);}
-	public Resource sfx() {return(sfx);}
+	public Audio.Clip sfx() {return(sfx);}
     }
 }

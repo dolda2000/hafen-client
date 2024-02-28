@@ -634,7 +634,7 @@ public class UI {
 	submitcmd(new Command(new UiMessage(id, msg, args)).dep(id, true));
     }
 
-    public final Map<Resource, Double> lastmsgsfx = new HashMap<>();
+    public final Map<Audio.Clip, Double> lastmsgsfx = new HashMap<>();
     public void msg(UIMessage msg) {
 	UIMessage.RWidget h = UIMessage.RWidget.find(root);
 	if(h != null)
@@ -793,6 +793,9 @@ public class UI {
 
     public void sfx(Audio.CS clip) {
 	audio.aui.add(clip);
+    }
+    public void sfx(Audio.Clip clip) {
+	sfx(clip.stream());
     }
     public void sfx(Resource clip) {
 	sfx(Audio.fromres(clip));
