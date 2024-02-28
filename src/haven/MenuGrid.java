@@ -385,10 +385,12 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
     private boolean cons(Pagina p, Collection<PagButton> buf) {
 	Pagina[] cp = new Pagina[0];
 	Collection<Pagina> open, close = new HashSet<Pagina>();
-	synchronized(paginae) {
-	    open = new LinkedList<Pagina>();
+	synchronized(pmap) {
 	    for(Pagina pag : pmap.values())
 		pag.tnew = 0;
+	}
+	synchronized(paginae) {
+	    open = new LinkedList<Pagina>();
 	    for(Pagina pag : paginae) {
 		open.add(pag);
 		if(pag.anew > 0) {
