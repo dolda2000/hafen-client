@@ -32,8 +32,8 @@ public interface UIMessage {
     public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
 
     public String text();
-    public Color color();
-    public Audio.Clip sfx();
+    public default Color color() {return(Color.WHITE);}
+    public default Audio.Clip sfx() {return(null);}
 
     public static interface RWidget {
 	public void msg(UIMessage msg);
