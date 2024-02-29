@@ -513,11 +513,11 @@ public class GobIcon extends GAttrib {
 		pack();
 	    }
 
-	    public class NotifBox extends Dropbox<NotificationSetting> {
+	    public class NotifBox extends SDropBox<NotificationSetting, Widget> {
 		private final List<NotificationSetting> items = new ArrayList<>();
 
 		public NotifBox(int w) {
-		    super(w, 8, UI.scale(20));
+		    super(w, UI.scale(160), UI.scale(20));
 		    items.add(NotificationSetting.nil);
 		    for(NotificationSetting notif : NotificationSetting.builtin)
 			items.add(notif);
@@ -526,18 +526,14 @@ public class GobIcon extends GAttrib {
 		    items.add(NotificationSetting.other);
 		    for(NotificationSetting item : items) {
 			if(item.act(conf)) {
-			    sel = item;
+			    change(item);
 			    break;
 			}
 		    }
 		}
 
-		protected NotificationSetting listitem(int idx) {return(items.get(idx));}
-		protected int listitems() {return(items.size());}
-
-		protected void drawitem(GOut g, NotificationSetting item, int idx) {
-		    g.atext(item.name, Coord.of(0, g.sz().y / 2), 0.0, 0.5);
-		}
+		protected List<NotificationSetting> items() {return(items);}
+		protected Widget makeitem(NotificationSetting item, int idx, Coord sz) {return(SListWidget.TextItem.of(sz, Text.std, () -> item.name));}
 
 		private void selectwav() {
 		    java.awt.EventQueue.invokeLater(() -> {
