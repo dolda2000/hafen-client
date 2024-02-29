@@ -216,8 +216,11 @@ public class BAttrWnd extends Widget {
 		    el.hl = false;
 		FoodInfo finf = Loading.or(() -> (tip == null) ? null : ItemInfo.find(FoodInfo.class, tip.info()), (FoodInfo)null);
 		if(finf != null) {
-		    for(int o = 0; o < finf.types.length; o++)
-			els.get(finf.types[o]).hl = true;
+		    for(int o = 0; o < finf.types.length; o++) {
+			int ti = finf.types[o];
+			if(ti < els.size())
+			    els.get(ti).hl = true;
+		    }
 		}
 		lasttip = tip;
 	    }
