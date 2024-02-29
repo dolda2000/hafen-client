@@ -67,7 +67,7 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	public TextItem(Coord sz) {super(sz);}
 
 	protected abstract String text();
-	protected int margin() {return(0);}
+	protected int margin() {return(-1);}
 	protected Text.Foundry foundry() {return(CharWnd.attrf);}
 	protected boolean valid(String text) {return(true);}
 
@@ -82,10 +82,12 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 			this.text = foundry().render(text.substring(0, len) + "...");
 		    }
 		}
-		g.image(this.text.tex(), Coord.of(0, (sz.y - this.text.sz().y) / 2));
+		int m = margin();
+		int y = (sz.y - this.text.sz().y) / 2;
+		g.image(this.text.tex(), Coord.of((m < 0) ? y : m, y));
 	    } catch(Loading l) {
 		Tex missing = foundry().render("...").tex();
-		g.image(missing, Coord.of(sz.y + UI.scale(5), (sz.y - missing.sz().y) / 2));
+		g.image(missing, Coord.of(UI.scale(5), (sz.y - missing.sz().y) / 2));
 		missing.dispose();
 	    }
 	}
@@ -104,6 +106,13 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 		text.dispose();
 		text = null;
 	    }
+	}
+
+	public static TextItem of(Coord sz, Text.Foundry fnd, Supplier<String> text) {
+	    return(new TextItem(sz) {
+		    public String text() {return(text.get());}
+		    public Text.Foundry foundry() {return(fnd);}
+		});
 	}
 
 	public static TextItem of(Coord sz, Supplier<String> text) {
