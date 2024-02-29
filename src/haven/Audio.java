@@ -669,25 +669,49 @@ public class Audio {
 	    ((Mixer)pl.stream).stop(clip);
     }
 
-    private static Map<Resource, Clip> reslastc = new HashMap<Resource, Clip>();
-    public static CS fromres(Resource res) {
+    private static Map<Resource, Clip> resclips = new HashMap<>();
+    public static Clip resclip(Resource res) {
 	Collection<Clip> clips = res.layers(Audio.clip, null);
-	synchronized(reslastc) {
-	    Clip last = reslastc.get(res);
-	    int sz = clips.size();
-	    int s = (int)(Math.random() * (((sz > 2) && (last != null)) ? (sz - 1) : sz));
-	    Clip clip = null;
-	    for(Clip cp : clips) {
-		if(cp == last)
-		    continue;
-		clip = cp;
-		if(--s < 0)
-		    break;
+	int sz = clips.size();
+	if(sz == 0)
+	    throw(new Resource.NoSuchLayerException("no audio clips in " + res.name));
+	if(sz == 1)
+	    return(clips.iterator().next());
+	synchronized(resclips) {
+	    Clip ret = resclips.get(res);
+	    if(ret != null)
+		return(ret);
+	    List<Clip> clipl = new ArrayList<>(clips);
+	    if(clipl.size() == 2) {
+		ret = new Clip() {
+			public CS stream() {
+			    return(clipl.get((int)(Math.random() * 2)).stream());
+			}
+		    };
+	    } else {
+		ret = new Clip() {
+			int last = -1;
+
+			public CS stream() {
+			    int c;
+			    if(last < 0) {
+				c = (int)(Math.random() * clipl.size());
+			    } else {
+				c = (int)(Math.random() * (clipl.size() - 1));
+				if(c >= last)
+				    c++;
+			    }
+			    return(clipl.get(last = c).stream());
+			}
+		    };
 	    }
-	    if(sz > 2)
-		reslastc.put(res, clip);
-	    return(clip.stream());
+	    resclips.put(res, ret);
+	    return(ret);
 	}
+    }
+
+    public static CS fromres(Resource res) {
+	return(resclip(res).stream());
     }
 
     public static void play(Resource res) {
