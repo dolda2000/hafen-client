@@ -672,7 +672,10 @@ public class Audio {
     private static Map<Resource, Clip> resclips = new HashMap<>();
     public static Clip resclip(Resource res) {
 	Collection<Clip> clips = res.layers(Audio.clip, null);
-	if(clips.size() == 1)
+	int sz = clips.size();
+	if(sz == 0)
+	    throw(new Resource.NoSuchLayerException("no audio clips in " + res.name));
+	if(sz == 1)
 	    return(clips.iterator().next());
 	synchronized(resclips) {
 	    Clip ret = resclips.get(res);
