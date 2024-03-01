@@ -31,6 +31,7 @@ import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.GraphicsDevice;
 import java.awt.DisplayMode;
+import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.InputEvent;
@@ -634,30 +635,35 @@ public class UI {
 	submitcmd(new Command(new UiMessage(id, msg, args)).dep(id, true));
     }
 
-    public final Map<Audio.Clip, Double> lastmsgsfx = new HashMap<>();
-    public void msg(UIMessage msg) {
-	UIMessage.RWidget h = UIMessage.RWidget.find(root);
-	if(h != null)
-	    h.msg(msg);
-    }
+    public static interface MessageWidget {
+	public void msg(String msg, Color color, Audio.Clip sfx);
 
-    public void msg(Indir<Resource> res, Object... args) {
-	UIMessage.RWidget h = UIMessage.RWidget.find(root);
-	if(h != null) {
-	    loader.defer(() -> {
-		    UIMessage.Factory fmt = res.get().getcode(UIMessage.Factory.class, true);
-		    UIMessage msg = fmt.format(Widget.wdgctx.curry((Widget)h), args);
-		    h.msg(msg);
-		}, null);
+	public static MessageWidget find(Widget w) {
+	    for(Widget ch = w.child; ch != null; ch = ch.next) {
+		MessageWidget ret = find(ch);
+		if(ret != null)
+		    return(ret);
+	    }
+	    if(w instanceof MessageWidget)
+		return((MessageWidget)w);
+	    return(null);
 	}
     }
 
+    public void msg(String msg, Color color, Audio.Clip sfx) {
+	if(color == null)
+	    color = Color.WHITE;
+	MessageWidget h = MessageWidget.find(root);
+	if(h != null)
+	    h.msg(msg, color, sfx);
+    }
+
     public void error(String msg) {
-	msg(new UIMessage.Error(msg));
+	msg(msg, new Color(192, 0, 0), errsfx);
     }
 
     public void msg(String msg) {
-	msg(new UIMessage.Info(msg));
+	msg(msg, Color.WHITE, msgsfx);
     }
 
     private void setmods(InputEvent ev) {
@@ -799,6 +805,20 @@ public class UI {
     }
     public void sfx(Resource clip) {
 	sfx(Audio.fromres(clip));
+    }
+
+    public static final Audio.Clip errsfx = Audio.resclip(Resource.local().loadwait("sfx/error"));
+    public static final Audio.Clip msgsfx = Audio.resclip(Resource.local().loadwait("sfx/msg"));
+    public final Map<Audio.Clip, Double> lastmsgsfx = new HashMap<>();
+    public void sfxrl(Audio.Clip clip) {
+	if(clip != null) {
+	    double now = Utils.rtime();
+	    Double last = lastmsgsfx.get(clip);
+	    if((last == null) || (now - last > 0.1)) {
+		sfx(clip);
+		lastmsgsfx.put(clip, now);
+	    }
+	}
     }
 
     public static double scale(double v) {

@@ -33,7 +33,7 @@ import java.awt.event.KeyEvent;
 import java.awt.image.WritableRaster;
 import static haven.Inventory.invsq;
 
-public class GameUI extends ConsoleHost implements Console.Directory, UIMessage.RWidget {
+public class GameUI extends ConsoleHost implements Console.Directory, UI.MessageWidget {
     private static final int blpw = UI.scale(142), brpw = UI.scale(142);
     public final String chrid, genus;
     public final long plid;
@@ -1194,10 +1194,10 @@ public class GameUI extends ConsoleHost implements Console.Directory, UIMessage.
     public void uimsg(String msg, Object... args) {
 	if(msg == "err") {
 	    String err = (String)args[0];
-	    msg(new UIMessage.Error(err));
+	    ui.error(err);
 	} else if(msg == "msg") {
 	    String text = (String)args[0];
-	    msg(new UIMessage.Info(text));
+	    ui.msg(text);
 	} else if(msg == "prog") {
 	    if(args.length > 0) {
 		double p = Utils.dv(args[0]) / 100.0;
@@ -1299,7 +1299,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UIMessage.
 			    Resource lres = Resource.remote().load(res.name, res.ver).get();
 			    Resource.Tooltip tip = lres.layer(Resource.tooltip);
 			    if(tip != null)
-				msg(new UIMessage.Info(String.format("%s added to list of seen icons.", tip.t)));
+				ui.msg(String.format("%s added to list of seen icons.", tip.t));
 			}, (Supplier<Object>)() -> null);
 		}
 	    } else if(args[1] instanceof Object[]) {
@@ -1552,7 +1552,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UIMessage.
     
     public void msg(String msg, Color color, Color logcol) {
 	msgtime = Utils.rtime();
-	lastmsg = UIMessage.msgfoundry.render(msg, color);
+	lastmsg = RootWidget.msgfoundry.render(msg, color);
 	syslog.append(msg, logcol);
     }
 
@@ -1560,21 +1560,13 @@ public class GameUI extends ConsoleHost implements Console.Directory, UIMessage.
 	msg(msg, color, color);
     }
 
-    public void msg(UIMessage msg) {
-	msg(msg.text(), msg.color());
-	Audio.Clip sfx = msg.sfx();
-	if(sfx != null) {
-	    double now = Utils.rtime();
-	    Double last = ui.lastmsgsfx.get(sfx);
-	    if((last == null) || (now - last > 0.1)) {
-		ui.sfx(sfx);
-		ui.lastmsgsfx.put(sfx, now);
-	    }
-	}
+    public void msg(String msg, Color color, Audio.Clip sfx) {
+	msg(msg, color);
+	ui.sfxrl(sfx);
     }
 
     public void error(String msg) {
-	msg(new UIMessage.Error(msg));
+	ui.error(msg);
     }
     
     public void act(String... args) {

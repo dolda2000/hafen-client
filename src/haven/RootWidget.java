@@ -29,7 +29,8 @@ package haven;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 
-public class RootWidget extends ConsoleHost implements UIMessage.RWidget {
+public class RootWidget extends ConsoleHost implements UI.MessageWidget {
+    public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
     public static final Resource defcurs = Resource.local().loadwait("gfx/hud/curs/arw");
     public boolean modtip = false;
     Profile guprof, grprof, ggprof;
@@ -88,9 +89,23 @@ public class RootWidget extends ConsoleHost implements UIMessage.RWidget {
 	if(msg == "err") {
 	    ui.error((String)args[0]);
 	} else if(msg == "msg") {
-	    ui.msg((String)args[0]);
-	} else if(msg == "msg2") {
-	    ui.msg(ui.sess.getresv(args[0]), Utils.splice(args, 1));
+	    if(args.length == 1) {
+		ui.msg((String)args[0]);
+	    } else {
+		ui.loader.defer(() -> {
+			int a = 0;
+			String text = (String)args[a++];
+			Color color = Color.WHITE;
+			if(args[a] instanceof Color)
+			    color = (Color)args[a++];
+			Audio.Clip sfx = UI.msgsfx;
+			if(args.length > a) {
+			    Indir<Resource> res = ui.sess.getresv(args[a++]);
+			    sfx = (res == null) ? null : Audio.resclip(res.get());
+			}
+			ui.msg(text, color, sfx);
+		    }, null);
+	    }
 	} else if(msg == "sfx") {
 	    int a = 0;
 	    Indir<Resource> resid = ui.sess.getresv(args[a++]);
@@ -120,25 +135,17 @@ public class RootWidget extends ConsoleHost implements UIMessage.RWidget {
     }
 
     public void msg(String msg, Color color) {
-	lastmsg = UIMessage.msgfoundry.render(msg, color);
+	lastmsg = msgfoundry.render(msg, color);
 	msgtime = Utils.rtime();
     }
 
-    public void msg(UIMessage msg) {
-	msg(msg.text(), msg.color());
-	Audio.Clip sfx = msg.sfx();
-	if(sfx != null) {
-	    double now = Utils.rtime();
-	    Double last = ui.lastmsgsfx.get(sfx);
-	    if((last == null) || (now - last > 0.1)) {
-		ui.sfx(sfx);
-		ui.lastmsgsfx.put(sfx, now);
-	    }
-	}
+    public void msg(String msg, Color color, Audio.Clip sfx) {
+	msg(msg, color);
+	ui.sfxrl(sfx);
     }
 
     public void error(String msg) {
-	msg(new UIMessage.Error(msg));
+	ui.error(msg);
     }
 
     public Object tooltip(Coord c, Widget prev) {
