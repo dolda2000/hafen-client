@@ -26,10 +26,11 @@
 
 package haven;
 
+import java.util.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 
-public class RootWidget extends ConsoleHost implements UI.MessageWidget {
+public class RootWidget extends ConsoleHost implements UI.MessageWidget, Console.Directory {
     public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
     public static final Resource defcurs = Resource.local().loadwait("gfx/hud/curs/arw");
     public boolean modtip = false;
@@ -152,5 +153,31 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget {
 	if(modtip && (ui.modflags() != 0))
 	    return(KeyMatch.modname(ui.modflags()));
 	return(super.tooltip(c, prev));
+    }
+
+    private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
+    {
+	cmdmap.put("wdgtree", new Console.Command() {
+		public void run(Console cons, String[] args) throws Exception {
+		    for(Widget w = RootWidget.this; w != null; w = w.rnext()) {
+			for(Widget p = w.parent; p != null; p = p.parent)
+			    cons.out.write('\t');
+			cons.out.write(w.visible ? 'S' : 'H');
+			cons.out.write(' ');
+			cons.out.write(w.hasfocus ? "F" : "f");
+			cons.out.write(w.focusctl ? "C" : "c");
+			cons.out.write(w.focustab ? "T" : "t");
+			cons.out.write(w.canfocus ? "A" : "a");
+			cons.out.write(w.autofocus ? "T" : "t");
+			cons.out.write(((w.parent != null) && (w.parent.focused == w)) ? "P" : "p");
+			cons.out.write(' ');
+			cons.out.write(w.toString());
+			cons.out.write('\n');
+		    }
+		}
+	    });
+    }
+    public Map<String, Console.Command> findcmds() {
+	return(cmdmap);
     }
 }
