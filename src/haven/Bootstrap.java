@@ -261,7 +261,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			    break connect;
 			} catch(Connection.SessionConnError err) {
 			} catch(Connection.SessionError err) {
-			    ui.uimsg(1, "error", err.toString());
+			    ui.uimsg(1, "error", err.getMessage());
 			    continue retry;
 			}
 		    }
