@@ -195,7 +195,7 @@ public class BAttrWnd extends Widget {
 		    Label a = adda(new Label(String.format("%d%%", Math.max((int)Math.round((1.0 - el.a) * 100), 1)), attrf),
 				   sz.x - UI.scale(1), sz.y / 2, 1.0, 0.5);
 		    a.setcolor((el.a > 1.0) ? buffed : Utils.blendcol(none, full, el.a));
-		    nm = adda(new ItemIcon(sz, new ItemSpec(OwnerContext.uictx.curry(Constipations.this.ui), el.t, null)),
+		    nm = adda(new ItemIcon(Coord.of(a.c.x - UI.scale(5), sz.y), new ItemSpec(OwnerContext.uictx.curry(Constipations.this.ui), el.t, null)),
 			      0, sz.y / 2, 0.0, 0.5);
 		    this.a = a;
 		    da = el.a;
