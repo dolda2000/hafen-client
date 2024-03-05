@@ -60,7 +60,7 @@ public class CharSelector extends Robot {
     }
     
     public void newwdg(int id, Widget w, Object... args) {
-	if(w instanceof Listbox) {
+	if(w instanceof Charlist) {
 	    chrlist = (Charlist)w;
 	}
 	check();
