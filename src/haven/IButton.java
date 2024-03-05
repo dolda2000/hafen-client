@@ -38,9 +38,21 @@ public class IButton extends SIWidget {
     @RName("ibtn")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    Indir<Resource> up = new Resource.Spec(Resource.local(), (String)args[0]);
-	    Indir<Resource> down = new Resource.Spec(Resource.local(), (String)args[1]);
-	    return(new IButton(up.get().flayer(Resource.imgc).scaled(), down.get().flayer(Resource.imgc).scaled()));
+	    int a = 0;
+	    Indir<Resource> up;
+	    if(args[0] instanceof String)
+		up = new Resource.Spec(Resource.local(), (String)args[a++]);
+	    else
+		up = ui.sess.getresv(args[a++]);
+	    Indir<Resource> down;
+	    if(args[1] instanceof String)
+		down = new Resource.Spec(Resource.local(), (String)args[a++]);
+	    else
+		down = ui.sess.getresv(args[a++]);
+	    Indir<Resource> hover = up;
+	    if(args.length > a)
+		hover = ui.sess.getresv(args[a++]);
+	    return(new IButton(up.get().flayer(Resource.imgc).scaled(), down.get().flayer(Resource.imgc).scaled(), hover.get().flayer(Resource.imgc).scaled()));
 	}
     }
 
