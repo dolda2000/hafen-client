@@ -38,7 +38,9 @@ public class IButton extends SIWidget {
     @RName("ibtn")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(new IButton(Resource.loadsimg((String)args[0]), Resource.loadsimg((String)args[1])));
+	    Indir<Resource> up = new Resource.Spec(Resource.local(), (String)args[0]);
+	    Indir<Resource> down = new Resource.Spec(Resource.local(), (String)args[1]);
+	    return(new IButton(up.get().flayer(Resource.imgc).scaled(), down.get().flayer(Resource.imgc).scaled()));
 	}
     }
 
