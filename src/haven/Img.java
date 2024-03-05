@@ -29,7 +29,6 @@ package haven;
 import java.awt.image.BufferedImage;
 
 public class Img extends Widget {
-    private Indir<Resource> res;
     private Tex img;
     private BufferedImage rimg;
     public boolean hit = false, opaque = false;
@@ -46,7 +45,7 @@ public class Img extends Widget {
 	    } else {
 		res = ui.sess.getresv(args[a++]);
 	    }
-	    Img ret = new Img(res);
+	    Img ret = new Img(res.get().flayer(Resource.imgc).tex());
 	    if(args.length > a) {
 		int fl = Utils.iv(args[a++]);
 		ret.hit = (fl & 1) != 0;
@@ -66,37 +65,25 @@ public class Img extends Widget {
     }
 
     public void draw(GOut g) {
-	if(res != null) {
-	    try {
-		setimg(res.get().flayer(Resource.imgc).tex());
-		res = null;
-	    } catch(Loading e) {}
-	}
-	if(img != null)
-	    g.image(img, Coord.z);
+	g.image(img, Coord.z);
     }
 
     public Img(Tex img) {
 	super(img.sz());
-	this.res = null;
 	setimg(img);
-    }
-
-    public Img(Indir<Resource> res) {
-	super(Coord.z);
-	this.res = res;
-	this.img = null;
     }
 
     public void uimsg(String name, Object... args) {
 	if(name == "ch") {
+	    Indir<Resource> res;
 	    if(args[0] instanceof String) {
 		String nm = (String)args[0];
 		int ver = (args.length > 1) ? Utils.iv(args[1]) : -1;
-		this.res = new Resource.Spec(Resource.remote(), nm, ver);
+		res = new Resource.Spec(Resource.remote(), nm, ver);
 	    } else {
-		this.res = ui.sess.getresv(args[0]);
+		res = ui.sess.getresv(args[0]);
 	    }
+	    setimg(res.get().flayer(Resource.imgc).tex());
 	} else if(name == "cl") {
 	    hit = Utils.bv(args[0]);
 	} else {
