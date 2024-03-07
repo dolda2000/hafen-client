@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 import java.awt.image.BufferedImage;
 
-public class ItemSpec implements GSprite.Owner, ItemInfo.SpriteOwner {
+public class ItemSpec implements GSprite.Owner, ItemInfo.SpriteOwner, RandomSource {
     private static final Object[] definfo = {
 	new Object[] {new ItemInfo.Name.Default()}
     };

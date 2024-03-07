@@ -124,7 +124,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	}
     }
 
-    public static class PagButton implements ItemInfo.Owner, GSprite.Owner {
+    public static class PagButton implements ItemInfo.Owner, GSprite.Owner, RandomSource {
 	public final Pagina pag;
 	public final Resource res;
 	public final KeyBinding bind;

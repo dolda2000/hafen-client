@@ -123,7 +123,7 @@ public class Avaview extends PView {
 	.add(Glob.class, v -> v.ui.sess.glob)
 	.add(Session.class, v -> v.ui.sess)
 	.add(Resource.Resolver.class, v -> (v.resmap == null ? v.ui.sess : v.resmap));
-    private class AvaOwner implements Sprite.Owner, Skeleton.ModOwner {
+    private class AvaOwner implements Sprite.Owner, Skeleton.ModOwner, RandomSource {
 	public Random mkrandoom() {return(new Random());}
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, Avaview.this));}
 	@Deprecated public Resource getres() {return(null);}

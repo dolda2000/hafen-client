@@ -55,7 +55,7 @@ public class Makewindow extends Widget {
 	.add(Makewindow.class, wdg -> wdg)
 	.add(Glob.class, wdg -> wdg.ui.sess.glob)
 	.add(Session.class, wdg -> wdg.ui.sess);
-    public class Spec implements GSprite.Owner, ItemInfo.SpriteOwner {
+    public class Spec implements GSprite.Owner, ItemInfo.SpriteOwner, RandomSource {
 	public Indir<Resource> res;
 	public MessageBuf sdt;
 	public Tex num;

@@ -201,7 +201,7 @@ public class Composited implements RenderTree.Node, EquipTarget {
     private static final OwnerContext.ClassResolver<SpriteEqu> eqctxr = new OwnerContext.ClassResolver<SpriteEqu>()
 	.add(SpriteEqu.class, eq -> eq)
 	.add(Composited.class, eq -> eq.comp());
-    public class SpriteEqu extends Equ<Sprite> implements Sprite.Owner {
+    public class SpriteEqu extends Equ<Sprite> implements Sprite.Owner, RandomSource {
 	private SpriteEqu(ED ed) {
 	    super(Sprite.create(eqowner, ed.res.res.get(), ed.res.sdt.clone()), ed);
 	}
