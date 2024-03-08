@@ -50,7 +50,7 @@ public class Avatar extends GAttrib {
 		for(Indir<Resource> res : layers) {
 		    nimg.add(res.get().layer(Resource.imgc));
 		}
-		Collections.sort(nimg);
+		Collections.sort(nimg, (a, b) -> (a.z - b.z));
 		images = nimg;
 	    }
 	    return(images);

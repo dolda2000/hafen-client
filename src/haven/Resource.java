@@ -992,7 +992,7 @@ public class Resource implements Serializable {
     }
 
     @LayerName("image")
-    public class Image extends Layer implements Comparable<Image>, IDLayer<Integer> {
+    public class Image extends Layer implements IDLayer<Integer> {
 	public transient BufferedImage img;
 	private transient BufferedImage scaled;
 	private transient Tex tex, rawtex;
@@ -1107,10 +1107,6 @@ public class Resource implements Serializable {
 	    return(gay == 1);
 	}
 
-	public int compareTo(Image other) {
-	    return(z - other.z);
-	}
-	
 	public Integer layerid() {
 	    return(id);
 	}
