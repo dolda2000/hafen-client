@@ -1002,7 +1002,6 @@ public class Resource implements Serializable {
 	public final Map<String, byte[]> kvdata;
 	public float scale = 1;
 	public Coord sz, o, so, tsz, ssz;
-	private int gay = -1;
 
 	public Image(Message buf) {
 	    z = buf.int16();
@@ -1089,22 +1088,6 @@ public class Resource implements Serializable {
 		}
 	    }
 	    return(tex);
-	}
-
-	private boolean detectgay() {
-	    for(int y = 0; y < sz.y; y++) {
-		for(int x = 0; x < sz.x; x++) {
-		    if((img.getRGB(x, y) & 0x00ffffff) == 0x00ff0080)
-			return(true);
-		}
-	    }
-	    return(false);
-	}
-		
-	public boolean gayp() {
-	    if(gay == -1)
-		gay = detectgay()?1:0;
-	    return(gay == 1);
 	}
 
 	public Integer layerid() {

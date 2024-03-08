@@ -70,21 +70,6 @@ public class Utils {
 	    });
     }
 
-    static void drawgay(BufferedImage t, BufferedImage img, Coord c) {
-	Coord sz = imgsz(img);
-	for(int y = 0; y < sz.y; y++) {
-	    for(int x = 0; x < sz.x; x++) {
-		int p = img.getRGB(x, y);
-		if(Utils.rgbm.getAlpha(p) > 128) {
-		    if((p & 0x00ffffff) == 0x00ff0080)
-			t.setRGB(x + c.x, y + c.y, 0);
-		    else
-			t.setRGB(x + c.x, y + c.y, p);
-		}
-	    }
-	}
-    }
-
     public static URI uri(String uri) {
 	try {
 	    return(new URI(uri));
