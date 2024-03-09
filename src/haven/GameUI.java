@@ -227,7 +227,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		    MenuGrid.Pagina pag = (MenuGrid.Pagina)thing;
 		    try {
 			if(pag.id instanceof Indir)
-			    GameUI.this.wdgmsg("setbelt", slot, pag.res().name);
+			    GameUI.this.wdgmsg("setbelt", slot, "res", pag.res().name);
 			else
 			    GameUI.this.wdgmsg("setbelt", slot, "pag", pag.id);
 		    } catch(Loading l) {
