@@ -225,9 +225,9 @@ public class MiniMap extends Widget {
 
     public static final Color notifcol = new Color(255, 128, 0, 255);
     public class DisplayIcon {
-	public final GobIcon icon;
+	public final GobIcon attr;
 	public final Gob gob;
-	public final GobIcon.Image img;
+	public final GobIcon.Icon icon;
 	public final GobIcon.Setting conf;
 	public Coord2d rc = null;
 	public Coord sc = null;
@@ -239,11 +239,11 @@ public class MiniMap extends Widget {
 	private Consumer<UI> snotify;
 	private boolean markchecked;
 
-	public DisplayIcon(GobIcon icon, GobIcon.Setting conf) {
-	    this.icon = icon;
-	    this.gob = icon.gob;
-	    this.img = icon.img();
-	    this.z = this.img.z;
+	public DisplayIcon(GobIcon attr, GobIcon.Setting conf) {
+	    this.attr = attr;
+	    this.gob = attr.gob;
+	    this.icon = attr.icon();
+	    this.z = icon.z();
 	    this.stime = Utils.rtime();
 	    this.conf = conf;
 	    if(this.notify = conf.notify)
@@ -267,10 +267,7 @@ public class MiniMap extends Widget {
 		g.chcolor(col);
 	    else
 		g.chcolor();
-	    if(!img.rot)
-		g.image(img.tex, sc.sub(img.cc));
-	    else
-		g.rotimage(img.tex, sc, img.cc, -ang + img.ao);
+	    icon.draw(g, sc);
 	    if(notify) {
 		double t = (Utils.rtime() - stime) * 1.0;
 		if(t > 1) {
@@ -280,8 +277,7 @@ public class MiniMap extends Widget {
 		    double a = (t < 0.5) ? 0.5 : (0.5 - (t - 0.5));
 		    g.usestate(new ColorMask(notifcol));
 		    g.chcolor(255, 255, 255, (int)Math.round(255 * a));
-		    if(!img.rot)
-			g.image(img.tex, sc.sub(img.cc.mul(f)), img.tex.sz().mul(f));
+		    icon.draw(g, sc);
 		    g.defstate();
 		}
 	    }
@@ -687,8 +683,7 @@ public class MiniMap extends Widget {
     public DisplayIcon iconat(Coord c) {
 	for(ListIterator<DisplayIcon> it = icons.listIterator(icons.size()); it.hasPrevious();) {
 	    DisplayIcon disp = it.previous();
-	    GobIcon.Image img = disp.img;
-	    if((disp.sc != null) && c.isect(disp.sc.sub(img.cc), img.tex.sz()) && !filter(disp))
+	    if((disp.sc != null) && disp.icon.checkhit(c.sub(disp.sc)) && !filter(disp))
 		return(disp);
 	}
 	return(null);
@@ -723,8 +718,8 @@ public class MiniMap extends Widget {
 	    try {
 		if(icon.markchecked)
 		    continue;
-		GobIcon.Image img = icon.icon.img();
-		if(!icon.conf.getmarkablep()) {
+		GobIcon.Icon micon = icon.icon;
+		if(!icon.conf.getmarkablep() || !(micon instanceof GobIcon.ImageIcon)) {
 		    icon.markchecked = true;
 		    continue;
 		}
@@ -738,11 +733,11 @@ public class MiniMap extends Widget {
 		    if(info == null)
 			continue;
 		    Coord sc = tc.add(info.sc.sub(obg.gc).mul(cmaps));
-		    SMarker prev = file.smarker(img.res.name, info.seg, sc);
+		    SMarker prev = file.smarker(micon.res.name, info.seg, sc);
 		    if(prev == null) {
 			if(icon.conf.getmarkp()) {
-			    Resource.Tooltip tt = img.res.flayer(Resource.tooltip);
-			    mid = new SMarker(info.seg, sc, tt.t, 0, new Resource.Spec(Resource.remote(), img.res.name, img.res.ver));
+			    Resource.Tooltip tt = micon.res.flayer(Resource.tooltip);
+			    mid = new SMarker(info.seg, sc, tt.t, 0, new Resource.Spec(Resource.remote(), micon.res.name, micon.res.ver));
 			    file.add(mid);
 			} else {
 			    mid = null;

@@ -38,17 +38,39 @@ import javax.swing.filechooser.*;
 public class GobIcon extends GAttrib {
     private static final int size = UI.scale(20);
     public static final PUtils.Convolution filter = new PUtils.Hanning(1);
-    private static final Map<Indir<Resource>, Image> cache = new WeakHashMap<>();
     public final Indir<Resource> res;
-    private Image img;
+    private Icon icon;
 
     public GobIcon(Gob g, Indir<Resource> res) {
 	super(g);
 	this.res = res;
     }
 
-    public static class Image {
+    public static abstract class Icon {
+	public static final Object[] nilid = new Object[0];
+	public final OwnerContext owner;
 	public final Resource res;
+
+	public Icon(OwnerContext owner, Resource res) {
+	    this.owner = owner;
+	    this.res = res;
+	}
+
+	public abstract BufferedImage image();
+	public abstract void draw(GOut g, Coord cc);
+	public abstract boolean checkhit(Coord c);
+	public Object[] id() {return(nilid);}
+	public int z() {return(0);}
+
+	@Resource.PublishedCode(name = "mapicon")
+	public static interface Factory {
+	    public Icon create(OwnerContext owner, Resource res, Message sdt);
+	    public Icon create(OwnerContext owner, Resource res, Object[] id);
+	}
+    }
+
+    public static class Image {
+	private static final Map<Resource, Image> cache = new WeakHashMap<>();
 	public final Tex tex;
 	public Coord cc;
 	public boolean rot;
@@ -56,7 +78,6 @@ public class GobIcon extends GAttrib {
 	public int z;
 
 	public Image(Resource res) {
-	    this.res = res;
 	    Resource.Image rimg = res.layer(Resource.imgc);
 	    Tex tex = rimg.tex();
 	    if ((tex.sz().x > size) || (tex.sz().y > size)) {
@@ -82,20 +103,67 @@ public class GobIcon extends GAttrib {
 	    if(data != null)
 		this.z = Utils.intvard(data, 0);
 	}
-    }
 
-    public Image img() {
-	if(this.img == null) {
+	public static Image get(Resource res) {
 	    synchronized(cache) {
 		Image img = cache.get(res);
 		if(img == null) {
-		    img = new Image(res.get());
+		    img = new Image(res);
 		    cache.put(res, img);
 		}
-		this.img = img;
+		return(img);
 	    }
 	}
-	return(this.img);
+    }
+
+    public static class ImageIcon extends Icon {
+	public final Image img;
+	private final Gob gob = owner.fcontext(Gob.class, false);
+
+	public ImageIcon(OwnerContext owner, Resource res, Image img) {
+	    super(owner, res);
+	    this.img = img;
+	}
+
+	public BufferedImage image() {
+	    return(res.flayer(Resource.imgc).img);
+	}
+
+	public void draw(GOut g, Coord cc) {
+	    if(!img.rot)
+		g.image(img.tex, cc.sub(img.cc));
+	    else
+		g.rotimage(img.tex, cc, img.cc, ((gob == null) ? 0 : -gob.a) + img.ao);
+	}
+
+	public boolean checkhit(Coord c) {
+	    return(c.isect(img.cc.inv(), img.tex.sz()));
+	}
+
+	public int z() {
+	    return(img.z);
+	}
+
+	public static final Factory factory = new Factory() {
+		public Icon create(OwnerContext owner, Resource res, Message sdt) {
+		    return(new ImageIcon(owner, res, Image.get(res)));
+		}
+
+		public Icon create(OwnerContext owner, Resource res, Object[] id) {
+		    return(new ImageIcon(owner, res, Image.get(res)));
+		}
+	    };
+    }
+
+    public Icon icon() {
+	if(this.icon == null) {
+	    Resource res = this.res.get();
+	    Icon.Factory fac = res.getcode(Icon.Factory.class, false);
+	    if(fac == null)
+		fac = ImageIcon.factory;
+	    this.icon = fac.create(gob, res, Message.nil);
+	}
+	return(this.icon);
     }
 
     private static Consumer<UI> resnotif(String nm) {
