@@ -235,6 +235,28 @@ public class GobIcon extends GAttrib {
 	public Path filens;
 	public boolean mark, markset;
 
+	public static class ID {
+	    public final String res;
+	    public final Object[] sub;
+
+	    public ID(String res, Object[] sub) {
+		this.res = res;
+		this.sub = sub;
+	    }
+
+	    public int hashCode() {
+		return((res.hashCode() * 31) + Arrays.deepHashCode(sub));
+	    }
+
+	    public boolean equals(ID that) {
+		return(this.res.equals(that.res) && Arrays.deepEquals(this.sub, that.sub));
+	    }
+
+	    public boolean equals(Object x) {
+		return((x instanceof ID) && equals((ID)x));
+	    }
+	}
+
 	public Setting(Resource.Spec res) {
 	    this.res = res;
 	}
