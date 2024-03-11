@@ -296,9 +296,14 @@ public class GobIcon extends GAttrib {
 
     public static class Settings implements Serializable {
 	public static final byte[] sig = "Icons".getBytes(Utils.ascii);
+	public final String filename;
 	public Map<String, Setting> settings = new HashMap<>();
 	public int tag = -1;
 	public boolean notify = false;
+
+	public Settings(String filename) {
+	    this.filename = filename;
+	}
 
 	public Setting get(Resource.Named res) {
 	    Setting ret = settings.get(res.name);
@@ -349,16 +354,15 @@ public class GobIcon extends GAttrib {
 	    dst.addlist(Utils.mapencn(buf));
 	}
 
-	public static Settings loadold(Message buf) {
+	public void loadold(Message buf) {
 	    if(!Arrays.equals(buf.bytes(sig.length), sig))
 		throw(new Message.FormatError("Invalid signature"));
 	    int ver = buf.uint8();
 	    if((ver < 1) || (ver > 2))
 		throw(new Message.FormatError("Unknown version: " + ver));
-	    Settings ret = new Settings();
-	    ret.tag = buf.int32();
+	    this.tag = buf.int32();
 	    if(ver >= 2)
-		ret.notify = (buf.uint8() != 0);
+		this.notify = (buf.uint8() != 0);
 	    while(true) {
 		String resnm = buf.string();
 		if(resnm.equals(""))
@@ -398,21 +402,19 @@ public class GobIcon extends GAttrib {
 		}
 		if(!setdef)
 		    set.defshow = set.show;
-		ret.settings.put(res.name, set);
+		this.settings.put(res.name, set);
 	    }
-	    return(ret);
 	}
 
-	public static Settings load(Message blob) {
+	public void load(Message blob) {
 	    if(!Arrays.equals(blob.bytes(sig.length), sig))
 		throw(new Message.FormatError("Invalid signature"));
 	    int ver = blob.uint8();
 	    if((ver < 3) || (ver > 3))
 		throw(new Message.FormatError("Unknown version: " + ver));
-	    Settings ret = new Settings();
 	    Map<Object, Object> root = Utils.mapdecn(blob.tto());
-	    ret.tag = Utils.iv(root.get("tag"));
-	    ret.notify = Utils.bv(root.getOrDefault("notify", 0));
+	    this.tag = Utils.iv(root.get("tag"));
+	    this.notify = Utils.bv(root.getOrDefault("notify", 0));
 	    for(Object eicon : (Object[])root.get("icons")) {
 		Map<Object, Object> icon = Utils.mapdecn(eicon);
 		Object[] eres = (Object[])icon.get("res");
@@ -431,9 +433,54 @@ public class GobIcon extends GAttrib {
 		} catch(RuntimeException e) {
 		    new Warning(e, "could not read path").issue();
 		}
-		ret.settings.put(res.name, set);
+		this.settings.put(res.name, set);
 	    }
-	    return(ret);
+	}
+
+	public void save() {
+	    if(ResCache.global == null)
+		return;
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.store(filename))) {
+		save(fp);
+	    } catch(Exception e) {
+		new Warning(e, "failed to store icon-conf").issue();
+	    }
+	}
+
+	private boolean saveagain = false, saving = false;
+	private void dsave0() {
+	    save();
+	    synchronized(this) {
+		if(saveagain) {
+		    Defer.later(this::dsave0, null);
+		    saveagain = false;
+		} else {
+		    saving = false;
+		}
+	    }
+	}
+
+	public void dsave() {
+	    synchronized(this) {
+		if(!saving) {
+		    Defer.later(this::dsave0, null);
+		    saving = true;
+		} else {
+		    saveagain = true;
+		}
+	    }
+	}
+
+	public static Settings load(String name) throws IOException {
+	    if(ResCache.global == null)
+		return(new Settings(name));
+	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(name))) {
+		Settings ret = new Settings(name);
+		ret.load(fp);
+		return(ret);
+	    } catch(FileNotFoundException e) {
+	    }
+	    return(new Settings(name));
 	}
     }
 
@@ -469,7 +516,6 @@ public class GobIcon extends GAttrib {
 
     public static class SettingsWindow extends Window {
 	public final Settings conf;
-	private final Runnable save;
 	private final PackCont.LinPack cont;
 	private final IconList list;
 	private Widget setbox;
@@ -482,7 +528,7 @@ public class GobIcon extends GAttrib {
 	}
 
 	private <T> Consumer<T> andsave(Consumer<T> main) {
-	    return(val -> {main.accept(val); if(save != null) save.run();});
+	    return(val -> {main.accept(val); conf.dsave();});
 	}
 
 	private static final Text.Foundry elf = CharWnd.attrf;
@@ -555,8 +601,7 @@ public class GobIcon extends GAttrib {
 		if(ev.getKeyCode() == java.awt.event.KeyEvent.VK_SPACE) {
 		    if(sel != null) {
 			sel.conf.show = !sel.conf.show;
-			if(save != null)
-			    save.run();
+			conf.dsave();
 		    }
 		    return(true);
 		}
@@ -649,8 +694,7 @@ public class GobIcon extends GAttrib {
 		    } else {
 			conf.resns = item.res;
 			conf.filens = item.wav;
-			if(save != null)
-			    save.run();
+			SettingsWindow.this.conf.dsave();
 		    }
 		}
 	    }
@@ -665,10 +709,9 @@ public class GobIcon extends GAttrib {
 	    }
 	}
 
-	public SettingsWindow(Settings conf, Runnable save) {
+	public SettingsWindow(Settings conf) {
 	    super(Coord.z, "Icon settings");
 	    this.conf = conf;
-	    this.save = save;
 	    add(this.cont = new PackCont.LinPack.VPack(), Coord.z).margin(UI.scale(5)).packpar(true);
 	    list = cont.last(new IconList(UI.scale(250, 500)), 0);
 	    cont.last(new HRuler(list.sz.x), 0);
@@ -677,8 +720,7 @@ public class GobIcon extends GAttrib {
 
 		    public void changed(boolean val) {
 			conf.notify = val;
-			if(save != null)
-			    save.run();
+			conf.dsave();
 		    }
 		}, UI.scale(5));
 	    cont.pack();

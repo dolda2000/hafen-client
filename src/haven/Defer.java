@@ -305,6 +305,13 @@ public class Defer extends ThreadGroup {
 	return(d.defer(task));
     }
 
+    public static <T> Future<T> later(Runnable task, T result) {
+	return(later(() -> {
+		    task.run();
+		    return(result);
+		}));
+    }
+
     public String stats() {
 	synchronized(queue) {
 	    return(String.format("%d %d/%d", queue.size(), busy.get(), pool.size()));
