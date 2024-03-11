@@ -330,6 +330,41 @@ public class GobIcon extends GAttrib {
 	    this.tag = tag;
 	}
 
+	public void receive(UI ui, Object[] args) {
+	    int tag = Utils.iv(args[0]);
+	    if(args[1] instanceof String) {
+		Resource.Spec res = new Resource.Spec(null, (String)args[1], Utils.iv(args[2]));
+		Setting cset = new GobIcon.Setting(res);
+		boolean has = settings.containsKey(res.name);
+		cset.show = cset.defshow = Utils.bv(args[3]);
+		receive(tag, new GobIcon.Setting[] {cset});
+		save();
+		if(!has && notify) {
+		    ui.loader.defer(() -> {
+			    Resource lres = Resource.remote().load(res.name, res.ver).get();
+			    Resource.Tooltip tip = lres.layer(Resource.tooltip);
+			    if(tip != null)
+				ui.msg(String.format("%s added to list of seen icons.", tip.t));
+			}, null);
+		}
+	    } else if(args[1] instanceof Object[]) {
+		Object[] sub = (Object[])args[1];
+		int a = 0;
+		Collection<GobIcon.Setting> csets = new ArrayList<>();
+		while(a < sub.length) {
+		    String resnm = (String)sub[a++];
+		    int resver = Utils.iv(sub[a++]);
+		    int fl = Utils.iv(sub[a++]);
+		    Resource.Spec res = new Resource.Spec(null, resnm, resver);
+		    GobIcon.Setting cset = new GobIcon.Setting(res);
+		    cset.show = cset.defshow = ((fl & 1) != 0);
+		    csets.add(cset);
+		}
+		receive(tag, csets.toArray(new GobIcon.Setting[0]));
+		save();
+	    }
+	}
+
 	public void save(Message dst) {
 	    Map<Object, Object> buf = new HashMap<>();
 	    buf.put("tag", tag);

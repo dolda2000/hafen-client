@@ -1263,36 +1263,8 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    if(args.length < 2) {
 		if(conf.tag != tag)
 		    wdgmsg("map-icons", conf.tag);
-	    } else if(args[1] instanceof String) {
-		Resource.Spec res = new Resource.Spec(null, (String)args[1], Utils.iv(args[2]));
-		GobIcon.Setting cset = new GobIcon.Setting(res);
-		boolean has = conf.settings.containsKey(res.name);
-		cset.show = cset.defshow = Utils.bv(args[3]);
-		conf.receive(tag, new GobIcon.Setting[] {cset});
-		conf.save();
-		if(!has && conf.notify) {
-		    ui.sess.glob.loader.defer(() -> {
-			    Resource lres = Resource.remote().load(res.name, res.ver).get();
-			    Resource.Tooltip tip = lres.layer(Resource.tooltip);
-			    if(tip != null)
-				ui.msg(String.format("%s added to list of seen icons.", tip.t));
-			}, (Supplier<Object>)() -> null);
-		}
-	    } else if(args[1] instanceof Object[]) {
-		Object[] sub = (Object[])args[1];
-		int a = 0;
-		Collection<GobIcon.Setting> csets = new ArrayList<>();
-		while(a < sub.length) {
-		    String resnm = (String)sub[a++];
-		    int resver = Utils.iv(sub[a++]);
-		    int fl = Utils.iv(sub[a++]);
-		    Resource.Spec res = new Resource.Spec(null, resnm, resver);
-		    GobIcon.Setting cset = new GobIcon.Setting(res);
-		    cset.show = cset.defshow = ((fl & 1) != 0);
-		    csets.add(cset);
-		}
-		conf.receive(tag, csets.toArray(new GobIcon.Setting[0]));
-		conf.save();
+	    } else {
+		conf.receive(ui, args);
 	    }
 	} else {
 	    super.uimsg(msg, args);
