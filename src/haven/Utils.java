@@ -1293,6 +1293,11 @@ public class Utils {
 			 ((x.getAlpha() * f2) + (y.getAlpha() * f1)) / 255));
     }
 
+    public static Color colmul(Color a, Color b) {
+	return(new Color((a.getRed()  * b.getRed() ) / 255, (a.getGreen() * b.getGreen()) / 255,
+			 (a.getBlue() * b.getBlue()) / 255, (a.getAlpha() * b.getAlpha()) / 255));
+    }
+
     public static Color preblend(Color c1, Color c2) {
 	double a1 = c1.getAlpha() / 255.0;
 	double a2 = c2.getAlpha() / 255.0;
