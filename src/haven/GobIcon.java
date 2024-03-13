@@ -590,7 +590,7 @@ public class GobIcon extends GAttrib {
 		ResID res = new ResID(new Resource.Spec(null, (String)eres[0], Utils.iv(eres[1])),
 				      (eres.length > 2) ? (byte[])eres[2] : new byte[0]);
 		Collection<Setting> sets = new ArrayList<>();
-		Setting set = new Setting(res.res, new Object[0]);
+		Setting set = new Setting(res.res, Icon.nilid);
 		parseset(set, icon);
 		sets.add(set);
 		if(icon.containsKey("sub")) {
