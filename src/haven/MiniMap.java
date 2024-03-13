@@ -569,11 +569,11 @@ public class MiniMap extends Widget {
     public List<DisplayIcon> findicons(Collection<? extends DisplayIcon> prev) {
 	if((ui.sess == null) || (iconconf == null))
 	    return(Collections.emptyList());
-	Map<Gob, DisplayIcon> pmap = Collections.emptyMap();
+	Map<GobIcon, DisplayIcon> pmap = Collections.emptyMap();
 	if(prev != null) {
 	    pmap = new HashMap<>();
 	    for(DisplayIcon disp : prev)
-		pmap.put(disp.gob, disp);
+		pmap.put(disp.attr, disp);
 	}
 	List<DisplayIcon> ret = new ArrayList<>();
 	OCache oc = ui.sess.glob.oc;
@@ -584,7 +584,7 @@ public class MiniMap extends Widget {
 		    if(icon != null) {
 			GobIcon.Setting conf = iconconf.get(icon.icon());
 			if((conf != null) && conf.show) {
-			    DisplayIcon disp = pmap.remove(gob);
+			    DisplayIcon disp = pmap.remove(icon);
 			    if(disp == null)
 				disp = new DisplayIcon(icon, conf);
 			    disp.update(gob.rc, gob.a);
