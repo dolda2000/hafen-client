@@ -232,7 +232,6 @@ public class MiniMap extends Widget {
 	public Coord2d rc = null;
 	public Coord sc = null;
 	public double ang = 0.0;
-	public Color col = Color.WHITE;
 	public int z;
 	public double stime;
 	public boolean notify;
@@ -263,10 +262,6 @@ public class MiniMap extends Widget {
 	}
 
 	public void draw(GOut g) {
-	    if(col != null)
-		g.chcolor(col);
-	    else
-		g.chcolor();
 	    icon.draw(g, sc);
 	    if(notify) {
 		double t = (Utils.rtime() - stime) * 1.0;
@@ -574,9 +569,6 @@ public class MiniMap extends Widget {
 			    if(disp == null)
 				disp = new DisplayIcon(icon, conf);
 			    disp.update(gob.rc, gob.a);
-			    KinInfo kin = gob.getattr(KinInfo.class);
-			    if((kin != null) && (kin.group < BuddyWnd.gc.length))
-				disp.col = BuddyWnd.gc[kin.group];
 			    ret.add(disp);
 			}
 		    }
