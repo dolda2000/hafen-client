@@ -497,7 +497,7 @@ public class GobIcon extends GAttrib {
 		Collection<GobIcon.Setting> csets = new ArrayList<>();
 		while(a < sub.length) {
 		    Resource.Spec res = new Resource.Spec(null, (String)sub[a++], Utils.iv(sub[a++]));
-		    byte[] data = (args[a] instanceof byte[]) ? (byte[])args[a++] : new byte[0];
+		    byte[] data = (sub[a] instanceof byte[]) ? (byte[])sub[a++] : new byte[0];
 		    int fl = Utils.iv(sub[a++]);
 		    ResID id = new ResID(res, data);
 		    Setting def = new Setting(res, Icon.nilid);
