@@ -56,12 +56,17 @@ public class GobIcon extends GAttrib {
 	    this.res = res;
 	}
 
+	public static enum Markable {
+	    UNMARKABLE, NONDEFAULT, DEFAULT
+	}
+
 	public abstract String name();
 	public abstract BufferedImage image();
 	public abstract void draw(GOut g, Coord cc);
 	public abstract boolean checkhit(Coord c);
 	public Object[] id() {return(nilid);}
 	public int z() {return(0);}
+	public Markable markable() {return(Markable.UNMARKABLE);}
 
 	@Resource.PublishedCode(name = "mapicon")
 	public static interface Factory {
@@ -148,6 +153,24 @@ public class GobIcon extends GAttrib {
 
 	public int z() {
 	    return(img.z);
+	}
+
+	private int markdata() {
+	    byte[] data = res.flayer(Resource.imgc).kvdata.get("mm/mark");
+	    if(data == null)
+		return(0);
+	    return(Utils.intvard(data, 0));
+	}
+
+	public Markable markable() {
+	    switch(markdata()) {
+	    case 1:
+		return(Markable.NONDEFAULT);
+	    case 2:
+		return(Markable.DEFAULT);
+	    default:
+		return(Markable.UNMARKABLE);
+	    }
 	}
 
 	public static final Factory factory = new Factory() {
@@ -300,21 +323,14 @@ public class GobIcon extends GAttrib {
 	    return(this.lres = this.res.loadsaved(Resource.remote()));
 	}
 
-	private int markdata() {
-	    byte[] data = resource().flayer(Resource.imgc).kvdata.get("mm/mark");
-	    if(data == null)
-		return(0);
-	    return(Utils.intvard(data, 0));
-	}
-
 	public boolean getmarkablep() {
-	    return(markdata() != 0);
+	    return(icon.markable() != Icon.Markable.UNMARKABLE);
 	}
 
 	public boolean getmarkp() {
 	    if(markset)
 		return(mark);
-	    return(markdata() == 2);
+	    return(icon.markable() == Icon.Markable.DEFAULT);
 	}
     }
 
