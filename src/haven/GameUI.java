@@ -1034,9 +1034,9 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	}
     }
     
-    private String iconconfname(String ver) {
+    private String iconconfname() {
 	StringBuilder buf = new StringBuilder();
-	buf.append("data/mm-icons" + ver);
+	buf.append("data/mm-icons-2");
 	if(genus != null)
 	    buf.append("/" + genus);
 	if(ui.sess != null)
@@ -1045,37 +1045,13 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
     }
 
     private GobIcon.Settings loadiconconf() {
-	if(ResCache.global == null)
-	    return(new GobIcon.Settings());
+	String nm = iconconfname();
 	try {
-	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(iconconfname("-2")))) {
-		return(GobIcon.Settings.load(fp));
-	    }
-	} catch(java.io.FileNotFoundException e) {
+	    return(GobIcon.Settings.load(ui, nm));
 	} catch(Exception e) {
-	    new Warning(e, "failed to load icon-conf").issue();
+	    new Warning(e, "could not load icon-conf").issue();
 	}
-	try {
-	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(iconconfname("")))) {
-		return(GobIcon.Settings.loadold(fp));
-	    }
-	} catch(java.io.FileNotFoundException e) {
-	} catch(Exception e) {
-	    new Warning(e, "failed to load old icon-conf").issue();
-	}
-	return(new GobIcon.Settings());
-    }
-
-    public void saveiconconf() {
-	if(ResCache.global == null)
-	    return;
-	try {
-	    try(StreamMessage fp = new StreamMessage(ResCache.global.store(iconconfname("-2")))) {
-		iconconf.save(fp);
-	    }
-	} catch(Exception e) {
-	    new Warning(e, "failed to store icon-conf").issue();
-	}
+	return(new GobIcon.Settings(ui, nm));
     }
 
     public class CornerMap extends MiniMap implements Console.Directory {
@@ -1287,36 +1263,8 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    if(args.length < 2) {
 		if(conf.tag != tag)
 		    wdgmsg("map-icons", conf.tag);
-	    } else if(args[1] instanceof String) {
-		Resource.Spec res = new Resource.Spec(null, (String)args[1], Utils.iv(args[2]));
-		GobIcon.Setting cset = new GobIcon.Setting(res);
-		boolean has = conf.settings.containsKey(res.name);
-		cset.show = cset.defshow = Utils.bv(args[3]);
-		conf.receive(tag, new GobIcon.Setting[] {cset});
-		saveiconconf();
-		if(!has && conf.notify) {
-		    ui.sess.glob.loader.defer(() -> {
-			    Resource lres = Resource.remote().load(res.name, res.ver).get();
-			    Resource.Tooltip tip = lres.layer(Resource.tooltip);
-			    if(tip != null)
-				ui.msg(String.format("%s added to list of seen icons.", tip.t));
-			}, (Supplier<Object>)() -> null);
-		}
-	    } else if(args[1] instanceof Object[]) {
-		Object[] sub = (Object[])args[1];
-		int a = 0;
-		Collection<GobIcon.Setting> csets = new ArrayList<>();
-		while(a < sub.length) {
-		    String resnm = (String)sub[a++];
-		    int resver = Utils.iv(sub[a++]);
-		    int fl = Utils.iv(sub[a++]);
-		    Resource.Spec res = new Resource.Spec(null, resnm, resver);
-		    GobIcon.Setting cset = new GobIcon.Setting(res);
-		    cset.show = cset.defshow = ((fl & 1) != 0);
-		    csets.add(cset);
-		}
-		conf.receive(tag, csets.toArray(new GobIcon.Setting[0]));
-		saveiconconf();
+	    } else {
+		conf.receive(args);
 	    }
 	} else {
 	    super.uimsg(msg, args);
@@ -1445,7 +1393,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		    if(iconconf == null)
 			return;
 		    if(iconwnd == null) {
-			iconwnd = new GobIcon.SettingsWindow(iconconf, () -> Utils.defer(GameUI.this::saveiconconf));
+			iconwnd = new GobIcon.SettingsWindow(iconconf);
 			fitwdg(GameUI.this.add(iconwnd, Utils.getprefc("wndc-icon", new Coord(200, 200))));
 		    } else {
 			ui.destroy(iconwnd);

@@ -54,8 +54,8 @@ public class BaseColor extends State {
     }
 
     public Color color() {
-	return(new Color((int)Math.round(color.r), (int)Math.round(color.g),
-			 (int)Math.round(color.b), (int)Math.round(color.a)));
+	return(new Color((int)Math.round(color.r * 255), (int)Math.round(color.g * 255),
+			 (int)Math.round(color.b * 255), (int)Math.round(color.a * 255)));
     }
 
     private static final ShaderMacro shader = prog -> {

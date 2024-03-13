@@ -1293,6 +1293,11 @@ public class Utils {
 			 ((x.getAlpha() * f2) + (y.getAlpha() * f1)) / 255));
     }
 
+    public static Color colmul(Color a, Color b) {
+	return(new Color((a.getRed()  * b.getRed() ) / 255, (a.getGreen() * b.getGreen()) / 255,
+			 (a.getBlue() * b.getBlue()) / 255, (a.getAlpha() * b.getAlpha()) / 255));
+    }
+
     public static Color preblend(Color c1, Color c2) {
 	double a1 = c1.getAlpha() / 255.0;
 	double a2 = c2.getAlpha() / 255.0;
@@ -2157,6 +2162,33 @@ public class Utils {
 		throw(e2);
 	    }
 	}
+    }
+
+    @SuppressWarnings("unchecked")
+    public static int compare(Object[] a, Object[] b) {
+	int i = 0;
+	for(i = 0; (i < a.length) && (i < b.length); i++) {
+	    if((a[i] == null) && (b[i] == null)) {
+	    } else if(a[i] == null) {
+		return(-1);
+	    } else if(b[i] == null) {
+		return(1);
+	    } else {
+		if(a[i].getClass() != b[i].getClass()) {
+		    return(a[i].getClass().getName().compareTo(b[i].getClass().getName()));
+		} else if(Comparable.class.isAssignableFrom(a[i].getClass())) {
+		    return(((Comparable)a[i]).compareTo(b[i]));
+		} else {
+		    if(a[i] != b[i])
+			return(sidcmp(a[i], b[i]));
+		}
+	    }
+	}
+	if(a.length < b.length)
+	    return(-1);
+	if(a.length > b.length)
+	    return(1);
+	return(0);
     }
 
     public static final Comparator<Object> idcmp = new Comparator<Object>() {
