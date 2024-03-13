@@ -568,7 +568,7 @@ public class MiniMap extends Widget {
 		try {
 		    GobIcon icon = gob.getattr(GobIcon.class);
 		    if(icon != null) {
-			GobIcon.Setting conf = iconconf.get(icon.res.get());
+			GobIcon.Setting conf = iconconf.get(icon.icon());
 			if((conf != null) && conf.show) {
 			    DisplayIcon disp = pmap.remove(gob);
 			    if(disp == null)

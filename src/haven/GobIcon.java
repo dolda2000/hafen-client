@@ -56,6 +56,7 @@ public class GobIcon extends GAttrib {
 	    this.res = res;
 	}
 
+	public abstract String name();
 	public abstract BufferedImage image();
 	public abstract void draw(GOut g, Coord cc);
 	public abstract boolean checkhit(Coord c);
@@ -65,7 +66,7 @@ public class GobIcon extends GAttrib {
 	@Resource.PublishedCode(name = "mapicon")
 	public static interface Factory {
 	    public Icon create(OwnerContext owner, Resource res, Message sdt);
-	    public Icon create(OwnerContext owner, Resource res, Object[] id);
+	    public Collection<Icon> enumerate(OwnerContext owner, Resource res, Message sdt);
 	}
     }
 
@@ -125,6 +126,11 @@ public class GobIcon extends GAttrib {
 	    this.img = img;
 	}
 
+	public String name() {
+	    Resource.Tooltip name = res.layer(Resource.tooltip);
+	    return(name == null ? "???" : name.t);
+	}
+
 	public BufferedImage image() {
 	    return(res.flayer(Resource.imgc).img);
 	}
@@ -149,19 +155,23 @@ public class GobIcon extends GAttrib {
 		    return(new ImageIcon(owner, res, Image.get(res)));
 		}
 
-		public Icon create(OwnerContext owner, Resource res, Object[] id) {
-		    return(new ImageIcon(owner, res, Image.get(res)));
+		public Collection<Icon> enumerate(OwnerContext owner, Resource res, Message sdt) {
+		    return(Collections.singletonList(new ImageIcon(owner, res, Image.get(res))));
 		}
 	    };
+    }
+
+    public static Icon.Factory getfac(Resource res) {
+	Icon.Factory fac = res.getcode(Icon.Factory.class, false);
+	if(fac != null)
+	    return(fac);
+	return(ImageIcon.factory);
     }
 
     public Icon icon() {
 	if(this.icon == null) {
 	    Resource res = this.res.get();
-	    Icon.Factory fac = res.getcode(Icon.Factory.class, false);
-	    if(fac == null)
-		fac = ImageIcon.factory;
-	    this.icon = fac.create(gob, res, Message.nil);
+	    this.icon = getfac(res).create(gob, res, Message.nil);
 	}
 	return(this.icon);
     }
@@ -229,6 +239,9 @@ public class GobIcon extends GAttrib {
     }
 
     public static class Setting implements Serializable {
+	public final ID id;
+	public final Icon icon;
+	public final Settings.ResID from;
 	public Resource.Spec res;
 	public boolean show, defshow, notify;
 	public String resns;
@@ -257,8 +270,19 @@ public class GobIcon extends GAttrib {
 	    }
 	}
 
-	public Setting(Resource.Spec res) {
+	public Setting(Resource.Spec res, Object[] id, Icon icon, Settings.ResID from) {
 	    this.res = res;
+	    this.id = new ID(res.name, id);
+	    this.icon = icon;
+	    this.from = from;
+	}
+
+	public Setting(Resource.Spec res, Object[] id) {
+	    this(res, id, null, null);
+	}
+
+	public Setting(Icon icon, Settings.ResID from) {
+	    this(new Resource.Spec(null, icon.res.name, icon.res.ver), icon.id(), icon, from);
 	}
 
 	public Consumer<UI> notification() {
@@ -294,93 +318,212 @@ public class GobIcon extends GAttrib {
 	}
     }
 
-    public static class Settings implements Serializable {
+    public static class Settings implements OwnerContext, Serializable {
 	public static final byte[] sig = "Icons".getBytes(Utils.ascii);
+	public final UI ui;
 	public final String filename;
-	public Map<String, Setting> settings = new HashMap<>();
+	public Map<Setting.ID, Setting> settings = new HashMap<>();
 	public int tag = -1;
 	public boolean notify = false;
 
-	public Settings(String filename) {
+	public Settings(UI ui, String filename) {
+	    this.ui = ui;
 	    this.filename = filename;
 	}
 
-	public Setting get(Resource.Named res) {
-	    Setting ret = settings.get(res.name);
-	    if((ret != null) && (ret.res.ver < res.ver))
-		ret.res = new Resource.Spec(null, res.name, res.ver);
-	    return(ret);
+	public Setting get(Icon icon) {
+	    return(settings.get(new Setting.ID(icon.res.name, icon.id())));
 	}
 
-	public Setting get(Resource res) {
-	    return(get(res.indir()));
-	}
+	public static class ResID {
+	    public final Resource.Spec res;
+	    public final byte[] data;
 
-	public void receive(int tag, Setting[] conf) {
-	    Map<String, Setting> nset = new HashMap<>(settings);
-	    for(int i = 0; i < conf.length; i++) {
-		String nm = conf[i].res.name;
-		Setting prev = nset.get(nm);
-		if(prev == null)
-		    nset.put(nm, conf[i]);
-		else if(prev.res.ver < conf[i].res.ver)
-		    prev.res = conf[i].res;
+	    public ResID(Resource.Spec res, byte[] data) {
+		this.res = res;
+		this.data = data;
 	    }
-	    this.settings = nset;
-	    this.tag = tag;
+
+	    public int hashCode() {
+		return((res.name.hashCode() * 31) + Arrays.hashCode(data));
+	    }
+
+	    public boolean equals(ResID that) {
+		return(this.res.name.equals(that.res.name) && Arrays.equals(this.data, that.data));
+	    }
+
+	    public boolean equals(Object x) {
+		return((x instanceof ResID) && equals((ResID)x));
+	    }
 	}
 
-	public void receive(UI ui, Object[] args) {
+	private Loader loading = null;
+	public class Loader implements Runnable {
+	    public final Queue<ResID> load = new ArrayDeque<>();
+	    public final Map<ResID, Setting> defaults = new HashMap<>();
+	    public final Map<ResID, Collection<Setting>> resolve = new HashMap<>();
+	    public boolean save = false, adv = false;
+	    public Integer tag = null;
+	    private final Collection<Icon> advbuf = new ArrayList<>();
+	    private ResID r = null;
+	    private Loader next = null;
+	    private Map<Setting.ID, Setting> nset = null;
+
+	    private void merge(Setting set, Setting conf) {
+		set.show    = conf.show;
+		set.defshow = conf.defshow;
+		set.notify  = conf.notify;
+		set.resns   = conf.resns;
+		set.filens  = conf.filens;
+		if(set.markset = conf.markset)
+		    set.mark = conf.mark;
+	    }
+
+	    public void run() {
+		if(nset == null)
+		    nset = new HashMap<>(settings);
+		while(true) {
+		    if((r == null) && ((r = load.poll()) == null))
+			break;
+		    Resource res = r.res.loadsaved(Resource.remote());
+		    Icon.Factory fac = getfac(res);
+		    for(Icon icon : fac.enumerate(Settings.this, res, new MessageBuf(r.data))) {
+			Setting set = new Setting(icon, r);
+			Setting def = defaults.get(r);
+			if(def != null)
+			    merge(set, def);
+			Setting prev = nset.get(set.id);
+			if((prev == null) || (prev.res.ver < set.res.ver)) {
+			    if(prev != null)
+				merge(set, prev);
+			    else
+				advbuf.add(icon);
+			    nset.put(set.id, set);
+			}
+		    }
+		    Collection<Setting> sets = resolve.remove(r);
+		    if(sets != null) {
+			for(Setting conf : sets) {
+			    Setting set = nset.get(conf.id);
+			    if(set != null)
+				merge(set, conf);
+			}
+		    }
+		    r = null;
+		}
+		settings = nset;
+		if(tag != null)
+		    Settings.this.tag = tag;
+		if(save)
+		    save();
+		if(adv && notify) {
+		    Set<String> names = new HashSet<>();
+		    advbuf.forEach(icon -> names.add(icon.name()));
+		    synchronized(ui) {
+			for(String nm : names)
+			    ui.msg(String.format("%s added to list of seen icons.", nm));
+		    }
+		}
+		synchronized(Settings.this) {
+		    if(loading == this)
+			loading = null;
+		    else
+			ui.loader.defer(next, null);
+		}
+	    }
+
+	    public void submit() {
+		synchronized(Settings.this) {
+		    if(loading == null)
+			ui.loader.defer(this, null);
+		    else
+			loading.next = this;
+		    loading = this;
+		}
+	    }
+	}
+
+	private final ClassResolver<Settings> ctxr = new ClassResolver<Settings>()
+	    .add(Glob.class, s -> s.ui.sess.glob)
+	    .add(Session.class, s -> s.ui.sess);
+	public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
+
+	public void receive(Object[] args) {
 	    int tag = Utils.iv(args[0]);
 	    if(args[1] instanceof String) {
-		Resource.Spec res = new Resource.Spec(null, (String)args[1], Utils.iv(args[2]));
-		Setting cset = new GobIcon.Setting(res);
-		boolean has = settings.containsKey(res.name);
-		cset.show = cset.defshow = Utils.bv(args[3]);
-		receive(tag, new GobIcon.Setting[] {cset});
-		save();
-		if(!has && notify) {
-		    ui.loader.defer(() -> {
-			    Resource lres = Resource.remote().load(res.name, res.ver).get();
-			    Resource.Tooltip tip = lres.layer(Resource.tooltip);
-			    if(tip != null)
-				ui.msg(String.format("%s added to list of seen icons.", tip.t));
-			}, null);
-		}
+		int a = 1;
+		Resource.Spec res = new Resource.Spec(null, (String)args[a++], Utils.iv(args[a++]));
+		byte[] data = (args[a] instanceof byte[]) ? (byte[])args[a++] : new byte[0];
+		ResID id = new ResID(res, data);
+		Setting def = new Setting(res, Icon.nilid);
+		def.show = def.defshow = Utils.bv(args[a++]);
+		Loader l = new Loader();
+		l.save = true;
+		l.adv = true;
+		l.tag = tag;
+		l.load.add(id);
+		l.defaults.put(id, def);
+		l.submit();
 	    } else if(args[1] instanceof Object[]) {
 		Object[] sub = (Object[])args[1];
 		int a = 0;
+		Loader l = new Loader();
+		l.save = true;
+		l.tag = tag;
 		Collection<GobIcon.Setting> csets = new ArrayList<>();
 		while(a < sub.length) {
-		    String resnm = (String)sub[a++];
-		    int resver = Utils.iv(sub[a++]);
+		    Resource.Spec res = new Resource.Spec(null, (String)sub[a++], Utils.iv(sub[a++]));
+		    byte[] data = (args[a] instanceof byte[]) ? (byte[])args[a++] : new byte[0];
 		    int fl = Utils.iv(sub[a++]);
-		    Resource.Spec res = new Resource.Spec(null, resnm, resver);
-		    GobIcon.Setting cset = new GobIcon.Setting(res);
-		    cset.show = cset.defshow = ((fl & 1) != 0);
-		    csets.add(cset);
+		    ResID id = new ResID(res, data);
+		    Setting def = new Setting(res, Icon.nilid);
+		    def.show = def.defshow = ((fl & 1) != 0);
+		    l.load.add(id);
+		    l.defaults.put(id, def);
 		}
-		receive(tag, csets.toArray(new GobIcon.Setting[0]));
-		save();
+		l.submit();
 	    }
 	}
 
+	private static void encodeset(Map<Object, Object> buf, Setting set) {
+	    if(set.show)    buf.put("s", 1);
+	    if(set.defshow) buf.put("d", 1);
+	    if(set.notify)  buf.put("n", 1);
+	    if(set.markset) buf.put("m", set.mark ? 1 : 0);
+	    if(set.resns != null)  buf.put("R", set.resns);
+	    if(set.filens != null) buf.put("W", set.filens.toString());
+	}
+
 	public void save(Message dst) {
+	    Map<ResID, Collection<Setting>> byid = new HashMap<>();
+	    for(Setting set : settings.values())
+		byid.computeIfAbsent(set.from, k -> new ArrayList<>()).add(set);
 	    Map<Object, Object> buf = new HashMap<>();
 	    buf.put("tag", tag);
 	    if(notify)
 		buf.put("notify", 1);
 	    List<Object> abuf = new ArrayList<>();
-	    for(Setting set : settings.values()) {
-		Map<Object, Object> sbuf = new HashMap<>();
-		sbuf.put("res", new Object[] {set.res.name, set.res.ver});
-		if(set.show)    sbuf.put("s", 1);
-		if(set.defshow) sbuf.put("d", 1);
-		if(set.notify)  sbuf.put("n", 1);
-		if(set.markset) sbuf.put("m", set.mark ? 1 : 0);
-		if(set.resns != null)  sbuf.put("R", set.resns);
-		if(set.filens != null) sbuf.put("W", set.filens.toString());
-		abuf.add(Utils.mapencn(sbuf));
+	    for(Map.Entry<ResID, Collection<Setting>> ent : byid.entrySet()) {
+		ResID id = ent.getKey();
+		Map<Object, Object> rbuf = new HashMap<>();
+		if(id.data.length == 0)
+		    rbuf.put("res", new Object[] {id.res.name, id.res.ver});
+		else
+		    rbuf.put("res", new Object[] {id.res.name, id.res.ver, id.data});
+		Collection<Object> sub = new ArrayList<>();
+		for(Setting set : ent.getValue()) {
+		    if(set.id.sub.length == 0) {
+			encodeset(rbuf, set);
+		    } else {
+			Map<Object, Object> sbuf = new HashMap<>();
+			sbuf.put("id", set.id.sub);
+			encodeset(sbuf, set);
+			sub.add(Utils.mapencn(sbuf));
+		    }
+		}
+		if(!sub.isEmpty())
+		    rbuf.put("sub", sub.toArray(new Object[0]));
+		abuf.add(Utils.mapencn(rbuf));
 	    }
 	    buf.put("icons", abuf.toArray(new Object[0]));
 
@@ -389,55 +532,19 @@ public class GobIcon extends GAttrib {
 	    dst.addlist(Utils.mapencn(buf));
 	}
 
-	public void loadold(Message buf) {
-	    if(!Arrays.equals(buf.bytes(sig.length), sig))
-		throw(new Message.FormatError("Invalid signature"));
-	    int ver = buf.uint8();
-	    if((ver < 1) || (ver > 2))
-		throw(new Message.FormatError("Unknown version: " + ver));
-	    this.tag = buf.int32();
-	    if(ver >= 2)
-		this.notify = (buf.uint8() != 0);
-	    while(true) {
-		String resnm = buf.string();
-		if(resnm.equals(""))
-		    break;
-		int resver = buf.uint16();
-		Resource.Spec res = new Resource.Spec(null, resnm, resver);
-		Setting set = new Setting(res);
-		boolean setdef = false;
-		data: while(true) {
-		    int datum = buf.uint8();
-		    switch(datum) {
-		    case (int)'s':
-			set.show = (buf.uint8() != 0);
-			break;
-		    case (int)'d':
-			set.defshow = (buf.uint8() != 0);
-			setdef = true;
-			break;
-		    case (int)'n':
-			set.notify = (buf.uint8() != 0);
-			break;
-		    case (int)'R':
-			set.resns = buf.string();
-			break;
-		    case (int)'W':
-			try {
-			    set.filens = Utils.path(buf.string());
-			} catch(RuntimeException e) {
-			    new Warning(e, "could not read path").issue();
-			}
-			break;
-		    case 0:
-			break data;
-		    default:
-			throw(new Message.FormatError("Unknown datum: " + datum));
-		    }
-		}
-		if(!setdef)
-		    set.defshow = set.show;
-		this.settings.put(res.name, set);
+	private static void parseset(Setting set, Map<Object, Object> data) {
+	    set.show    = Utils.bv(data.getOrDefault("s", 0));
+	    set.defshow = Utils.bv(data.getOrDefault("d", 0));
+	    set.notify  = Utils.bv(data.getOrDefault("n", 0));
+	    set.resns   = (String)data.getOrDefault("R", null);
+	    if(data.containsKey("m")) {
+		set.markset = true;
+		set.mark = Utils.bv(data.get("m"));
+	    }
+	    try {
+		set.filens = Utils.path((String)data.getOrDefault("W", null));
+	    } catch(RuntimeException e) {
+		new Warning(e, "could not read path").issue();
 	    }
 	}
 
@@ -450,26 +557,28 @@ public class GobIcon extends GAttrib {
 	    Map<Object, Object> root = Utils.mapdecn(blob.tto());
 	    this.tag = Utils.iv(root.get("tag"));
 	    this.notify = Utils.bv(root.getOrDefault("notify", 0));
+	    Loader l = new Loader();
 	    for(Object eicon : (Object[])root.get("icons")) {
 		Map<Object, Object> icon = Utils.mapdecn(eicon);
 		Object[] eres = (Object[])icon.get("res");
-		Resource.Spec res = new Resource.Spec(null, (String)eres[0], Utils.iv(eres[1]));
-		Setting set = new Setting(res);
-		set.show    = Utils.bv(icon.getOrDefault("s", 0));
-		set.defshow = Utils.bv(icon.getOrDefault("d", 0));
-		set.notify  = Utils.bv(icon.getOrDefault("n", 0));
-		set.resns   = (String)icon.getOrDefault("R", null);
-		if(icon.containsKey("m")) {
-		    set.markset = true;
-		    set.mark = Utils.bv(icon.get("m"));
+		ResID res = new ResID(new Resource.Spec(null, (String)eres[0], Utils.iv(eres[1])),
+				      (eres.length > 2) ? (byte[])eres[2] : new byte[0]);
+		Collection<Setting> sets = new ArrayList<>();
+		Setting set = new Setting(res.res, new Object[0]);
+		parseset(set, icon);
+		sets.add(set);
+		if(icon.containsKey("sub")) {
+		    for(Object esub : (Object[])icon.get("sub")) {
+			Map<Object, Object> sub = Utils.mapdecn(esub);
+			set = new Setting(res.res, (Object[])sub.get("id"));
+			parseset(set, sub);
+			sets.add(set);
+		    }
 		}
-		try {
-		    set.filens = Utils.path((String)icon.getOrDefault("W", null));
-		} catch(RuntimeException e) {
-		    new Warning(e, "could not read path").issue();
-		}
-		this.settings.put(res.name, set);
+		l.load.add(res);
+		l.resolve.put(res, sets);
 	    }
+	    l.submit();
 	}
 
 	public void save() {
@@ -506,16 +615,16 @@ public class GobIcon extends GAttrib {
 	    }
 	}
 
-	public static Settings load(String name) throws IOException {
+	public static Settings load(UI ui, String name) throws IOException {
 	    if(ResCache.global == null)
-		return(new Settings(name));
+		return(new Settings(ui, name));
 	    try(StreamMessage fp = new StreamMessage(ResCache.global.fetch(name))) {
-		Settings ret = new Settings(name);
+		Settings ret = new Settings(ui, name);
 		ret.load(fp);
 		return(ret);
 	    } catch(FileNotFoundException e) {
 	    }
-	    return(new Settings(name));
+	    return(new Settings(ui, name));
 	}
     }
 
@@ -555,11 +664,14 @@ public class GobIcon extends GAttrib {
 	private final IconList list;
 	private Widget setbox;
 
-	public static class Icon {
+	public static class ListIcon {
 	    public final Setting conf;
-	    public String name;
+	    public final String name;
 
-	    public Icon(Setting conf) {this.conf = conf;}
+	    public ListIcon(Setting conf) {
+		this.conf = conf;
+		this.name = conf.icon.name();
+	    }
 	}
 
 	private <T> Consumer<T> andsave(Consumer<T> main) {
@@ -568,66 +680,43 @@ public class GobIcon extends GAttrib {
 
 	private static final Text.Foundry elf = CharWnd.attrf;
 	private static final int elh = elf.height() + UI.scale(2);
-	public class IconList extends SSearchBox<Icon, IconList.IconLine> {
-	    private List<Icon> ordered = Collections.emptyList();
-	    private Map<String, Setting> cur = null;
-	    private boolean reorder = false;
+	public class IconList extends SSearchBox<ListIcon, IconList.IconLine> {
+	    private List<ListIcon> ordered = Collections.emptyList();
+	    private Map<Setting.ID, Setting> cur = null;
 
 	    private IconList(Coord sz) {
 		super(sz, elh);
 	    }
 
-	    public class IconLine extends SListWidget.ItemWidget<Icon> {
-		public IconLine(Coord sz, Icon icon) {
+	    public class IconLine extends SListWidget.ItemWidget<ListIcon> {
+		public IconLine(Coord sz, ListIcon icon) {
 		    super(IconList.this, sz, icon);
 		    Widget prev;
 		    prev = adda(new CheckBox("").state(() -> icon.conf.notify).set(andsave(val -> icon.conf.notify = val)).settip("Notify"),
 				sz.x - UI.scale(2) - (sz.y / 2), sz.y / 2, 0.5, 0.5);
 		    prev = adda(new CheckBox("").state(() -> icon.conf.show).set(andsave(val -> icon.conf.show = val)).settip("Display"),
 				prev.c.x - UI.scale(2) - (sz.y / 2), sz.y / 2, 0.5, 0.5);
-		    add(SListWidget.IconText.of(Coord.of(prev.c.x - UI.scale(2), sz.y), () -> item.conf.resource()), Coord.z);
+		    add(SListWidget.IconText.of(Coord.of(prev.c.x - UI.scale(2), sz.y), item.conf.icon::image, item.conf.icon::name), Coord.z);
 		}
 	    }
 
-	    protected boolean searchmatch(Icon icon, String text) {
+	    protected boolean searchmatch(ListIcon icon, String text) {
 		return((icon.name != null) &&
 		       (icon.name.toLowerCase().indexOf(text.toLowerCase()) >= 0));
 	    }
-	    protected List<Icon> allitems() {return(ordered);}
-	    protected IconLine makeitem(Icon icon, int idx, Coord sz) {return(new IconLine(sz, icon));}
+	    protected List<ListIcon> allitems() {return(ordered);}
+	    protected IconLine makeitem(ListIcon icon, int idx, Coord sz) {return(new IconLine(sz, icon));}
 
 	    public void tick(double dt) {
-		Map<String, Setting> cur = this.cur;
+		Map<Setting.ID, Setting> cur = this.cur;
 		if(cur != conf.settings) {
 		    cur = conf.settings;
-		    ArrayList<Icon> ordered = new ArrayList<>(cur.size());
+		    ArrayList<ListIcon> ordered = new ArrayList<>(cur.size());
 		    for(Setting conf : cur.values())
-			ordered.add(new Icon(conf));
+			ordered.add(new ListIcon(conf));
 		    this.cur = cur;
 		    this.ordered = ordered;
-		    reorder = true;
-		}
-		if(reorder) {
-		    reorder = false;
-		    for(Icon icon : ordered) {
-			if(icon.name == null) {
-			    try {
-				Resource.Tooltip name = icon.conf.resource().layer(Resource.tooltip);
-				icon.name = (name == null) ? "???" : name.t;
-			    } catch(Loading l) {
-				reorder = true;
-			    }
-			}
-		    }
-		    Collections.sort(ordered, (a, b) -> {
-			    if((a.name == null) && (b.name == null))
-				return(0);
-			    if(a.name == null)
-				return(1);
-			    if(b.name == null)
-				return(-1);
-			    return(a.name.compareTo(b.name));
-			});
+		    Collections.sort(ordered, (a, b) -> a.name.compareTo(b.name));
 		}
 		super.tick(dt);
 	    }
@@ -643,7 +732,7 @@ public class GobIcon extends GAttrib {
 		return(super.keydown(ev));
 	    }
 
-	    public void change(Icon icon) {
+	    public void change(ListIcon icon) {
 		super.change(icon);
 		if(setbox != null) {
 		    setbox.destroy();

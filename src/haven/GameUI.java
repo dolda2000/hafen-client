@@ -1047,11 +1047,11 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
     private GobIcon.Settings loadiconconf() {
 	String nm = iconconfname();
 	try {
-	    return(GobIcon.Settings.load(nm));
+	    return(GobIcon.Settings.load(ui, nm));
 	} catch(Exception e) {
 	    new Warning(e, "could not load icon-conf").issue();
 	}
-	return(new GobIcon.Settings(nm));
+	return(new GobIcon.Settings(ui, nm));
     }
 
     public class CornerMap extends MiniMap implements Console.Directory {
@@ -1264,7 +1264,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		if(conf.tag != tag)
 		    wdgmsg("map-icons", conf.tag);
 	    } else {
-		conf.receive(ui, args);
+		conf.receive(args);
 	    }
 	} else {
 	    super.uimsg(msg, args);
