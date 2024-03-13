@@ -71,7 +71,7 @@ public class GobIcon extends GAttrib {
 	@Resource.PublishedCode(name = "mapicon")
 	public static interface Factory {
 	    public Icon create(OwnerContext owner, Resource res, Message sdt);
-	    public Collection<Icon> enumerate(OwnerContext owner, Resource res, Message sdt);
+	    public Collection<? extends Icon> enumerate(OwnerContext owner, Resource res, Message sdt);
 	}
     }
 
@@ -182,11 +182,11 @@ public class GobIcon extends GAttrib {
 	}
 
 	public static final Factory factory = new Factory() {
-		public Icon create(OwnerContext owner, Resource res, Message sdt) {
+		public ImageIcon create(OwnerContext owner, Resource res, Message sdt) {
 		    return(new ImageIcon(owner, res, Image.get(res)));
 		}
 
-		public Collection<Icon> enumerate(OwnerContext owner, Resource res, Message sdt) {
+		public Collection<ImageIcon> enumerate(OwnerContext owner, Resource res, Message sdt) {
 		    return(Collections.singletonList(new ImageIcon(owner, res, Image.get(res))));
 		}
 	    };
