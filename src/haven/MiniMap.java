@@ -26,6 +26,7 @@
 
 package haven;
 
+import haven.render.*;
 import java.util.*;
 import java.util.function.*;
 import java.awt.Color;
@@ -43,7 +44,7 @@ import static haven.OCache.posres;
 public class MiniMap extends Widget {
     public static final Tex bg = Resource.loadtex("gfx/hud/mmap/ptex");
     public static final Tex nomap = Resource.loadtex("gfx/hud/mmap/nomap");
-    public static final Tex plp = ((TexI)Resource.loadtex("gfx/hud/mmap/plp")).filter(haven.render.Texture.Filter.LINEAR);
+    public static final Tex plp = ((TexI)Resource.loadtex("gfx/hud/mmap/plp")).filter(Texture.Filter.LINEAR);
     public final MapFile file;
     public Location curloc;
     public Location sessloc;
@@ -223,6 +224,23 @@ public class MiniMap extends Widget {
 	follow = true;
     }
 
+    public static class Scale2D implements Pipe.Op {
+	public final Coord cc;
+	public final float f;
+
+	public Scale2D(Coord cc, float f) {
+	    this.cc = cc;
+	    this.f = f;
+	}
+
+	public void apply(Pipe buf) {
+	    Ortho2D st = (Ortho2D)buf.get(States.vxf);
+	    float w = st.r - st.l, h = st.b - st.u;
+	    buf.prep(new Ortho2D(cc.x + ((st.l - cc.x) / f), cc.y + ((st.u - cc.y) / f),
+				 cc.x + ((st.r - cc.x) / f), cc.y + ((st.b - cc.y) / f)));
+	}
+    }
+
     public static final Color notifcol = new Color(255, 128, 0, 255);
     public class DisplayIcon {
 	public final GobIcon attr;
@@ -271,6 +289,7 @@ public class MiniMap extends Widget {
 		    double f = 1.0 + (Math.pow(Math.sin(t * Math.PI * 1.5), 2) * 1.0);
 		    double a = (t < 0.5) ? 0.5 : (0.5 - (t - 0.5));
 		    g.usestate(new ColorMask(notifcol));
+		    g.usestate(new Scale2D(sc.add(g.tx), (float)f));
 		    g.chcolor(255, 255, 255, (int)Math.round(255 * a));
 		    icon.draw(g, sc);
 		    g.defstate();
