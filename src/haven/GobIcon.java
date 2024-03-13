@@ -691,10 +691,12 @@ public class GobIcon extends GAttrib {
 	public static class ListIcon {
 	    public final Setting conf;
 	    public final String name;
+	    public final Object[] id;
 
 	    public ListIcon(Setting conf) {
 		this.conf = conf;
 		this.name = conf.icon.name();
+		this.id = conf.icon.id();
 	    }
 	}
 
@@ -740,7 +742,14 @@ public class GobIcon extends GAttrib {
 			ordered.add(new ListIcon(conf));
 		    this.cur = cur;
 		    this.ordered = ordered;
-		    Collections.sort(ordered, (a, b) -> a.name.compareTo(b.name));
+		    Collections.sort(ordered, (a, b) -> {
+			    int c;;
+			    if((c = a.name.compareTo(b.name)) != 0)
+				return(c);
+			    if((c = Utils.compare(a.id, b.id)) != 0)
+				return(c);
+			    return(0);
+			});
 		}
 		super.tick(dt);
 	    }
