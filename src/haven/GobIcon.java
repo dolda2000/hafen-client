@@ -39,11 +39,13 @@ public class GobIcon extends GAttrib {
     private static final int size = UI.scale(20);
     public static final PUtils.Convolution filter = new PUtils.Hanning(1);
     public final Indir<Resource> res;
+    public final byte[] sdt;
     private Icon icon;
 
-    public GobIcon(Gob g, Indir<Resource> res) {
+    public GobIcon(Gob g, Indir<Resource> res, byte[] sdt) {
 	super(g);
 	this.res = res;
+	this.sdt = sdt;
     }
 
     public static abstract class Icon {
@@ -202,7 +204,7 @@ public class GobIcon extends GAttrib {
     public Icon icon() {
 	if(this.icon == null) {
 	    Resource res = this.res.get();
-	    this.icon = getfac(res).create(gob, res, Message.nil);
+	    this.icon = getfac(res).create(gob, res, new MessageBuf(sdt));
 	}
 	return(this.icon);
     }
@@ -893,7 +895,8 @@ public class GobIcon extends GAttrib {
 		g.delattr(GobIcon.class);
 	    } else {
 		int ifl = msg.uint8();
-		g.setattr(new GobIcon(g, OCache.Delta.getres(g, resid)));
+		byte[] sdt = msg.bytes();
+		g.setattr(new GobIcon(g, OCache.Delta.getres(g, resid), sdt));
 	    }
 	}
     }
