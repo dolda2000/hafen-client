@@ -77,6 +77,7 @@ public class GobIcon extends GAttrib {
 
     public static class Image {
 	private static final Map<Resource, Image> cache = new WeakHashMap<>();
+	public final BufferedImage img;
 	public final Tex tex;
 	public Coord cc;
 	public boolean rot;
@@ -85,6 +86,7 @@ public class GobIcon extends GAttrib {
 
 	public Image(Resource res) {
 	    Resource.Image rimg = res.layer(Resource.imgc);
+	    BufferedImage img = rimg.scaled();
 	    Tex tex = rimg.tex();
 	    if ((tex.sz().x > size) || (tex.sz().y > size)) {
 		BufferedImage buf = rimg.img;
@@ -95,8 +97,9 @@ public class GobIcon extends GAttrib {
 		else
 		    tsz = new Coord((size * buf.getWidth()) / buf.getHeight(), size);
 		buf = PUtils.convolve(buf, tsz, filter);
-		tex = new TexI(buf);
+		tex = new TexI(img = buf);
 	    }
+	    this.img = img;
 	    this.tex = tex;
 	    this.cc = tex.sz().div(2);
 	    byte[] data = rimg.kvdata.get("mm/rot");
@@ -148,7 +151,12 @@ public class GobIcon extends GAttrib {
 	}
 
 	public boolean checkhit(Coord c) {
-	    return(c.isect(img.cc.inv(), img.tex.sz()));
+	    Coord oc = c.add(img.cc);
+	    if(!oc.isect(Coord.z, PUtils.imgsz(img.img)))
+		return(false);
+	    if(img.img.getRaster().getNumBands() < 4)
+		return(true);
+	    return(img.img.getRaster().getSample(oc.x, oc.y, 3) >= 128);
 	}
 
 	public int z() {
