@@ -2159,6 +2159,33 @@ public class Utils {
 	}
     }
 
+    @SuppressWarnings("unchecked")
+    public static int compare(Object[] a, Object[] b) {
+	int i = 0;
+	for(i = 0; (i < a.length) && (i < b.length); i++) {
+	    if((a[i] == null) && (b[i] == null)) {
+	    } else if(a[i] == null) {
+		return(-1);
+	    } else if(b[i] == null) {
+		return(1);
+	    } else {
+		if(a[i].getClass() != b[i].getClass()) {
+		    return(a[i].getClass().getName().compareTo(b[i].getClass().getName()));
+		} else if(Comparable.class.isAssignableFrom(a[i].getClass())) {
+		    return(((Comparable)a[i]).compareTo(b[i]));
+		} else {
+		    if(a[i] != b[i])
+			return(sidcmp(a[i], b[i]));
+		}
+	    }
+	}
+	if(a.length < b.length)
+	    return(-1);
+	if(a.length > b.length)
+	    return(1);
+	return(0);
+    }
+
     public static final Comparator<Object> idcmp = new Comparator<Object>() {
 	int eid = 0;
 	final Map<Ref, Long> emerg = new HashMap<Ref, Long>();
