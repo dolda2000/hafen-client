@@ -814,7 +814,7 @@ public class UI {
 	if(clip != null) {
 	    double now = Utils.rtime();
 	    Double last = lastmsgsfx.get(clip);
-	    if((last == null) || (now - last > 0.1)) {
+	    if((last == null) || (now - last > 0.01)) {
 		sfx(clip);
 		lastmsgsfx.put(clip, now);
 	    }
