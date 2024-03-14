@@ -99,7 +99,7 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget, Console
 			Color color = Color.WHITE;
 			if(args[a] instanceof Color)
 			    color = (Color)args[a++];
-			Audio.Clip sfx = UI.msgsfx;
+			Audio.Clip sfx = msgsfx;
 			if(args.length > a) {
 			    Indir<Resource> res = ui.sess.getresv(args[a++]);
 			    sfx = (res == null) ? null : Audio.resclip(res.get());
