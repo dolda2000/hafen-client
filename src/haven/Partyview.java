@@ -88,10 +88,13 @@ public class Partyview extends Widget {
 	    Gob gob = m.getgob();
 	    if(gob == null)
 		return(tooltip);
+	    return(null);
+	    /*
 	    KinInfo ki = gob.getattr(KinInfo.class);
 	    if(ki == null)
 		return(null);
 	    return(tooltip = ki.rendered());
+	    */
 	}
     }
 

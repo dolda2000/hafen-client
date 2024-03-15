@@ -48,7 +48,7 @@ public class OCache implements Iterable<Gob> {
     public static final int OD_OVERLAY = 12;
     /* public static final int OD_AUTH = 13; -- Removed */
     public static final int OD_HEALTH = 14;
-    public static final int OD_BUDDY = 15;
+    /* public static final int OD_BUDDY = 15; -- Removed */
     public static final int OD_CMPPOSE = 16;
     public static final int OD_CMPMOD = 17;
     public static final int OD_CMPEQU = 18;
