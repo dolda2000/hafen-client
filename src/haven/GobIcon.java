@@ -890,13 +890,15 @@ public class GobIcon extends GAttrib {
     public static class $icon implements OCache.Delta {
 	public void apply(Gob g, OCache.AttrDelta msg) {
 	    int resid = msg.uint16();
-	    Indir<Resource> res;
 	    if(resid == 65535) {
 		g.delattr(GobIcon.class);
 	    } else {
+		Indir<Resource> res = OCache.Delta.getres(g, resid);
 		int ifl = msg.uint8();
 		byte[] sdt = msg.bytes();
-		g.setattr(new GobIcon(g, OCache.Delta.getres(g, resid), sdt));
+		GobIcon cur = g.getattr(GobIcon.class);
+		if((cur == null) || (cur.res != res) || !Arrays.equals(cur.sdt, sdt))
+		    g.setattr(new GobIcon(g, OCache.Delta.getres(g, resid), sdt));
 	    }
 	}
     }
