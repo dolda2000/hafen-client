@@ -130,6 +130,43 @@ public class Resource implements Serializable {
 	}
     }
 
+    public static class Saved extends Named implements Serializable {
+	public final transient Pool pool;
+	public int prio = 0;
+
+	public Saved(Pool pool, String name, int ver) {
+	    super(name, ver);
+	    this.pool = pool;
+	}
+
+	private transient Indir<Resource> getting = null;
+	private Throwable verr = null;
+	public Resource get(int prio) {
+	    if(verr == null) {
+		try {
+		    if(getting == null)
+			getting = pool.load(name, ver, prio);
+		    return(getting.get());
+		} catch(Loading l) {
+		    throw(l);
+		} catch(Exception e) {
+		    verr = e;
+		    getting = pool.load(name, -1, prio);
+		}
+	    }
+	    try {
+		return(getting.get());
+	    } catch(Throwable t) {
+		t.addSuppressed(verr);
+		throw(t);
+	    }
+	}
+
+	public Resource get() {
+	    return(get(prio));
+	}
+    }
+
     public static interface Resolver {
 	public Indir<Resource> getres(int id);
 
