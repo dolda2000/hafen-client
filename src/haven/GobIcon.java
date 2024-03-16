@@ -275,7 +275,7 @@ public class GobIcon extends GAttrib {
 	public final ID id;
 	public final Icon icon;
 	public final Settings.ResID from;
-	public Resource.Spec res;
+	public Resource.Saved res;
 	public boolean show, defshow, notify;
 	public String resns;
 	public Path filens;
@@ -303,19 +303,19 @@ public class GobIcon extends GAttrib {
 	    }
 	}
 
-	public Setting(Resource.Spec res, Object[] id, Icon icon, Settings.ResID from) {
+	public Setting(Resource.Saved res, Object[] id, Icon icon, Settings.ResID from) {
 	    this.res = res;
 	    this.id = new ID(res.name, id);
 	    this.icon = icon;
 	    this.from = from;
 	}
 
-	public Setting(Resource.Spec res, Object[] id) {
+	public Setting(Resource.Saved res, Object[] id) {
 	    this(res, id, null, null);
 	}
 
 	public Setting(Icon icon, Settings.ResID from) {
-	    this(new Resource.Spec(null, icon.res.name, icon.res.ver), icon.id(), icon, from);
+	    this(new Resource.Saved(Resource.remote(), icon.res.name, icon.res.ver), icon.id(), icon, from);
 	}
 
 	public Consumer<UI> notification() {
@@ -330,7 +330,7 @@ public class GobIcon extends GAttrib {
 	public Resource resource() {
 	    if(this.lres != null)
 		return(this.lres);
-	    return(this.lres = this.res.loadsaved(Resource.remote()));
+	    return(this.lres = this.res.get());
 	}
 
 	public boolean getmarkablep() {
@@ -362,10 +362,10 @@ public class GobIcon extends GAttrib {
 	}
 
 	public static class ResID {
-	    public final Resource.Spec res;
+	    public final Resource.Saved res;
 	    public final byte[] data;
 
-	    public ResID(Resource.Spec res, byte[] data) {
+	    public ResID(Resource.Saved res, byte[] data) {
 		this.res = res;
 		this.data = data;
 	    }
@@ -411,7 +411,13 @@ public class GobIcon extends GAttrib {
 		while(true) {
 		    if((r == null) && ((r = load.poll()) == null))
 			break;
-		    Resource res = r.res.loadsaved(Resource.remote());
+		    Resource res;
+		    try {
+			res = r.res.get();
+		    } catch(Resource.NoSuchResourceException e) {
+			r = null;
+			continue;
+		    }
 		    Icon.Factory fac = getfac(res);
 		    for(Icon icon : fac.enumerate(Settings.this, res, new MessageBuf(r.data))) {
 			Setting set = new Setting(icon, r);
@@ -478,7 +484,7 @@ public class GobIcon extends GAttrib {
 	    int tag = Utils.iv(args[0]);
 	    if(args[1] instanceof String) {
 		int a = 1;
-		Resource.Spec res = new Resource.Spec(null, (String)args[a++], Utils.iv(args[a++]));
+		Resource.Saved res = new Resource.Saved(Resource.remote(), (String)args[a++], Utils.iv(args[a++]));
 		byte[] data = (args[a] instanceof byte[]) ? (byte[])args[a++] : new byte[0];
 		ResID id = new ResID(res, data);
 		Setting def = new Setting(res, Icon.nilid);
@@ -498,7 +504,7 @@ public class GobIcon extends GAttrib {
 		l.tag = tag;
 		Collection<GobIcon.Setting> csets = new ArrayList<>();
 		while(a < sub.length) {
-		    Resource.Spec res = new Resource.Spec(null, (String)sub[a++], Utils.iv(sub[a++]));
+		    Resource.Saved res = new Resource.Saved(Resource.remote(), (String)sub[a++], Utils.iv(sub[a++]));
 		    byte[] data = (sub[a] instanceof byte[]) ? (byte[])sub[a++] : new byte[0];
 		    int fl = Utils.iv(sub[a++]);
 		    ResID id = new ResID(res, data);
@@ -587,7 +593,7 @@ public class GobIcon extends GAttrib {
 	    for(Object eicon : (Object[])root.get("icons")) {
 		Map<Object, Object> icon = Utils.mapdecn(eicon);
 		Object[] eres = (Object[])icon.get("res");
-		ResID res = new ResID(new Resource.Spec(null, (String)eres[0], Utils.iv(eres[1])),
+		ResID res = new ResID(new Resource.Saved(Resource.remote(), (String)eres[0], Utils.iv(eres[1])),
 				      (eres.length > 2) ? (byte[])eres[2] : new byte[0]);
 		Collection<Setting> sets = new ArrayList<>();
 		Setting set = new Setting(res.res, Icon.nilid);
