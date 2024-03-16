@@ -413,7 +413,7 @@ public class GobIcon extends GAttrib {
 			break;
 		    Resource res;
 		    try {
-			res = r.res.get();
+			res = r.res.get(-10);
 		    } catch(Resource.NoSuchResourceException e) {
 			r = null;
 			continue;
