@@ -1869,6 +1869,13 @@ public class Resource implements Serializable {
     private static final byte[] RESOURCE_SIG = "Haven Resource 1".getBytes(Utils.ascii);
     private void load(InputStream st) throws IOException {
 	Message in = new StreamMessage(st);
+	if(in.eom()) {
+	    /* XXX? This should not be necessary, but for some reason
+	     * it seems that custom client resources find their way to
+	     * create empty cache files by the same name. I don't know
+	     * how. */
+	    throw(new FileNotFoundException("empty file"));
+	}
 	if(!Arrays.equals(RESOURCE_SIG, in.bytes(RESOURCE_SIG.length)))
 	    throw(new LoadException("Invalid res signature", this));
 	int ver = in.uint16();
