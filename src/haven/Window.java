@@ -180,7 +180,7 @@ public class Window extends Widget implements DTarget {
 
 	public DefaultDeco(boolean lg) {
 	    this.lg = lg;
-	    cbtn = add(new IButton(cbtni[0], cbtni[1], cbtni[2])).action(() -> parent.wdgmsg("close"));
+	    cbtn = add(new IButton(cbtni[0], cbtni[1], cbtni[2])).action(((Window)parent)::reqclose);
 	}
 	public DefaultDeco() {this(false);}
 
@@ -436,7 +436,7 @@ public class Window extends Widget implements DTarget {
 	if(super.keydown(ev))
 	    return(true);
 	if(key_esc.match(ev)) {
-	    wdgmsg("close");
+	    reqclose();
 	    return(true);
 	}
 	return(false);
@@ -462,6 +462,10 @@ public class Window extends Widget implements DTarget {
 	    return(ret);
 	else
 	    return("");
+    }
+
+    public void reqclose() {
+	wdgmsg("close");
     }
 
     public static void main(String[] args) {
