@@ -180,7 +180,7 @@ public class Window extends Widget implements DTarget {
 
 	public DefaultDeco(boolean lg) {
 	    this.lg = lg;
-	    cbtn = add(new IButton(cbtni[0], cbtni[1], cbtni[2])).action(((Window)parent)::reqclose);
+	    cbtn = add(new IButton(cbtni[0], cbtni[1], cbtni[2])).action(() -> ((Window)parent).reqclose());
 	}
 	public DefaultDeco() {this(false);}
 
