@@ -241,7 +241,7 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	}
 
 	public String sortkey() {
-	    if(act().ad.length == 0)
+	    if((act().ad.length == 0) && (pag.id instanceof Indir))
 		return("\0" + name());
 	    return(name());
 	}
