@@ -674,8 +674,8 @@ public class Resource implements Serializable {
 			queue.removeid(cq);
 		    }
 		    Queued nq = new Queued(name, ver, prio);
-		    queued.put(name, nq);
 		    if(parent == null) {
+			queued.put(name, nq);
 			queue.add(nq);
 			queue.notify();
 		    } else {
@@ -690,8 +690,8 @@ public class Resource implements Serializable {
 				    pq.rdep.add(nq);
 				}
 			    }
+			    queued.put(name, nq);
 			} else {
-			    queued.remove(name);
 			    nq.res = pr.get();
 			    nq.done = true;
 			}
