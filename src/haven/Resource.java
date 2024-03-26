@@ -108,27 +108,7 @@ public class Resource implements Serializable {
 	public Resource get() {
 	    return(get(0));
 	}
-
-	public static Resource loadsaved(Resource.Pool pool, Resource.Spec spec) {
-	    try {
-		if(spec.pool == null)
-		    return(pool.load(spec.name, spec.ver).get());
-		return(spec.get());
-	    } catch(Loading l) {
-		throw(l);
-	    } catch(Exception e) {
-		return(pool.load(spec.name).get());
-	    }
-	}
-
-	public Resource loadsaved(Resource.Pool pool) {
-	    return(loadsaved(pool, this));
-	}
-
-	public Resource loadsaved() {
-	    return(loadsaved(this.pool));
-	}
-    }
+   }
 
     public static class Saved extends Named implements Serializable {
 	public final transient Pool pool;
@@ -139,23 +119,23 @@ public class Resource implements Serializable {
 	    this.pool = pool;
 	}
 
-	private transient Indir<Resource> getting = null;
+	private transient Indir<Resource> wver = null;
 	private Throwable verr = null;
 	public Resource get(int prio) {
 	    if(verr == null) {
 		try {
-		    if(getting == null)
-			getting = pool.load(name, ver, prio);
-		    return(getting.get());
+		    if(wver == null)
+			wver = pool.load(name, ver, prio);
+		    return(wver.get());
 		} catch(Loading l) {
 		    throw(l);
 		} catch(Exception e) {
 		    verr = e;
-		    getting = pool.load(name, -1, prio);
+		    wver = null;
 		}
 	    }
 	    try {
-		return(getting.get());
+		return(pool.load(name, -1, prio).get());
 	    } catch(Throwable t) {
 		t.addSuppressed(verr);
 		throw(t);
@@ -674,8 +654,8 @@ public class Resource implements Serializable {
 			queue.removeid(cq);
 		    }
 		    Queued nq = new Queued(name, ver, prio);
-		    queued.put(name, nq);
 		    if(parent == null) {
+			queued.put(name, nq);
 			queue.add(nq);
 			queue.notify();
 		    } else {
@@ -690,8 +670,8 @@ public class Resource implements Serializable {
 				    pq.rdep.add(nq);
 				}
 			    }
+			    queued.put(name, nq);
 			} else {
-			    queued.remove(name);
 			    nq.res = pr.get();
 			    nq.done = true;
 			}
@@ -1869,6 +1849,13 @@ public class Resource implements Serializable {
     private static final byte[] RESOURCE_SIG = "Haven Resource 1".getBytes(Utils.ascii);
     private void load(InputStream st) throws IOException {
 	Message in = new StreamMessage(st);
+	if(in.eom()) {
+	    /* XXX? This should not be necessary, but for some reason
+	     * it seems that custom client resources find their way to
+	     * create empty cache files by the same name. I don't know
+	     * how. */
+	    throw(new FileNotFoundException("empty file"));
+	}
 	if(!Arrays.equals(RESOURCE_SIG, in.bytes(RESOURCE_SIG.length)))
 	    throw(new LoadException("Invalid res signature", this));
 	int ver = in.uint16();

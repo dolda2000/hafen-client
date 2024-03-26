@@ -363,7 +363,7 @@ public class MiniMap extends Widget {
 		SMarker sm = (SMarker)m;
 		try {
 		    if(cc == null) {
-			Resource res = sm.res.loadsaved(Resource.remote());
+			Resource res = sm.res.get();
 			img = res.flayer(Resource.imgc);
 			Resource.Neg neg = res.layer(Resource.negc);
 			cc = (neg != null) ? neg.cc : img.ssz.div(2);
@@ -748,7 +748,7 @@ public class MiniMap extends Widget {
 		    if(prev == null) {
 			if(icon.conf.getmarkp()) {
 			    Resource.Tooltip tt = micon.res.flayer(Resource.tooltip);
-			    mid = new SMarker(info.seg, sc, tt.t, 0, new Resource.Spec(Resource.remote(), micon.res.name, micon.res.ver));
+			    mid = new SMarker(info.seg, sc, tt.t, 0, new Resource.Saved(Resource.remote(), micon.res.name, micon.res.ver));
 			    file.add(mid);
 			} else {
 			    mid = null;
