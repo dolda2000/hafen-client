@@ -113,20 +113,23 @@ public class Resource implements Serializable {
     public static class Saved extends Named implements Serializable {
 	public final transient Pool pool;
 	public int prio = 0;
+	private transient Indir<Resource> wver = null;
+	private Throwable verr = null;
+	private transient Resource loaded;
 
 	public Saved(Pool pool, String name, int ver) {
 	    super(name, ver);
 	    this.pool = pool;
 	}
 
-	private transient Indir<Resource> wver = null;
-	private Throwable verr = null;
 	public Resource get(int prio) {
+	    if(loaded != null)
+		return(loaded);
 	    if(verr == null) {
 		try {
 		    if(wver == null)
 			wver = pool.load(name, ver, prio);
-		    return(wver.get());
+		    return(loaded = wver.get());
 		} catch(Loading l) {
 		    throw(l);
 		} catch(Exception e) {
@@ -135,7 +138,7 @@ public class Resource implements Serializable {
 		}
 	    }
 	    try {
-		return(pool.load(name, -1, prio).get());
+		return(loaded = pool.load(name, -1, prio).get());
 	    } catch(Throwable t) {
 		t.addSuppressed(verr);
 		throw(t);
@@ -144,6 +147,12 @@ public class Resource implements Serializable {
 
 	public Resource get() {
 	    return(get(prio));
+	}
+
+	public int savever() {
+	    if((loaded != null) && (loaded.ver > this.ver))
+		return(loaded.ver);
+	    return(this.ver);
 	}
     }
 
