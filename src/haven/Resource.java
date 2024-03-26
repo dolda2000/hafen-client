@@ -139,23 +139,23 @@ public class Resource implements Serializable {
 	    this.pool = pool;
 	}
 
-	private transient Indir<Resource> getting = null;
+	private transient Indir<Resource> wver = null;
 	private Throwable verr = null;
 	public Resource get(int prio) {
 	    if(verr == null) {
 		try {
-		    if(getting == null)
-			getting = pool.load(name, ver, prio);
-		    return(getting.get());
+		    if(wver == null)
+			wver = pool.load(name, ver, prio);
+		    return(wver.get());
 		} catch(Loading l) {
 		    throw(l);
 		} catch(Exception e) {
 		    verr = e;
-		    getting = pool.load(name, -1, prio);
+		    wver = null;
 		}
 	    }
 	    try {
-		return(getting.get());
+		return(pool.load(name, -1, prio).get());
 	    } catch(Throwable t) {
 		t.addSuppressed(verr);
 		throw(t);
