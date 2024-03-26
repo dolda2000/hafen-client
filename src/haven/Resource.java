@@ -652,7 +652,7 @@ public class Resource implements Serializable {
 				return(cq);
 			    }
 			} else {
-			    if(cq.done && (cq.error != null)) {
+			    if((cq.ver != -1) && cq.done && (cq.error != null)) {
 				/* XXX: This is probably not the right way to handle this. */
 			    } else {
 				cq.boostprio(prio);
