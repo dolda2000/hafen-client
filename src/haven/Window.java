@@ -26,11 +26,15 @@
 
 package haven;
 
+import haven.render.*;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import static haven.PUtils.*;
 
 public class Window extends Widget implements DTarget {
+    public static final Pipe.Op bgblend = FragColor.blend.nil;
+    public static final Pipe.Op cblend  = FragColor.blend(new BlendMode(BlendMode.Function.ADD, BlendMode.Factor.SRC_ALPHA, BlendMode.Factor.INV_SRC_ALPHA,
+									BlendMode.Function.ADD, BlendMode.Factor.ONE, BlendMode.Factor.INV_SRC_ALPHA));
     public static final Tex bg = Resource.loadtex("gfx/hud/wnd/lg/bg");
     public static final Tex bgl = Resource.loadtex("gfx/hud/wnd/lg/bgl");
     public static final Tex bgr = Resource.loadtex("gfx/hud/wnd/lg/bgr");
@@ -76,6 +80,9 @@ public class Window extends Widget implements DTarget {
     public Deco deco;
     public boolean dt = false;
     public String cap;
+    public TexRaw gbuf = null;
+    private FragColor gout;
+    private Pipe.Op gbasic;
     private UI.Grab dm = null;
     private Coord doff;
     public boolean decohide = false;
@@ -209,11 +216,13 @@ public class Window extends Widget implements DTarget {
 	}
 
 	protected void drawbg(GOut g) {
+	    g.usestate(bgblend);
 	    Coord bgc = new Coord();
 	    for(bgc.y = ca.ul.y; bgc.y < ca.br.y; bgc.y += bg.sz().y) {
 		for(bgc.x = ca.ul.x; bgc.x < ca.br.x; bgc.x += bg.sz().x)
 		    g.image(bg, bgc, ca.ul, ca.br);
 	    }
+	    g.defstate();
 	    bgc.x = ca.ul.x;
 	    for(bgc.y = ca.ul.y; bgc.y < ca.br.y; bgc.y += bgl.sz().y)
 		g.image(bgl, bgc, ca.ul, ca.br);
@@ -315,6 +324,17 @@ public class Window extends Widget implements DTarget {
     public void cdraw(GOut g) {
     }
 
+    protected void drawfin(GOut g) {
+	g.image(gbuf, Coord.z);
+    }
+
+    public void draw(GOut og) {
+	GOut g = new GOut(og.out, og.basicstate().prep(gbasic), this.sz);
+	g.out.clear(g.state(), FragColor.fragcol, FColor.BLACK_T);
+	super.draw(g);
+	drawfin(og);
+    }
+
     public Coord contentsz() {
 	Coord max = new Coord(0, 0);
 	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
@@ -343,6 +363,7 @@ public class Window extends Widget implements DTarget {
     }
 
     private void resize2(Coord sz) {
+	Coord psz = this.sz;
 	if(deco != null) {
 	    deco.iresize(sz);
 	    deco.c = deco.contarea().ul.inv();
@@ -352,6 +373,15 @@ public class Window extends Widget implements DTarget {
 	}
 	for(Widget ch = child; ch != null; ch = ch.next)
 	    ch.presize();
+	if((gbuf == null) || !Utils.eq(this.sz, psz)) {
+	    if(gbuf != null)
+		gbuf.dispose();
+	    gbuf = new TexRaw(new Texture2D.Sampler2D(new Texture2D(this.sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null)), true);
+	    gout = new FragColor<>(gbuf.back.tex.image(0));
+	    Area garea = Area.sized(this.sz);
+	    gbasic = Pipe.Op.compose(gout, DepthBuffer.slot.nil, cblend,
+				     new States.Viewport(garea), new Ortho2D(garea));
+	}
     }
 
     public void resize(Coord sz) {
