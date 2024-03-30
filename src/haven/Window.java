@@ -385,6 +385,7 @@ public class Window extends Widget implements DTarget {
 	    if(gbuf != null)
 		gbuf.dispose();
 	    gbuf = new TexRaw(new Texture2D.Sampler2D(new Texture2D(this.sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null)), true);
+	    gbuf.back.minfilter(Texture.Filter.LINEAR).magfilter(Texture.Filter.LINEAR);
 	    gout = new FragColor<>(gbuf.back.tex.image(0));
 	    Area garea = Area.sized(this.sz);
 	    gbasic = Pipe.Op.compose(gout, DepthBuffer.slot.nil, cblend,
