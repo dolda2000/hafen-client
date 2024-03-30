@@ -27,6 +27,7 @@
 package haven;
 
 import haven.render.*;
+import java.util.function.*;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import static haven.PUtils.*;
@@ -123,7 +124,9 @@ public class Window extends Widget implements DTarget {
     }
 
     protected void added() {
+	super.added();
 	parent.setfocus(this);
+	initanim();
     }
 
     public void chcap(String cap) {
@@ -325,13 +328,18 @@ public class Window extends Widget implements DTarget {
     }
 
     protected void drawfin(GOut g) {
-	g.image(gbuf, Coord.z);
+	if(anim != null)
+	    anim.draw(g, gbuf);
+	else
+	    g.image(gbuf, Coord.z);
     }
 
     public void draw(GOut og) {
-	GOut g = new GOut(og.out, og.basicstate().prep(gbasic), this.sz);
-	g.out.clear(g.state(), FragColor.fragcol, FColor.BLACK_T);
-	super.draw(g);
+	if(animst != "dest") {
+	    GOut g = new GOut(og.out, og.basicstate().prep(gbasic), this.sz);
+	    g.out.clear(g.state(), FragColor.fragcol, FColor.BLACK_T);
+	    super.draw(g);
+	}
 	drawfin(og);
     }
 
@@ -492,6 +500,135 @@ public class Window extends Widget implements DTarget {
 	    return(ret);
 	else
 	    return("");
+    }
+
+    public static interface Animation {
+	public boolean tick(double dt);
+	public void draw(GOut g, Tex tex);
+    }
+
+    public static interface Transition<S extends Animation, H extends Animation> {
+	public S show(Window wnd, H hiding);
+	public H hide(Window wnd, S showing);
+    }
+
+    private Transition<?, ?> trans = null;
+    private Animation anim = null;
+    private String animst = null;
+    public void tick(double dt) {
+	super.tick(dt);
+	if(anim != null) {
+	    if(anim.tick(dt)) {
+		if(animst == "show") {
+		} else if(animst == "hide") {
+		    super.hide();
+		} else if(animst == "dest") {
+		    destroy();
+		} else {
+		    throw(new AssertionError(animst));
+		}
+		anim = null;
+		animst = null;
+	    }
+	}
+    }
+
+    @SuppressWarnings("unchecked")
+    private <H extends Animation> Animation show0(Transition<?, H> trans, Animation h) {
+	return(trans.show(this, (H)h));
+    }
+    @SuppressWarnings("unchecked")
+    private <S extends Animation> Animation hide0(Transition<S, ?> trans, Animation s) {
+	return(trans.hide(this, (S)s));
+    }
+
+    public void settrans(Transition<?, ?> trans) {
+	if(this.anim != null)
+	    throw(new IllegalStateException(String.valueOf(this.anim)));
+	this.trans = trans;
+    }
+
+    public boolean visible() {
+	return(visible && ((animst == null) || (animst == "show")));
+    }
+
+    private void initanim() {
+	if(trans == null)
+	    trans = deftrans();
+	if(visible) {
+	    anim = trans.show(this, null);
+	    animst = "show";
+	}
+    }
+
+    public void show() {
+	if(parent == null) {
+	    super.show();
+	    return;
+	}
+	if(!visible)
+	    super.show();
+	if(animst == null) {
+	    anim = trans.show(this, null);
+	    animst = "show";
+	} else if(animst == "show") {
+	} else if(animst == "hide") {
+	    anim = show0(trans, anim);
+	    animst = "show";
+	} else if(animst == "dest") {
+	} else {
+	    throw(new AssertionError(animst));
+	}
+    }
+
+    public void hide() {
+	if(parent == null) {
+	    super.hide();
+	    return;
+	}
+	if(animst == null) {
+	    anim = trans.hide(this, null);
+	    animst = "hide";
+	} else if(animst == "show") {
+	    anim = hide0(trans, anim);
+	    animst = "hide";
+	} else if(animst == "hide") {
+	} else if(animst == "dest") {
+	} else {
+	    throw(new AssertionError(animst));
+	}
+    }
+
+    public void reqdestroy() {
+	if(parent == null) {
+	    super.reqdestroy();
+	    return;
+	}
+	if(animst == null) {
+	    anim = trans.hide(this, null);
+	    animst = "dest";
+	} else if(animst == "show") {
+	    anim = hide0(trans, anim);
+	    animst = "dest";
+	} else if(animst == "hide") {
+	    animst = "dest";
+	} else if(animst == "dest") {
+	} else {
+	    throw(new AssertionError(animst));
+	}
+    }
+
+    public static class NilAnim implements Animation {
+	public boolean tick(double dt) {return(true);}
+	public void draw(GOut g, Tex tex) {g.image(tex, Coord.z);}
+    }
+
+    public static final Transition<?, ?> niltrans = new Transition<Animation, Animation>() {
+	    public NilAnim show(Window wnd, Animation hide) {return(new NilAnim());}
+	    public NilAnim hide(Window wnd, Animation show) {return(new NilAnim());}
+	};
+    protected Transition<?, ?> deftrans() {
+	return(niltrans);
     }
 
     public static void main(String[] args) {
