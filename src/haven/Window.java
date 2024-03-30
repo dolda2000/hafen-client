@@ -627,8 +627,58 @@ public class Window extends Widget implements DTarget {
 	    public NilAnim show(Window wnd, Animation hide) {return(new NilAnim());}
 	    public NilAnim hide(Window wnd, Animation show) {return(new NilAnim());}
 	};
+
+    public abstract static class NormAnim implements Animation {
+	public final double s;
+	public final boolean rev;
+	public double a = 0.0, na = 0.0;
+
+	public NormAnim(double t, double fromn, boolean rev) {
+	    this.s = 1.0 / t;
+	    this.na = fromn;
+	    this.rev = rev;
+	    this.a = (rev ? (1.0 - fromn) : fromn) * t;
+	}
+	public NormAnim(double t, NormAnim from, boolean rev) {
+	    this(t, (from == null) ? (rev ? 1.0 : 0.0) : from.na, rev);
+	}
+	public NormAnim(double t) {this(t, 0.0, false);}
+
+	public boolean tick(double dt) {
+	    a += dt;
+	    double na = Math.min(a * s, 1.0);
+	    stick(this.na = rev ? (1.0 - na) : na);
+	    return(na >= 1.0);
+	}
+
+	public void stick(double a) {}
+    }
+
+    public static class FadeAnim extends NormAnim {
+	public static final double minfac = 0.1;
+	public static final double time = 0.1;
+
+	public FadeAnim(boolean hide, FadeAnim from) {
+	    super(time, from, hide);
+	}
+
+	public void draw(GOut g, Tex tex) {
+	    double na = Utils.smoothstep(this.na);
+	    g.chcolor(255, 255, 255, (int)(na * 255));
+	    Coord sz = tex.sz();
+	    double fac = minfac * (1.0 - na);
+	    g.image(tex, Coord.of((int)(sz.x * fac), (int)(sz.y * fac)),
+		    Coord.of((int)(sz.x * (1.0 - (fac * 2))), (int)(sz.y * (1.0 - (fac * 2)))));
+	}
+
+	public static final Transition<?, ?> trans = new Transition<FadeAnim, FadeAnim>() {
+		public FadeAnim show(Window wnd, FadeAnim hide) {return(new FadeAnim(false, hide));}
+		public FadeAnim hide(Window wnd, FadeAnim show) {return(new FadeAnim(true,  show));}
+	    };
+    }
+
     protected Transition<?, ?> deftrans() {
-	return(niltrans);
+	return(FadeAnim.trans);
     }
 
     public static void main(String[] args) {
