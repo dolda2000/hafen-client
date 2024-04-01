@@ -31,6 +31,7 @@ import java.util.function.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.image.WritableRaster;
+import haven.render.Location;
 import static haven.Inventory.invsq;
 
 public class GameUI extends ConsoleHost implements Console.Directory, UI.MessageWidget {
@@ -931,6 +932,11 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 			    }
 			}
 			break;
+		    case "obj":
+			if(child instanceof Window) {
+			    ((Window)child).settrans(new GobTrans(map, Utils.uiv(opta[1])));
+			}
+			break;
 		    }
 		}
 	    }
@@ -940,6 +946,54 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	} else {
 	    throw(new UI.UIException("Illegal gameui child", place, args));
 	}
+    }
+
+    public static class GobTrans implements Window.Transition<GobTrans.Anim, GobTrans.Anim> {
+	public static final double time = 0.1;
+	public final MapView map;
+	public final long gobid;
+
+	public GobTrans(MapView map, long gobid) {
+	    this.map = map;
+	    this.gobid = gobid;
+	}
+
+	private Coord oc() {
+	    Gob gob = map.ui.sess.glob.oc.getgob(gobid);
+	    if(gob == null)
+		return(null);
+	    Location.Chain loc = Utils.el(gob.getloc());
+	    if(loc == null)
+		return(null);
+	    return(map.screenxf(loc.fin(Matrix4f.id).mul4(Coord3f.o).invy()).round2());
+	}
+
+	public class Anim extends Window.NormAnim {
+	    public final Window wnd;
+	    private Coord oc;
+
+	    public Anim(Window wnd, boolean hide, Anim from) {
+		super(time, from, hide);
+		this.wnd = wnd;
+		this.oc = wnd.c.add(wnd.sz.div(2));
+	    }
+
+	    public void draw(GOut g, Tex tex) {
+		GOut pg = g.reclipl(wnd.c.inv(), wnd.parent.sz);
+		Coord cur = oc();
+		if(cur != null)
+		    this.oc = cur;
+		Coord sz = tex.sz();
+		double na = Utils.smoothstep(this.na);
+		double fac = 1.0 - na;
+		Coord c = this.oc.sub(sz.div(2)).mul(1.0 - na).add(wnd.c.mul(na));
+		pg.image(tex, c.add((int)(sz.x * fac * 0.5), (int)(sz.y * fac * 0.5)),
+			 Coord.of((int)(sz.x * (1.0 - fac)), (int)(sz.y * (1.0 - fac))));
+	    }
+	}
+
+	public Anim show(Window wnd, Anim hide) {return(new Anim(wnd, false, hide));}
+	public Anim hide(Window wnd, Anim show) {return(new Anim(wnd, true,  show));}
     }
 
     public void cdestroy(Widget w) {
