@@ -985,6 +985,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		    this.oc = cur;
 		Coord sz = tex.sz();
 		double na = Utils.smoothstep(this.na);
+		pg.chcolor(255, 255, 255, (int)(na * 255));
 		double fac = 1.0 - na;
 		Coord c = this.oc.sub(sz.div(2)).mul(1.0 - na).add(wnd.c.mul(na));
 		pg.image(tex, c.add((int)(sz.x * fac * 0.5), (int)(sz.y * fac * 0.5)),
