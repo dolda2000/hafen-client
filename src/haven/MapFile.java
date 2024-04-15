@@ -333,7 +333,7 @@ public class MapFile {
 	    fp.adduint8('s');
 	    fp.addint64(sm.oid);
 	    fp.addstring(sm.res.name);
-	    fp.adduint16(sm.res.ver);
+	    fp.adduint16(sm.res.savever());
 	} else {
 	    throw(new ClassCastException("Can only save PMarkers and SMarkers"));
 	}
@@ -534,7 +534,7 @@ public class MapFile {
 	    fp.adduint16(tilesets.length);
 	    for(int i = 0; i < tilesets.length; i++) {
 		fp.addstring(tilesets[i].res.name);
-		fp.adduint16(tilesets[i].res.ver);
+		fp.adduint16(tilesets[i].res.savever());
 		fp.adduint8(tilesets[i].prio);
 	    }
 	    if(tilesets.length <= 256) {
@@ -631,7 +631,7 @@ public class MapFile {
 	public static void saveols(Message fp, Collection<Overlay> ols) {
 	    for(Overlay ol : ols) {
 		fp.addstring(ol.olid.name);
-		fp.adduint16(ol.olid.ver);
+		fp.adduint16(ol.olid.savever());
 		for(int i = 0; i < ol.ol.length; i += 8) {
 		    int b = 0;
 		    for(int o = 0; o < Math.min(8, ol.ol.length - i); o++) {

@@ -539,9 +539,9 @@ public class GobIcon extends GAttrib {
 		ResID id = ent.getKey();
 		Map<Object, Object> rbuf = new HashMap<>();
 		if(id.data.length == 0)
-		    rbuf.put("res", new Object[] {id.res.name, id.res.ver});
+		    rbuf.put("res", new Object[] {id.res.name, id.res.savever()});
 		else
-		    rbuf.put("res", new Object[] {id.res.name, id.res.ver, id.data});
+		    rbuf.put("res", new Object[] {id.res.name, id.res.savever(), id.data});
 		Collection<Object> sub = new ArrayList<>();
 		for(Setting set : ent.getValue()) {
 		    if(set.id.sub.length == 0) {
