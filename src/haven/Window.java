@@ -327,20 +327,39 @@ public class Window extends Widget implements DTarget {
     public void cdraw(GOut g) {
     }
 
-    protected void drawfin(GOut g) {
+    public Pipe.Op gbasic() {
+	if((gbuf == null) || !Utils.eq(sz, gbuf.back.tex.sz())) {
+	    if(gbuf != null)
+		gbuf.dispose();
+	    gbuf = new TexRaw(new Texture2D.Sampler2D(new Texture2D(this.sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null)), true);
+	    gbuf.back.minfilter(Texture.Filter.LINEAR).magfilter(Texture.Filter.LINEAR);
+	    gout = new FragColor<>(gbuf.back.tex.image(0));
+	    Area garea = Area.sized(this.sz);
+	    gbasic = Pipe.Op.compose(gout, DepthBuffer.slot.nil, cblend,
+				     new States.Viewport(garea), new Ortho2D(garea));
+	}
+	return(gbasic);
+    }
+
+    protected void drawbuf(GOut g) {
+	super.draw(g);
+    }
+
+    protected void drawfin(GOut g, Tex buf) {
 	if(anim != null)
-	    anim.draw(g, gbuf);
+	    anim.draw(g, buf);
 	else
-	    g.image(gbuf, Coord.z);
+	    g.image(buf, Coord.z);
     }
 
     public void draw(GOut og) {
 	if(animst != "dest") {
-	    GOut g = new GOut(og.out, og.basicstate().prep(gbasic), this.sz);
+	    GOut g = new GOut(og.out, og.basicstate().prep(gbasic()), this.sz);
 	    g.out.clear(g.state(), FragColor.fragcol, FColor.BLACK_T);
-	    super.draw(g);
+	    drawbuf(g);
 	}
-	drawfin(og);
+	if(gbuf != null)
+	    drawfin(og, gbuf);
     }
 
     public Coord contentsz() {
@@ -381,16 +400,6 @@ public class Window extends Widget implements DTarget {
 	}
 	for(Widget ch = child; ch != null; ch = ch.next)
 	    ch.presize();
-	if((gbuf == null) || !Utils.eq(this.sz, psz)) {
-	    if(gbuf != null)
-		gbuf.dispose();
-	    gbuf = new TexRaw(new Texture2D.Sampler2D(new Texture2D(this.sz, DataBuffer.Usage.STATIC, new VectorFormat(4, NumberFormat.UNORM8), null)), true);
-	    gbuf.back.minfilter(Texture.Filter.LINEAR).magfilter(Texture.Filter.LINEAR);
-	    gout = new FragColor<>(gbuf.back.tex.image(0));
-	    Area garea = Area.sized(this.sz);
-	    gbasic = Pipe.Op.compose(gout, DepthBuffer.slot.nil, cblend,
-				     new States.Viewport(garea), new Ortho2D(garea));
-	}
     }
 
     public void resize(Coord sz) {
