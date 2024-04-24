@@ -53,7 +53,7 @@ public class EnumInterval<E extends Enum<E>> extends AbstractList<E> {
     }
 
     public int indexOf(Object o) {
-	if(o.getClass() != cl)
+	if((o == null) || o.getClass() != cl)
 	    return(-1);
 	int i = ((Enum)o).ordinal();
 	if((i < lo.ordinal()) || (i > hi.ordinal()))
