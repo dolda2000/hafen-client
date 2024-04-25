@@ -39,7 +39,7 @@ public interface ReadLine {
     public int mark();
     public void mark(int m);
     public void setline(String line);
-    public boolean key(char c, int code, int mod);
+    public boolean key(char c, KeyEvent ev, int mod);
     public double mtime();
 
     public default boolean empty() {return(length() == 0);}
@@ -77,7 +77,7 @@ public interface ReadLine {
 		    c = (char)(c + 'a' - 1);
 	    }
 	}
-	return(key(c, ev.getKeyCode(), mod));
+	return(key(c, ev, mod));
     }
 
     public static interface Owner {
@@ -150,11 +150,11 @@ public interface ReadLine {
 	    return(from);
 	}
 
-	protected abstract boolean key2(char c, int code, int mod);
+	protected abstract boolean key2(char c, KeyEvent ev, int mod);
 
-	public boolean key(char c, int code, int mod) {
+	public boolean key(char c, KeyEvent ev, int mod) {
 	    int pseq = this.seq;
-	    boolean ret = key2(c, code, mod);
+	    boolean ret = key2(c, ev, mod);
 	    if(this.seq != pseq)
 		owner.changed(this);
 	    if(ret)
@@ -254,7 +254,8 @@ public interface ReadLine {
 	    }
 	}
 
-	public boolean key2(char c, int code, int mod) {
+	public boolean key2(char c, KeyEvent ev, int mod) {
+	    int code = ev.getKeyCode();
 	    boolean s = (mod & S) != 0;
 	    mod &= ~S;
 	    if((c == 8) && (mod == 0)) {
@@ -272,7 +273,7 @@ public interface ReadLine {
 		} else {
 		    rmsel();
 		}
-	    } else if(c == 10) {
+	    } else if(Widget.key_act.match(ev)) {
 		owner.done(this);
 	    } else if((c == 127) && (mod == 0)) {
 		if(mark < 0) {
@@ -418,7 +419,7 @@ public interface ReadLine {
 	    }
 	}
 
-	public boolean key2(char c, int code, int mod) {
+	public boolean key2(char c, KeyEvent ev, int mod) {
 	    mod &= ~S;
 	    if(mark > length)
 		mark = length;
@@ -437,7 +438,7 @@ public interface ReadLine {
 		    kill(line(b, point - b));
 		remove(b, point - b);
 		point = b;
-	    } else if(c == 10) {
+	    } else if(Widget.key_act.match(ev)) {
 		owner.done(this);
 	    } else if((c == 'd') && (mod == C)) {
 		mode("erase");
