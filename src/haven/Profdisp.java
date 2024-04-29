@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 
 public class Profdisp extends Widget {
-    private static final int h = 80;
+    private static final int h = UI.scale(80);
     public final Profile prof;
     public double mt = 0.05;
     private Tex tex = null;
