@@ -34,6 +34,7 @@ import java.net.*;
 import java.lang.ref.*;
 import java.lang.reflect.*;
 import java.util.prefs.*;
+import java.security.*;
 import java.util.*;
 import java.util.function.*;
 import java.awt.Graphics;
@@ -110,6 +111,17 @@ public class Utils {
 	} catch(java.net.URISyntaxException e) {
 	    throw(new IllegalArgumentException(String.valueOf(cl) + " has a malformed location", e));
 	}
+    }
+
+    public static byte[] sha256sum(byte[] msg) {
+	MessageDigest dig;
+	try {
+	    dig = MessageDigest.getInstance("SHA-256");
+	} catch(NoSuchAlgorithmException e) {
+	    throw(new RuntimeException(e));
+	}
+	dig.update(msg);
+	return(dig.digest());
     }
 
     public static int drawtext(Graphics g, String text, Coord c) {
