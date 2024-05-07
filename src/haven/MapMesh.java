@@ -112,7 +112,7 @@ public class MapMesh implements RenderTree.Node, Disposable {
 	}
     }
 
-    public class MapSurface extends haven.Surface implements ConsHooks {
+    public class MapSurface extends Surface implements ConsHooks {
 	public final Scan vs = new Scan(new Coord(-1, -1), sz.add(3, 3));
 	public final Scan ts = new Scan(Coord.z, sz);
 	public final Vertex[] surf = new Vertex[vs.l];
@@ -482,7 +482,7 @@ public class MapMesh implements RenderTree.Node, Disposable {
     private OLArray makeolvbuf() {
 	MapSurface ms = data(gnd);
 	int[] vl = new int[ms.vl.length];
-	haven.Surface.Normals sn = ms.data(haven.Surface.nrm);
+	Surface.Normals sn = ms.data(Surface.nrm);
 	for(int i = 0; i < vl.length; i++)
 	    vl[i] = -1;
 	VertexBuilder vbuf = new VertexBuilder(olvfmt);
