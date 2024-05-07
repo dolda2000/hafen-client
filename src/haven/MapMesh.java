@@ -113,10 +113,11 @@ public class MapMesh implements RenderTree.Node, Disposable {
     }
 
     public class MapSurface extends Surface implements ConsHooks {
-	public final Scan vs = new Scan(new Coord(-1, -1), sz.add(3, 3));
+	public final Scan vs = new Scan(Coord.of(-1, -1), sz.add(3, 3));
 	public final Scan ts = new Scan(Coord.z, sz);
+	public final Scan bs = new Scan(Coord.of(-1, -1), sz.add(2, 2));
 	public final Vertex[] surf = new Vertex[vs.l];
-	public final boolean[] split = new boolean[ts.l];
+	public final boolean[] split = new boolean[bs.l];
 
 	public MapSurface() {
 	    for(int y = vs.ul.y; y < vs.br.y; y++) {
@@ -124,10 +125,26 @@ public class MapMesh implements RenderTree.Node, Disposable {
 		    surf[vs.o(x, y)] = new Vertex(x * (float)tilesz.x, y * -(float)tilesz.y, (float)map.getfz(ul.add(x, y)));
 		}
 	    }
-	    for(int y = ts.ul.y; y < ts.br.y; y++) {
-		for(int x = ts.ul.x; x < ts.br.x; x++) {
-		    split[ts.o(x, y)] = Math.abs(surf[vs.o(x, y)].z - surf[vs.o(x + 1, y + 1)].z) > Math.abs(surf[vs.o(x + 1, y)].z - surf[vs.o(x, y + 1)].z);
+	    for(int y = bs.ul.y; y < bs.br.y; y++) {
+		for(int x = bs.ul.x; x < bs.br.x; x++) {
+		    split[bs.o(x, y)] = Math.abs(surf[vs.o(x, y)].z - surf[vs.o(x + 1, y + 1)].z) > Math.abs(surf[vs.o(x + 1, y)].z - surf[vs.o(x, y + 1)].z);
 		}
+	    }
+	}
+
+	private void modelborder() {
+	    /* XXX? This is a bit ugly, since it doesn't accurately
+	     * model the border for non-flat tiles. It's probably
+	     * "close enough", though, and I'm not sure I want to
+	     * force other tile types to be able to model tiles
+	     * outside the main area. */
+	    for(int y = -1; y < sz.y + 1; y++) {
+		Tiler.flatmodel(MapMesh.this, Coord.of(-1, y));
+		Tiler.flatmodel(MapMesh.this, Coord.of(sz.x, y));
+	    }
+	    for(int x = 0; x < sz.x; x++) {
+		Tiler.flatmodel(MapMesh.this, Coord.of(x, -1));
+		Tiler.flatmodel(MapMesh.this, Coord.of(x, sz.y));
 	    }
 	}
 
@@ -144,7 +161,10 @@ public class MapMesh implements RenderTree.Node, Disposable {
 		});
 	}
 
-	public void sfin() {fin();}
+	public void sfin() {
+	    modelborder();
+	    fin();
+	}
 	public void calcnrm() {}
 	public void postcalcnrm(Random rnd) {}
 	public boolean clean() {return(true);}
