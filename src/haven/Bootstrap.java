@@ -108,7 +108,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
     private static String mangleuser(String user) {
 	if(user.length() <= 32)
 	    return(user);
-	/* Mange name because Java pref names have a somewhat
+	/* Mangle name because Java pref names have a somewhat
 	 * ridiculously short limit. */
 	return(Utils.byte2hex(Digest.hash(Digest.MD5, user.getBytes(Utils.utf8))));
     }
