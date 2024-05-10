@@ -110,7 +110,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	    return(user);
 	/* Mange name because Java pref names have a somewhat
 	 * ridiculously short limit. */
-	return(Utils.byte2hex(Utils.splice(Utils.sha256sum(user.getBytes(Utils.utf8)), 0, 16)));
+	return(Utils.byte2hex(Utils.splice(Digest.hash(Digest.SHA256, user.getBytes(Utils.utf8)), 0, 16)));
     }
 
     private void transtoken() {

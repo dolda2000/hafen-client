@@ -268,7 +268,7 @@ public class AuthClient implements Closeable {
 	}
 	
 	public NativeCred(String username, String pw) {
-	    this(username, Utils.sha256sum(pw.getBytes(Utils.utf8)));
+	    this(username, Digest.hash(Digest.SHA256, pw.getBytes(Utils.utf8)));
 	}
 	
 	public String name() {

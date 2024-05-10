@@ -113,17 +113,6 @@ public class Utils {
 	}
     }
 
-    public static byte[] sha256sum(byte[] msg) {
-	MessageDigest dig;
-	try {
-	    dig = MessageDigest.getInstance("SHA-256");
-	} catch(NoSuchAlgorithmException e) {
-	    throw(new RuntimeException(e));
-	}
-	dig.update(msg);
-	return(dig.digest());
-    }
-
     public static int drawtext(Graphics g, String text, Coord c) {
 	java.awt.FontMetrics m = g.getFontMetrics();
 	g.drawString(text, c.x, c.y + m.getAscent());
