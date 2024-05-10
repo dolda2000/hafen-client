@@ -31,6 +31,8 @@ import java.security.*;
 
 public interface Digest {
     public static final Algorithm SHA256 = Builtin.alg("SHA-256");
+    public static final Algorithm SHA384 = Builtin.alg("SHA-384");
+    public static final Algorithm SHA512 = Builtin.alg("SHA-512");
     public static final Algorithm SHA1 = Builtin.alg("SHA-1");
     public static final Algorithm MD5 = Builtin.alg("MD5");
 
