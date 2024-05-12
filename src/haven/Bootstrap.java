@@ -113,16 +113,6 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	return(Utils.byte2hex(Digest.hash(Digest.MD5, user.getBytes(Utils.utf8))));
     }
 
-    private void transtoken() {
-	/* XXX: Transitory, remove when appropriate. */
-	String oldtoken = getpref("savedtoken", "");
-	String tokenname = getpref("tokenname", "");
-	if((oldtoken.length() == 64) && (tokenname.length() > 0)) {
-	    setpref("savedtoken-" + tokenname, oldtoken);
-	    setpref("savedtoken", "");
-	}
-    }
-
     public static byte[] gettoken(String user, String hostname) {
 	return(getprefb("savedtoken-" + mangleuser(user), hostname, null, false));
     }
@@ -174,7 +164,6 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	ui.newwidgetp(1, ($1, $2) -> new LoginScreen(hostname), 0, new Object[] {Coord.z});
 	String loginname = getpref("loginname", "");
 	boolean savepw = false;
-	transtoken();
 	String authserver = (authserv.get() == null) ? hostname : authserv.get();
 	int authport = Bootstrap.authport.get();
 	Session sess;
