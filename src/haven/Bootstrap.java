@@ -105,18 +105,16 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	return(ret);
     }
 
-    private void transtoken() {
-	/* XXX: Transitory, remove when appropriate. */
-	String oldtoken = getpref("savedtoken", "");
-	String tokenname = getpref("tokenname", "");
-	if((oldtoken.length() == 64) && (tokenname.length() > 0)) {
-	    setpref("savedtoken-" + tokenname, oldtoken);
-	    setpref("savedtoken", "");
-	}
+    private static String mangleuser(String user) {
+	if(user.length() <= 32)
+	    return(user);
+	/* Mangle name because Java pref names have a somewhat
+	 * ridiculously short limit. */
+	return(Utils.byte2hex(Digest.hash(Digest.MD5, user.getBytes(Utils.utf8))));
     }
 
     public static byte[] gettoken(String user, String hostname) {
-	return(getprefb("savedtoken-" + user, hostname, null, false));
+	return(getprefb("savedtoken-" + mangleuser(user), hostname, null, false));
     }
 
     public static void rottokens(String user, String hostname, boolean creat, boolean rm) {
@@ -130,7 +128,8 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
     }
 
     public static void settoken(String user, String hostname, byte[] token) {
-	Utils.setpref("savedtoken-" + user + "@" + hostname, (token == null) ? "" : Utils.byte2hex(token));
+	String prefnm = user;
+	Utils.setpref("savedtoken-" + mangleuser(user) + "@" + hostname, (token == null) ? "" : Utils.byte2hex(token));
 	rottokens(user, hostname, token != null, true);
     }
 
@@ -165,7 +164,6 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	ui.newwidgetp(1, ($1, $2) -> new LoginScreen(hostname), 0, new Object[] {Coord.z});
 	String loginname = getpref("loginname", "");
 	boolean savepw = false;
-	transtoken();
 	String authserver = (authserv.get() == null) ? hostname : authserv.get();
 	int authport = Bootstrap.authport.get();
 	Session sess;
@@ -183,9 +181,9 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		this.inittoken = null;
 		authed: try(AuthClient auth = new AuthClient(authserver, authport)) {
 		    authaddr = auth.address();
-		    if(!Arrays.equals(inittoken, getprefb("lasttoken-" + inituser, hostname, null, false))) {
+		    if(!Arrays.equals(inittoken, getprefb("lasttoken-" + mangleuser(inituser), hostname, null, false))) {
 			String authed = auth.trytoken(inituser, inittoken);
-			setpref("lasttoken-" + inituser, Utils.byte2hex(inittoken));
+			setpref("lasttoken-" + mangleuser(inituser), Utils.byte2hex(inittoken));
 			if(authed != null) {
 			    acctname = authed;
 			    cookie = auth.getcookie();

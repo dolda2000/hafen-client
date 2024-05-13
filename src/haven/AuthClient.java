@@ -107,17 +107,6 @@ public class AuthClient implements Closeable {
 	return(sk.getRemoteSocketAddress());
     }
 
-    private static byte[] digest(byte[] pw) {
-	MessageDigest dig;
-	try {
-	    dig = MessageDigest.getInstance("SHA-256");
-	} catch(java.security.NoSuchAlgorithmException e) {
-	    throw(new RuntimeException(e));
-	}
-	dig.update(pw);
-	return(dig.digest());
-    }
-
     public String trypasswd(String user, byte[] phash) throws IOException {
 	Message rpl = cmd("pw", user, phash);
 	String stat = rpl.string();
@@ -279,7 +268,7 @@ public class AuthClient implements Closeable {
 	}
 	
 	public NativeCred(String username, String pw) {
-	    this(username, digest(pw.getBytes(Utils.utf8)));
+	    this(username, Digest.hash(Digest.SHA256, pw.getBytes(Utils.utf8)));
 	}
 	
 	public String name() {
