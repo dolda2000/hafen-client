@@ -439,9 +439,24 @@ public abstract class Message {
 	for(Object o : args) {
 	    if(o == null) {
 		adduint8(T_NIL);
-	    } else if(o instanceof Integer) {
-		adduint8(T_INT);
-		addint32(((Integer)o).intValue());
+	    } else if((o instanceof Byte) || (o instanceof Short) || (o instanceof Integer)) {
+		int v = ((Number)o).intValue();
+		if((v >= 0) && (v < 256)) {
+		    adduint8(T_UINT8);
+		    adduint8(v);
+		} else if((v >= 0) && (v < 65536)) {
+		    adduint8(T_UINT16);
+		    adduint16(v);
+		} else if((v >= -128) && (v < 0)) {
+		    adduint8(T_INT8);
+		    addint8((byte)v);
+		} else if((v >= -32768) && (v < 0)) {
+		    adduint8(T_INT16);
+		    addint16((short)v);
+		} else {
+		    adduint8(T_INT);
+		    addint32(v);
+		}
 	    } else if(o instanceof String) {
 		adduint8(T_STR);
 		addstring((String)o);
