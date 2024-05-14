@@ -707,6 +707,10 @@ public class Resource implements Serializable {
 	    return(load(String.format("dyn/%x", id), 1));
 	}
 
+	public Indir<Resource> dynres(UID id) {
+	    return(dynres(id.bits));
+	}
+
 	private void ckld() {
 	    int qsz;
 	    synchronized(queue) {

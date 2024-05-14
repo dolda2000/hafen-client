@@ -239,20 +239,6 @@ public class Buff extends Widget implements ItemInfo.ResOwner, Bufflist.Managed 
 	    info = null;
 	    rawinfo = new ItemInfo.Raw(args);
 	    shorttip = longtip = null;
-	} else if(msg == "tip") {
-	    String tt = (String)args[0];
-	    this.tt = tt.equals("") ? null : tt;
-	    shorttip = longtip = null;
-	} else if(msg == "am") {
-	    this.ameter = (Integer)args[0];
-	    shorttip = longtip = null;
-	} else if(msg == "nm") {
-	    this.nmeter = (Integer)args[0];
-	    ntext = null;
-	} else if(msg == "cm") {
-	    this.cmeter = ((Number)args[0]).doubleValue() / 100.0;
-	    this.cmrem = (args.length > 1) ? (((Number)args[1]).doubleValue() * 0.06) : -1;
-	    gettime = Utils.rtime();
 	} else {
 	    super.uimsg(msg, args);
 	}

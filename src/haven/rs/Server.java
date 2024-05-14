@@ -64,15 +64,7 @@ public class Server extends Thread {
 	{
 	    nonce = new byte[32];
 	    rng.nextBytes(nonce);
-	    MessageDigest dig;
-	    try {
-		dig = MessageDigest.getInstance("SHA-256");
-	    } catch(NoSuchAlgorithmException e) {
-		throw(new Error(e));
-	    }
-	    dig.update(key);
-	    dig.update(nonce);
-	    ckey = dig.digest();
+	    ckey = Digest.hash(Digest.SHA256, key, nonce);
 	}
 
 	private Client(Socket sk) {
