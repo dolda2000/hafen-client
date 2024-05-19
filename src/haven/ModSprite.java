@@ -95,7 +95,6 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    this.obj = obj;
 	    for(NodeWrap wrap : wraps)
 		this.wraps.add(wrap);
-	    state.add(SkelSprite.rigid);
 	}
 
 	/* XXX? Is this nice? Not sure how to handle render-links in a nicer way. */
