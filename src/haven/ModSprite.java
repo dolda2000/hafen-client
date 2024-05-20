@@ -475,9 +475,10 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 
 	public boolean tick(double ddt) {
 	    float dt = (float)ddt;
+	    boolean done = false;
 	    for(MeshAnim.Animation anim : anims)
-		anim.tick(dt);
-	    return(false);
+		done |= anim.tick(dt);
+	    return(done);
 	}
 
 	public void age() {
