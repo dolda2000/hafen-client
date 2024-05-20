@@ -291,8 +291,8 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	RenderTree.Node[] pparts = this.parts;
 	this.parts = cons.parts();
 	RUtils.readd(slots, this::parts, () -> {this.parts = pparts;});
-	this.tickers = cons.tickers.toArray(new Ticker[0]);
-	this.eqtgts = cons.eqtgts.toArray(new EquipTarget[0]);
+	this.tickers = cons.tickers.toArray(notickers);
+	this.eqtgts = cons.eqtgts.toArray(noeqtgts);
     }
 
     public void update(Message sdt) {
