@@ -87,9 +87,9 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 
     public static class Part {
 	public RenderTree.Node obj;
-	public List<NodeWrap> wraps = new ArrayList<>();
-	public List<Pipe.Op> state = new ArrayList<>();
-	public List<Supplier<? extends Pipe.Op>> dynstate = new ArrayList<>();
+	public LinkedList<NodeWrap> wraps = new LinkedList<>();
+	public LinkedList<Pipe.Op> state = new LinkedList<>();
+	public LinkedList<Supplier<? extends Pipe.Op>> dynstate = new LinkedList<>();
 
 	public Part(RenderTree.Node obj, NodeWrap... wraps) {
 	    this.obj = obj;
