@@ -47,7 +47,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
     protected RenderTree.Node[] parts = noparts;
     protected Ticker[] tickers = notickers;
     protected EquipTarget[] eqtgts = noeqtgts;
-    private Mod[] amods = nomods;
+    private Mod[] omods = nomods;
     private int lastupd;
     
     public static final Factory fact = new Factory() {
@@ -280,7 +280,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    for(Mod mod : imods)
 		cons.add(mod);
 	}
-	for(Mod mod : amods)
+	for(Mod mod : omods)
 	    cons.add(mod);
     }
 
@@ -300,21 +300,25 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	update();
     }
 
+    protected void omods(Collection<Mod> buf, Gob gob) {
+	for(GAttrib attr : gob.attr.values()) {
+	    if(attr instanceof Mod)
+		buf.add((Mod)attr);
+	}
+    }
+
     private void attrupdate() {
 	synchronized(gob) {
 	    Collection<Mod> buf = new ArrayList<>();
-	    for(GAttrib attr : gob.attr.values()) {
-		if(attr instanceof Mod)
-		    buf.add((Mod)attr);
-	    }
-	    Mod[] amods = buf.toArray(nomods);
-	    if(!Arrays.equals(amods, this.amods)) {
-		Mod[] pmods = this.amods;
-		this.amods = amods;
+	    omods(buf, gob);
+	    Mod[] omods = buf.toArray(nomods);
+	    if(!Arrays.equals(omods, this.omods)) {
+		Mod[] pmods = this.omods;
+		this.omods = omods;
 		try {
 		    update();
 		} catch(Loading l) {
-		    this.amods = pmods;
+		    this.omods = pmods;
 		    throw(l);
 		}
 	    }
