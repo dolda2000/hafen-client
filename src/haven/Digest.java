@@ -132,4 +132,30 @@ public interface Digest {
 	    return(ret);
 	}
     }
+
+    public static byte[] pbkdf2_hmac(Algorithm dig, byte[] pw, byte[] salt, int rounds, int len) {
+	if(rounds < 1)
+	    throw(new IllegalArgumentException(String.valueOf(rounds)));
+	int bl = dig.diglen();
+	byte[] ret = new byte[len];
+	int r = salt.length;
+	byte[] sbuf = Arrays.copyOf(salt, r + 4);
+	for(int bc = 0; (bc * bl) < len; bc++) {
+	    {
+		int i = bc + 1;
+		sbuf[r + 0] = (byte)((i & 0xff000000) >>> 24); sbuf[r + 1] = (byte)((i & 0x00ff0000) >>> 16);
+		sbuf[r + 2] = (byte)((i & 0x0000ff00) >>>  8); sbuf[r + 3] = (byte)((i & 0x000000ff) >>>  0);
+	    }
+	    byte[] p = new HMAC(dig, pw).update(sbuf).digest();
+	    byte[] blk = Arrays.copyOf(p, p.length);
+	    for(int c = 1; c < rounds; c++) {
+		byte[] n = new HMAC(dig, pw).update(p).digest();
+		for(int i = 0; i < n.length; i++)
+		    blk[i] ^= n[i];
+		p = n;
+	    }
+	    System.arraycopy(blk, 0, ret, bc * bl, Math.min(bl, len - (bc * bl)));
+	}
+	return(ret);
+    }
 }
