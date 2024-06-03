@@ -174,6 +174,7 @@ public interface Digest {
 	    }
 	    System.arraycopy(blk, 0, ret, bc * bl, Math.min(bl, len - (bc * bl)));
 	}
+	Arrays.fill(sbuf, (byte)0);
 	return(ret);
     }
 }
