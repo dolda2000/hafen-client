@@ -154,14 +154,14 @@ public interface Digest {
 	}
     }
 
-    public static byte[] pbkdf2_hmac(Algorithm dig, byte[] pw, byte[] salt, int rounds, int len) {
+    public static byte[] pbkdf2(Algorithm prf, byte[] salt, int rounds, int len) {
 	if(rounds < 1)
 	    throw(new IllegalArgumentException(String.valueOf(rounds)));
-	int bl = dig.diglen();
+	int bl = prf.diglen();
 	byte[] ret = new byte[len];
 	int r = salt.length;
 	byte[] sbuf = Arrays.copyOf(salt, r + 4);
-	HMAC hmac = new HMAC(dig, pw);
+	Digest hmac = prf.get();
 	for(int bc = 0; (bc * bl) < len; bc++) {
 	    {
 		int i = bc + 1;
