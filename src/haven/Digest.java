@@ -95,20 +95,21 @@ public interface Digest {
 	private final Digest inner;
 	private final byte[] key;
 
-	private byte[] keypad(byte mod) {
-	    int bsz = dig.blocklen();
-	    byte[] ret = Arrays.copyOf(key, ((key.length + bsz - 1) / bsz) * bsz);
-	    for(int i = 0; i < ret.length; i++)
-		ret[i] ^= mod;
-	    return(ret);
+	private Digest addkey(Digest dig, byte mod) {
+	    int bsz = this.dig.blocklen();
+	    byte[] buf = Arrays.copyOf(key, ((key.length + bsz - 1) / bsz) * bsz);
+	    for(int i = 0; i < buf.length; i++)
+		buf[i] ^= mod;
+	    dig.update(buf);
+	    for(int i = 0; i < buf.length; i++)
+		buf[i] ^= 0;
+	    return(dig);
 	}
 
 	public HMAC(Algorithm dig, byte[] key) {
 	    this.dig = dig;
-	    byte[] copy = Arrays.copyOf(key, key.length);
-	    Finalizer.finalize(this, () -> Arrays.fill(copy, (byte)0));
-	    this.key = copy;
-	    this.inner = dig.get().update(keypad((byte)0x36));
+	    this.key = key;
+	    this.inner = addkey(dig.get(), (byte)0x36);
 	}
 
 	public Digest update(byte[] part, int off, int len) {
@@ -117,7 +118,7 @@ public interface Digest {
 	}
 
 	public byte[] digest() {
-	    return(dig.get().update(keypad((byte)0x5c)).update(inner.digest()).digest());
+	    return(addkey(dig.get(), (byte)0x5c).update(inner.digest()).digest());
 	}
 
 	public static Algorithm alg(Algorithm dig, byte[] key) {
