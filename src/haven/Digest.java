@@ -102,9 +102,8 @@ public interface Digest {
     public static class HMAC implements Digest {
 	public final Algorithm dig;
 	private final Digest inner, outer;
-	private final byte[] key;
 
-	private Digest addkey(Digest dig, byte mod) {
+	private Digest addkey(Digest dig, byte[] key, byte mod) {
 	    int bsz = this.dig.blocklen();
 	    byte[] buf = Arrays.copyOf(key, ((key.length + bsz - 1) / bsz) * bsz);
 	    for(int i = 0; i < buf.length; i++)
@@ -117,16 +116,14 @@ public interface Digest {
 
 	private HMAC(HMAC that) {
 	    this.dig = that.dig;
-	    this.key = that.key;
 	    this.inner = that.inner.copy();
 	    this.outer = that.outer.copy();
 	}
 
 	public HMAC(Algorithm dig, byte[] key) {
 	    this.dig = dig;
-	    this.key = key;
-	    this.inner = addkey(dig.get(), (byte)0x36);
-	    this.outer = addkey(dig.get(), (byte)0x5c);
+	    this.inner = addkey(dig.get(), key, (byte)0x36);
+	    this.outer = addkey(dig.get(), key, (byte)0x5c);
 	}
 
 	public Digest update(byte[] part, int off, int len) {
