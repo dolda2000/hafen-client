@@ -122,6 +122,8 @@ public interface Digest {
 
 	public HMAC(Algorithm dig, byte[] key) {
 	    this.dig = dig;
+	    if(key.length > dig.blocklen())
+		key = hash(dig, key);
 	    this.inner = addkey(dig.get(), key, (byte)0x36);
 	    this.outer = addkey(dig.get(), key, (byte)0x5c);
 	}
