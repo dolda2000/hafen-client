@@ -257,26 +257,42 @@ public class AuthClient implements Closeable {
 
     public static class NativeCred extends Credentials {
 	public final String username;
-	private final byte[] phash;
+	private final byte[] pw;
 	private final Runnable clean;
 	
-	public NativeCred(String username, byte[] phash) {
+	public NativeCred(String username, byte[] pw) {
 	    this.username = username;
-	    if((this.phash = phash).length != 32)
-		throw(new IllegalArgumentException("Password hash must be 32 bytes"));
-	    clean = Finalizer.finalize(this, () -> Arrays.fill(phash, (byte)0));
+	    this.pw = pw;
+	    clean = Finalizer.finalize(this, () -> Arrays.fill(pw, (byte)0));
 	}
 	
 	public NativeCred(String username, String pw) {
-	    this(username, Digest.hash(Digest.SHA256, pw.getBytes(Utils.utf8)));
+	    this(username, pw.getBytes(Utils.utf8));
 	}
 	
 	public String name() {
 	    return(username);
 	}
 	
+	private byte[] hashpw(AuthClient cl) throws IOException {
+	    Message rpl = cl.cmd("pwdata", username);
+	    String stat = rpl.string();
+	    if(stat.equals("no"))
+		throw(new AuthException(rpl.string()));
+	    else if(!stat.equals("ok"))
+		throw(new RuntimeException("Unexpected reply " + stat + " from auth server"));
+	    Object[] pwdata = rpl.list();
+	    if(Utils.eq(pwdata[0], "sha256")) {
+		return(Digest.hash(Digest.SHA256, pw));
+	    } else if(Utils.eq(pwdata[0], "pbkdf2")) {
+		return(Digest.pbkdf2(Digest.HMAC.of(Digest.SHA256, pw), (byte[])pwdata[2], 1 << Utils.iv(pwdata[1]), 32));
+	    } else {
+		throw(new AuthException("Unknown password prehash: " + pwdata[0]));
+	    }
+	}
+
 	public String tryauth(AuthClient cl) throws IOException {
-	    Message rpl = cl.cmd("pw", username, phash);
+	    Message rpl = cl.cmd("pw", username, hashpw(cl));
 	    String stat = rpl.string();
 	    if(stat.equals("ok")) {
 		String acct = rpl.string();
