@@ -141,7 +141,7 @@ public interface Digest {
 	    return(new HMAC(this));
 	}
 
-	public static Algorithm alg(Algorithm dig, byte[] key) {
+	public static Algorithm of(Algorithm dig, byte[] key) {
 	    byte[] copy = Arrays.copyOf(key, key.length);
 	    Algorithm ret = new Algorithm() {
 		    public Digest get() {return(new HMAC(dig, copy));}
