@@ -142,14 +142,11 @@ public interface Digest {
 	}
 
 	public static Algorithm of(Algorithm dig, byte[] key) {
-	    byte[] copy = Arrays.copyOf(key, key.length);
-	    Algorithm ret = new Algorithm() {
-		    public Digest get() {return(new HMAC(dig, copy));}
+	    return(new Algorithm() {
+		    public Digest get() {return(new HMAC(dig, key));}
 		    public int diglen() {return(dig.diglen());}
 		    public int blocklen() {return(dig.blocklen());}
-		};
-	    Finalizer.finalize(ret, () -> Arrays.fill(copy, (byte)0));
-	    return(ret);
+		});
 	}
     }
 
