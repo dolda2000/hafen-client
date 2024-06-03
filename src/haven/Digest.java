@@ -26,21 +26,24 @@
 
 package haven;
 
+import java.util.*;
 import java.util.function.*;
 import java.security.*;
 
 public interface Digest {
-    public static final Algorithm SHA256 = Builtin.alg("SHA-256");
-    public static final Algorithm SHA384 = Builtin.alg("SHA-384");
-    public static final Algorithm SHA512 = Builtin.alg("SHA-512");
-    public static final Algorithm SHA1 = Builtin.alg("SHA-1");
-    public static final Algorithm MD5 = Builtin.alg("MD5");
+    public static final Algorithm SHA256 = Builtin.alg("SHA-256", 32, 64);
+    public static final Algorithm SHA384 = Builtin.alg("SHA-384", 48, 128);
+    public static final Algorithm SHA512 = Builtin.alg("SHA-512", 64, 128);
+    public static final Algorithm SHA1 = Builtin.alg("SHA-1", 20, 64);
+    public static final Algorithm MD5 = Builtin.alg("MD5", 16, 64);
 
     public static interface Algorithm extends Supplier<Digest> {
-	public String name();
+	public int diglen();
+	public int blocklen();
     }
 
-    public Digest update(byte[] part);
+    public Digest update(byte[] buf, int off, int len);
+    public default Digest update(byte[] part) {return(update(part, 0, part.length));}
     public byte[] digest();
     public default String hexdigest() {
 	return(Utils.byte2hex(digest()));
@@ -60,8 +63,8 @@ public interface Digest {
 	    this.md = md;
 	}
 
-	public Digest update(byte[] part) {
-	    md.update(part);
+	public Digest update(byte[] buf, int off, int len) {
+	    md.update(buf, off, len);
 	    return(this);
 	}
 
@@ -69,7 +72,7 @@ public interface Digest {
 	    return(md.digest());
 	}
 
-	private static Algorithm alg(String name) {
+	private static Algorithm alg(String name, int dsz, int bsz) {
 	    return(new Algorithm() {
 		    public Digest get() {
 			try {
@@ -79,9 +82,53 @@ public interface Digest {
 			}
 		    }
 
-		    public String name() {return(name);}
-		    public String toString() {return(name());}
+		    public int diglen() {return(dsz);}
+		    public int blocklen() {return(bsz);}
+
+		    public String toString() {return(name);}
 		});
+	}
+    }
+
+    public static class HMAC implements Digest {
+	public final Algorithm dig;
+	private final Digest inner;
+	private final byte[] key;
+
+	private byte[] keypad(byte mod) {
+	    int bsz = dig.blocklen();
+	    byte[] ret = Arrays.copyOf(key, ((key.length + bsz - 1) / bsz) * bsz);
+	    for(int i = 0; i < ret.length; i++)
+		ret[i] ^= mod;
+	    return(ret);
+	}
+
+	public HMAC(Algorithm dig, byte[] key) {
+	    this.dig = dig;
+	    byte[] copy = Arrays.copyOf(key, key.length);
+	    Finalizer.finalize(this, () -> Arrays.fill(copy, (byte)0));
+	    this.key = copy;
+	    this.inner = dig.get().update(keypad((byte)0x36));
+	}
+
+	public Digest update(byte[] part, int off, int len) {
+	    inner.update(part, off, len);
+	    return(this);
+	}
+
+	public byte[] digest() {
+	    return(dig.get().update(keypad((byte)0x5c)).update(inner.digest()).digest());
+	}
+
+	public static Algorithm alg(Algorithm dig, byte[] key) {
+	    byte[] copy = Arrays.copyOf(key, key.length);
+	    Algorithm ret = new Algorithm() {
+		    public Digest get() {return(new HMAC(dig, copy));}
+		    public int diglen() {return(dig.diglen());}
+		    public int blocklen() {return(dig.blocklen());}
+		};
+	    Finalizer.finalize(ret, () -> Arrays.fill(copy, (byte)0));
+	    return(ret);
 	}
     }
 }
