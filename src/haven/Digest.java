@@ -45,6 +45,7 @@ public interface Digest {
     public Digest update(byte[] buf, int off, int len);
     public default Digest update(byte[] part) {return(update(part, 0, part.length));}
     public byte[] digest();
+    public Digest copy();
     public default String hexdigest() {
 	return(Utils.byte2hex(digest()));
     }
@@ -72,6 +73,14 @@ public interface Digest {
 	    return(md.digest());
 	}
 
+	public Digest copy() {
+	    try {
+		return(new Builtin((MessageDigest)md.clone()));
+	    } catch(CloneNotSupportedException e) {
+		throw(new UnsupportedOperationException(e));
+	    }
+	}
+
 	private static Algorithm alg(String name, int dsz, int bsz) {
 	    return(new Algorithm() {
 		    public Digest get() {
@@ -92,7 +101,7 @@ public interface Digest {
 
     public static class HMAC implements Digest {
 	public final Algorithm dig;
-	private final Digest inner;
+	private final Digest inner, outer;
 	private final byte[] key;
 
 	private Digest addkey(Digest dig, byte mod) {
@@ -106,10 +115,18 @@ public interface Digest {
 	    return(dig);
 	}
 
+	private HMAC(HMAC that) {
+	    this.dig = that.dig;
+	    this.key = that.key;
+	    this.inner = that.inner.copy();
+	    this.outer = that.outer.copy();
+	}
+
 	public HMAC(Algorithm dig, byte[] key) {
 	    this.dig = dig;
 	    this.key = key;
 	    this.inner = addkey(dig.get(), (byte)0x36);
+	    this.outer = addkey(dig.get(), (byte)0x5c);
 	}
 
 	public Digest update(byte[] part, int off, int len) {
@@ -118,7 +135,11 @@ public interface Digest {
 	}
 
 	public byte[] digest() {
-	    return(addkey(dig.get(), (byte)0x5c).update(inner.digest()).digest());
+	    return(outer.update(inner.digest()).digest());
+	}
+
+	public Digest copy() {
+	    return(new HMAC(this));
 	}
 
 	public static Algorithm alg(Algorithm dig, byte[] key) {
