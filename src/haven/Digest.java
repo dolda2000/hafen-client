@@ -110,7 +110,7 @@ public interface Digest {
 		buf[i] ^= mod;
 	    dig.update(buf);
 	    for(int i = 0; i < buf.length; i++)
-		buf[i] ^= 0;
+		buf[i] = 0;
 	    return(dig);
 	}
 
