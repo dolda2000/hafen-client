@@ -31,11 +31,14 @@ import java.util.function.*;
 import java.security.*;
 
 public interface Digest {
+    public static final Algorithm MD5 = Builtin.alg("MD5", 16, 64);
+    public static final Algorithm SHA1 = Builtin.alg("SHA-1", 20, 64);
     public static final Algorithm SHA256 = Builtin.alg("SHA-256", 32, 64);
     public static final Algorithm SHA384 = Builtin.alg("SHA-384", 48, 128);
     public static final Algorithm SHA512 = Builtin.alg("SHA-512", 64, 128);
-    public static final Algorithm SHA1 = Builtin.alg("SHA-1", 20, 64);
-    public static final Algorithm MD5 = Builtin.alg("MD5", 16, 64);
+    public static final Algorithm SHA3_256 = Builtin.alg("SHA3-256", 32, 136);
+    public static final Algorithm SHA3_384 = Builtin.alg("SHA3-384", 48, 104);
+    public static final Algorithm SHA3_512 = Builtin.alg("SHA3-512", 64, 72);
 
     public static interface Algorithm extends Supplier<Digest> {
 	public int diglen();
