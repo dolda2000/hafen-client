@@ -314,8 +314,8 @@ public class AuthClient implements Closeable {
 	}
 
 	public SrpAssertion(byte[] phash, byte[] Bb) {
-	    BigInteger B = new BigInteger(1, Bb);
-	    if(B.mod(N).equals(n(0)))
+	    BigInteger B = b2i(Bb).mod(N);
+	    if(B.equals(n(0)))
 		throw(new Credentials.AuthException("Invalid SRP challenge"));
 	    BigInteger x = b2i(phash);
 	    byte[] ab = new byte[32];
