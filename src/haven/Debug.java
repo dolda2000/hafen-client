@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import java.io.*;
 import java.nio.file.*;
 import java.awt.image.*;
@@ -161,6 +162,15 @@ public class Debug {
 
     public static void dumpstack(Object... msg) {
 	new Throwable((msg.length == 0) ? Thread.currentThread().getName() : Arrays.asList(msg).toString()).printStackTrace();
+    }
+
+    public static <T> T time(Supplier<T> task) {
+	double st = Utils.rtime();
+	try {
+	    return(task.get());
+	} finally {
+	    Debug.dump(Utils.rtime() - st);
+	}
     }
 
     public static <T> T statprint(T line, boolean cond) {
