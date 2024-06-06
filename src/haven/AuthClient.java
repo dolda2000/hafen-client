@@ -369,7 +369,9 @@ public class AuthClient implements Closeable {
 	    else if(!stat.equals("ok"))
 		throw(new RuntimeException("Unexpected reply " + stat + " from auth server"));
 	    Object[] pwdata = rpl.list();
-	    if(Utils.eq(pwdata[0], "srp")) {
+	    if(Utils.eq(pwdata[0], "prehash")) {
+		return(prehash(pw, Utils.splice(pwdata, 1)));
+	    } else if(Utils.eq(pwdata[0], "srp")) {
 		byte[] phash = prehash(pw, (Object[])pwdata[1]);
 		byte[] B = (byte[])pwdata[2];
 		byte[] chal = (byte[])pwdata[3];
