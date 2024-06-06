@@ -258,6 +258,7 @@ public class AuthClient implements Closeable {
 
     public static class SrpAssertion {
 	public static final Digest.Algorithm digest = Digest.SHA256;
+	/* Safe 4096-bit prime and generator from RFC 5054 */
 	public static final BigInteger N = b2i(new byte[] {
 		  -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,  -55,   15,  -38,  -94,   33,  104,  -62,   52,
 		 -60,  -58,   98, -117, -128,  -36,   28,  -47,   41,    2,   78,    8, -118,  103,  -52,  116,
