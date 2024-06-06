@@ -31,7 +31,8 @@ import java.net.*;
 import java.util.*;
 import javax.net.ssl.*;
 import java.security.cert.*;
-import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.math.BigInteger;
 
 public class AuthClient implements Closeable {
     public static final Config.Variable<Boolean> strictcert = Config.Variable.propb("haven.auth-cert-strict", true);
@@ -163,7 +164,7 @@ public class AuthClient implements Closeable {
 	    TokenInfo ret = new TokenInfo();
 	    if((ret.id = Utils.getprefb("token-id", ret.id)).length == 0) {
 		ret.id = new byte[16];
-		new java.security.SecureRandom().nextBytes(ret.id);
+		new SecureRandom().nextBytes(ret.id);
 		Utils.setprefb("token-id", ret.id);
 	    }
 	    if((ret.desc = Utils.getpref("token-desc", null)) == null) {
@@ -255,6 +256,82 @@ public class AuthClient implements Closeable {
 	}
     }
 
+    public static class SrpAssertion {
+	public static final Digest.Algorithm digest = Digest.SHA256;
+	public static final BigInteger N = b2i(new byte[] {
+		  -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,  -55,   15,  -38,  -94,   33,  104,  -62,   52,
+		 -60,  -58,   98, -117, -128,  -36,   28,  -47,   41,    2,   78,    8, -118,  103,  -52,  116,
+		   2,   11,  -66,  -90,   59,   19, -101,   34,   81,   74,    8,  121, -114,   52,    4,  -35,
+		 -17, -107,   25,  -77,  -51,   58,   67,   27,   48,   43,   10,  109,  -14,   95,   20,   55,
+		  79,  -31,   53,  109,  109,   81,  -62,   69,  -28, -123,  -75,  118,   98,   94,  126,  -58,
+		 -12,   76,   66,  -23,  -90,   55,  -19,  107,   11,   -1,   92,  -74,  -12,    6,  -73,  -19,
+		 -18,   56,  107,   -5,   90, -119,  -97,  -91,  -82,  -97,   36,   17,  124,   75,   31,  -26,
+		  73,   40,  102,   81,  -20,  -28,   91,   61,  -62,    0,  124,  -72,  -95,   99,  -65,    5,
+		-104,  -38,   72,   54,   28,   85,  -45, -102,  105,   22,   63,  -88,   -3,   36,  -49,   95,
+		-125,  101,   93,   35,  -36,  -93,  -83, -106,   28,   98,  -13,   86,   32, -123,   82,  -69,
+		 -98,  -43,   41,    7,  112, -106, -106,  109,  103,   12,   53,   78,   74,  -68, -104,    4,
+		 -15,  116,  108,    8,  -54,   24,   33,  124,   50, -112,   94,   70,   46,   54,  -50,   59,
+		 -29,  -98,  119,   44,   24,   14, -122,    3, -101,   39, -125,  -94,  -20,    7,  -94, -113,
+		 -75,  -59,   93,  -16,  111,   76,   82,  -55,  -34,   43,  -53,  -10, -107,   88,   23,   24,
+		  57, -107,   73,  124,  -22, -107,  106,  -27,   21,  -46,   38,   24, -104,   -6,    5,   16,
+		  21,  114, -114,   90, -118,  -86,  -60,   45,  -83,   51,   23,   13,    4,   80,  122,   51,
+		 -88,   85,   33,  -85,  -33,   28,  -70,  100,  -20,   -5, -123,    4,   88,  -37,  -17,   10,
+		-118,  -22,  113,   87,   93,    6,   12,  125,  -77, -105,   15, -123,  -90,  -31,  -28,  -57,
+		 -85,  -11,  -82, -116,  -37,    9,   51,  -41,   30, -116, -108,  -32,   74,   37,   97,  -99,
+		 -50,  -29,  -46,   38,   26,  -46,  -18,  107,  -15,   47,   -6,    6,  -39, -118,    8,  100,
+		 -40,  118,    2,  115,   62,  -56,  106,  100,   82,   31,   43,   24,   23,  123,   32,   12,
+		 -69,  -31,   23,   87,  122,   97,   93,  108,  119,    9, -120,  -64,  -70,  -39,   70,  -30,
+		   8,  -30,   79,  -96,  116,  -27,  -85,   49,   67,  -37,   91,   -4,  -32,   -3,   16, -114,
+		  75, -126,  -47,   32,  -87,   33,    8,    1,   26,  114,   60,   18,  -89, -121,  -26,  -41,
+		-120,  113, -102,   16,  -67,  -70,   91,   38, -103,  -61,   39,   24,  106,  -12,  -30,   60,
+		  26, -108,  104,   52,  -74,   21,   11,  -38,   37, -125,  -23,  -54,   42,  -44,   76,  -24,
+		 -37,  -69,  -62,  -37,    4,  -34, -114,   -7,   46, -114,   -4,   20,   31,  -66,  -54,  -90,
+		  40,  124,   89,   71,   78,  107,  -64,   93, -103,  -78, -106,   79,  -96, -112,  -61,  -94,
+		  35,   59,  -95, -122,   81,   91,  -25,  -19,   31,   97,   41,  112,  -50,  -30,  -41,  -81,
+		 -72,   27,  -35,  118,   33,  112,   72,   28,  -48,    6, -111,   39,  -43,  -80,   90,  -87,
+		-109,  -76,  -22, -104, -115, -113,  -35,  -63, -122,   -1,  -73,  -36, -112,  -90,  -64, -113,
+		  77,  -12,   53,  -55,   52,    6,   49, -103,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+	    });
+	public static final BigInteger g = n(2);
+	public static final BigInteger k = b2i(Digest.hash(digest, i2b(N), i2b(g)));
+	public final byte[] A;
+	public final byte[] K;
+
+	public static BigInteger n(long v) {
+	    return(BigInteger.valueOf(v));
+	}
+
+	public static BigInteger b2i(byte[] b) {
+	    return(new BigInteger(1, b));
+	}
+
+	public static byte[] i2b(BigInteger i) {
+	    byte[] ret = i.toByteArray();
+	    if(ret[0] == 0)
+		ret = Utils.splice(ret, 1);
+	    return(ret);
+	}
+
+	public SrpAssertion(byte[] phash, byte[] Bb) {
+	    BigInteger B = new BigInteger(1, Bb);
+	    if(B.mod(N).equals(n(0)))
+		throw(new Credentials.AuthException("Invalid SRP challenge"));
+	    BigInteger x = b2i(phash);
+	    byte[] ab = new byte[32];
+	    new SecureRandom().nextBytes(ab);
+	    BigInteger a = b2i(ab);
+	    BigInteger A = g.modPow(a, N);
+	    BigInteger u = b2i(Digest.hash(digest, i2b(A), i2b(B)));
+	    BigInteger S = B.subtract(k.multiply(g.modPow(x, N))).mod(N).modPow(a.add(u.multiply(x)), N);
+	    this.A = i2b(A);
+	    this.K = Digest.hash(digest, i2b(S));
+	}
+
+	public byte[] sign(byte[] msg) {
+	    return(Digest.hash(Digest.HMAC.of(Digest.SHA256, K), msg));
+	}
+    }
+
     public static class NativeCred extends Credentials {
 	public final String username;
 	private final byte[] pw;
@@ -273,6 +350,16 @@ public class AuthClient implements Closeable {
 	public String name() {
 	    return(username);
 	}
+
+	public static byte[] prehash(byte[] pw, Object[] spec) {
+	    if(Utils.eq(spec[0], "sha256")) {
+		return(Digest.hash(Digest.SHA256, pw));
+	    } else if(Utils.eq(spec[0], "pbkdf2")) {
+		return(Digest.pbkdf2(Digest.HMAC.of(Digest.SHA256, pw), (byte[])spec[2], 1 << Utils.iv(spec[1]), 32));
+	    } else {
+		throw(new AuthException("Unknown password prehash: " + spec[0]));
+	    }
+	}
 	
 	private byte[] hashpw(AuthClient cl) throws IOException {
 	    Message rpl = cl.cmd("pwdata", username);
@@ -282,12 +369,16 @@ public class AuthClient implements Closeable {
 	    else if(!stat.equals("ok"))
 		throw(new RuntimeException("Unexpected reply " + stat + " from auth server"));
 	    Object[] pwdata = rpl.list();
-	    if(Utils.eq(pwdata[0], "sha256")) {
-		return(Digest.hash(Digest.SHA256, pw));
-	    } else if(Utils.eq(pwdata[0], "pbkdf2")) {
-		return(Digest.pbkdf2(Digest.HMAC.of(Digest.SHA256, pw), (byte[])pwdata[2], 1 << Utils.iv(pwdata[1]), 32));
+	    if(Utils.eq(pwdata[0], "srp")) {
+		byte[] phash = prehash(pw, (Object[])pwdata[1]);
+		byte[] B = (byte[])pwdata[2];
+		byte[] chal = (byte[])pwdata[3];
+		SrpAssertion srp = new SrpAssertion(phash, B);
+		MessageBuf resp = new MessageBuf();
+		resp.addlist(srp.A, chal, srp.sign(chal));
+		return(resp.fin());
 	    } else {
-		throw(new AuthException("Unknown password prehash: " + pwdata[0]));
+		return(prehash(pw, pwdata));
 	    }
 	}
 
