@@ -875,6 +875,11 @@ public class Widget {
 	return(false);
     }
 
+    public Widget setgkey(KeyMatch gkey) {
+	this.gkey = gkey;
+	return(this);
+    }
+	
     public Widget setgkey(KeyBinding gkey) {
 	kb_gkey = gkey;
 	if((tooltip == null) && (kb_gkey != null))
