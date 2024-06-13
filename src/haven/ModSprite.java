@@ -233,8 +233,10 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 
     protected ModSprite(boolean dummy, Owner owner, Resource res) {
 	super(owner, res);
-	if((gob = owner.fcontext(Gob.class, false)) != null)
+	if((gob = owner.fcontext(Gob.class, false)) != null) {
+	    omods = getomods();
 	    lastupd = gob.updateseq;
+	}
 	resdata = resdata(res);
 	for(SMod smod : resdata.smods)
 	    smod.operate(this);
@@ -307,11 +309,15 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	}
     }
 
+    private Mod[] getomods() {
+	Collection<Mod> buf = new ArrayList<>();
+	omods(buf, gob);
+	return(buf.toArray(nomods));
+    }
+
     private void attrupdate() {
 	synchronized(gob) {
-	    Collection<Mod> buf = new ArrayList<>();
-	    omods(buf, gob);
-	    Mod[] omods = buf.toArray(nomods);
+	    Mod[] omods = getomods();
 	    if(!Arrays.equals(omods, this.omods)) {
 		Mod[] pmods = this.omods;
 		this.omods = omods;
