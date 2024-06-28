@@ -1467,7 +1467,7 @@ public class ChatUI extends Widget {
 
     public void presize() {
 	if(sz.y > parent.sz.y - UI.scale(100))
-	    hresize(parent.sz.y - UI.scale(100));
+	    hresize(Math.max(UI.scale(minh), parent.sz.y - UI.scale(100)));
     }
 
     public boolean targetshow = false;
