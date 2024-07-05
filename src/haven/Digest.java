@@ -108,7 +108,7 @@ public interface Digest {
 
 	private Digest addkey(Digest dig, byte[] key, byte mod) {
 	    int bsz = this.dig.blocklen();
-	    byte[] buf = Arrays.copyOf(key, ((key.length + bsz - 1) / bsz) * bsz);
+	    byte[] buf = Arrays.copyOf(key, ((Math.max(key.length, 1) + bsz - 1) / bsz) * bsz);
 	    for(int i = 0; i < buf.length; i++)
 		buf[i] ^= mod;
 	    dig.update(buf);
