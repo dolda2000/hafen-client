@@ -154,6 +154,22 @@ public interface Digest {
 	}
     }
 
+    public static byte[] hkdf(Algorithm dig, byte[] salt, byte[] ikm, byte[] info, int len) {
+	if(salt == null)
+	    salt = new byte[dig.diglen()];
+	byte[] prk = hash(HMAC.of(dig, salt), ikm);
+	Algorithm hmac = HMAC.of(dig, prk);
+	int L = hmac.diglen();
+	int n = (len + L - 1) / L;
+	byte[] t = new byte[0];
+	byte[] out = new byte[len];
+	for(int i = 0; i < n; i++) {
+	    t = hash(hmac, Utils.concat(t, info, new byte[] {(byte)(i + 1)}));
+	    System.arraycopy(t, 0, out, L * i, Math.min(t.length, len - (L * i)));
+	}
+	return(out);
+    }
+
     public static byte[] pbkdf2(Algorithm prf, byte[] salt, int rounds, int len) {
 	if(rounds < 1)
 	    throw(new IllegalArgumentException(String.valueOf(rounds)));
