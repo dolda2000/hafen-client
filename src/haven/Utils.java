@@ -1570,6 +1570,19 @@ public class Utils {
 	return(dst);
     }
 
+    public static byte[] concat(byte[]... parts) {
+	int n = 0;
+	for(byte[] p : parts)
+	    n += p.length;
+	byte[] rv = new byte[n];
+	int o = 0;
+	for(byte[] p : parts) {
+	    System.arraycopy(p, 0, rv, o, p.length);
+	    o += p.length;
+	}
+	return(rv);
+    }
+
     public static <T> T el(Iterable<T> c) {
 	Iterator<T> i = c.iterator();
 	if(!i.hasNext()) return(null);
