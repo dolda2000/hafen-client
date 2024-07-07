@@ -36,7 +36,7 @@ public class SteamStore {
 	Steam api = Steam.get();
 	long uid = (api.userid() & 0xffffffffl) | 0x01_1_00001_00000000l;
 	byte[] sig = Digest.hash(Digest.HMAC.of(Digest.SHA256, sess.sesskey), "steam-store".getBytes());
-	URI uri = Utils.uriparam(steamsvc.get(), "uid", Long.toUnsignedString(uid), "sig", Utils.base64enc(sig));
+	URI uri = Utils.uriparam(steamsvc.get().resolve("tostore"), "uid", Long.toUnsignedString(uid), "sig", Utils.base64enc(sig));
 	api.browse(uri, true);
     }
 }
