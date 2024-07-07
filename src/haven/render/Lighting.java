@@ -134,6 +134,7 @@ public interface Lighting {
     }
 
     public static class LightGrid {
+	public static final boolean visnlights = false;
 	public static final boolean stats = false;
 	public static final int defmax = 16;
 	public final int w, h, d;
@@ -463,6 +464,31 @@ public interface Lighting {
 					    body.apply(new Params(intcons(lidx.ref()), getlight.call(lidx.ref())))));
 			}
 		    });
+
+		Function vgapal = new Function.Def(VEC3, "vgapal") {{
+		    Expression n = param(IN, INT).ref();
+		    code.add(new Return(mul(add(vec3(floatcons(rshift(bitand(n, l(4)), l(1))),
+						     floatcons(       bitand(n, l(2))),
+						     floatcons(lshift(bitand(n, l(1)), l(1)))),
+						vec3(floatcons(rshift(bitand(n, l(8)), l(3))))),
+					    l(1.0 / 3.0))));
+		}};
+		Function nlights = new Function.Def(INT, "nlights") {{
+		    Expression lsidx = code.local(UINT, getlist.call()).ref();
+		    Variable i = code.local(UINT, "i", null);
+		    Variable lidx = code.local(UINT, null);
+		    code.add(new For(ass(i, ul(0)), and(lt(i.ref(), ul(maxlights)), ne(ass(lidx, getlidx.call(add(lsidx, i.ref()))), ul(0xffff))), linc(i.ref()),
+				     new Block()));
+		    code.add(new Return(intcons(i.ref())));
+		}};
+
+		if(visnlights) {
+		    /* XXX? Not *entirely* sure why this is necessary.
+		     *  What rendering with lighting is not already
+		     *  using the Homo3D shader? */
+		    Homo3D.get(prog);
+		    FragColor.fragcol(prog.fctx).mod(in -> mix(in, vec4(vgapal.call(nlights.call()), l(1.0)), l(0.5)), 50000);
+		}
 	    }
 
 	    public int hashCode() {

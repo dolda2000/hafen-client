@@ -108,8 +108,6 @@ public class Block extends Statement {
     }
 
     public void trail(Output out, boolean nl) {
-	if(stmts.isEmpty())
-	    return;
 	out.write("{\n");
 	out.indent++;
 	for(Statement s : stmts) {
