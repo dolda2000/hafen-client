@@ -741,7 +741,7 @@ public class OptWnd extends Window {
 	y = main.add(new PButton(UI.scale(200), "Keybindings", 'k', keybind), 0, y).pos("bl").adds(0, 5).y;
 	y += UI.scale(60);
 	if(gopts) {
-	    if(Steam.get() != null) {
+	    if((SteamStore.steamsvc.get() != null) && (Steam.get() != null)) {
 		y = main.add(new Button(UI.scale(200), "Visit store", false).action(() -> {
 			    SteamStore.launch(ui.sess);
 		}), 0, y).pos("bl").adds(0, 5).y;
