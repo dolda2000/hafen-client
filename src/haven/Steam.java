@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.net.*;
 import com.codedisaster.steamworks.*;
 import com.jogamp.common.os.Platform;
 import com.jogamp.common.jvm.JNILibLoaderBase;
@@ -170,6 +171,10 @@ public class Steam {
 
     public synchronized String displayname() {
 	return(friends.getPersonaName());
+    }
+
+    public synchronized void browse(URI uri, boolean modal) {
+	friends.activateGameOverlayToWebPage(uri.toString(), modal ? SteamFriends.OverlayToWebPageMode.Modal : SteamFriends.OverlayToWebPageMode.Default);
     }
 
     public class WebTicket implements AutoCloseable {
