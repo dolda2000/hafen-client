@@ -31,12 +31,43 @@ import java.net.*;
 
 public class SteamStore {
     public static final Config.Variable<URI> steamsvc = Config.Variable.propu("haven.steamsvc", "");
+    private static Authorizer cb;
+
+    private static void sendauth(long orderid, boolean approved) {
+	if(approved) {
+	    URI uri = Utils.uriparam(steamsvc.get().resolve("txnfin"), "order", Long.toUnsignedString(orderid, 16));
+	    try {
+		/* XXX? Calling browse() immediately gets the browser
+		 * window closed along with the confirmation dialog. */
+		Thread.sleep(1000);
+	    } catch(InterruptedException e) {
+		Thread.currentThread().interrupt();
+	    }
+	    Steam.get().browse(uri, true);
+	}
+    }
+
+    private static class Authorizer implements Steam.Listener {
+	public void callback(String id, Object[] args) {
+	    if(id == "onMicroTxnAuthorization") {
+		long orderid = (Long)args[1];
+		boolean approved = (Boolean)args[2];
+		Thread th = new HackThread(() -> sendauth(orderid, approved), "Store authorizer");
+		th.setDaemon(true);
+		th.start();
+	    }
+	}
+    }
 
     public static void launch(Session sess) {
 	Steam api = Steam.get();
 	long uid = (api.userid() & 0xffffffffL) | 0x01_1_00001_00000000L;
 	byte[] sig = Digest.hash(Digest.HMAC.of(Digest.SHA256, sess.sesskey), "steam-store".getBytes());
 	URI uri = Utils.uriparam(steamsvc.get().resolve("tostore"), "uid", Long.toUnsignedString(uid), "sig", Utils.base64enc(sig));
-	api.browse(uri, true);
+	api.browse(uri, false);
+	synchronized(SteamStore.class) {
+	    if(cb == null)
+		api.add(cb = new Authorizer());
+	}
     }
 }
