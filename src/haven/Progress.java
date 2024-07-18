@@ -26,28 +26,77 @@
 
 package haven;
 
+import java.util.function.*;
+import java.awt.Color;
+
 public class Progress extends Widget {
-    Text text;
+    public static final int defh = UI.scale(20);
+    private static final int m = UI.scale(1);
+    public float a;
+    private Supplier<Float> val;
+    private Function<? super Float, ?> text;
+    private Function<?, String> fmt;
+    private Function<?, Color> col;
 
     @RName("prog")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
-	    return(new Progress(Utils.iv(args[0])));
+	    Progress ret = new Progress(UI.scale(Utils.iv(args[0])));
+	    if(args.length > 1)
+		ret.a = Utils.fv(args[1]);
+	    return(ret);
 	}
     }
 
-    public Progress(int p) {
-	super(UI.scale(new Coord(75, 20)));
-	text = Text.renderf(FlowerMenu.pink, "%d%%", p);
+    public Progress(Coord sz) {
+	super(sz);
     }
 
+    public Progress(int w) {
+	this(Coord.of(w, defh));
+    }
+
+    public Progress val(Supplier<Float> val) {this.val = val; return(this);}
+    public <V> Progress text(Function<? super Float, V> text, Function<? super V, String> fmt, Function<? super V, Color> col) {
+	this.text = text;
+	this.fmt = fmt;
+	this.col = col;
+	return(this);
+    }
+    public <V> Progress text(Supplier<V> text, Function<? super V, String> fmt, Function<? super V, Color> col) {return(text(a -> text.get(), fmt, col));}
+    public <V> Progress text(Function<? super Float, V> text, Function<? super V, String> fmt) {return(text(text, fmt, val -> Color.WHITE));}
+    public <V> Progress text(Supplier<V> text, Function<? super V, String> fmt) {return(text(a -> text.get(), fmt, val -> Color.WHITE));}
+    public Progress text(Function<? super Float, ?> text) {return(text(text, String::valueOf));}
+    public Progress text(Supplier<?> text) {return(text(a -> text.get(), String::valueOf));}
+    public Progress percent() {return(text(a -> (int)Math.floor(a * 100), p -> String.format("%d%%", p)));}
+
+    private Tex rt = null;
+    private Object pt;
     public void draw(GOut g) {
-	g.image(text.tex(), new Coord(sz.x / 2 - text.tex().sz().x / 2, 0));
+	float a = (val == null) ? this.a : val.get();
+	g.chcolor(0, 0, 0, 255);
+	g.frect(Coord.z, sz);
+	g.chcolor(128, 0, 0, 255);
+	int mw = (int)Math.floor((sz.x - (m * 2)) * a);
+	g.frect(Coord.of(m), new Coord(mw, sz.y - (m * 2)));
+	g.chcolor();
+	Object t = (text == null) ? null : text.apply(a);
+	if((rt != null) && !Utils.eq(t, pt)) {
+	    rt.dispose();
+	    rt = null;
+	}
+	if((rt == null) && (text != null)) {
+	    @SuppressWarnings("unchecked") Color col = ((Function<Object, Color>)this.col).apply(t);
+	    @SuppressWarnings("unchecked") String fmt = ((Function<Object, String>)this.fmt).apply(t);
+	    rt = new TexI(Utils.outline2(Text.render(fmt, col).img, Utils.contrast(col)));
+	}
+	if(rt != null)
+	    g.aimage(rt, sz.div(2), 0.5, 0.5);
     }
 
     public void uimsg(String msg, Object... args) {
 	if(msg == "p") {
-	    text = Text.renderf(FlowerMenu.pink, "%d%%", Utils.iv(args[0]));
+	    a = Utils.fv(args[0]);
 	} else {
 	    super.uimsg(msg, args);
 	}
