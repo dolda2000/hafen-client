@@ -30,7 +30,7 @@ import java.io.*;
 import java.net.*;
 
 public class SteamStore {
-    public static final Config.Variable<URI> steamsvc = Config.Services.var("steamsvc");
+    public static final Config.Variable<URI> steamsvc = Config.Services.var("steamsvc", "");
     private static Authorizer cb;
 
     private static void sendauth(long orderid, boolean approved) {
