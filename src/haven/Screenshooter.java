@@ -38,7 +38,7 @@ import java.io.*;
 import java.net.*;
 
 public class Screenshooter extends Window {
-    public static final Config.Variable<URI> screenurl = Config.Variable.propu("haven.screenurl", "");
+    public static final Config.Variable<URI> screenurl = Config.Services.var("screenurl", "");
     public static final ComponentColorModel outcm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), new int[] {8, 8, 8}, false, false, ComponentColorModel.OPAQUE, DataBuffer.TYPE_BYTE);
     public static final PUtils.Convolution thumbflt = new PUtils.Lanczos(3);
     public final URI tgt;

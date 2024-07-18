@@ -108,7 +108,7 @@ public interface Digest {
 
 	private Digest addkey(Digest dig, byte[] key, byte mod) {
 	    int bsz = this.dig.blocklen();
-	    byte[] buf = Arrays.copyOf(key, ((key.length + bsz - 1) / bsz) * bsz);
+	    byte[] buf = Arrays.copyOf(key, ((Math.max(key.length, 1) + bsz - 1) / bsz) * bsz);
 	    for(int i = 0; i < buf.length; i++)
 		buf[i] ^= mod;
 	    dig.update(buf);
@@ -152,6 +152,22 @@ public interface Digest {
 		    public int blocklen() {return(dig.blocklen());}
 		});
 	}
+    }
+
+    public static byte[] hkdf(Algorithm dig, byte[] salt, byte[] ikm, byte[] info, int len) {
+	if(salt == null)
+	    salt = new byte[dig.diglen()];
+	byte[] prk = hash(HMAC.of(dig, salt), ikm);
+	Algorithm hmac = HMAC.of(dig, prk);
+	int L = hmac.diglen();
+	int n = (len + L - 1) / L;
+	byte[] t = new byte[0];
+	byte[] out = new byte[len];
+	for(int i = 0; i < n; i++) {
+	    t = hash(hmac, Utils.concat(t, info, new byte[] {(byte)(i + 1)}));
+	    System.arraycopy(t, 0, out, L * i, Math.min(t.length, len - (L * i)));
+	}
+	return(out);
     }
 
     public static byte[] pbkdf2(Algorithm prf, byte[] salt, int rounds, int len) {
