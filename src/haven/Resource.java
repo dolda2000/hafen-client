@@ -349,37 +349,12 @@ public class Resource implements Serializable {
     }
 
     public static class HttpSource implements ResSource, Serializable {
-	public static final String USER_AGENT;
-	private final transient SslHelper ssl;
 	public URI base;
 
-	static {
-	    StringBuilder buf = new StringBuilder();
-	    buf.append("Haven/1.0");
-	    if(!Config.confid.equals(""))
-		buf.append(" (" + Config.confid + ")");
-	    String jv = Utils.getprop("java.version", null);
-	    if((jv != null) && !jv.equals(""))
-		buf.append(" Java/" + jv);
-	    USER_AGENT = buf.toString();
-	}
-	
-	{
-	    ssl = new SslHelper();
-	    try {
-		ssl.trust(Resource.class.getResourceAsStream("ressrv.crt"));
-	    } catch(java.security.cert.CertificateException e) {
-		throw(new Error("Invalid built-in certificate", e));
-	    } catch(IOException e) {
-		throw(new Error(e));
-	    }
-	    ssl.ignoreName();
-	}
-	
 	public HttpSource(URI base) {
 	    this.base = base;
 	}
-		
+
 	private URI encodeuri(URI raw) throws IOException {
 	    /* This is kinda crazy, but it is, actually, how the Java
 	     * documentation recommends that it be done... */
@@ -391,24 +366,12 @@ public class Resource implements Serializable {
 	}
 
 	public InputStream get(String name) throws IOException {
-	    URL resurl = encodeuri(base.resolve(name + ".res")).toURL();
-	    RetryingInputStream ret = new RetryingInputStream() {
-		    protected InputStream create() throws IOException {
-			URLConnection c;
-			if(resurl.getProtocol().equals("https"))
-			    c = ssl.connect(resurl);
-			else
-			    c = resurl.openConnection();
+	    return(Http.fetch(encodeuri(base.resolve(name + ".res")).toURL(), c -> {
 			/* Apparently, some versions of Java Web Start has
 			 * a bug in its internal cache where it refuses to
 			 * reload a URL even when it has changed. */
 			c.setUseCaches(false);
-			c.addRequestProperty("User-Agent", USER_AGENT);
-			return(c.getInputStream());
-		    }
-		};
-	    ret.check();
-	    return(ret);
+		    }));
 	}
 
 	public String toString() {
