@@ -1524,6 +1524,14 @@ public class Utils {
     }
 
     @SuppressWarnings("unchecked")
+    public static <T> T[] cast(Object[] a, Class<T> cl) {
+	T[] d = (T[])Array.newInstance(cl, a.length);
+	for(int i = 0; i < a.length; i++)
+	    d[i] = cl.cast(a[i]);
+	return(d);
+    }
+
+    @SuppressWarnings("unchecked")
     public static <T> T[] extend(T[] src, int off, int nl) {
 	T[] dst = (T[])Array.newInstance(src.getClass().getComponentType(), nl);
 	System.arraycopy(src, off, dst, 0, Math.min(src.length - off, dst.length));
