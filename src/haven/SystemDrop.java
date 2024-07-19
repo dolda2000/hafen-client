@@ -26,28 +26,45 @@
 
 package haven;
 
-public interface DropTarget {
-    public boolean dropthing(Coord cc, Object thing);
+import java.awt.event.*;
+import java.awt.dnd.*;
+import java.awt.datatransfer.*;
+import java.io.IOException;
 
-    public default boolean drophover(Coord cc, boolean hovering, Object thing) {
-	return(false);
+public interface SystemDrop {
+    public boolean supports(DataFlavor f);
+    public Object receive(DataFlavor f) throws IOException ;
+
+    public static SystemDrop of(DropTargetDragEvent ev) {
+	return(new SystemDrop() {
+		public boolean supports(DataFlavor f) {
+		    return(ev.isDataFlavorSupported(f));
+		}
+
+		public Object receive(DataFlavor f) throws IOException {
+		    try {
+			return(ev.getTransferable().getTransferData(f));
+		    } catch(UnsupportedFlavorException e) {
+			return(null);
+		    }
+		}
+	    });
     }
 
-    public static boolean drophover(Widget wdg, Coord c, boolean hovering, Object thing) {
-	boolean ret = false;
-	if((wdg instanceof DropTarget) && ((DropTarget)wdg).drophover(c, hovering, thing))
-	    return(true);
-	for(Widget ch = wdg.lchild; ch != null; ch = ch.prev) {
-	    boolean hc = hovering;
-	    if(!ch.visible())
-		hc = false;
-	    Coord cc = wdg.xlate(ch.c, true);
-	    boolean inside = c.isect(cc, ch.sz);
-	    if(drophover(ch, c.sub(cc), hc && inside, thing)) {
-		hovering = false;
-		ret = true;
-	    }
-	}
-	return(ret);
+    public static SystemDrop of(DropTargetDropEvent ev) {
+	return(new SystemDrop() {
+		public boolean supports(DataFlavor f) {
+		    return(ev.isDataFlavorSupported(f));
+		}
+
+		public Object receive(DataFlavor f) throws IOException {
+		    ev.acceptDrop(ev.getDropAction());
+		    try {
+			return(ev.getTransferable().getTransferData(f));
+		    } catch(UnsupportedFlavorException e) {
+			return(null);
+		    }
+		}
+	    });
     }
 }
