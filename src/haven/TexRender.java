@@ -129,7 +129,7 @@ public abstract class TexRender implements Tex, Disposable {
 	};
 	g.usestate(draw);
 	g.out.draw1(g.state(), new Model(Model.Mode.TRIANGLE_STRIP, new VertexArray(vf_tex2d, new VertexArray.Buffer(data.length * 4, DataBuffer.Usage.EPHEMERAL, DataBuffer.Filler.of(data))), null, 0, 4));
-	g.usestate(ColorTex.slot);
+	g.usestate(TexDraw.slot);
     }
 
     @Material.ResName("tex")
