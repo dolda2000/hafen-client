@@ -1761,16 +1761,16 @@ public class Utils {
 	return(buf.toString());
     }
 
-    public static URI uriparam(URI base, String... pars) {
+    public static URI uriparam(URI base, Object... pars) {
 	StringBuilder buf = new StringBuilder();
 	if(base.getQuery() != null)
 	    buf.append(base.getQuery());
 	for(int i = 0; i < pars.length; i += 2) {
 	    if(buf.length() > 0)
 		buf.append('&');
-	    buf.append(urlencode(pars[i]));
+	    buf.append(urlencode(String.valueOf(pars[i])));
 	    buf.append('=');
-	    buf.append(urlencode(pars[i + 1]));
+	    buf.append(urlencode(String.valueOf(pars[i + 1])));
 	}
 	try {
 	    return(new URI(base.getScheme(), base.getAuthority(), base.getPath(), buf.toString(), base.getFragment()));
