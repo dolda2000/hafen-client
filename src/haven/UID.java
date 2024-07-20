@@ -27,6 +27,7 @@
 package haven;
 
 public class UID extends Number {
+    public static final UID nil = new UID(0);
     public final long bits;
 
     private UID(long bits) {
