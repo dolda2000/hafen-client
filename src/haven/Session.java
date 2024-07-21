@@ -186,6 +186,10 @@ public class Session implements Resource.Resolver {
 	return(getres(id, 0));
     }
 
+    public Indir<Resource> dynres(UID uid) {
+	return(Resource.remote().dynres(uid));
+    }
+
     private void handlerel(PMessage msg) {
 	if((msg.type == RMessage.RMSG_NEWWDG) || (msg.type == RMessage.RMSG_WDGMSG) ||
 	   (msg.type == RMessage.RMSG_DSTWDG) || (msg.type == RMessage.RMSG_ADDWDG) ||

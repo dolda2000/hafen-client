@@ -159,9 +159,15 @@ public class Resource implements Serializable {
     public static interface Resolver {
 	public Indir<Resource> getres(int id);
 
+	public default Indir<Resource> dynres(UID uid) {
+	    return(() -> {throw(new NoSuchResourceException(String.format("dyn/%x", uid.longValue()), 1, null));});
+	}
+
 	public default Indir<Resource> getresv(Object desc) {
 	    if(desc == null)
 		return(null);
+	    if(desc instanceof UID)
+		return(dynres((UID)desc));
 	    if(desc instanceof Number) {
 		int id = ((Number)desc).intValue();
 		if(id < 0)
