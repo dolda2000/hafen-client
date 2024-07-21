@@ -396,6 +396,9 @@ public abstract class Message {
 	Utils.int64e(num, wbuf, off);
 	return(this);
     }
+    public Message adduniqid(UID uid) {
+	return(addint64(uid.bits));
+    }
     public Message addstring2(String str) {
 	addbytes(str.getBytes(Utils.utf8));
 	return(this);
