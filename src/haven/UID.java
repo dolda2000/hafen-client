@@ -33,7 +33,11 @@ public class UID extends Number {
     private UID(long bits) {
 	this.bits = bits;
     }
-    public static UID of(long bits) {return(new UID(bits));}
+    public static UID of(long bits) {
+	if(bits == 0)
+	    return(nil);
+	return(new UID(bits));
+    }
 
     public long longValue() {return(bits);}
 
