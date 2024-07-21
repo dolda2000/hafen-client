@@ -181,4 +181,27 @@ public abstract class TexR extends Resource.Layer implements Resource.IDLayer<In
 	    return(id);
 	}
     }
+
+    public static class Image extends TexR {
+	public final TexL tex;
+	public final int id;
+
+	public Image(Resource res, TexL tex, int id) {
+	    super(res);
+	    this.tex = tex;
+	    this.id = id;
+	}
+
+	public Image(Resource res, TexL tex) {
+	    this(res, tex, -1);
+	}
+
+	public TexL tex() {
+	    return(tex);
+	}
+
+	public Integer layerid() {
+	    return(id);
+	}
+    }
 }
