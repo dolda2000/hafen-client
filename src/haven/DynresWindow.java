@@ -707,6 +707,7 @@ public class DynresWindow extends Window {
 		prev = add(new Preview(display.sz.x, previews, tex), prev.pos("bl").adds(0, 10));
 	    uploadbtn = add(new Button(UI.scale(100), "Upload", false, this::upload), prev.pos("bl").adds(0, 10));
 	    pack();
+	    display.move(Coord.of((csz().x - display.sz.x) / 2, display.c.y));
 	}
 
 	public class Display extends Widget {
