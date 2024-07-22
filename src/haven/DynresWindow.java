@@ -793,7 +793,7 @@ public class DynresWindow extends Window {
 	    super(Coord.z, "Preview", true);
 	    this.img = img;
 	    this.tex = new TexL.Fixed(img);
-	    tex.mipmap(Mipmapper.avg);
+	    tex.mipmap(Mipmapper.dav);
 	    tex.img.magfilter(LINEAR).minfilter(LINEAR).mipfilter(LINEAR);
 	    Widget prev = display = add(new Display(tex.sz().max(128, 128)), 0, 0);
 	    if(previews != null)
