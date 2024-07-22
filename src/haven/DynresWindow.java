@@ -683,7 +683,7 @@ public class DynresWindow extends Window {
 	private Progress prog;
 
 	public PreviewWindow(BufferedImage img, List<Preview.Spec> previews) {
-	    super(Coord.z, "Image", true);
+	    super(Coord.z, "Preview", true);
 	    this.img = img;
 	    this.tex = new TexL.Fixed(img);
 	    tex.mipmap(Mipmapper.avg);
