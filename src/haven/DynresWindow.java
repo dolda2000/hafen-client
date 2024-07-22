@@ -141,6 +141,65 @@ public class DynresWindow extends Window {
 	return(rasterimg(buf));
     }
 
+    public static class PaletteCopy implements Transferable, ClipboardOwner {
+	public final Color[] pal;
+	private final Map<DataFlavor, Supplier<Object>> types;
+
+	public PaletteCopy(Color[] pal) {
+	    this.pal = pal;
+	    types = Utils.<DataFlavor, Supplier<Object>>map()
+		.put(DataFlavor.imageFlavor, this::img)
+		.put(DataFlavor.stringFlavor, this::text)
+		.map();
+	}
+
+	private BufferedImage img() {
+	    int w;
+	    for(w = (int)Math.floor(Math.sqrt(pal.length)); w > 1; w--) {
+		if((pal.length % w) == 0) {
+		    w = pal.length / w;
+		    break;
+		}
+	    }
+	    if(w == 0)
+		w = (int)Math.ceil(Math.sqrt(pal.length));
+	    Coord csz = Coord.of(20, 20);
+	    WritableRaster buf = imgraster(csz.mul(w, (pal.length + w - 1) / w));
+	    for(int i = 0 ; i < pal.length; i++) {
+		Color c = pal[i];
+		int X = i % w, Y = i / w;
+		for(int y = Y * csz.y; y < (Y + 1) * csz.y; y++) {
+		    for(int x = X * csz.x; x < (X + 1) * csz.x; x++) {
+			buf.setSample(x, y, 0, c.getRed());
+			buf.setSample(x, y, 1, c.getGreen());
+			buf.setSample(x, y, 2, c.getBlue());
+			buf.setSample(x, y, 3, 255);
+		    }
+		}
+	    }
+	    return(rasterimg(buf));
+	}
+
+	private String text() {
+	    StringBuilder buf = new StringBuilder();
+	    for(Color c : pal)
+		buf.append(String.format("#%02X%02X%02X\n", c.getRed(), c.getGreen(), c.getBlue()));
+	    return(buf.toString());
+	}
+
+	public DataFlavor[] getTransferDataFlavors() {
+	    return(types.keySet().toArray(new DataFlavor[0]));
+	}
+	public boolean isDataFlavorSupported(DataFlavor f) {
+	    return(types.containsKey(f));
+	}
+	public Object getTransferData(DataFlavor f) {
+	    return(types.get(f).get());
+	}
+	public void lostOwnership(Clipboard c, Transferable t) {
+	}
+    }
+
     public class Adder extends Widget implements DropTarget {
 	private final List<Future<BufferedImage>> processing = new LinkedList<>();
 	private SListMenu menu;
@@ -148,6 +207,28 @@ public class DynresWindow extends Window {
 	public Adder(Coord sz) {
 	    super(sz);
 	    adda(new Label("New image..."), sz.div(2), 0.5, 0.5);
+	    settip(mktip(), true);
+	}
+
+	private String mktip() {
+	    StringBuilder tip = new StringBuilder();
+	    tip.append("$i{Tips for formatting images:}\n" +
+		       "\n" +
+		       " \u2022 Images should optimally be even powers of two in size. If they are not, they will be automatically resized.\n" +
+		       " \u2022 The following colors are accepted:\n");
+	    int w = 5;
+	    for(int i = 0; i < pal.length; i++) {
+		Color c = pal[i];
+		    tip.append(((i % w) == 0) ? "\u2003" : ", ");
+		double val = (0.2126 * c.getRed() / 255.0) + (0.7152 * c.getGreen() / 255.0) + (0.0722 * c.getBlue() / 255.0);
+		tip.append(String.format("$bg[%d,%d,%d]{%s{$font[Monospaced]{$b{#%02X%02X%02X}}}}",
+					 c.getRed(), c.getGreen(), c.getBlue(),
+					 RichText.Parser.col2a((val > 0.25) ? Color.BLACK : Color.WHITE),
+					 c.getRed(), c.getGreen(), c.getBlue()));
+		if(((i + 1) % w) == 0)
+		    tip.append("\n");
+	    }
+	    return(tip.toString());
 	}
 
 	public void draw(GOut g) {
@@ -238,7 +319,7 @@ public class DynresWindow extends Window {
 	    if(btn == 2) {
 		create(() -> {
 			try {
-			    return(getpaste(java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()));
+			    return(getpaste(java.awt.Toolkit.getDefaultToolkit().getSystemSelection()));
 			} catch(IOException e) {
 			    throw(new RuntimeException(e));
 			}
@@ -248,12 +329,24 @@ public class DynresWindow extends Window {
 	    return(super.mousedown(c, btn));
 	}
 
+	private void copypal() {
+	    Clipboard cb = java.awt.Toolkit.getDefaultToolkit().getSystemClipboard();
+	    if(cb != null) {
+		PaletteCopy xf = new PaletteCopy(pal);
+		try {
+		    cb.setContents(xf, xf);
+		} catch(IllegalStateException e) {
+		}
+	    }
+	}
+
 	public boolean mousehover(Coord c, boolean hovering) {
 	    boolean menuhover = (menu != null) && (menu.parent != null) && menu.rootarea().contains(ui.mc);
 	    if((hovering || menuhover) && (menu == null)) {
 		menu = SListMenu.of(UI.scale(250, 200), null,
 				    Arrays.asList(SListMenu.Action.of("Select from file...", this::open),
-						  SListMenu.Action.of("Paste from clipboard...", this::paste)))
+						  SListMenu.Action.of("Paste from clipboard...", this::paste),
+						  SListMenu.Action.of("Copy palette to clipboard", this::copypal)))
 		    .addat(this, pos("cbl"));
 	    } else if(!(hovering || menuhover) && (menu != null)) {
 		menu.reqdestroy();
