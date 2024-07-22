@@ -428,7 +428,10 @@ public class DynresWindow extends Window {
 	    this.specs = new ArrayList<>(specs);
 	    vres = consres(tex);
 	    Widget prev = add(new Label("Preview on:"), 0, 0);
-	    Spec defspec = this.specs.get(0);
+	    String last = Utils.getpref("dynres-pv/lastspec", "");
+	    Spec defspec = Utils.find(specs, s -> s.name.equals(last));
+	    if(defspec == null)
+		defspec = this.specs.get(0);
 	    Collections.sort(this.specs, (a, b) -> a.name.compareTo(b.name));
 	    prev = add(Frame.with(list = SDropBox.of(Math.max(UI.scale(250), minw) - Window.wbox.bisz().x, UI.scale(160), UI.scale(15),
 						     this.specs, (spec, sz) -> SListWidget.TextItem.of(sz, Text.std, () -> spec.name), this::set),
@@ -450,6 +453,7 @@ public class DynresWindow extends Window {
 		View nview = view.parent.add(new View(view.sz, spec, vres), view.c);
 		view.destroy();
 		view = nview;
+		Utils.setpref("dynres-pv/lastspec", spec.name);
 	    }
 	}
 
