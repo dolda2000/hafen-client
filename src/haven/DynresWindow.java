@@ -28,6 +28,7 @@ package haven;
 
 import haven.render.*;
 import java.util.*;
+import java.util.function.*;
 import java.io.*;
 import java.net.*;
 import java.awt.event.*;
@@ -154,12 +155,17 @@ public class DynresWindow extends Window {
 	    Window.wbox.draw(g, Coord.z, sz);
 	}
 
-	public void create(BufferedImage img) {
+	public void create(Supplier<BufferedImage> img) {
 	    if(!previews.done()) {
 		ui.error("Please wait, still downloading preview information...");
 		return;
 	    }
-	    processing.add(Defer.later(() -> process(img)));
+	    processing.add(Defer.later(() -> {
+			BufferedImage pre = img.get();
+			if(pre == null)
+			    return(null);
+			return(process(pre));
+		    }));
 	}
 
 	public void tick(double dt) {
@@ -167,21 +173,29 @@ public class DynresWindow extends Window {
 	    for(Iterator<Future<BufferedImage>> i = processing.iterator(); i.hasNext();) {
 		Future<BufferedImage> proc = i.next();
 		if(proc.done()) {
-		    getparent(GameUI.class).addchild(new PreviewWindow(proc.get(), previews.get()), "misc", new Coord2d(0.2, 0.2));
+		    try {
+			BufferedImage img = proc.get();
+			if(img != null)
+			    getparent(GameUI.class).addchild(new PreviewWindow(img, previews.get()), "misc", new Coord2d(0.2, 0.2));
+		    } catch(Defer.DeferredException e) {
+			ui.error(e.getCause().getMessage());
+		    }
 		    i.remove();
 		}
 	    }
 	}
 
 	private void open(File file) {
-	    try {
-		BufferedImage img = ImageIO.read(file);
-		if(img == null)
-		    throw(new IOException("File format not recognized."));
-		create(img);
-	    } catch(IOException e) {
-		ui.error("Could not load image: " + e.getMessage());
-	    }
+	    create(() -> {
+		    try {
+			BufferedImage img = ImageIO.read(file);
+			if(img == null)
+			    throw(new IOException("File format not recognized."));
+			return(img);
+		    } catch(IOException e) {
+			throw(new RuntimeException(e));
+		    }
+		});
 	}
 
 	private void open() {
@@ -208,30 +222,27 @@ public class DynresWindow extends Window {
 	}
 
 	private void paste() {
-	    BufferedImage img;
-	    try {
-		img = getpaste(java.awt.Toolkit.getDefaultToolkit().getSystemClipboard());
-		if(img == null) {
-		    ui.error("The clipboard contains no image.");
-		    return;
-		}
-	    } catch(IOException e) {
-		ui.error(e.getMessage());
-		return;
-	    }
-	    create(img);
+	    create(() -> {
+		    try {
+			BufferedImage img = getpaste(java.awt.Toolkit.getDefaultToolkit().getSystemClipboard());
+			if(img == null)
+			    throw(new RuntimeException("The clipboard contains no image."));
+			return(img);
+		    } catch(IOException e) {
+			throw(new RuntimeException(e));
+		    }
+		});
 	}
 
 	public boolean mousedown(Coord c, int btn) {
 	    if(btn == 2) {
-		BufferedImage img = null;
-		try {
-		    img = getpaste(java.awt.Toolkit.getDefaultToolkit().getSystemClipboard());
-		} catch(IOException e) {
-		    ui.error(e.getMessage());
-		}
-		if(img != null)
-		    create(img);
+		create(() -> {
+			try {
+			    return(getpaste(java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()));
+			} catch(IOException e) {
+			    throw(new RuntimeException(e));
+			}
+		    });
 		return(true);
 	    }
 	    return(super.mousedown(c, btn));
@@ -264,16 +275,15 @@ public class DynresWindow extends Window {
 		SystemDrop d = (SystemDrop)thing;
 		boolean rv = false;
 		if(d.supports(DataFlavor.imageFlavor)) {
-		    BufferedImage img = null;
 		    try {
-			img = (BufferedImage)d.receive(DataFlavor.imageFlavor);
+			BufferedImage img = (BufferedImage)d.receive(DataFlavor.imageFlavor);
+			if(img != null) {
+			    create(() -> img);
+			    rv = true;
+			}
 		    } catch(ClassCastException e) {
 		    } catch(IOException e) {
 			ui.error(e.getMessage());
-		    }
-		    if(img != null) {
-			create(img);
-			rv = true;
 		    }
 		} else if(d.supports(DataFlavor.javaFileListFlavor)) {
 		    List files = null;
