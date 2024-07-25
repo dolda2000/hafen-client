@@ -32,6 +32,7 @@ import java.awt.Color;
 public class Party {
     public Map<Long, Member> memb = Collections.emptyMap();
     public Member leader = null;
+    public int id;
     private final Glob glob;
     private int mseq = 0;
 
