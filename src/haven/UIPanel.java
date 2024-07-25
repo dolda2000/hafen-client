@@ -33,6 +33,7 @@ import java.awt.Cursor;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.awt.event.*;
+import java.awt.dnd.*;
 
 public interface UIPanel extends Runnable {
     public static final Config.Variable<Boolean> dbtext = Config.Variable.propb("haven.dbtext", false);
@@ -50,12 +51,14 @@ public interface UIPanel extends Runnable {
     public void setCursor(Cursor c);
     public Component getParent();
 
-    public static class Dispatcher implements KeyListener, MouseListener, MouseWheelListener, MouseMotionListener {
+    public static class Dispatcher implements KeyListener, MouseListener, MouseWheelListener, MouseMotionListener, DropTargetListener {
 	public final Queue<InputEvent> events = new LinkedList<>();
 	public MouseEvent mousemv = null;
 	private KeyEvent lastpress = null;
+	private UI ui;
 
 	public void dispatch(UI ui) {
+	    this.ui = ui;
 	    Collection<InputEvent> copy;
 	    MouseEvent mousemv;
 	    synchronized(this) {
@@ -129,6 +132,7 @@ public interface UIPanel extends Runnable {
 	    wdg.addMouseListener(this);
 	    wdg.addMouseWheelListener(this);
 	    wdg.addMouseMotionListener(this);
+	    new java.awt.dnd.DropTarget(wdg, this);
 	}
 
 	public void keyTyped(KeyEvent e) {
@@ -179,6 +183,41 @@ public interface UIPanel extends Runnable {
 	    synchronized(this) {
 		mousemv = e;
 	    }
+	}
+
+	/* Drag-and-drop events must be handled synchronously. */
+	private void drophover(DropTargetDragEvent ev) {
+	    UI ui = this.ui;
+	    if(ui == null)
+		return;
+	    synchronized(ui) {
+		Coord c = Coord.of(ev.getLocation().x, ev.getLocation().y);
+		if(DropTarget.drophover(ui.root, c, true, SystemDrop.of(ev)))
+		    ev.acceptDrag(ev.getDropAction());
+		else
+		    ev.rejectDrag();
+	    }
+	}
+
+	private void dropthing(DropTargetDropEvent ev) {
+	    UI ui = this.ui;
+	    if(ui == null)
+		return;
+	    synchronized(ui) {
+		Coord c = Coord.of(ev.getLocation().x, ev.getLocation().y);
+		if(ui.dropthing(ui.root, c, SystemDrop.of(ev)))
+		    ev.dropComplete(true);
+		else
+		    ev.rejectDrop();
+	    }
+	}
+
+	public void dragEnter(DropTargetDragEvent ev) {drophover(ev);}
+	public void dragOver(DropTargetDragEvent ev) {drophover(ev);}
+	public void dropActionChanged(DropTargetDragEvent ev) {drophover(ev);}
+	public void dragExit(DropTargetEvent ev) {}
+	public void drop(DropTargetDropEvent ev) {
+	    dropthing(ev);
 	}
     }
 

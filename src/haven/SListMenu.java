@@ -36,6 +36,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
     public static final Tex bg = Window.bg;
     public static final IBox obox = Window.wbox;
     public final InnerList box;
+    public boolean grab = true;
     private UI.Grab mg, kg;
 
     protected abstract List<? extends I> items();
@@ -136,6 +137,11 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	return(true);
     }
 
+    public boolean mousehover(Coord c, boolean hovering) {
+	super.mousehover(c, hovering);
+	return(hovering);
+    }
+
     public boolean keydown(java.awt.event.KeyEvent ev) {
 	if(key_esc.match(ev))
 	    choice(null);
@@ -143,13 +149,17 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
     }
 
     protected void added() {
-	mg = ui.grabmouse(this);
-	kg = ui.grabkeys(this);
+	if(grab) {
+	    mg = ui.grabmouse(this);
+	    kg = ui.grabkeys(this);
+	}
     }
 
     public void destroy() {
-	mg.remove();
-	kg.remove();
+	if(mg != null) {
+	    mg.remove();
+	    kg.remove();
+	}
 	super.destroy();
     }
 
@@ -160,6 +170,11 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 
     public SListMenu<I, W> addat(Widget wdg, Coord c) {
 	wdg.ui.root.add(this, wdg.rootpos(c));
+	return(this);
+    }
+
+    public SListMenu nograb() {
+	grab = false;
 	return(this);
     }
 
@@ -210,8 +225,12 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	}
     }
 
+    public static SListMenu<Action, Widget> of(Coord sz, Text.Foundry fnd, List<? extends Action> actions, Runnable cancel) {
+	return(of(sz, fnd, actions, Action::name, Action::run, cancel));
+    }
+
     public static SListMenu<Action, Widget> of(Coord sz, Text.Foundry fnd, List<? extends Action> actions) {
-	return(of(sz, fnd, actions, Action::name, Action::run, null));
+	return(of(sz, fnd, actions, null));
     }
 
     public static abstract class IconMenu<I> extends SListMenu<I, Widget> {

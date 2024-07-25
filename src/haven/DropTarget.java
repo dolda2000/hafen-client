@@ -28,4 +28,26 @@ package haven;
 
 public interface DropTarget {
     public boolean dropthing(Coord cc, Object thing);
+
+    public default boolean drophover(Coord cc, boolean hovering, Object thing) {
+	return(false);
+    }
+
+    public static boolean drophover(Widget wdg, Coord c, boolean hovering, Object thing) {
+	boolean ret = false;
+	if((wdg instanceof DropTarget) && ((DropTarget)wdg).drophover(c, hovering, thing))
+	    return(true);
+	for(Widget ch = wdg.lchild; ch != null; ch = ch.prev) {
+	    boolean hc = hovering;
+	    if(!ch.visible())
+		hc = false;
+	    Coord cc = wdg.xlate(ch.c, true);
+	    boolean inside = c.isect(cc, ch.sz);
+	    if(drophover(ch, c.sub(cc), hc && inside, thing)) {
+		hovering = false;
+		ret = true;
+	    }
+	}
+	return(ret);
+    }
 }

@@ -173,4 +173,17 @@ public abstract class TexL extends TexRender {
     private FillBuffer fill(Image img, Environment env) {
 	return(prepare(env).data[img.level]);
     }
+
+    public static class Fixed extends TexL {
+	public final BufferedImage img;
+
+	public Fixed(BufferedImage img) {
+	    super(PUtils.imgsz(img));
+	    this.img = img;
+	}
+
+	public BufferedImage fill() {
+	    return(img);
+	}
+    }
 }
