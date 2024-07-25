@@ -174,6 +174,8 @@ public class Partyview extends Widget {
 		    m.col = (Color)args[a++];
 		m.setc(c);
 	    }
+	} else if(msg == "pid") {
+	    party.id = Utils.iv(args[0]);
 	} else {
 	    super.uimsg(msg, args);
 	}
