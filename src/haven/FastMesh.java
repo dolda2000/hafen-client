@@ -38,7 +38,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
     public final ShortBuffer indb;
     public final int num;
     public final Model model;
-    private Coord3f nb, pb;
+    private Volume3f bounds;
 
     public FastMesh(VertexBuf vert, ShortBuffer ind) {
 	this.vert = vert;
@@ -85,17 +85,20 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 		nb.z = Math.min(nb.z, z); pb.z = Math.max(pb.z, z);
 	    }
 	}
-	this.nb = nb;
-	this.pb = pb;
+	this.bounds = Volume3f.corn(nb, pb);
     }
 
+    public Volume3f bounds() {
+	if(bounds == null) cbounds();
+	return(bounds);
+    }
     public Coord3f nbounds() {
-	if(nb == null) cbounds();
-	return(nb);
+	if(bounds == null) cbounds();
+	return(bounds.n);
     }
     public Coord3f pbounds() {
-	if(pb == null) cbounds();
-	return(pb);
+	if(bounds == null) cbounds();
+	return(bounds.p);
     }
 
     public void draw(Pipe context, Render out) {

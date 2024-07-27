@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import java.awt.Color;
 
 public abstract class SDropBox<I, W extends Widget> extends SListWidget<I, W> {
@@ -167,5 +168,17 @@ public abstract class SDropBox<I, W extends Widget> extends SListWidget<I, W> {
 	    return(true);
 	}
 	return(false);
+    }
+
+    public static <I> SDropBox<I, Widget> of(int w, int listh, int itemh, List<? extends I>  items, BiFunction<? super I, ? super Coord, ? extends Widget> render, Consumer<? super I> change) {
+	return(new SDropBox<I, Widget>(w, listh, itemh) {
+		{super.change(items.get(0));}
+		protected List<? extends I> items() {return(items);}
+		protected Widget makeitem(I item, int idx, Coord sz) {return(render.apply(item, sz));}
+		public void change(I item) {
+		    super.change(item);
+		    change.accept(item);
+		}
+	    });
     }
 }

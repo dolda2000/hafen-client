@@ -55,11 +55,11 @@ public class Resource implements Serializable {
     public static Class<Audio> audio = Audio.class;
     public static Class<Tooltip> tooltip = Tooltip.class;
     
-    private Collection<Layer> layers = new LinkedList<Layer>();
     public final String name;
     public int ver;
     public ResSource source;
     public final transient Pool pool;
+    protected Collection<Layer> layers = new LinkedList<Layer>();
     private boolean used = false;
 
     public abstract static class Named implements Indir<Resource>, Serializable {
@@ -227,6 +227,20 @@ public class Resource implements Serializable {
 	this.pool = pool;
 	this.name = name;
 	this.ver = ver;
+    }
+
+    public static class Virtual extends Resource {
+	public Virtual(Pool pool, String name, int ver) {
+	    super(pool, name, ver);
+	}
+
+	public Virtual(String name, int ver) {
+	    this(remote(), name, ver);
+	}
+
+	public void add(Layer layer) {
+	    layers.add(layer);
+	}
     }
 	
     public static void setcache(ResCache cache) {

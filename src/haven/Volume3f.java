@@ -112,6 +112,11 @@ public class Volume3f {
 		    Coord3f.of(Math.max(p.x, c.x), Math.max(p.y, c.y), Math.max(p.z, c.z))));
     }
 
+    public Volume3f include(Volume3f v) {
+	return(corn(Coord3f.of(Math.min(n.x, v.n.x), Math.min(n.y, v.n.y), Math.min(n.z, v.n.z)),
+		    Coord3f.of(Math.max(p.x, v.p.x), Math.max(p.y, v.p.y), Math.max(p.z, v.p.z))));
+    }
+
     public String toString() {
 	return(String.format("(%s - %s)", n, p));
     }
