@@ -983,10 +983,37 @@ public class ChatUI extends Widget {
     
     public static class PrivChat extends EntryChannel {
 	private final int other;
+	private boolean muted;
 	
+	public PrivChat(boolean closable, int other) {
+	    super(closable);
+	    this.other = other;
+	}
+
+	private void menu() {
+	    SListMenu.Action ma = SListMenu.Action.of(muted ? "Unmute" : "Mute", () -> wdgmsg("mute", muted ? 0 : 1));
+	    SListMenu.of(UI.scale(250, 120), null, Arrays.asList(ma)).addat(ui.root, ui.mc);
+	}
+
+	public boolean selclicked(Coord c, int btn) {
+	    if(btn == 3) {
+		menu();
+		return(true);
+	    }
+	    return(super.selclicked(c, btn));
+	}
+
 	public class InMessage extends SimpleMessage {
 	    public InMessage(String text) {
 		super(text, new Color(255, 128, 128, 255));
+	    }
+
+	    public boolean clicked(Channel chan, CharPos pos, Coord c, int btn) {
+		if(btn == 3) {
+		    menu();
+		    return(true);
+		}
+		return(super.clicked(chan, pos, c, btn));
 	    }
 	}
 
@@ -994,11 +1021,6 @@ public class ChatUI extends Widget {
 	    public OutMessage(String text) {
 		super(text, new Color(128, 128, 255, 255));
 	    }
-	}
-
-	public PrivChat(boolean closable, int other) {
-	    super(closable);
-	    this.other = other;
 	}
 
 	public void uimsg(String msg, Object... args) {
@@ -1015,6 +1037,8 @@ public class ChatUI extends Widget {
 		String err = (String)args[0];
 		Message cmsg = new SimpleMessage(err, Color.RED);
 		append(cmsg, 3);
+	    } else if(msg == "muted") {
+		this.muted = Utils.bv(args[0]);
 	    } else {
 		super.uimsg(msg, args);
 	    }
