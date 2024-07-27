@@ -548,6 +548,10 @@ public class ChatUI extends Widget {
 		return(true);
 	    CharPos ch = charat(c);
 	    selorig = ch;
+	    if(ch != null) {
+		if(ch.rm.msg.mousedown(this, ch, c, btn))
+		    return(true);
+	    }
 	    if(btn == 1) {
 		selstart = selend = null;
 		if(ch != null) {
@@ -556,9 +560,6 @@ public class ChatUI extends Widget {
 		    grab = ui.grabmouse(this);
 		}
 		return(true);
-	    } else {
-		if(ch != null)
-		    ch.rm.msg.mousedown(this, ch, c, btn);
 	    }
 	    return(true);
 	}
@@ -582,6 +583,32 @@ public class ChatUI extends Widget {
 	    } else {
 		super.mousemove(c);
 	    }
+	}
+
+	public boolean mouseup(Coord c, int btn) {
+	    if(super.mouseup(c, btn))
+		return(true);
+	    if((btn == 1) && (grab != null)) {
+		grab.remove();
+		grab = null;
+		dragging = false;
+		if(selstart != null) {
+		    selected(selstart, selend);
+		    return(true);
+		}
+	    }
+	    CharPos ch = charat(c);
+	    if(ch != null) {
+		if(ch.rm.msg.mouseup(this, ch, c, btn))
+		    return(true);
+		if(!dragging && (selorig != null) && ch.equals(selorig)) {
+		    if(ch.rm.msg.clicked(this, ch, c, btn))
+			return(true);
+		    if(clicked(selorig, btn))
+			return(true);
+		}
+	    }
+	    return(true);
 	}
 
 	protected void selected(CharPos start, CharPos end) {
@@ -641,43 +668,23 @@ public class ChatUI extends Widget {
 	    } catch(IllegalStateException e) {}
 	}
 
-	protected void clicked(CharPos pos) {
-	    AttributedCharacterIterator inf = pos.part.ti();
-	    inf.setIndex(pos.ch.getCharIndex() + pos.part.start);
-	    URI uri = (URI)inf.getAttribute(ChatAttribute.HYPERLINK);
-	    if(uri != null) {
-		try {
-		    WebBrowser.sshow(uri.toURL());
-		} catch(java.net.MalformedURLException e) {
-		    getparent(GameUI.class).error("Could not follow link.");
-		} catch(WebBrowser.BrowserException e) {
-		    getparent(GameUI.class).error("Could not launch web browser.");
-		}
-	    }
-	}
-
-	public boolean mouseup(Coord c, int btn) {
-	    if(super.mouseup(c, btn))
-		return(true);
+	protected boolean clicked(CharPos pos, int btn) {
 	    if(btn == 1) {
-		if(grab != null) {
-		    if(selstart != null)
-			selected(selstart, selend);
-		    else
-			clicked(selorig);
-		    grab.remove();
-		    grab = null;
-		    dragging = false;
+		AttributedCharacterIterator inf = pos.part.ti();
+		inf.setIndex(pos.ch.getCharIndex() + pos.part.start);
+		URI uri = (URI)inf.getAttribute(ChatAttribute.HYPERLINK);
+		if(uri != null) {
+		    try {
+			WebBrowser.sshow(uri.toURL());
+		    } catch(java.net.MalformedURLException e) {
+			getparent(GameUI.class).error("Could not follow link.");
+		    } catch(WebBrowser.BrowserException e) {
+			getparent(GameUI.class).error("Could not launch web browser.");
+		    }
 		}
-	    } else {
-		CharPos ch = charat(c);
-		if(ch != null) {
-		    ch.rm.msg.mouseup(this, ch, c, btn);
-		    if((selorig != null) && ch.equals(selorig))
-			ch.rm.msg.clicked(this, ch, c, btn);
-		}
+		return(true);
 	    }
-	    return(true);
+	    return(false);
 	}
 
 	public void select() {
