@@ -864,6 +864,8 @@ public class ChatUI extends Widget {
 	public final int urgency;
 	private final String name;
 	private final Map<Integer, Color> pc = new HashMap<Integer, Color>();
+	private Map<Integer, Boolean> muted = null;
+	private Integer mutewait = null;
 
 	public class NamedMessage extends Message {
 	    public final int from;
@@ -902,6 +904,25 @@ public class ChatUI extends Widget {
 	    public boolean valid(Indir<Text> data) {
 		return(((Rendered)data).nm.equals(nm()));
 	    }
+
+	    public boolean clicked(Channel chan, CharPos pos, Coord c, int btn) {
+		if((btn == 3) && (muted != null)) {
+		    Boolean muted = MultiChat.this.muted.get(from);
+		    if(muted == null) {
+			mutewait = from;
+			wdgmsg("muted", from);
+		    } else {
+			mutemenu(from, muted);
+		    }
+		    return(true);
+		}
+		return(super.clicked(chan, pos, c, btn));
+	    }
+	}
+
+	private void mutemenu(int pl, boolean cur) {
+	    SListMenu.Action ma = SListMenu.Action.of(cur ? "Unmute" : "Mute", () -> wdgmsg("mute", pl, cur ? 0 : 1));
+	    SListMenu.of(UI.scale(250, 120), null, Arrays.asList(ma)).addat(ui.root, ui.mc);
 	}
 
 	public class MyMessage extends SimpleMessage {
@@ -917,6 +938,8 @@ public class ChatUI extends Widget {
 	    super(closable);
 	    this.name = name;
 	    this.urgency = urgency;
+	    if(name.equals("Area Chat"))
+		muted = new HashMap<>();
 	}
 
 	private float colseq = 0;
@@ -942,6 +965,16 @@ public class ChatUI extends Widget {
 		} else {
 		    Message cmsg = new NamedMessage(from.intValue(), line, fromcolor(from.intValue()));
 		    append(cmsg, urgency);
+		}
+	    } else if(msg == "mutable") {
+		this.muted = Utils.bv(args[0]) ? new HashMap<>() : null;
+	    } else if(msg == "muted") {
+		int pl = Utils.iv(args[0]);
+		boolean muted = Utils.bv(args[1]);
+		this.muted.put(pl, muted);
+		if((mutewait != null) && (mutewait == pl)) {
+		    mutewait = null;
+		    mutemenu(pl, muted);
 		}
 	    } else {
 		super.uimsg(msg, args);
