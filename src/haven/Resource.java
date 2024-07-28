@@ -217,6 +217,10 @@ public class Resource implements Serializable {
 		return(bk.getres(map.get(id)));
 	    }
 
+	    public Indir<Resource> dynres(UID uid) {
+		return(bk.dynres(uid));
+	    }
+
 	    public String toString() {
 		return(map.toString());
 	    }
