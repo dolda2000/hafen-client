@@ -1145,6 +1145,7 @@ public class Widget {
 	public CursorQuery derive(Coord c) {return(new CursorQuery(this, c));}
     }
 
+    @Deprecated
     public boolean mousedown(Coord c, int button) {
 	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
 	    if(!wdg.visible())
@@ -1159,6 +1160,7 @@ public class Widget {
 	return(false);
     }
 	
+    @Deprecated
     public boolean mouseup(Coord c, int button) {
 	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
 	    if(!wdg.visible())
@@ -1173,6 +1175,7 @@ public class Widget {
 	return(false);
     }
 	
+    @Deprecated
     public boolean mousewheel(Coord c, int amount) {
 	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
 	    if(!wdg.visible())
@@ -1187,6 +1190,7 @@ public class Widget {
 	return(false);
     }
 	
+    @Deprecated
     public void mousemove(Coord c) {
 	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
 	    if(!wdg.visible())
@@ -1196,6 +1200,7 @@ public class Widget {
 	}
     }
 
+    @Deprecated
     public boolean mousehover(Coord c, boolean hovering) {
 	boolean ret = false;
 	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
