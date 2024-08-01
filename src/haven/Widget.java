@@ -770,6 +770,7 @@ public class Widget {
 
     public static abstract class Event {
 	public boolean propagate;
+	public Widget handling;
 	private boolean phandled;
 
 	protected abstract boolean propagation(Widget from);
@@ -794,10 +795,16 @@ public class Widget {
 	}
 
 	public boolean dispatch(Widget w) {
-	    propagate = true;
-	    if(w.handle(this))
-		return(true);
-	    return(propagate(w));
+	    Widget phandling = handling;
+	    handling = w;
+	    try {
+		propagate = true;
+		if(w.handle(this))
+		    return(true);
+		return(propagate(w));
+	    } finally {
+		handling = phandling;
+	    }
 	}
     }
 
