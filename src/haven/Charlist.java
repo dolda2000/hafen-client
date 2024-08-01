@@ -29,7 +29,7 @@ package haven;
 import java.awt.Color;
 import java.util.*;
 
-public class Charlist extends Widget {
+public class Charlist extends Widget implements Widget.MouseEvent.Handler {
     public static final Coord bsz = UI.scale(289, 96);
     public static final Text.Furnace tf = new PUtils.BlurFurn(new PUtils.TexFurn(new Text.Foundry(Text.fraktur, 20).aa(true), Window.ctex), UI.scale(2), UI.scale(2), Color.BLACK);
     public static final int margin = UI.scale(6);
@@ -77,7 +77,7 @@ public class Charlist extends Widget {
 	}
     }
 
-    public class Charbox extends Widget {
+    public class Charbox extends Widget implements MouseEvent.Handler {
 	public final Char chr;
 	public final Avaview ava;
 
@@ -102,10 +102,9 @@ public class Charlist extends Widget {
 	    super.draw(g);
 	}
 
-	public boolean mousedown(Coord c, int button) {
-	    super.mousedown(c, button);
+	public boolean mousedown(MouseDownEvent ev) {
 	    list.change(chr);
-	    return(true);
+	    return(false);
 	}
     }
 
@@ -118,7 +117,7 @@ public class Charlist extends Widget {
 	protected Charbox makeitem(Char chr, int idx, Coord sz) {return(new Charbox(chr));}
 
 	protected void drawslot(GOut g, Char item, int idx, Area area) {}
-	public boolean mousewheel(Coord c, int amount) {return(false);}
+	public boolean mousewheel(MouseWheelEvent ev) {return(false);}
 	protected boolean unselect(int button) {return(false);}
 	protected boolean autoscroll() {return(false);}
 
@@ -158,15 +157,8 @@ public class Charlist extends Widget {
 	scrolltgt = Utils.clip(((scrolltgt < 0) ? list.scrollval() : scrolltgt) + ((bsz.y + margin) * amount), list.scrollmin(), list.scrollmax());
     }
 
-    public boolean mousedown(Coord c, int button) {
-	boolean hit = false;
-	if(super.mousedown(c, button))
-	    return(true);
-	return(hit);
-    }
-
-    public boolean mousewheel(Coord c, int amount) {
-	scroll(amount);
+    public boolean mousewheel(MouseWheelEvent ev) {
+	scroll(ev.a);
 	return(true);
     }
 

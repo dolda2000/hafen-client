@@ -168,7 +168,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	return(new ResBeltSlot(idx, rdt));
     }
 
-    public abstract class Belt extends Widget implements DTarget, DropTarget {
+    public abstract class Belt extends Widget implements MouseEvent.Handler, DTarget, DropTarget {
 	public Belt(Coord sz) {
 	    super(sz);
 	}
@@ -198,16 +198,16 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 
 	public abstract int beltslot(Coord c);
 
-	public boolean mousedown(Coord c, int button) {
-	    int slot = beltslot(c);
+	public boolean mousedown(MouseDownEvent ev) {
+	    int slot = beltslot(ev.c);
 	    if(slot != -1) {
-		if(button == 1)
+		if(ev.b == 1)
 		    act(slot, new MenuGrid.Interaction(1, ui.modflags()));
-		if(button == 3)
+		if(ev.b == 3)
 		    GameUI.this.wdgmsg("setbelt", slot, null);
 		return(true);
 	    }
-	    return(super.mousedown(c, button));
+	    return(false);
 	}
 
 	public boolean drop(Coord c, Coord ul) {
@@ -1502,10 +1502,6 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    return(true);
 	}
 	return(super.globtype(key, ev));
-    }
-    
-    public boolean mousedown(Coord c, int button) {
-	return(super.mousedown(c, button));
     }
 
     private int uimode = 1;

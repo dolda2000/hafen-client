@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 import java.awt.image.WritableRaster;
 
-public class Inventory extends Widget implements DTarget {
+public class Inventory extends Widget implements Widget.MouseEvent.Handler, DTarget {
     public static final Coord sqsz = UI.scale(new Coord(32, 32)).add(1, 1);
     public static final Tex invsq;
     public boolean dropul = true;
@@ -85,13 +85,13 @@ public class Inventory extends Widget implements DTarget {
 	isz = sz;
     }
     
-    public boolean mousewheel(Coord c, int amount) {
+    public boolean mousewheel(MouseWheelEvent ev) {
 	if(ui.modshift) {
 	    Inventory minv = getparent(GameUI.class).maininv;
 	    if(minv != this) {
-		if(amount < 0)
+		if(ev.a < 0)
 		    wdgmsg("invxf", minv.wdgid(), 1);
-		else if(amount > 0)
+		else if(ev.a > 0)
 		    minv.wdgmsg("invxf", this.wdgid(), 1);
 	    }
 	}

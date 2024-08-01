@@ -163,8 +163,8 @@ public abstract class SSearchBox<I, W extends Widget> extends SListBox<I, W> {
 	stopsearch();
     }
 
-    public boolean mousedown(Coord c, int button) {
+    public boolean mousedown(MouseDownEvent ev) {
 	parent.setfocus(this);
-	return(super.mousedown(c, button));
+	return(super.mousedown(ev));
     }
 }

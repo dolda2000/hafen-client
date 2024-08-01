@@ -45,7 +45,7 @@ public class SAttrWnd extends Widget {
 	}
     }
 
-    public class SAttr extends Widget {
+    public class SAttr extends Widget implements MouseEvent.Handler {
 	public final String nm;
 	public final Text rnm;
 	public final Glob.CAttr attr;
@@ -126,8 +126,8 @@ public class SAttrWnd extends Widget {
 	    updcost();
 	}
 
-	public boolean mousewheel(Coord c, int a) {
-	    adj(-a);
+	public boolean mousewheel(MouseWheelEvent ev) {
+	    adj(-ev.a);
 	    return(true);
 	}
     }

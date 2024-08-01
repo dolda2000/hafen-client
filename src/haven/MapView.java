@@ -40,7 +40,7 @@ import haven.MCache.OverlayInfo;
 import haven.render.sl.Uniform;
 import haven.render.sl.Type;
 
-public class MapView extends PView implements DTarget, Console.Directory {
+public class MapView extends PView implements Widget.MouseEvent.Handler, DTarget, Console.Directory {
     public static boolean clickdb = false;
     public long plgob = -1;
     public Coord2d cc;
@@ -1990,61 +1990,61 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    this.grab = null;
     }
     
-    public boolean mousedown(Coord c, int button) {
+    public boolean mousedown(MouseDownEvent ev) {
 	parent.setfocus(this);
 	Loader.Future<Plob> placing_l = this.placing;
-	if(button == 2) {
-	    if(((Camera)camera).click(c)) {
+	if(ev.b == 2) {
+	    if(((Camera)camera).click(ev.c)) {
 		camdrag = ui.grabmouse(this);
 	    }
 	} else if((placing_l != null) && placing_l.done()) {
 	    Plob placing = placing_l.get();
 	    if(placing.lastmc != null)
-		wdgmsg("place", placing.rc.floor(posres), (int)Math.round(placing.a * 32768 / Math.PI), button, ui.modflags());
-	} else if((grab != null) && grab.mmousedown(c, button)) {
+		wdgmsg("place", placing.rc.floor(posres), (int)Math.round(placing.a * 32768 / Math.PI), ev.b, ui.modflags());
+	} else if((grab != null) && grab.mmousedown(ev.c, ev.b)) {
 	} else {
-	    new Click(c, button).run();
+	    new Click(ev.c, ev.b).run();
 	}
 	return(true);
     }
     
-    public void mousemove(Coord c) {
+    public void mousemove(MouseMoveEvent ev) {
 	if(grab != null)
-	    grab.mmousemove(c);
+	    grab.mmousemove(ev.c);
 	Loader.Future<Plob> placing_l = this.placing;
 	if(camdrag != null) {
-	    ((Camera)camera).drag(c);
+	    ((Camera)camera).drag(ev.c);
 	} else if((placing_l != null) && placing_l.done()) {
 	    Plob placing = placing_l.get();
-	    if((placing.lastmc == null) || !placing.lastmc.equals(c)) {
-		placing.new Adjust(c, ui.modflags()).run();
+	    if((placing.lastmc == null) || !placing.lastmc.equals(ev.c)) {
+		placing.new Adjust(ev.c, ui.modflags()).run();
 	    }
 	}
     }
     
-    public boolean mouseup(Coord c, int button) {
-	if(button == 2) {
+    public boolean mouseup(MouseUpEvent ev) {
+	if(ev.b == 2) {
 	    if(camdrag != null) {
 		camera.release();
 		camdrag.remove();
 		camdrag = null;
 	    }
 	} else if(grab != null) {
-	    grab.mmouseup(c, button);
+	    grab.mmouseup(ev.c, ev.b);
 	}
 	return(true);
     }
 
-    public boolean mousewheel(Coord c, int amount) {
+    public boolean mousewheel(MouseWheelEvent ev) {
 	Loader.Future<Plob> placing_l = this.placing;
-	if((grab != null) && grab.mmousewheel(c, amount))
+	if((grab != null) && grab.mmousewheel(ev.c, ev.a))
 	    return(true);
 	if((placing_l != null) && placing_l.done()) {
 	    Plob placing = placing_l.get();
-	    if(placing.adjust.rotate(placing, amount, ui.modflags()))
+	    if(placing.adjust.rotate(placing, ev.a, ui.modflags()))
 		return(true);
 	}
-	return(((Camera)camera).wheel(c, amount));
+	return(((Camera)camera).wheel(ev.c, ev.a));
     }
     
     public boolean drop(final Coord cc, Coord ul) {

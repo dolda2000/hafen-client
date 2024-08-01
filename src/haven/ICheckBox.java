@@ -28,7 +28,7 @@ package haven;
 
 import java.awt.image.BufferedImage;
 
-public class ICheckBox extends ACheckBox {
+public class ICheckBox extends ACheckBox implements Widget.MouseEvent.Handler {
     public final Tex up, down, hoverup, hoverdown;
     private final BufferedImage img;
     public boolean h;
@@ -92,16 +92,16 @@ public class ICheckBox extends ACheckBox {
 	return(img.getRaster().getSample(c.x, c.y, 3) >= 128);
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if((button == 1) && checkhit(c)) {
+    public boolean mousedown(MouseDownEvent ev) {
+	if((ev.b == 1) && checkhit(ev.c)) {
 	    click();
 	    return(true);
 	}
-	return(super.mousedown(c, button));
+	return(false);
     }
 
-    public void mousemove(Coord c) {
-	this.h = checkhit(c);
+    public void mousemove(MouseMoveEvent ev) {
+	this.h = checkhit(ev.c);
     }
 
     public Object tooltip(Coord c, Widget prev) {

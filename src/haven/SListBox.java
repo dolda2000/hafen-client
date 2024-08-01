@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 import java.awt.Color;
 
-public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> implements Scrollable {
+public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> implements Widget.MouseEvent.Handler, Scrollable {
     public static final Color every = new Color(255, 255, 255, 16), other = new Color(255, 255, 255, 32);
     public final int itemh, marg;
     public final Scrollbar sb;
@@ -180,14 +180,14 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> im
 	return((c.y + cury) / (itemh + marg));
     }
 
-    public boolean mousewheel(Coord c, int amount) {
-	if(super.mousewheel(c, amount))
+    public boolean mousewheel(MouseWheelEvent ev) {
+	if(ev.propagate(this))
 	    return(true);
 	int step = sz.y / 8;
 	if(maxy > 0)
 	    step = Math.min(step, maxy / 8);
 	step = Math.max(step, itemh);
-	cury = Math.max(Math.min(cury + (step * amount), maxy), 0);
+	cury = Math.max(Math.min(cury + (step * ev.a), maxy), 0);
 	return(true);
     }
 
@@ -201,13 +201,13 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> im
 	return(false);
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if(super.mousedown(c, button))
+    public boolean mousedown(MouseDownEvent ev) {
+	if(ev.propagate(this))
 	    return(true);
-	int slot = slotat(c);
-	if((slot >= 0) && slotclick(c, slotat(c), button))
+	int slot = slotat(ev.c);
+	if((slot >= 0) && slotclick(ev.c, slotat(ev.c), ev.b))
 	    return(true);
-	return(unselect(button));
+	return(unselect(ev.b));
     }
 
     public void resize(Coord sz) {

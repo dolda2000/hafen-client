@@ -28,7 +28,7 @@ package haven;
 
 import java.awt.image.BufferedImage;
 
-public class HSlider extends Widget {
+public class HSlider extends Widget implements Widget.MouseEvent.Handler {
     static final Tex sflarp = Resource.loadtex("gfx/hud/sflarp");
     static final Tex schain;
     static final int chcut = UI.scale(7);
@@ -62,31 +62,34 @@ public class HSlider extends Widget {
 	g.image(sflarp, new Coord(fx, 0));
     }
     
-    public boolean mousedown(Coord c, int button) {
-	if(button != 1)
+    private void update(Coord c) {
+	double a = (double)(c.x - (sflarp.sz().x / 2)) / (double)(sz.x - sflarp.sz().x);
+	if(a < 0)
+	    a = 0;
+	if(a > 1)
+	    a = 1;
+	int nval = (int)Math.round(a * (max - min)) + min;
+	if(val != nval) {
+	    val = nval;
+	    changed();
+	}
+    }
+
+    public boolean mousedown(MouseDownEvent ev) {
+	if(ev.b != 1)
 	    return(false);
 	drag = ui.grabmouse(this);
-	mousemove(c);
+	update(ev.c);
 	return(true);
     }
     
-    public void mousemove(Coord c) {
-	if(drag != null) {
-	    double a = (double)(c.x - (sflarp.sz().x / 2)) / (double)(sz.x - sflarp.sz().x);
-	    if(a < 0)
-		a = 0;
-	    if(a > 1)
-		a = 1;
-	    int nval = (int)Math.round(a * (max - min)) + min;
-	    if(val != nval) {
-		val = nval;
-		changed();
-	    }
-	}
+    public void mousemove(MouseMoveEvent ev) {
+	if(drag != null)
+	    update(ev.c);
     }
     
-    public boolean mouseup(Coord c, int button) {
-	if(button != 1)
+    public boolean mouseup(MouseUpEvent ev) {
+	if(ev.b != 1)
 	    return(false);
 	if(drag == null)
 	    return(false);

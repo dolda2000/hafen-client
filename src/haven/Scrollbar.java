@@ -26,7 +26,7 @@
 
 package haven;
 
-public class Scrollbar extends Widget {
+public class Scrollbar extends Widget implements Widget.MouseEvent.Handler {
     public static final Tex schain = Resource.loadtex("gfx/hud/schain");
     public static final Tex sflarp = Resource.loadtex("gfx/hud/sflarp");
     public static final int chcut = UI.scale(7);
@@ -73,33 +73,36 @@ public class Scrollbar extends Widget {
 	}
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if(button != 1)
+    private void update(Coord c) {
+	double a = (double)(c.y - (sflarp.sz().y / 2)) / (double)(sz.y - sflarp.sz().y);
+	if(a < 0)
+	    a = 0;
+	if(a > 1)
+	    a = 1;
+	int val = (int)Math.round(a * (max - min)) + min;
+	if(val != this.val) {
+	    this.val = val;
+	    changed();
+	}
+    }
+
+    public boolean mousedown(MouseDownEvent ev) {
+	if(ev.b != 1)
 	    return(false);
 	if(!vis())
 	    return(false);
 	drag = ui.grabmouse(this);
-	mousemove(c);
+	update(ev.c);
 	return(true);
     }
 
-    public void mousemove(Coord c) {
-	if(drag != null) {
-	    double a = (double)(c.y - (sflarp.sz().y / 2)) / (double)(sz.y - sflarp.sz().y);
-	    if(a < 0)
-		a = 0;
-	    if(a > 1)
-		a = 1;
-	    int val = (int)Math.round(a * (max - min)) + min;
-	    if(val != this.val) {
-		this.val = val;
-		changed();
-	    }
-	}
+    public void mousemove(MouseMoveEvent ev) {
+	if(drag != null)
+	    update(ev.c);
     }
 
-    public boolean mouseup(Coord c, int button) {
-	if(button != 1)
+    public boolean mouseup(MouseUpEvent ev) {
+	if(ev.b != 1)
 	    return(false);
 	if(drag == null)
 	    return(false);

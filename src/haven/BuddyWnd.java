@@ -170,7 +170,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	}
     }
 
-    public static class GroupRect extends Widget {
+    public static class GroupRect extends Widget implements MouseEvent.Handler {
 	final private static Coord offset = UI.scale(new Coord(2, 2));
 	final private static Coord selsz = UI.scale(new Coord(19, 19));
 	final private static Coord colsz = selsz.sub(offset.mul(2));
@@ -195,7 +195,7 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    g.chcolor();
 	}
 
-	public boolean mousedown(Coord c, int button) {
+	public boolean mousedown(MouseDownEvent ev) {
 	    selector.select(group);
 	    return (true);
 	}
@@ -382,10 +382,10 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 			g.chcolor();
 		    }
 
-		    public boolean mousedown(Coord c, int button) {
-			if(button == 1)
+		    public boolean mousedown(MouseDownEvent ev) {
+			if(ev.b == 1)
 			    change(item);
-			else if(button == 3)
+			else if(ev.b == 3)
 			    opts(b, ui.mc);
 			return(true);
 		    }

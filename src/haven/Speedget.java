@@ -28,7 +28,7 @@ package haven;
 
 import java.awt.event.KeyEvent;
 
-public class Speedget extends Widget {
+public class Speedget extends Widget implements Widget.MouseEvent.Handler {
     public static final Tex imgs[][];
     public static final String tips[];
     public static final Coord tsz;
@@ -92,11 +92,11 @@ public class Speedget extends Widget {
 	wdgmsg("set", s);
     }
 
-    public boolean mousedown(Coord c, int button) {
+    public boolean mousedown(MouseDownEvent ev) {
 	int x = 0;
 	for(int i = 0; i < 4; i++) {
 	    x += imgs[i][0].sz().x;
-	    if(c.x < x) {
+	    if(ev.c.x < x) {
 		set(i);
 		break;
 	    }
@@ -104,9 +104,9 @@ public class Speedget extends Widget {
 	return(true);
     }
 
-    public boolean mousewheel(Coord c, int amount) {
+    public boolean mousewheel(MouseWheelEvent ev) {
 	if(max >= 0)
-	    set(Utils.clip(cur + amount, 0, max));
+	    set(Utils.clip(cur + ev.a, 0, max));
 	return(true);
     }
 

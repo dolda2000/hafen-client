@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.function.*;
 import java.awt.image.BufferedImage;
 
-public abstract class SListMenu<I, W extends Widget> extends Widget {
+public abstract class SListMenu<I, W extends Widget> extends Widget implements Widget.MouseEvent.Handler {
     public static final Text.Foundry bigf = CharWnd.attrf;
     public static final Text.Foundry smallf = new Text.Foundry(Text.fraktur, 14).aa(true);
     public static final Tex bg = Window.bg;
@@ -58,7 +58,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	}
     }
 
-    public class InnerList extends SListBox<I, Item> {
+    public class InnerList extends SListBox<I, Item> implements MouseEvent.Handler {
 	private Coord mc = Coord.of(-1, -1);
 
 	private InnerList(Coord sz, int itemh) {
@@ -77,9 +77,8 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	    choice(item);
 	}
 
-	public void mousemove(Coord c) {
-	    super.mousemove(c);
-	    this.mc = c;
+	public void mousemove(MouseMoveEvent ev) {
+	    this.mc = ev.c;
 	}
 
 	protected void drawbg(GOut g, I item, int idx, Area area) {
@@ -128,18 +127,22 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	super.draw(g);
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if(!c.isect(Coord.z, sz)) {
+    public boolean mousedown(MouseDownEvent ev) {
+	if(!ev.c.isect(Coord.z, sz)) {
 	    choice(null);
+	    return(true);
 	} else {
-	    super.mousedown(c, button);
+	    return(false);
 	}
-	return(true);
     }
 
-    public boolean mousehover(Coord c, boolean hovering) {
-	super.mousehover(c, hovering);
-	return(hovering);
+    public boolean handle(Event ev) {
+	if((ev instanceof PointerEvent) && checkhit(((PointerEvent)ev).c)) {
+	    super.handle(ev);
+	    ev.propagate(this);
+	    return(true);
+	}
+	return(super.handle(ev));
     }
 
     public boolean keydown(java.awt.event.KeyEvent ev) {

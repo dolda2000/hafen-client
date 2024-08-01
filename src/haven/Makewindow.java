@@ -294,7 +294,7 @@ public class Makewindow extends Widget {
 	}
     }
 
-    public class Input extends SpecWidget {
+    public class Input extends SpecWidget implements MouseEvent.Handler {
 	public final int idx;
 	private List<MenuGrid.Pagina> rpag = null;
 	private Coord cc = null;
@@ -304,14 +304,14 @@ public class Makewindow extends Widget {
 	    this.idx = idx;
 	}
 
-	public boolean mousedown(Coord c, int button) {
-	    if(button == 1) {
+	public boolean mousedown(MouseDownEvent ev) {
+	    if(ev.b == 1) {
 		if(rpag == null)
 		    Makewindow.this.wdgmsg("findrcps", idx);
-		this.cc = c;
+		this.cc = ev.c;
 		return(true);
 	    }
-	    return(super.mousedown(c, button));
+	    return(false);
 	}
 
 	public void tick(double dt) {

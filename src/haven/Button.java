@@ -31,7 +31,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.image.BufferedImage;
 
-public class Button extends SIWidget {
+public class Button extends SIWidget implements Widget.MouseEvent.Handler {
     public static final BufferedImage bl = Resource.loadsimg("gfx/hud/buttons/tbtn/left");
     public static final BufferedImage br = Resource.loadsimg("gfx/hud/buttons/tbtn/right");
     public static final BufferedImage bt = Resource.loadsimg("gfx/hud/buttons/tbtn/top");
@@ -183,9 +183,9 @@ public class Button extends SIWidget {
 	}
     }
     
-    public void mousemove(Coord c) {
+    public void mousemove(MouseMoveEvent ev) {
 	if(d != null) {
-	    boolean a = c.isect(Coord.z, sz);
+	    boolean a = ev.c.isect(Coord.z, sz);
 	    if(a != this.a) {
 		this.a = a;
 		redraw();
@@ -201,8 +201,8 @@ public class Button extends SIWidget {
 	ui.sfx(click);
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if((button != 1) || dis)
+    public boolean mousedown(MouseDownEvent ev) {
+	if((ev.b != 1) || dis)
 	    return(false);
 	a = true;
 	d = ui.grabmouse(this);
@@ -211,13 +211,13 @@ public class Button extends SIWidget {
 	return(true);
     }
 	
-    public boolean mouseup(Coord c, int button) {
-	if((d != null) && button == 1) {
+    public boolean mouseup(MouseUpEvent ev) {
+	if((d != null) && ev.b == 1) {
 	    d.remove();
 	    d = null;
 	    a = false;
 	    redraw();
-	    if(c.isect(new Coord(0, 0), sz)) {
+	    if(ev.c.isect(Coord.z, sz)) {
 		unpress();
 		click();
 	    }

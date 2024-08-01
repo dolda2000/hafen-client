@@ -28,7 +28,7 @@ package haven;
 
 import java.awt.Color;
 
-public class RichTextBox extends Widget {
+public class RichTextBox extends Widget implements Widget.MouseEvent.Handler {
     private static final int margin1 = UI.scale(10);
     private static final int margin2 = 2 * margin1;
     public Color bg = Color.BLACK;
@@ -63,8 +63,8 @@ public class RichTextBox extends Widget {
 	sb.val = 0;
     }
     
-    public boolean mousewheel(Coord c, int amount) {
-	sb.ch(amount * margin2);
+    public boolean mousewheel(MouseWheelEvent ev) {
+	sb.ch(ev.a * margin2);
 	return(true);
     }
 

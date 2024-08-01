@@ -26,7 +26,7 @@
 
 package haven;
 
-public class GiveButton extends Widget {
+public class GiveButton extends Widget implements Widget.MouseEvent.Handler {
     public static Tex bg = Resource.loadtex("gfx/hud/combat/knapp/knapp");
     public static Tex ol = Resource.loadtex("gfx/hud/combat/knapp/ol");
     public static Tex or = Resource.loadtex("gfx/hud/combat/knapp/or");
@@ -69,8 +69,8 @@ public class GiveButton extends Widget {
 	    g.image(sr, Coord.z, sz);
     }
     
-    public boolean mousedown(Coord c, int button) {
-	wdgmsg("click", button);
+    public boolean mousedown(MouseDownEvent ev) {
+	wdgmsg("click", ev.b);
 	return(true);
     }
     

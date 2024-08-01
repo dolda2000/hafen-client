@@ -36,7 +36,7 @@ import java.awt.image.BufferedImage;
 import haven.Resource.AButton;
 import haven.ItemInfo.AttrCache;
 
-public class MenuGrid extends Widget implements KeyBinding.Bindable {
+public class MenuGrid extends Widget implements Widget.MouseEvent.Handler, KeyBinding.Bindable {
     public final static Tex bg = Inventory.invsq;
     public final static Coord bgsz = Inventory.sqsz;
     public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, UI.scale(10f));
@@ -531,18 +531,18 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	    return(null);
     }
 
-    public boolean mousedown(Coord c, int button) {
-	PagButton h = bhit(c);
-	if((button == 1) && (h != null)) {
+    public boolean mousedown(MouseDownEvent ev) {
+	PagButton h = bhit(ev.c);
+	if((ev.b == 1) && (h != null)) {
 	    pressed = h;
 	    grab = ui.grabmouse(this);
 	}
 	return(true);
     }
 
-    public void mousemove(Coord c) {
+    public void mousemove(MouseMoveEvent ev) {
 	if((dragging == null) && (pressed != null)) {
-	    PagButton h = bhit(c);
+	    PagButton h = bhit(ev.c);
 	    if(h != pressed)
 		dragging = pressed.pag;
 	}
@@ -580,9 +580,9 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	}
     }
 
-    public boolean mouseup(Coord c, int button) {
-	PagButton h = bhit(c);
-	if((button == 1) && (grab != null)) {
+    public boolean mouseup(MouseUpEvent ev) {
+	PagButton h = bhit(ev.c);
+	if((ev.b == 1) && (grab != null)) {
 	    if(dragging != null) {
 		ui.dropthing(ui.root, ui.mc, dragging);
 		pressed = null;

@@ -32,7 +32,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import static haven.PUtils.*;
 
-public class Window extends Widget implements DTarget {
+public class Window extends Widget implements Widget.MouseEvent.Handler, DTarget {
     public static final Pipe.Op bgblend = FragColor.blend.nil;
     public static final Pipe.Op cblend  = FragColor.blend(new BlendMode(BlendMode.Function.ADD, BlendMode.Factor.SRC_ALPHA, BlendMode.Factor.INV_SRC_ALPHA,
 									BlendMode.Function.ADD, BlendMode.Factor.ONE, BlendMode.Factor.INV_SRC_ALPHA));
@@ -163,23 +163,23 @@ public class Window extends Widget implements DTarget {
 	public abstract Area contarea();
     }
 
-    public abstract static class DragDeco extends Deco {
-	public boolean mousedown(Coord c, int button) {
-	    if(super.mousedown(c, button))
+    public abstract static class DragDeco extends Deco implements MouseEvent.Handler {
+	public boolean mousedown(MouseDownEvent ev) {
+	    if(ev.propagate(this))
 		return(true);
-	    if(checkhit(c)) {
+	    if(checkhit(ev.c)) {
 		Window wnd = (Window)parent;
 		wnd.parent.setfocus(wnd);
 		wnd.raise();
-		if(button == 1)
-		    wnd.drag(c);
+		if(ev.b == 1)
+		    wnd.drag(ev.c);
 		return(true);
 	    }
 	    return(false);
 	}
     }
 
-    public static class DefaultDeco extends DragDeco {
+    public static class DefaultDeco extends DragDeco implements MouseEvent.Handler {
 	public final boolean lg;
 	public final IButton cbtn;
 	public boolean dragsize;
@@ -291,31 +291,31 @@ public class Window extends Widget implements DTarget {
 
 	private UI.Grab szdrag;
 	private Coord szdragc;
-	public boolean mousedown(Coord c, int button) {
+	public boolean mousedown(MouseDownEvent ev) {
 	    if(dragsize) {
-		Coord cc = c.sub(ca.ul);
-		if((button == 1) && (c.x < ca.br.x) && (c.y < ca.br.y) && (c.y >= ca.br.y - UI.scale(25) + (ca.br.x - c.x))) {
+		Coord c = ev.c, cc = c.sub(ca.ul);
+		if((ev.b == 1) && (c.x < ca.br.x) && (c.y < ca.br.y) && (c.y >= ca.br.y - UI.scale(25) + (ca.br.x - c.x))) {
 		    szdrag = ui.grabmouse(this);
 		    szdragc = aa.sz().sub(c);
 		    return(true);
 		}
 	    }
-	    return(super.mousedown(c, button));
+	    return(super.mousedown(ev));
 	}
 
-	public void mousemove(Coord c) {
+	public void mousemove(MouseMoveEvent ev) {
 	    if(szdrag != null)
-		((Window)parent).resize(c.add(szdragc));
-	    super.mousemove(c);
+		((Window)parent).resize(ev.c.add(szdragc));
+	    super.mousemove(ev);
 	}
 
-	public boolean mouseup(Coord c, int button) {
-	    if((button == 1) && (szdrag != null)) {
+	public boolean mouseup(MouseUpEvent ev) {
+	    if((ev.b == 1) && (szdrag != null)) {
 		szdrag.remove();
 		szdrag = null;
 		return(true);
 	    }
-	    return(super.mouseup(c, button));
+	    return(super.mouseup(ev));
 	}
 
 	public boolean checkhit(Coord c) {
@@ -448,8 +448,8 @@ public class Window extends Widget implements DTarget {
 	return((deco == null) || deco.checkhit(c));
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if(super.mousedown(c, button)) {
+    public boolean mousedown(MouseDownEvent ev) {
+	if(ev.propagate(this)) {
 	    parent.setfocus(this);
 	    raise();
 	    return(true);
@@ -457,27 +457,27 @@ public class Window extends Widget implements DTarget {
 	return(false);
     }
 
-    public boolean mouseup(Coord c, int button) {
+    public boolean mouseup(MouseUpEvent ev) {
 	if(dm != null) {
 	    dm.remove();
 	    dm = null;
-	} else {
-	    super.mouseup(c, button);
+	    return(true);
 	}
-	return(true);
+	return(false);
     }
 
-    public void mousemove(Coord c) {
-	if(dm != null) {
-	    this.c = this.c.add(c.add(doff.inv()));
-	} else {
-	    super.mousemove(c);
-	}
+    public void mousemove(MouseMoveEvent ev) {
+	if(dm != null)
+	    move(this.c.add(ev.c.sub(doff)));
     }
 
-    public boolean mousehover(Coord c, boolean hovering) {
-	super.mousehover(c, hovering);
-	return(hovering);
+    public boolean handle(Event ev) {
+	if((ev instanceof PointerEvent) && checkhit(((PointerEvent)ev).c)) {
+	    super.handle(ev);
+	    ev.propagate(this);
+	    return(true);
+	}
+	return(super.handle(ev));
     }
 
     public boolean keydown(java.awt.event.KeyEvent ev) {

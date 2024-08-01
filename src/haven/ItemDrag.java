@@ -26,7 +26,7 @@
 
 package haven;
 
-public class ItemDrag extends WItem {
+public class ItemDrag extends WItem implements Widget.MouseEvent.Handler {
     public Coord doff;
     
     public ItemDrag(Coord dc, GItem item) {
@@ -80,26 +80,26 @@ public class ItemDrag extends WItem {
 	return(false);
     }
 	
-    public boolean mousedown(Coord c, int button) {
+    public boolean mousedown(MouseDownEvent ev) {
 	if(ui.modctrl && !ui.modshift && !ui.modmeta) {
 	    /* XXX */
 	    GameUI gui = getparent(GameUI.class);
 	    if((gui != null) && (gui.map != null)) {
 		ui.modctrl = false;
-		return(gui.map.mousedown(gui.map.rootxlate(c.add(rootpos())), button));
+		return(ev.derive(gui.map.rootxlate(ev.c.add(rootpos()))).dispatch(gui.map));
 	    }
 	}
-	if(button == 1) {
-	    dropon(parent, c.add(this.c));
+	if(ev.b == 1) {
+	    dropon(parent, ev.c.add(this.c));
 	    return(true);
-	} else if(button == 3) {
-	    interact(parent, c.add(this.c));
+	} else if(ev.b == 3) {
+	    interact(parent, ev.c.add(this.c));
 	    return(true);
 	}
 	return(false);
     }
 
-    public void mousemove(Coord c) {
-	this.c = this.c.add(c.add(doff.inv()));
+    public void mousemove(MouseMoveEvent ev) {
+	this.c = this.c.add(ev.c.sub(doff));
     }
 }

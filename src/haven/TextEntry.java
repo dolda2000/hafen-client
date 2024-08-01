@@ -30,7 +30,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 
-public class TextEntry extends Widget implements ReadLine.Owner {
+public class TextEntry extends Widget implements ReadLine.Owner, Widget.MouseEvent.Handler {
     public static final Color defcol = new Color(255, 205, 109), dirtycol = new Color(255, 232, 209);
     public static final Color selcol = new Color(24, 80, 192);
     public static final Text.Foundry fnd = new Text.Foundry(Text.serif, 12).aa(true);
@@ -172,27 +172,27 @@ public class TextEntry extends Widget implements ReadLine.Owner {
 	return(buf.key(e));
     }
 
-    public void mousemove(Coord c) {
+    public void mousemove(MouseMoveEvent ev) {
 	if((d != null) && (tcache != null)) {
-	    int p = tcache.charat(c.x + sx - toffx);
+	    int p = tcache.charat(ev.c.x + sx - toffx);
 	    if(buf.mark() < 0)
 		buf.mark(buf.point());
 	    buf.point(p);
 	}
     }
 
-    public boolean mousedown(Coord c, int button) {
+    public boolean mousedown(MouseDownEvent ev) {
 	parent.setfocus(this);
-	if((button == 1) && (tcache != null)) {
-	    buf.point(tcache.charat(c.x + sx - toffx));
+	if((ev.b == 1) && (tcache != null)) {
+	    buf.point(tcache.charat(ev.c.x + sx - toffx));
 	    buf.mark(-1);
 	    d = ui.grabmouse(this);
 	}
 	return(true);
     }
 
-    public boolean mouseup(Coord c, int button) {
-	if((button == 1) && (d != null)) {
+    public boolean mouseup(MouseUpEvent ev) {
+	if((ev.b == 1) && (d != null)) {
 	    d.remove();
 	    d = null;
 	    return(true);

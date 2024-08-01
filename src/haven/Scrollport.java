@@ -26,7 +26,7 @@
 
 package haven;
 
-public class Scrollport extends Widget {
+public class Scrollport extends Widget implements Widget.MouseEvent.Handler {
     public final Scrollbar bar;
     public final Scrollcont cont;
 
@@ -88,8 +88,8 @@ public class Scrollport extends Widget {
 	}
     }
 
-    public boolean mousewheel(Coord c, int amount) {
-	bar.ch(amount * UI.scale(15));
+    public boolean mousewheel(MouseWheelEvent ev) {
+	bar.ch(ev.a * UI.scale(15));
 	return(true);
     }
 

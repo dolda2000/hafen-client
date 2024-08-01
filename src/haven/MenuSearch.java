@@ -44,9 +44,9 @@ public class MenuSearch extends Window {
 		    }
 
 		    private double lastcl = 0;
-		    public boolean mousedown(Coord c, int button) {
+		    @Override public boolean mousedown(MouseDownEvent ev) {
 			boolean psel = sel == item;
-			super.mousedown(c, button);
+			super.mousedown(ev);
 			double now = Utils.rtime();
 			if(psel) {
 			    if(now - lastcl < 0.5)

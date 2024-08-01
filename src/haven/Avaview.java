@@ -33,7 +33,7 @@ import haven.Composited.Desc;
 import haven.Composited.MD;
 import haven.Composited.ED;
 
-public class Avaview extends PView {
+public class Avaview extends PView implements Widget.MouseEvent.Handler {
     public static final Tex missing = Resource.loadtex("gfx/hud/equip/missing");
     public static final Coord dasz = missing.sz();
     public FColor clearcolor = FColor.BLACK;
@@ -273,11 +273,10 @@ public class Avaview extends PView {
 	}
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if(canactivate) {
-	    wdgmsg("click", button);
-	    return(true);
-	}
-	return(super.mousedown(c, button));
+    public boolean mousedown(MouseDownEvent ev) {
+	if(!canactivate)
+	    return(false);
+	wdgmsg("click", ev.b);
+	return(true);
     }
 }

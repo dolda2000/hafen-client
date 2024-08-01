@@ -619,7 +619,7 @@ public class OptWnd extends Window {
     }
 
 
-    public static class PointBind extends Button {
+    public static class PointBind extends Button implements MouseEvent.Handler {
 	public static final String msg = "Bind other elements...";
 	public static final Resource curs = Resource.local().loadwait("gfx/hud/curs/wrench");
 	private UI.Grab mg, kg;
@@ -668,15 +668,15 @@ public class OptWnd extends Window {
 	    return(true);
 	}
 
-	public boolean mousedown(Coord c, int btn) {
+	public boolean mousedown(MouseDownEvent ev) {
 	    if(mg == null)
-		return(super.mousedown(c, btn));
+		return(super.mousedown(ev));
 	    Coord gc = ui.mc;
-	    if(btn == 1) {
+	    if(ev.b == 1) {
 		this.cmd = KeyBinding.Bindable.getbinding(ui.root, gc);
 		return(true);
 	    }
-	    if(btn == 3) {
+	    if(ev.b == 3) {
 		mg.remove();
 		mg = null;
 		change(msg);
@@ -685,11 +685,11 @@ public class OptWnd extends Window {
 	    return(false);
 	}
 
-	public boolean mouseup(Coord c, int btn) {
+	public boolean mouseup(MouseUpEvent ev) {
 	    if(mg == null)
-		return(super.mouseup(c, btn));
+		return(super.mouseup(ev));
 	    Coord gc = ui.mc;
-	    if(btn == 1) {
+	    if(ev.b == 1) {
 		if((this.cmd != null) && (KeyBinding.Bindable.getbinding(ui.root, gc) == this.cmd)) {
 		    mg.remove();
 		    mg = null;
@@ -700,7 +700,7 @@ public class OptWnd extends Window {
 		}
 		return(true);
 	    }
-	    if(btn == 3)
+	    if(ev.b == 3)
 		return(true);
 	    return(false);
 	}

@@ -47,8 +47,8 @@ public class RadioGroup {
 	    super(lbl);
 	}
 
-	public boolean mousedown(Coord c, int button) {
-	    if(a || button != 1)
+	public boolean mousedown(MouseDownEvent ev) {
+	    if(a || ev.b != 1)
 		return(false);
 	    check(this);
 	    return(true);

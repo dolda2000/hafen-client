@@ -41,7 +41,7 @@ import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
 import static haven.OCache.posres;
 
-public class MiniMap extends Widget {
+public class MiniMap extends Widget implements Widget.MouseEvent.Handler {
     public static final Tex bg = Resource.loadtex("gfx/hud/mmap/ptex");
     public static final Tex nomap = Resource.loadtex("gfx/hud/mmap/nomap");
     public static final Tex plp = ((TexI)Resource.loadtex("gfx/hud/mmap/plp")).filter(Texture.Filter.LINEAR);
@@ -804,70 +804,69 @@ public class MiniMap extends Widget {
     private Location dsloc;
     private DisplayIcon dsicon;
     private DisplayMarker dsmark;
-    public boolean mousedown(Coord c, int button) {
-	dsloc = xlate(c);
+    public boolean mousedown(MouseDownEvent ev) {
+	dsloc = xlate(ev.c);
 	if(dsloc != null) {
-	    dsicon = iconat(c);
+	    dsicon = iconat(ev.c);
 	    dsmark = markerat(dsloc.tc);
-	    if((dsicon != null) && clickicon(dsicon, dsloc, button, true))
+	    if((dsicon != null) && clickicon(dsicon, dsloc, ev.b, true))
 		return(true);
-	    if((dsmark != null) && clickmarker(dsmark, dsloc, button, true))
+	    if((dsmark != null) && clickmarker(dsmark, dsloc, ev.b, true))
 		return(true);
-	    if(clickloc(dsloc, button, true))
+	    if(clickloc(dsloc, ev.b, true))
 		return(true);
 	} else {
 	    dsloc = null;
 	    dsicon = null;
 	    dsmark = null;
 	}
-	if(dragp(button)) {
+	if(dragp(ev.b)) {
 	    Location loc = curloc;
 	    if((drag == null) && (loc != null)) {
 		drag = ui.grabmouse(this);
-		dsc = c;
+		dsc = ev.c;
 		dmc = loc.tc;
 		dragging = false;
 	    }
 	    return(true);
 	}
-	return(super.mousedown(c, button));
+	return(false);
     }
 
-    public void mousemove(Coord c) {
+    public void mousemove(MouseMoveEvent ev) {
 	if(drag != null) {
 	    if(dragging) {
 		setloc = null;
 		follow = false;
-		curloc = new Location(curloc.seg, dmc.add(dsc.sub(c).mul(scalef())));
-	    } else if(c.dist(dsc) > 5) {
+		curloc = new Location(curloc.seg, dmc.add(dsc.sub(ev.c).mul(scalef())));
+	    } else if(ev.c.dist(dsc) > 5) {
 		dragging = true;
 	    }
 	}
-	super.mousemove(c);
     }
 
-    public boolean mouseup(Coord c, int button) {
-	if((drag != null) && (button == 1)) {
+    public boolean mouseup(MouseUpEvent ev) {
+	if((drag != null) && (ev.b == 1)) {
 	    drag.remove();
 	    drag = null;
 	}
 	release: if(!dragging && (dsloc != null)) {
-	    if((dsicon != null) && clickicon(dsicon, dsloc, button, false))
+	    if((dsicon != null) && clickicon(dsicon, dsloc, ev.b, false))
 		break release;
-	    if((dsmark != null) && clickmarker(dsmark, dsloc, button, false))
+	    if((dsmark != null) && clickmarker(dsmark, dsloc, ev.b, false))
 		break release;
-	    if(clickloc(dsloc, button, false))
+	    if(clickloc(dsloc, ev.b, false))
 		break release;
 	}
 	dsloc = null;
 	dsicon = null;
 	dsmark = null;
 	dragging = false;
-	return(super.mouseup(c, button));
+	return(false);
     }
 
-    public boolean mousewheel(Coord c, int amount) {
-	if(amount > 0) {
+    public boolean mousewheel(MouseWheelEvent ev) {
+	if(ev.a > 0) {
 	    if(allowzoomout())
 		zoomlevel = Math.min(zoomlevel + 1, dlvl + 1);
 	} else {

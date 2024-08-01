@@ -36,7 +36,7 @@ import haven.ItemInfo.AttrCache;
 import static haven.ItemInfo.find;
 import static haven.Inventory.sqsz;
 
-public class WItem extends Widget implements DTarget {
+public class WItem extends Widget implements Window.MouseEvent.Handler, DTarget {
     public static final Resource missing = Resource.local().loadwait("gfx/invobjs/missing");
     public final GItem item;
     private Resource cspr = null;
@@ -192,20 +192,20 @@ public class WItem extends Widget implements DTarget {
 	}
     }
 
-    public boolean mousedown(Coord c, int btn) {
-	if(btn == 1) {
+    public boolean mousedown(MouseDownEvent ev) {
+	if(ev.b == 1) {
 	    if(ui.modshift) {
 		int n = ui.modctrl ? -1 : 1;
-		item.wdgmsg("transfer", c, n);
+		item.wdgmsg("transfer", ev.c, n);
 	    } else if(ui.modctrl) {
 		int n = ui.modmeta ? -1 : 1;
-		item.wdgmsg("drop", c, n);
+		item.wdgmsg("drop", ev.c, n);
 	    } else {
-		item.wdgmsg("take", c);
+		item.wdgmsg("take", ev.c);
 	    }
 	    return(true);
-	} else if(btn == 3) {
-	    item.wdgmsg("iact", c, ui.modflags());
+	} else if(ev.b == 3) {
+	    item.wdgmsg("iact", ev.c, ui.modflags());
 	    return(true);
 	}
 	return(false);
@@ -220,12 +220,11 @@ public class WItem extends Widget implements DTarget {
 	return(true);
     }
 
-    public boolean mousehover(Coord c, boolean on) {
-	boolean ret = super.mousehover(c, on);
+    public boolean mousehover(MouseHoverEvent ev, boolean on) {
 	if(on && (item.contents != null)) {
 	    item.hovering(this);
 	    return(true);
 	}
-	return(ret);
+	return(false);
     }
 }

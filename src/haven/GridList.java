@@ -30,7 +30,7 @@ import java.awt.Color;
 import java.util.*;
 import static haven.PUtils.*;
 
-public abstract class GridList<T> extends Widget {
+public abstract class GridList<T> extends Widget implements Widget.MouseEvent.Handler {
     public static final Text.Furnace dcatf = new BlurFurn(new TexFurn(new Text.Foundry(Text.fraktur, 18).aa(true), Window.ctex), 2, 1, new Color(96, 48, 0));
     public final Text.Furnace catf;
     public final Scrollbar sb;
@@ -149,8 +149,8 @@ public abstract class GridList<T> extends Widget {
 	super.draw(g);
     }
 
-    public boolean mousewheel(Coord c, int amount) {
-	sb.ch(amount * 20);
+    public boolean mousewheel(MouseWheelEvent ev) {
+	sb.ch(ev.a * 20);
 	return(true);
     }
 
@@ -200,14 +200,14 @@ public abstract class GridList<T> extends Widget {
 	    change(item);
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if(super.mousedown(c, button))
+    public boolean mousedown(MouseDownEvent ev) {
+	if(ev.propagate(this))
 	    return(true);
-	T item = itemat(c);
-	if((item == null) && (button == 1))
+	T item = itemat(ev.c);
+	if((item == null) && (ev.b == 1))
 	    change(null);
 	else if(item != null)
-	    itemclick(item, button);
+	    itemclick(item, ev.b);
 	return(true);
     }
 

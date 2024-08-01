@@ -30,14 +30,14 @@ import java.util.*;
 import java.util.function.*;
 import java.awt.Color;
 
-public abstract class SDropBox<I, W extends Widget> extends SListWidget<I, W> {
+public abstract class SDropBox<I, W extends Widget> extends SListWidget<I, W> implements Widget.MouseEvent.Handler {
     public static final Tex dropimg = Resource.loadtex("gfx/hud/drop");
     public final int listh,itemh;
     protected final ACheckBox drop;
     private SDropList dl;
     private W curitem;
 
-    public class SDropList extends SListBox<I, Widget> {
+    public class SDropList extends SListBox<I, Widget> implements MouseEvent.Handler {
 	private UI.Grab grab = null;
 
 	protected SDropList() {
@@ -84,12 +84,12 @@ public abstract class SDropBox<I, W extends Widget> extends SListWidget<I, W> {
 	    ldrawslot(g, item, idx, area);
 	}
 
-	public boolean mousedown(Coord c, int btn) {
-	    if(!c.isect(Coord.z, sz)) {
+	public boolean mousedown(MouseDownEvent ev) {
+	    if(!ev.c.isect(Coord.z, sz)) {
 		reqdestroy();
 		return(true);
 	    }
-	    return(super.mousedown(c, btn));
+	    return(false);
 	}
 
 	protected boolean unselect(int btn) {
@@ -160,10 +160,10 @@ public abstract class SDropBox<I, W extends Widget> extends SListWidget<I, W> {
 	super.draw(g);
     }
 
-    public boolean mousedown(Coord c, int btn) {
-	if(super.mousedown(c, btn))
+    public boolean mousedown(MouseDownEvent ev) {
+	if(ev.propagate(this))
 	    return(true);
-	if(btn == 1) {
+	if(ev.b == 1) {
 	    drop.click();
 	    return(true);
 	}

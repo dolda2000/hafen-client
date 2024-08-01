@@ -44,7 +44,7 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	this.sel = item;
     }
 
-    public static class ItemWidget<I> extends Widget {
+    public static class ItemWidget<I> extends Widget implements MouseEvent.Handler {
 	public final SListWidget<I, ?> list;
 	public final I item;
 
@@ -54,8 +54,8 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	    this.item = item;
 	}
 
-	public boolean mousedown(Coord c, int button) {
-	    if(super.mousedown(c, button))
+	public boolean mousedown(MouseDownEvent ev) {
+	    if(ev.propagate(this))
 		return(true);
 	    list.change(item);
 	    return(true);

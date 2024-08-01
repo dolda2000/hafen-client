@@ -198,7 +198,7 @@ public class SkillWnd extends Widget {
 	}
     }
 
-    public class CredoGrid extends Scrollport {
+    public class CredoGrid extends Scrollport implements MouseEvent.Handler {
 	public final Coord crsz = UI.scale(70, 88);
 	public final int btnw = UI.scale(100);
 	public final Tex credoufr = new TexI(convolvedown(Resource.loadimg("gfx/hud/chr/yrkirframe"), crsz, iconfilter));
@@ -239,7 +239,7 @@ public class SkillWnd extends Widget {
 	    return(cr.small);
 	}
 
-	private class CredoImg extends Img {
+	private class CredoImg extends Img implements MouseEvent.Handler {
 	    private final Credo cr;
 
 	    CredoImg(Credo cr) {
@@ -253,8 +253,8 @@ public class SkillWnd extends Widget {
 		g.image((cr == sel) ? credosfr : credoufr, Coord.z);
 	    }
 
-	    public boolean mousedown(Coord c, int button) {
-		if(button == 1) {
+	    public boolean mousedown(MouseDownEvent ev) {
+		if(ev.b == 1) {
 		    change(cr);
 		}
 		return(true);
@@ -350,8 +350,8 @@ public class SkillWnd extends Widget {
 	    loading = true;
 	}
 
-	public boolean mousedown(Coord c, int button) {
-	    if(super.mousedown(c, button))
+	public boolean mousedown(MouseDownEvent ev) {
+	    if(ev.propagate(this))
 		return(true);
 	    change(null);
 	    return(true);

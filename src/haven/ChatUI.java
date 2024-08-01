@@ -40,7 +40,7 @@ import java.util.regex.*;
 import java.io.IOException;
 import java.awt.datatransfer.*;
 
-public class ChatUI extends Widget {
+public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
     public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(UI.scale(12f)), TextAttribute.FOREGROUND, Color.BLACK)).aa(true);
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
     public static final int selw = UI.scale(130);
@@ -121,7 +121,7 @@ public class ChatUI extends Widget {
 	}
     }
 
-    public static abstract class Channel extends Widget {
+    public static abstract class Channel extends Widget implements MouseEvent.Handler {
 	public final List<RenderedMessage> rmsgs = new ArrayList<>();
 	public int urgency = 0;
 	private final Scrollbar sb;
@@ -422,8 +422,8 @@ public class ChatUI extends Widget {
 	    dy = ty + (Math.pow(2, -dt * 40) * (dy - ty));
 	}
 
-	public boolean mousewheel(Coord c, int amount) {
-	    sb.ch(amount * 45);
+	public boolean mousewheel(MouseWheelEvent ev) {
+	    sb.ch(ev.a * 45);
 	    return(true);
 	}
 
@@ -541,18 +541,18 @@ public class ChatUI extends Widget {
 	private CharPos selorig, lasthit, selstart, selend;
 	private UI.Grab grab;
 	private boolean dragging;
-	public boolean mousedown(Coord c, int btn) {
-	    if(super.mousedown(c, btn))
+	public boolean mousedown(MouseDownEvent ev) {
+	    if(ev.propagate(this))
 		return(true);
 	    if(grab != null)
 		return(true);
-	    CharPos ch = charat(c);
+	    CharPos ch = charat(ev.c);
 	    selorig = ch;
 	    if(ch != null) {
-		if(ch.rm.msg.mousedown(this, ch, c, btn))
+		if(ch.rm.msg.mousedown(this, ch, ev.c, ev.b))
 		    return(true);
 	    }
-	    if(btn == 1) {
+	    if(ev.b == 1) {
 		selstart = selend = null;
 		if(ch != null) {
 		    lasthit = ch;
@@ -564,9 +564,9 @@ public class ChatUI extends Widget {
 	    return(true);
 	}
 
-	public void mousemove(Coord c) {
+	public void mousemove(MouseMoveEvent ev) {
 	    if(grab != null) {
-		CharPos ch = charat(c);
+		CharPos ch = charat(ev.c);
 		if((ch != null) && !ch.equals(lasthit)) {
 		    lasthit = ch;
 		    if(!dragging && !ch.equals(selorig))
@@ -580,15 +580,13 @@ public class ChatUI extends Widget {
 			selstart = selend = null;
 		    }
 		}
-	    } else {
-		super.mousemove(c);
 	    }
 	}
 
-	public boolean mouseup(Coord c, int btn) {
-	    if(super.mouseup(c, btn))
+	public boolean mouseup(MouseUpEvent ev) {
+	    if(ev.propagate(this))
 		return(true);
-	    if((btn == 1) && (grab != null)) {
+	    if((ev.b == 1) && (grab != null)) {
 		grab.remove();
 		grab = null;
 		dragging = false;
@@ -597,14 +595,14 @@ public class ChatUI extends Widget {
 		    return(true);
 		}
 	    }
-	    CharPos ch = charat(c);
+	    CharPos ch = charat(ev.c);
 	    if(ch != null) {
-		if(ch.rm.msg.mouseup(this, ch, c, btn))
+		if(ch.rm.msg.mouseup(this, ch, ev.c, ev.b))
 		    return(true);
 		if(!dragging && (selorig != null) && ch.equals(selorig)) {
-		    if(ch.rm.msg.clicked(this, ch, c, btn))
+		    if(ch.rm.msg.clicked(this, ch, ev.c, ev.b))
 			return(true);
-		    if(clicked(selorig, btn))
+		    if(clicked(selorig, ev.b))
 			return(true);
 		}
 	    }
@@ -1099,7 +1097,7 @@ public class ChatUI extends Widget {
     
     private static final Tex chandiv = Resource.loadtex("gfx/hud/chat-cdiv");
     private static final Tex chanseld = Resource.loadtex("gfx/hud/chat-csel");
-    private class Selector extends Widget {
+    private class Selector extends Widget implements MouseEvent.Handler {
 	public final BufferedImage ctex = Resource.loadimg("gfx/hud/chantex");
 	public final Text.Foundry tf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, UI.scale(12))).aa(true);
 	public final Color[] uc = {
@@ -1292,26 +1290,26 @@ public class ChatUI extends Widget {
 	    return(null);
 	}
 
-	public boolean mousedown(Coord c, int button) {
-	    Channel chan = bypos(c);
+	public boolean mousedown(MouseDownEvent ev) {
+	    Channel chan = bypos(ev.c);
 	    cstart = chan;
 	    if(chan != null) {
-		if(button == 1) {
+		if(ev.b == 1) {
 		    select(chan);
 		} else {
-		    chan.selmousedown(c, button);
+		    chan.selmousedown(ev.c, ev.b);
 		}
 	    }
 	    return(true);
 	}
 
-	public boolean mouseup(Coord c, int button) {
-	    Channel chan = bypos(c);
+	public boolean mouseup(MouseUpEvent ev) {
+	    Channel chan = bypos(ev.c);
 	    if(chan != null) {
-		if(button != 1) {
-		    chan.selmouseup(c, button);
+		if(ev.b != 1) {
+		    chan.selmouseup(ev.c, ev.b);
 		    if(cstart == chan)
-			chan.selclicked(c, button);
+			chan.selclicked(ev.c, ev.b);
 		}
 	    }
 	    cstart = null;
@@ -1323,13 +1321,13 @@ public class ChatUI extends Widget {
 	    return(Math.max(Math.min(s, maxh), 0));
 	}
 
-	public boolean mousewheel(Coord c, int amount) {
+	public boolean mousewheel(MouseWheelEvent ev) {
 	    if(!ui.modshift) {
-		ts = clips(ts + (amount * UI.scale(40)));
+		ts = clips(ts + (ev.a * UI.scale(40)));
 	    } else {
-		if(amount < 0)
+		if(ev.a < 0)
 		    up();
-		else if(amount > 0)
+		else if(ev.a > 0)
 		    down();
 	    }
 	    return(true);
@@ -1545,33 +1543,31 @@ public class ChatUI extends Widget {
     private UI.Grab dm = null;
     private Coord doff;
     private static final int minh = 111;
-    public boolean mousedown(Coord c, int button) {
+    public boolean mousedown(MouseDownEvent ev) {
 	int bmfx = (sz.x - bmf.sz().x) / 2;
-	if((button == 1) && (c.y < bmf.sz().y) && (c.x >= bmfx) && (c.x <= (bmfx + bmf.sz().x))) {
+	Coord c= ev.c;
+	if((ev.b == 1) && (c.y < bmf.sz().y) && (c.x >= bmfx) && (c.x <= (bmfx + bmf.sz().x))) {
 	    dm = ui.grabmouse(this);
 	    doff = c;
 	    return(true);
 	} else {
-	    return(super.mousedown(c, button));
+	    return(false);
 	}
     }
 
-    public void mousemove(Coord c) {
-	if(dm != null) {
-	    resize(sz.x, Math.max(UI.scale(minh), Math.min(parent.sz.y - UI.scale(100), sz.y + doff.y - c.y)));
-	} else {
-	    super.mousemove(c);
-	}
+    public void mousemove(MouseMoveEvent ev) {
+	if(dm != null)
+	    resize(sz.x, Math.max(UI.scale(minh), Math.min(parent.sz.y - UI.scale(100), sz.y + doff.y - ev.c.y)));
     }
 
-    public boolean mouseup(Coord c, int button) {
+    public boolean mouseup(MouseUpEvent ev) {
 	if(dm != null) {
 	    dm.remove();
 	    dm = null;
 	    Utils.setprefi("chatsize", UI.unscale(sz.y));
 	    return(true);
 	} else {
-	    return(super.mouseup(c, button));
+	    return(false);
 	}
     }
 
