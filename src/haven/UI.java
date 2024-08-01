@@ -727,30 +727,30 @@ public class UI {
 	setmods(ev);
 	lcc = mc = c;
 	for(Grab g : c(mousegrab)) {
-	    if(g.wdg.mousedown(wdgxlate(c, g.wdg), button))
+	    if(new Widget.MouseDownEvent(wdgxlate(c, g.wdg), button).dispatch(g.wdg))
 		return;
 	}
-	root.mousedown(c, button);
+	new Widget.MouseDownEvent(c, button).dispatch(root);
     }
 	
     public void mouseup(MouseEvent ev, Coord c, int button) {
 	setmods(ev);
 	mc = c;
 	for(Grab g : c(mousegrab)) {
-	    if(g.wdg.mouseup(wdgxlate(c, g.wdg), button))
+	    if(new Widget.MouseUpEvent(wdgxlate(c, g.wdg), button).dispatch(g.wdg))
 		return;
 	}
-	root.mouseup(c, button);
+	new Widget.MouseUpEvent(c, button).dispatch(root);
     }
 	
     public void mousemove(MouseEvent ev, Coord c) {
 	setmods(ev);
 	mc = c;
-	root.mousemove(c);
+	new Widget.MouseMoveEvent(c).dispatch(root);
     }
 
     public void mousehover(Coord c) {
-	root.mousehover(c, true);
+	new Widget.MouseHoverEvent(c).dispatch(root);
     }
 
     public void setmousepos(Coord c) {
@@ -761,10 +761,10 @@ public class UI {
 	setmods(ev);
 	lcc = mc = c;
 	for(Grab g : c(mousegrab)) {
-	    if(g.wdg.mousewheel(wdgxlate(c, g.wdg), amount))
+	    if(new Widget.MouseWheelEvent(wdgxlate(c, g.wdg), amount).dispatch(g.wdg))
 		return;
 	}
-	root.mousewheel(c, amount);
+	new Widget.MouseWheelEvent(c, amount).dispatch(root);
     }
 
     public Resource getcurs(Coord c) {
