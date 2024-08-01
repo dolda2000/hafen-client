@@ -774,6 +774,13 @@ public class Widget {
 
 	protected abstract boolean propagation(Widget from);
 
+	public void stop() {
+	    if(propagate) {
+		propagate = false;
+		phandled = false;
+	    }
+	}
+
 	protected boolean shandle(Widget w) {
 	    return(false);
 	}
