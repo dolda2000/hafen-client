@@ -957,10 +957,10 @@ public class Widget {
 	    boolean ret = false;
 	    boolean hovering = this.hovering;
 	    for(Widget wdg = from.lchild; wdg != null; wdg = wdg.prev) {
-		boolean ch = hovering && wdg.visible();
 		Coord cc = from.xlate(wdg.c, true);
 		boolean inside = c.isect(cc, wdg.sz);
-		if(derive(c.sub(cc)).hovering(hovering).dispatch(wdg)) {
+		boolean ch = hovering && inside && wdg.visible();
+		if(derive(c.sub(cc)).hovering(ch).dispatch(wdg) && ch) {
 		    hovering = false;
 		    ret = true;
 		}
