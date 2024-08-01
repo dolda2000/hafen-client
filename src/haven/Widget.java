@@ -920,7 +920,7 @@ public class Widget {
 	public boolean shandle(Widget w) {
 	    if(w instanceof Handler)
 		((Handler)w).mousemove(this);
-	    return(true);
+	    return(false);
 	}
     }
 
