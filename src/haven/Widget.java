@@ -848,6 +848,7 @@ public class Widget {
 	public PointerEvent(Coord c) {
 	    this.c = c;
 	}
+	public PointerEvent(PointerEvent from, Coord c) {this(c);}
 
 	public abstract PointerEvent derive(Coord c);
 
@@ -867,6 +868,7 @@ public class Widget {
 
     public static abstract class MouseEvent extends PointerEvent {
 	public MouseEvent(Coord c) {super(c);}
+	public MouseEvent(MouseEvent from, Coord c) {super(from, c);}
 
 	public static interface Handler {
 	    public default boolean mousedown(MouseDownEvent ev) {return(false);}
@@ -884,6 +886,10 @@ public class Widget {
 	    super(c);
 	    this.b = b;
 	}
+	public MouseButtonEvent(MouseButtonEvent from, Coord c) {
+	    super(from, c);
+	    this.b = from.b;
+	}
 
 	public abstract MouseButtonEvent derive(Coord c);
     }
@@ -892,8 +898,11 @@ public class Widget {
 	public MouseDownEvent(Coord c, int b) {
 	    super(c, b);
 	}
+	public MouseDownEvent(MouseDownEvent from, Coord c) {
+	    super(from, c);
+	}
 
-	public MouseDownEvent derive(Coord c) {return(new MouseDownEvent(c, b));}
+	public MouseDownEvent derive(Coord c) {return(new MouseDownEvent(this, c));}
 
 	protected boolean shandle(Widget w) {
 	    if(w instanceof Handler)
@@ -906,8 +915,11 @@ public class Widget {
 	public MouseUpEvent(Coord c, int b) {
 	    super(c, b);
 	}
+	public MouseUpEvent(MouseUpEvent from, Coord c) {
+	    super(from, c);
+	}
 
-	public MouseUpEvent derive(Coord c) {return(new MouseUpEvent(c, b));}
+	public MouseUpEvent derive(Coord c) {return(new MouseUpEvent(this, c));}
 
 	protected boolean shandle(Widget w) {
 	    if(w instanceof Handler)
@@ -918,8 +930,9 @@ public class Widget {
 
     public static class MouseMoveEvent extends MouseEvent {
 	public MouseMoveEvent(Coord c) {super(c);}
+	public MouseMoveEvent(MouseMoveEvent from, Coord c) {super(from, c);;}
 
-	public MouseMoveEvent derive(Coord c) {return(new MouseMoveEvent(c));}
+	public MouseMoveEvent derive(Coord c) {return(new MouseMoveEvent(this, c));}
 
 	protected boolean propagation(Widget from) {
 	    for(Widget wdg = from.lchild; wdg != null; wdg = wdg.prev) {
@@ -945,8 +958,12 @@ public class Widget {
 	    super(c);
 	    this.a = a;
 	}
+	public MouseWheelEvent(MouseWheelEvent from, Coord c) {
+	    super(from, c);
+	    this.a = from.a;
+	}
 
-	public MouseWheelEvent derive(Coord c) {return(new MouseWheelEvent(c, a));}
+	public MouseWheelEvent derive(Coord c) {return(new MouseWheelEvent(this, c));}
 
 	public boolean shandle(Widget w) {
 	    if(w instanceof Handler)
@@ -962,8 +979,11 @@ public class Widget {
 	    super(c);
 	    hovering = true;
 	}
+	public MouseHoverEvent(MouseHoverEvent from, Coord c) {
+	    super(from, c);
+	}
 
-	public MouseHoverEvent derive(Coord c) {return(new MouseHoverEvent(c));}
+	public MouseHoverEvent derive(Coord c) {return(new MouseHoverEvent(this, c));}
 
 	public MouseHoverEvent hovering(boolean h) {hovering = h; return(this);}
 
@@ -1129,9 +1149,8 @@ public class Widget {
 	    super(c);
 	    root = this;
 	}
-
 	public CursorQuery(CursorQuery from, Coord c) {
-	    super(c);
+	    super(from, c);
 	    root = from.root;
 	}
 
