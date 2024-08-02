@@ -960,6 +960,8 @@ public class Widget {
 	public MouseDownEvent derive(Coord c) {return(new MouseDownEvent(this, c));}
 
 	protected boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "mousedown", new Class<?>[] {Coord.class, Integer.TYPE}, c, b))
+		return(true);
 	    if(w instanceof Handler)
 		return(((Handler)w).mousedown(this));
 	    return(super.shandle(w));
@@ -977,6 +979,8 @@ public class Widget {
 	public MouseUpEvent derive(Coord c) {return(new MouseUpEvent(this, c));}
 
 	protected boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "mouseup", new Class<?>[] {Coord.class, Integer.TYPE}, c, b))
+		return(true);
 	    if(w instanceof Handler)
 		return(((Handler)w).mouseup(this));
 	    return(super.shandle(w));
@@ -1000,6 +1004,8 @@ public class Widget {
 	}
 
 	public boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "mousemove", new Class<?>[] {Coord.class}, c))
+		return(true);
 	    if(w instanceof Handler)
 		((Handler)w).mousemove(this);
 	    return(false);
@@ -1021,6 +1027,8 @@ public class Widget {
 	public MouseWheelEvent derive(Coord c) {return(new MouseWheelEvent(this, c));}
 
 	public boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "mousewheel", new Class<?>[] {Coord.class, Integer.TYPE}, c, a))
+		return(true);
 	    if(w instanceof Handler)
 		return(((Handler)w).mousewheel(this));
 	    return(super.shandle(w));
@@ -1058,6 +1066,8 @@ public class Widget {
 	}
 
 	protected boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "mousehover", new Class<?>[] {Coord.class, Boolean.TYPE}, c, hovering))
+		return(true);
 	    if(w instanceof Handler)
 		return(((Handler)w).mousehover(this, hovering));
 	    return(super.shandle(w));
@@ -1219,76 +1229,50 @@ public class Widget {
 	public CursorQuery derive(Coord c) {return(new CursorQuery(this, c));}
     }
 
-    @Deprecated
-    public boolean mousedown(Coord c, int button) {
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(!wdg.visible())
-		continue;
-	    Coord cc = xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz)) {
-		if(wdg.mousedown(c.add(cc.inv()), button)) {
-		    return(true);
-		}
-	    }
-	}
-	return(false);
-    }
-	
-    @Deprecated
-    public boolean mouseup(Coord c, int button) {
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(!wdg.visible())
-		continue;
-	    Coord cc = xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz)) {
-		if(wdg.mouseup(c.add(cc.inv()), button)) {
-		    return(true);
-		}
-	    }
-	}
-	return(false);
-    }
-	
-    @Deprecated
-    public boolean mousewheel(Coord c, int amount) {
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(!wdg.visible())
-		continue;
-	    Coord cc = xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz)) {
-		if(wdg.mousewheel(c.add(cc.inv()), amount)) {
-		    return(true);
-		}
-	    }
-	}
-	return(false);
-    }
-	
-    @Deprecated
-    public void mousemove(Coord c) {
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(!wdg.visible())
-		continue;
-	    Coord cc = xlate(wdg.c, true);
-	    wdg.mousemove(c.add(cc.inv()));
+    /* XXX: Remove me! */
+    private static final ThreadLocal<Event> hackhandling = new ThreadLocal<>();
+    private static boolean hackhandle(Event ev, Widget w, String nm, Class<?>[] argt, Object... args) {
+	Event prev = hackhandling.get();
+	hackhandling.set(ev);
+	try {
+	    Method m = w.getClass().getMethod(nm, argt),
+		  wm = Widget.class.getMethod(nm, argt);
+	    if(Utils.eq(m, wm))
+		return(false);
+	    Boolean ret = (Boolean)wm.invoke(w, args);
+	    return((ret == null) ? false : ret);
+	} catch(InvocationTargetException e) {
+	    throw((RuntimeException)e.getCause());
+	} catch(NoSuchMethodException | IllegalAccessException e) {
+	    return(false);
+	} finally {
+	    hackhandling.set(prev);
 	}
     }
 
     @Deprecated
+    public boolean mousedown(Coord c, int button) {
+	return(hackhandling.get().propagate(this));
+    }
+	
+    @Deprecated
+    public boolean mouseup(Coord c, int button) {
+	return(hackhandling.get().propagate(this));
+    }
+	
+    @Deprecated
+    public boolean mousewheel(Coord c, int amount) {
+	return(hackhandling.get().propagate(this));
+    }
+	
+    @Deprecated
+    public void mousemove(Coord c) {
+	hackhandling.get().propagate(this);
+    }
+
+    @Deprecated
     public boolean mousehover(Coord c, boolean hovering) {
-	boolean ret = false;
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    boolean ch = hovering;
-	    if(!wdg.visible())
-		ch = false;
-	    Coord cc = xlate(wdg.c, true);
-	    boolean inside = c.isect(cc, wdg.sz);
-	    if(wdg.mousehover(c.add(cc.inv()), ch && inside)) {
-		hovering = false;
-		ret = true;
-	    }
-	}
-	return(ret);
+	return(hackhandling.get().propagate(this));
     }
 
     private static final Map<Integer, Integer> gkeys = Utils.<Integer, Integer>map().
