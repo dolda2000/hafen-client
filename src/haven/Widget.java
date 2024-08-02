@@ -808,7 +808,62 @@ public class Widget {
 	}
     }
 
+    public static interface EventHandler<E extends Event> {
+	public boolean handle(E ev);
+    }
+
+    private static class EventListener<E extends Event> {
+	final Class<E> t;
+	final EventHandler<? super E> h;
+
+	EventListener(Class<E> t, EventHandler<? super E> h) {
+	    this.t = t;
+	    this.h = h;
+	}
+
+	boolean check(Event ev) {
+	    return(t.isInstance(ev) ? h.handle(t.cast(ev)) : false);
+	}
+    }
+
+    private Collection<EventListener<?>> listening = null;
+
+    public <E extends Event> void listen(Class<E> t, EventHandler<? super E> h) {
+	if(listening == null)
+	    listening = new ArrayList<>(1);
+	listening.add(new EventListener<>(t, h));
+    }
+
+    public boolean deafen(EventHandler<?> h) {
+	if(listening != null) {
+	    for(Iterator<EventListener<?>> i = listening.iterator(); i.hasNext();) {
+		EventListener<?> l = i.next();
+		if(l.h == h) {
+		    i.remove();
+		    return(true);
+		}
+	    }
+	}
+	return(false);
+    }
+
+    public <H extends EventListener<?>> H listening(Class<H> cl) {
+	if(listening != null) {
+	    for(EventListener<?> l : listening) {
+		if(cl.isInstance(l.h))
+		    return(cl.cast(l.h));
+	    }
+	}
+	return(null);
+    }
+
     public boolean handle(Event ev) {
+	if(listening != null) {
+	    for(EventListener<?> l : listening) {
+		if(l.check(ev))
+		    return(true);
+	    }
+	}
 	return(ev.shandle(this));
     }
 
