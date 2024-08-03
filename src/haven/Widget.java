@@ -1076,6 +1076,9 @@ public class Widget {
 	}
     }
 
+    public static final KeyMatch key_act = KeyMatch.forcode(KeyEvent.VK_ENTER, 0);
+    public static final KeyMatch key_esc = KeyMatch.forcode(KeyEvent.VK_ESCAPE, 0);
+    public static final KeyMatch key_tab = KeyMatch.forcode(KeyEvent.VK_TAB, 0);
     public static abstract class KbdEvent extends Event {
 	public final KeyEvent awt;
 	public final int code, mods;
@@ -1099,6 +1102,8 @@ public class Widget {
 			c = (char)(c + 'a' - 1);
 		}
 	    }
+	    if(c == awt.CHAR_UNDEFINED)
+		c = 0;
 	    this.c = c;
 	}
 
@@ -1201,7 +1206,7 @@ public class Widget {
 	    if(w.kb_gkey != null)
 		gkey = w.kb_gkey.key();
 	    if((gkey != null) && gkey.match(awt)) {
-		if(w.gkeytype(awt))
+		if(w.gkeytype(this))
 		    return(true);
 	    }
 	    return(super.shandle(w));
@@ -1321,22 +1326,9 @@ public class Widget {
 	return(KeyMatch.forchar((char)key, modmask, modmatch));
     }
 
-    public boolean gkeytype(KeyEvent ev) {
-	wdgmsg("activate", UI.modflags(ev));
+    public boolean gkeytype(GlobKeyEvent ev) {
+	wdgmsg("activate", UI.modflags(ev.awt));
 	return(true);
-    }
-
-    public boolean globtype(char key, KeyEvent ev) {
-	KeyMatch gkey = this.gkey;
-	if(kb_gkey != null)
-	    gkey = kb_gkey.key();
-	if((gkey != null) && gkey.match(ev))
-	    return(gkeytype(ev));
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(wdg.globtype(key, ev))
-		return(true);
-	}
-	return(false);
     }
 
     public Widget setgkey(KeyBinding gkey) {
@@ -1345,10 +1337,6 @@ public class Widget {
 	    tooltip = new KeyboundTip();
 	return(this);
     }
-	
-    public static final KeyMatch key_act = KeyMatch.forcode(KeyEvent.VK_ENTER, 0);
-    public static final KeyMatch key_esc = KeyMatch.forcode(KeyEvent.VK_ESCAPE, 0);
-    public static final KeyMatch key_tab = KeyMatch.forcode(KeyEvent.VK_TAB, 0);
     public boolean keydown(KeyEvent ev) {
 	if(canactivate) {
 	    if(key_act.match(ev)) {
@@ -1421,7 +1409,7 @@ public class Widget {
 	}
 	return(false);
     }
-    
+
     public Area area() {
 	return(Area.sized(c, sz));
     }

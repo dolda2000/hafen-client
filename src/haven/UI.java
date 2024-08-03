@@ -684,24 +684,20 @@ public class UI {
     public void keydown(KeyEvent ev) {
 	setmods(ev);
 	for(Grab g : c(keygrab)) {
-	    if(g.wdg.keydown(ev))
+	    if(new Widget.KeyDownEvent(ev).grabbed(true).dispatch(g.wdg))
 		return;
 	}
-	if(!root.keydown(ev)) {
-	    char key = ev.getKeyChar();
-	    if(key == ev.CHAR_UNDEFINED)
-		key = 0;
-	    root.globtype(key, ev);
-	}
+	if(!new Widget.KeyDownEvent(ev).dispatch(root))
+	    new Widget.GlobKeyEvent(ev).dispatch(root);
     }
 	
     public void keyup(KeyEvent ev) {
 	setmods(ev);
 	for(Grab g : c(keygrab)) {
-	    if(g.wdg.keyup(ev))
+	    if(new Widget.KeyUpEvent(ev).grabbed(true).dispatch(g.wdg))
 		return;
 	}
-	root.keyup(ev);
+	new Widget.KeyUpEvent(ev).dispatch(root);
     }
 	
     private Coord wdgxlate(Coord c, Widget wdg) {
