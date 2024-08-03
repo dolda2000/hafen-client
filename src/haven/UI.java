@@ -727,7 +727,7 @@ public class UI {
 	setmods(ev);
 	lcc = mc = c;
 	for(Grab g : c(mousegrab)) {
-	    if(new Widget.MouseDownEvent(wdgxlate(c, g.wdg), button).dispatch(g.wdg))
+	    if(new Widget.MouseDownEvent(wdgxlate(c, g.wdg), button).grabbed(true).dispatch(g.wdg))
 		return;
 	}
 	new Widget.MouseDownEvent(c, button).dispatch(root);
@@ -737,7 +737,7 @@ public class UI {
 	setmods(ev);
 	mc = c;
 	for(Grab g : c(mousegrab)) {
-	    if(new Widget.MouseUpEvent(wdgxlate(c, g.wdg), button).dispatch(g.wdg))
+	    if(new Widget.MouseUpEvent(wdgxlate(c, g.wdg), button).grabbed(true).dispatch(g.wdg))
 		return;
 	}
 	new Widget.MouseUpEvent(c, button).dispatch(root);
@@ -761,7 +761,7 @@ public class UI {
 	setmods(ev);
 	lcc = mc = c;
 	for(Grab g : c(mousegrab)) {
-	    if(new Widget.MouseWheelEvent(wdgxlate(c, g.wdg), amount).dispatch(g.wdg))
+	    if(new Widget.MouseWheelEvent(wdgxlate(c, g.wdg), amount).grabbed(true).dispatch(g.wdg))
 		return;
 	}
 	new Widget.MouseWheelEvent(c, amount).dispatch(root);
@@ -769,11 +769,13 @@ public class UI {
 
     public Resource getcurs(Coord c) {
 	for(Grab g : mousegrab) {
-	    Resource ret = g.wdg.getcurs(wdgxlate(c, g.wdg));
-	    if(ret != null)
-		return(ret);
+	    Widget.CursorQuery q = new Widget.CursorQuery(wdgxlate(c, g.wdg));
+	    if(q.grabbed(true).dispatch(g.wdg))
+		return(q.ret);
 	}
-	return(root.getcurs(c));
+	Widget.CursorQuery q = new Widget.CursorQuery(c);
+	q.dispatch(root);
+	return(q.ret);
     }
 
     public static int modflags(InputEvent ev) {

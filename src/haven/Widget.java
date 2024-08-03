@@ -769,9 +769,11 @@ public class Widget {
     }
 
     public static abstract class Event {
-	public boolean propagate;
+	public boolean propagate, grabbed;
 	public Widget handling;
 	private boolean phandled;
+
+	public Event grabbed(boolean g) {grabbed = g; return(this);}
 
 	protected abstract boolean propagation(Widget from);
 
