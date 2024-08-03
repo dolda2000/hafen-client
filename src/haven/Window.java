@@ -472,7 +472,7 @@ public class Window extends Widget implements Widget.MouseEvent.Handler, DTarget
     }
 
     public boolean handle(Event ev) {
-	if((ev instanceof PointerEvent) && checkhit(((PointerEvent)ev).c)) {
+	if(!ev.grabbed && (ev instanceof PointerEvent) && checkhit(((PointerEvent)ev).c)) {
 	    super.handle(ev);
 	    ev.propagate(this);
 	    return(true);
