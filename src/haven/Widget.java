@@ -1143,13 +1143,13 @@ public class Widget {
 	    if(w instanceof Handler)
 		return(((Handler)w).keydown(this));
 	    if(w.canactivate) {
-		if(key_act.match(awt)) {
+		if(key_act.match(this)) {
 		    w.wdgmsg("activate");
 		    return(true);
 		}
 	    }
 	    if(w.cancancel) {
-		if(key_esc.match(awt)) {
+		if(key_esc.match(this)) {
 		    w.wdgmsg("cancel");
 		    return(true);
 		}

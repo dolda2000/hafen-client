@@ -86,6 +86,10 @@ public class KeyMatch {
 	return(match(ev, 0));
     }
 
+    public boolean match(Widget.KbdEvent ev) {
+	return(match(ev.awt));
+    }
+
     public String name() {
 	StringBuilder buf = new StringBuilder();
 	if((modmatch & S) != 0)
