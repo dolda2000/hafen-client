@@ -30,7 +30,7 @@ import java.util.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 
-public class RootWidget extends ConsoleHost implements UI.MessageWidget, Console.Directory {
+public class RootWidget extends ConsoleHost implements UI.MessageWidget, Widget.CursorQuery.Handler, Console.Directory {
     public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
     public static final Resource defcurs = Resource.local().loadwait("gfx/hud/curs/arw");
     public boolean modtip = false;
@@ -42,9 +42,19 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget, Console
 	super(ui, new Coord(0, 0), sz);
 	setfocusctl(true);
 	hasfocus = true;
-	cursor = defcurs.indir();
     }
 	
+    public boolean getcurs(CursorQuery ev) {
+	Resource ret = defcurs;
+	if(cursor != null) {
+	    try {
+		ret = cursor.get();
+	    } catch(Loading l) {}
+	}
+	ev.set(ret);
+	return(false);
+    }
+
     public boolean globtype(char key, KeyEvent ev) {
 	if(!super.globtype(key, ev)) {
 	    if(key == '`') {

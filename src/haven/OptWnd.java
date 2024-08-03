@@ -619,7 +619,7 @@ public class OptWnd extends Window {
     }
 
 
-    public static class PointBind extends Button implements MouseEvent.Handler {
+    public static class PointBind extends Button implements MouseEvent.Handler, CursorQuery.Handler {
 	public static final String msg = "Bind other elements...";
 	public static final Resource curs = Resource.local().loadwait("gfx/hud/curs/wrench");
 	private UI.Grab mg, kg;
@@ -705,10 +705,8 @@ public class OptWnd extends Window {
 	    return(false);
 	}
 
-	public Resource getcurs(Coord c) {
-	    if(mg == null)
-		return(null);
-	    return(curs);
+	public boolean getcurs(CursorQuery ev) {
+	    return(ev.grabbed ? ev.set(curs) : false);
 	}
 
 	public boolean keydown(KeyEvent ev) {

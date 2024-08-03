@@ -1229,6 +1229,28 @@ public class Widget {
 	}
 
 	public CursorQuery derive(Coord c) {return(new CursorQuery(this, c));}
+
+	public static interface Handler {
+	    public boolean getcurs(CursorQuery ev);
+	}
+
+	protected boolean shandle(Widget w) {
+	    if(Debug.ff && w instanceof RootWidget) Debug.dump(1);
+	    if(w instanceof Handler)
+		return(((Handler)w).getcurs(this));
+	    if(Debug.ff && w instanceof RootWidget) Debug.dump(2);
+	    if(propagate(w))
+		return(true);
+	    if(Debug.ff && w instanceof RootWidget) Debug.dump(w.cursor);
+	    if(w.cursor != null) {
+		try {
+		    set(w.cursor.get());
+		    return(true);
+		} catch(Loading l) {}
+	    }
+	    if(Debug.ff && w instanceof RootWidget) Debug.dump(4);
+	    return(super.shandle(w));
+	}
     }
 
     /* XXX: Remove me! */
@@ -1776,25 +1798,6 @@ public class Widget {
 			});
 		}
 	    });
-    }
-
-    public Resource getcurs(Coord c) {
-	Resource ret;
-		
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(!wdg.visible())
-		continue;
-	    Coord cc = xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz)) {
-		if((ret = wdg.getcurs(c.add(cc.inv()))) != null)
-		    return(ret);
-	    }
-	}
-	try {
-	    return((cursor == null)?null:cursor.get());
-	} catch(Loading l) {
-	    return(null);
-	}
     }
 
     public static class PaginaTip implements Indir<Tex> {

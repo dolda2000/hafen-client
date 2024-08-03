@@ -265,7 +265,7 @@ public class MapWnd extends Window implements Console.Directory {
 	}
     }
 
-    private class View extends MiniMap {
+    private class View extends MiniMap implements CursorQuery.Handler {
 	View(MapFile file) {
 	    super(file);
 	}
@@ -342,10 +342,10 @@ public class MapWnd extends Window implements Console.Directory {
 	    super.draw(g);
 	}
 
-	public Resource getcurs(Coord c) {
+	public boolean getcurs(CursorQuery ev) {
 	    if(domark)
-		return(markcurs);
-	    return(super.getcurs(c));
+		return(ev.set(markcurs));
+	    return(false);
 	}
     }
 
