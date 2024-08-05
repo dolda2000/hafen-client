@@ -938,8 +938,6 @@ public class ChatUI extends Widget {
 	    super(closable);
 	    this.name = name;
 	    this.urgency = urgency;
-	    if(name.equals("Area Chat"))
-		muted = new HashMap<>();
 	}
 
 	private float colseq = 0;
