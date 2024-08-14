@@ -1240,20 +1240,16 @@ public class Widget {
 	}
 
 	protected boolean shandle(Widget w) {
-	    if(Debug.ff && w instanceof RootWidget) Debug.dump(1);
 	    if(w instanceof Handler)
 		return(((Handler)w).getcurs(this));
-	    if(Debug.ff && w instanceof RootWidget) Debug.dump(2);
 	    if(propagate(w))
 		return(true);
-	    if(Debug.ff && w instanceof RootWidget) Debug.dump(w.cursor);
 	    if(w.cursor != null) {
 		try {
 		    set(w.cursor.get());
 		    return(true);
 		} catch(Loading l) {}
 	    }
-	    if(Debug.ff && w instanceof RootWidget) Debug.dump(4);
 	    return(super.shandle(w));
 	}
     }
