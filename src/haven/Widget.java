@@ -1327,12 +1327,34 @@ public class Widget {
 	return(true);
     }
 
+    @Deprecated
+    public boolean gkeytype(KeyEvent ev) {
+	wdgmsg("activate", UI.modflags(ev));
+	return(true);
+    }
+
+    @Deprecated
+    public boolean globtype(char key, KeyEvent ev) {
+	KeyMatch gkey = this.gkey;
+	if(kb_gkey != null)
+	    gkey = kb_gkey.key();
+	if((gkey != null) && gkey.match(ev))
+	    return(gkeytype(ev));
+	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
+	    if(wdg.globtype(key, ev))
+		return(true);
+	}
+	return(false);
+    }
+
     public Widget setgkey(KeyBinding gkey) {
 	kb_gkey = gkey;
 	if((tooltip == null) && (kb_gkey != null))
 	    tooltip = new KeyboundTip();
 	return(this);
     }
+
+    @Deprecated
     public boolean keydown(KeyEvent ev) {
 	if(canactivate) {
 	    if(key_act.match(ev)) {
@@ -1386,6 +1408,7 @@ public class Widget {
 	return(false);
     }
 	
+    @Deprecated
     public boolean keyup(KeyEvent ev) {
 	if(focusctl) {
 	    if(focused != null) {
