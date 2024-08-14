@@ -27,10 +27,9 @@
 package haven;
 
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 
-public class TextEntry extends Widget implements ReadLine.Owner, Widget.MouseEvent.Handler {
+public class TextEntry extends Widget implements ReadLine.Owner, Widget.MouseEvent.Handler, Widget.KbdEvent.Handler {
     public static final Color defcol = new Color(255, 205, 109), dirtycol = new Color(255, 232, 209);
     public static final Color selcol = new Color(24, 80, 192);
     public static final Text.Foundry fnd = new Text.Foundry(Text.serif, 12).aa(true);
@@ -163,13 +162,13 @@ public class TextEntry extends Widget implements ReadLine.Owner, Widget.MouseEve
 	TextEntry.this.changed();
     }
 
-    public boolean gkeytype(KeyEvent ev) {
+    public boolean gkeytype(GlobKeyEvent ev) {
 	activate(buf.line());
 	return(true);
     }
 
-    public boolean keydown(KeyEvent e) {
-	return(buf.key(e));
+    public boolean keydown(KeyDownEvent e) {
+	return(buf.key(e.awt));
     }
 
     public void mousemove(MouseMoveEvent ev) {

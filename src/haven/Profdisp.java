@@ -28,7 +28,7 @@ package haven;
 
 import java.util.*;
 
-public class Profdisp extends Widget {
+public class Profdisp extends Widget implements Widget.KbdEvent.Handler {
     private static final int h = UI.scale(80);
     public final Profile prof;
     public double mt = 0.05;
@@ -82,12 +82,12 @@ public class Profdisp extends Widget {
 	g.image(sscl, new Coord(prof.hist.length + UI.scale(2), sy - (sscl.sz().y / 2)));
     }
 
-    public boolean keydown(java.awt.event.KeyEvent ev) {
-	if(ev.getKeyChar() == 'd') {
+    public boolean keydown(KeyDownEvent ev) {
+	if(ev.c == 'd') {
 	    prof.dump(System.err);
 	    return(true);
 	}
-	return(super.keydown(ev));
+	return(false);
     }
 
     public String tooltip(Coord c, Widget prev) {

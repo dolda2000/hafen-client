@@ -30,7 +30,7 @@ import java.awt.Color;
 import java.awt.Font;
 import static java.lang.Math.PI;
 
-public class FlowerMenu extends Widget implements Widget.MouseEvent.Handler{
+public class FlowerMenu extends Widget implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler {
     public static final Color pink = new Color(255, 0, 128);
     public static final Color ptc = Color.YELLOW;
     public static final Text.Foundry ptf = new Text.Foundry(Text.dfont, 12);
@@ -242,10 +242,9 @@ public class FlowerMenu extends Widget implements Widget.MouseEvent.Handler{
 	super.draw(g, false);
     }
 
-    public boolean keydown(java.awt.event.KeyEvent ev) {
-	char key = ev.getKeyChar();
-	if((key >= '0') && (key <= '9')) {
-	    int opt = (key == '0')?10:(key - '1');
+    public boolean keydown(KeyDownEvent ev) {
+	if((ev.c >= '0') && (ev.c <= '9')) {
+	    int opt = (ev.c == '0') ? 9 : (ev.c - '1');
 	    if(opt < opts.length) {
 		choose(opts[opt]);
 		kg.remove();

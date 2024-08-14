@@ -27,7 +27,6 @@
 package haven;
 
 import java.util.*;
-import java.awt.event.KeyEvent;
 
 public class LoginScreen extends Widget {
     public static final Text.Foundry
@@ -57,7 +56,7 @@ public class LoginScreen extends Widget {
 
     public static final KeyBinding kb_savtoken = KeyBinding.get("login/savtoken", KeyMatch.forchar('R', KeyMatch.M));
     public static final KeyBinding kb_deltoken = KeyBinding.get("login/deltoken", KeyMatch.forchar('F', KeyMatch.M));
-    public class Credbox extends Widget {
+    public class Credbox extends Widget implements KbdEvent.Handler {
 	public final UserEntry user;
 	private final TextEntry pass;
 	private final CheckBox savetoken;
@@ -87,7 +86,7 @@ public class LoginScreen extends Widget {
 		changed();
 	    }
 
-	    public boolean keydown(KeyEvent ev) {
+	    public boolean keydown(KeyDownEvent ev) {
 		if(ConsoleHost.kb_histprev.key().match(ev)) {
 		    if(hpos < history.size() - 1) {
 			if(hpos < 0)
@@ -212,12 +211,12 @@ public class LoginScreen extends Widget {
 	    return(ret);
 	}
 
-	public boolean keydown(KeyEvent ev) {
+	public boolean keydown(KeyDownEvent ev) {
 	    if(key_act.match(ev)) {
 		enter();
 		return(true);
 	    }
-	    return(super.keydown(ev));
+	    return(false);
 	}
 
 	public void show() {

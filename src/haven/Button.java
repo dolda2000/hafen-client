@@ -165,7 +165,7 @@ public class Button extends SIWidget implements Widget.MouseEvent.Handler {
 	    action.run();
     }
 
-    public boolean gkeytype(java.awt.event.KeyEvent ev) {
+    public boolean gkeytype(GlobKeyEvent ev) {
 	click();
 	return(true);
     }

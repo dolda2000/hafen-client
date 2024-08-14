@@ -26,9 +26,7 @@
 
 package haven;
 
-import java.awt.event.KeyEvent;
-
-public class Speedget extends Widget implements Widget.MouseEvent.Handler {
+public class Speedget extends Widget implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler {
     public static final Tex imgs[][];
     public static final String tips[];
     public static final Coord tsz;
@@ -124,7 +122,7 @@ public class Speedget extends Widget implements Widget.MouseEvent.Handler {
 	KeyBinding.get("speed-set/2", KeyMatch.nil),
 	KeyBinding.get("speed-set/3", KeyMatch.nil),
     };
-    public boolean globtype(char key, KeyEvent ev) {
+    public boolean globtype(GlobKeyEvent ev) {
 	int dir = 0;
 	if(kb_speedup.key().match(ev))
 	    dir = 1;
@@ -142,6 +140,6 @@ public class Speedget extends Widget implements Widget.MouseEvent.Handler {
 		return(true);
 	    }
 	}
-	return(super.globtype(key, ev));
+	return(false);
     }
 }

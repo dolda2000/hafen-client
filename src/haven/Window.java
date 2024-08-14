@@ -32,7 +32,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import static haven.PUtils.*;
 
-public class Window extends Widget implements Widget.MouseEvent.Handler, DTarget {
+public class Window extends Widget implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler, DTarget {
     public static final Pipe.Op bgblend = FragColor.blend.nil;
     public static final Pipe.Op cblend  = FragColor.blend(new BlendMode(BlendMode.Function.ADD, BlendMode.Factor.SRC_ALPHA, BlendMode.Factor.INV_SRC_ALPHA,
 									BlendMode.Function.ADD, BlendMode.Factor.ONE, BlendMode.Factor.INV_SRC_ALPHA));
@@ -480,8 +480,8 @@ public class Window extends Widget implements Widget.MouseEvent.Handler, DTarget
 	return(super.handle(ev));
     }
 
-    public boolean keydown(java.awt.event.KeyEvent ev) {
-	if(super.keydown(ev))
+    public boolean keydown(KeyDownEvent ev) {
+	if(ev.propagate(this))
 	    return(true);
 	if(key_esc.match(ev)) {
 	    reqclose();

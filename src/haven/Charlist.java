@@ -29,7 +29,7 @@ package haven;
 import java.awt.Color;
 import java.util.*;
 
-public class Charlist extends Widget implements Widget.MouseEvent.Handler {
+public class Charlist extends Widget implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler {
     public static final Coord bsz = UI.scale(289, 96);
     public static final Text.Furnace tf = new PUtils.BlurFurn(new PUtils.TexFurn(new Text.Foundry(Text.fraktur, 20).aa(true), Window.ctex), UI.scale(2), UI.scale(2), Color.BLACK);
     public static final int margin = UI.scale(6);
@@ -221,16 +221,16 @@ public class Charlist extends Widget implements Widget.MouseEvent.Handler {
 	}
     }
 
-    public boolean keydown(java.awt.event.KeyEvent ev) {
-	if(ev.getKeyCode() == ev.VK_UP) {
+    public boolean keydown(KeyDownEvent ev) {
+	if(ev.code == ev.awt.VK_UP) {
 	    if(!chars.isEmpty())
 		list.change(chars.get(Math.max(chars.indexOf(list.sel) - 1, 0)));
 	    return(true);
-	} else if(ev.getKeyCode() == ev.VK_DOWN) {
+	} else if(ev.code == ev.awt.VK_DOWN) {
 	    if(!chars.isEmpty())
 		list.change(chars.get(Math.min(chars.indexOf(list.sel) + 1, chars.size() - 1)));
 	    return(true);
-	} else if(ev.getKeyCode() == ev.VK_ENTER) {
+	} else if(ev.code == ev.awt.VK_ENTER) {
 	    if(list.sel != null)
 		wdgmsg("play", list.sel.name);
 	    return(true);

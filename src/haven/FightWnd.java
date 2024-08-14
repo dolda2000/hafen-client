@@ -30,7 +30,6 @@ import java.util.*;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.awt.event.KeyEvent;
 import static haven.CharWnd.attrf;
 import static haven.Window.wbox;
 import static haven.Inventory.invsq;
@@ -559,7 +558,7 @@ public class FightWnd extends Widget {
 	protected List<Integer> items() {return(items);}
 	protected Widget makeitem(Integer n, int idx, Coord sz) {return(new Item(sz, n));}
 
-	public class Item extends Widget implements MouseEvent.Handler, ReadLine.Owner {
+	public class Item extends Widget implements MouseEvent.Handler, KbdEvent.Handler, ReadLine.Owner {
 	    public final int n;
 	    private Text.Line redit = null;
 	    private ReadLine ed;
@@ -633,16 +632,16 @@ public class FightWnd extends Widget {
 		}
 	    }
 
-	    public boolean keydown(KeyEvent ev) {
+	    public boolean keydown(KeyDownEvent ev) {
 		if(ed != null) {
 		    if(key_esc.match(ev)) {
 			ed = null;
 			return(true);
 		    } else {
-			return(ed.key(ev));
+			return(ed.key(ev.awt));
 		    }
 		}
-		return(super.keydown(ev));
+		return(false);
 	    }
 	}
     }

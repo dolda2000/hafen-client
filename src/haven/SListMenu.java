@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.function.*;
 import java.awt.image.BufferedImage;
 
-public abstract class SListMenu<I, W extends Widget> extends Widget implements Widget.MouseEvent.Handler {
+public abstract class SListMenu<I, W extends Widget> extends Widget implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler {
     public static final Text.Foundry bigf = CharWnd.attrf;
     public static final Text.Foundry smallf = new Text.Foundry(Text.fraktur, 14).aa(true);
     public static final Tex bg = Window.bg;
@@ -145,7 +145,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget implements W
 	return(super.handle(ev));
     }
 
-    public boolean keydown(java.awt.event.KeyEvent ev) {
+    public boolean keydown(KeyDownEvent ev) {
 	if(key_esc.match(ev))
 	    choice(null);
 	return(true);

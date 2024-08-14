@@ -48,7 +48,7 @@ public class OptWnd extends Window {
 	}
     }
 
-    public class PButton extends Button {
+    public class PButton extends Button implements KbdEvent.Handler {
 	public final Panel tgt;
 	public final int key;
 
@@ -62,8 +62,8 @@ public class OptWnd extends Window {
 	    chpanel(tgt);
 	}
 
-	public boolean keydown(java.awt.event.KeyEvent ev) {
-	    if((this.key != -1) && (ev.getKeyChar() == this.key)) {
+	@Override public boolean keydown(KeyDownEvent ev) {
+	    if((this.key != -1) && (ev.c == this.key)) {
 		click();
 		return(true);
 	    }
@@ -619,7 +619,7 @@ public class OptWnd extends Window {
     }
 
 
-    public static class PointBind extends Button implements MouseEvent.Handler, CursorQuery.Handler {
+    public static class PointBind extends Button implements MouseEvent.Handler, KbdEvent.Handler, CursorQuery.Handler {
 	public static final String msg = "Bind other elements...";
 	public static final Resource curs = Resource.local().loadwait("gfx/hud/curs/wrench");
 	private UI.Grab mg, kg;
@@ -669,7 +669,7 @@ public class OptWnd extends Window {
 	}
 
 	public boolean mousedown(MouseDownEvent ev) {
-	    if(mg == null)
+	    if(!ev.grabbed)
 		return(super.mousedown(ev));
 	    Coord gc = ui.mc;
 	    if(ev.b == 1) {
@@ -709,10 +709,10 @@ public class OptWnd extends Window {
 	    return(ev.grabbed ? ev.set(curs) : false);
 	}
 
-	public boolean keydown(KeyEvent ev) {
-	    if(kg == null)
-		return(super.keydown(ev));
-	    if(handle(ev)) {
+	public boolean keydown(KeyDownEvent ev) {
+	    if(!ev.grabbed)
+		return(false);
+	    if(handle(ev.awt)) {
 		kg.remove();
 		kg = null;
 		cmd = null;

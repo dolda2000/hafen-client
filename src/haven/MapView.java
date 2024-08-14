@@ -40,7 +40,7 @@ import haven.MCache.OverlayInfo;
 import haven.render.sl.Uniform;
 import haven.render.sl.Type;
 
-public class MapView extends PView implements Widget.MouseEvent.Handler, DTarget, Console.Directory {
+public class MapView extends PView implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler, DTarget, Console.Directory {
     public static boolean clickdb = false;
     public long plgob = -1;
     public Coord2d cc;
@@ -77,7 +77,7 @@ public class MapView extends PView implements Widget.MouseEvent.Handler, DTarget
 	    resized();
 	}
 
-	public boolean keydown(KeyEvent ev) {
+	public boolean keydown(KeyDownEvent ev) {
 	    return(false);
 	}
 
@@ -452,7 +452,7 @@ public class MapView extends PView implements Widget.MouseEvent.Handler, DTarget
 	    return(true);
 	}
 
-	public boolean keydown(KeyEvent ev) {
+	public boolean keydown(KeyDownEvent ev) {
 	    if(kb_camleft.key().match(ev)) {
 		tangl = (float)(Math.PI * 0.5 * (Math.floor((tangl / (Math.PI * 0.5)) - 0.51) + 0.5));
 		return(true);
@@ -2068,22 +2068,22 @@ public class MapView extends PView implements Widget.MouseEvent.Handler, DTarget
 	return(true);
     }
 
-    public boolean keydown(KeyEvent ev) {
+    public boolean keydown(KeyDownEvent ev) {
 	Loader.Future<Plob> placing_l = this.placing;
 	if((placing_l != null) && placing_l.done()) {
 	    Plob placing = placing_l.get();
-	    if((ev.getKeyCode() == KeyEvent.VK_LEFT) && placing.adjust.rotate(placing, -1, ui.modflags()))
+	    if((ev.code == KeyEvent.VK_LEFT) && placing.adjust.rotate(placing, -1, ui.modflags()))
 		return(true);
-	    if((ev.getKeyCode() == KeyEvent.VK_RIGHT) && placing.adjust.rotate(placing, 1, ui.modflags()))
+	    if((ev.code == KeyEvent.VK_RIGHT) && placing.adjust.rotate(placing, 1, ui.modflags()))
 		return(true);
 	}
 	if(camera.keydown(ev))
 	    return(true);
-	return(super.keydown(ev));
+	return(false);
     }
 
     public static final KeyBinding kb_grid = KeyBinding.get("grid", KeyMatch.forchar('G', KeyMatch.C));
-    public boolean globtype(char c, KeyEvent ev) {
+    public boolean globtype(GlobKeyEvent ev) {
 	if(kb_grid.key().match(ev)) {
 	    showgrid(gridlines == null);
 	    return(true);

@@ -34,7 +34,7 @@ import java.awt.image.WritableRaster;
 import haven.render.Location;
 import static haven.Inventory.invsq;
 
-public class GameUI extends ConsoleHost implements Console.Directory, UI.MessageWidget {
+public class GameUI extends ConsoleHost implements Widget.KbdEvent.Handler, Console.Directory, UI.MessageWidget {
     private static final int blpw = UI.scale(142), brpw = UI.scale(142);
     public final String chrid, genus;
     public final long plid;
@@ -1468,8 +1468,8 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
     public static final KeyBinding kb_hide = KeyBinding.get("ui-toggle", KeyMatch.nil);
     public static final KeyBinding kb_logout = KeyBinding.get("logout", KeyMatch.nil);
     public static final KeyBinding kb_switchchr = KeyBinding.get("logout-cs", KeyMatch.nil);
-    public boolean globtype(char key, KeyEvent ev) {
-	if(key == ':') {
+    public boolean globtype(GlobKeyEvent ev) {
+	if(ev.c == ':') {
 	    entercmd();
 	    return(true);
 	} else if((Screenshooter.screenurl.get() != null) && kb_shoot.key().match(ev)) {
@@ -1497,11 +1497,11 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    }
 	    Utils.setprefb("chatvis", chat.targetshow);
 	    return(true);
-	} else if((key == 27) && (map != null) && !map.hasfocus) {
+	} else if((ev.c == 27) && (map != null) && !map.hasfocus) {
 	    setfocus(map);
 	    return(true);
 	}
-	return(super.globtype(key, ev));
+	return(false);
     }
 
     private int uimode = 1;
@@ -1589,7 +1589,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	wdgmsg("act", al);
     }
 
-    public class FKeyBelt extends Belt implements DTarget, DropTarget {
+    public class FKeyBelt extends Belt implements KbdEvent.Handler, DTarget, DropTarget {
 	public final int beltkeys[] = {KeyEvent.VK_F1, KeyEvent.VK_F2, KeyEvent.VK_F3, KeyEvent.VK_F4,
 				       KeyEvent.VK_F5, KeyEvent.VK_F6, KeyEvent.VK_F7, KeyEvent.VK_F8,
 				       KeyEvent.VK_F9, KeyEvent.VK_F10, KeyEvent.VK_F11, KeyEvent.VK_F12};
@@ -1626,10 +1626,10 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    }
 	}
 	
-	public boolean globtype(char key, KeyEvent ev) {
-	    boolean M = (ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0;
+	public boolean globtype(GlobKeyEvent ev) {
+	    boolean M = (ev.mods & KeyMatch.M) != 0;
 	    for(int i = 0; i < beltkeys.length; i++) {
-		if(ev.getKeyCode() == beltkeys[i]) {
+		if(ev.code == beltkeys[i]) {
 		    if(M) {
 			curbelt = i;
 			return(true);
@@ -1644,7 +1644,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
     }
     
     private static final Tex nkeybg = Resource.loadtex("gfx/hud/hb-main");
-    public class NKeyBelt extends Belt {
+    public class NKeyBelt extends Belt implements KbdEvent.Handler {
 	public int curbelt = 0;
 	final Coord pagoff = UI.scale(new Coord(5, 25));
 
@@ -1709,12 +1709,11 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    super.draw(g);
 	}
 	
-	public boolean globtype(char key, KeyEvent ev) {
-	    int c = ev.getKeyCode();
-	    if((c < KeyEvent.VK_0) || (c > KeyEvent.VK_9))
+	public boolean globtype(GlobKeyEvent ev) {
+	    if((ev.code < KeyEvent.VK_0) || (ev.code > KeyEvent.VK_9))
 		return(false);
-	    int i = Utils.floormod(c - KeyEvent.VK_0 - 1, 10);
-	    boolean M = (ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0;
+	    int i = Utils.floormod(ev.code - KeyEvent.VK_0 - 1, 10);
+	    boolean M = (ev.mods & KeyMatch.M) != 0;
 	    if(M) {
 		curbelt = i;
 	    } else {

@@ -36,7 +36,7 @@ import java.awt.image.BufferedImage;
 import haven.Resource.AButton;
 import haven.ItemInfo.AttrCache;
 
-public class MenuGrid extends Widget implements Widget.MouseEvent.Handler, KeyBinding.Bindable {
+public class MenuGrid extends Widget implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler, KeyBinding.Bindable {
     public final static Tex bg = Inventory.invsq;
     public final static Coord bgsz = Inventory.sqsz;
     public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, UI.scale(10f));
@@ -652,7 +652,7 @@ public class MenuGrid extends Widget implements Widget.MouseEvent.Handler, KeyBi
     public static final KeyBinding kb_root = KeyBinding.get("scm-root", KeyMatch.forcode(KeyEvent.VK_ESCAPE, 0));
     public static final KeyBinding kb_back = KeyBinding.get("scm-back", KeyMatch.forcode(KeyEvent.VK_BACK_SPACE, 0));
     public static final KeyBinding kb_next = KeyBinding.get("scm-next", KeyMatch.forchar('N', KeyMatch.S | KeyMatch.C | KeyMatch.M, KeyMatch.S));
-    public boolean globtype(char k, KeyEvent ev) {
+    public boolean globtype(GlobKeyEvent ev) {
 	if(kb_root.key().match(ev) && (this.cur != null)) {
 	    change(null);
 	    return(true);
@@ -675,7 +675,7 @@ public class MenuGrid extends Widget implements Widget.MouseEvent.Handler, KeyBi
 	    }
 	}
 	if(pag != null) {
-	    use(pag, new Interaction(), (KeyMatch.mods(ev) & KeyMatch.S) == 0);
+	    use(pag, new Interaction(), (ev.mods & KeyMatch.S) == 0);
 	    if(this.cur != null)
 		showkeys = true;
 	    return(true);

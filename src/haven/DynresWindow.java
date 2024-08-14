@@ -41,7 +41,7 @@ import javax.swing.JFileChooser;
 import static haven.PUtils.*;
 import static haven.render.Texture.Filter.*;
 
-public class DynresWindow extends Window {
+public class DynresWindow extends Window implements Widget.KbdEvent.Handler {
     public static final Config.Variable<URI> service = Config.Services.var("dynresurl", "");
     public static final Coord itemsz = UI.scale(128, 128);
     public final Future<List<Preview.Spec>> previews = Preview.Spec.fetch();
@@ -400,19 +400,16 @@ public class DynresWindow extends Window {
 	}
     }
 
-    public boolean keydown(KeyEvent ev) {
-	if(super.keydown(ev))
-	    return(true);
+    public boolean keydown(KeyDownEvent ev) {
 	if(adder != null) {
-	    int mod = UI.modflags(ev);
-	    if((ev.getKeyChar() == 22) ||
-	       ((ev.getKeyCode() == KeyEvent.VK_INSERT) && (mod == KeyMatch.S)))
+	    if(((ev.c == 'v') && (ev.mods == KeyMatch.C)) ||
+	       ((ev.code == KeyEvent.VK_INSERT) && (ev.mods == KeyMatch.S)))
 		{
 		    adder.paste();
 		    return(true);
 		}
 	}
-	return(false);
+	return(super.keydown(ev));
     }
 
     public class Image extends Widget implements MouseEvent.Handler, Transferable, ClipboardOwner {

@@ -28,9 +28,8 @@ package haven;
 
 import java.util.*;
 import java.awt.Color;
-import java.awt.event.KeyEvent;
 
-public class RootWidget extends ConsoleHost implements UI.MessageWidget, Widget.CursorQuery.Handler, Console.Directory {
+public class RootWidget extends ConsoleHost implements UI.MessageWidget, Widget.KbdEvent.Handler, Widget.CursorQuery.Handler, Console.Directory {
     public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
     public static final Resource defcurs = Resource.local().loadwait("gfx/hud/curs/arw");
     public boolean modtip = false;
@@ -55,9 +54,9 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget, Widget.
 	return(false);
     }
 
-    public boolean globtype(char key, KeyEvent ev) {
-	if(!super.globtype(key, ev)) {
-	    if(key == '`') {
+    public boolean globtype(GlobKeyEvent ev) {
+	if(!ev.propagate(this)) {
+	    if(ev.c == '`') {
 		if(UIPanel.profile.get()) {
 		    add(new Profwnd(guprof, "UI profile"), UI.scale(100, 100));
 		    add(new Profwnd(grprof, "GL profile"), UI.scale(500, 100));
@@ -70,10 +69,10 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget, Widget.
 		if(UIPanel.profilegpu.get()) {
 		    add(new Profwnd(ggprof, "GPU profile"), UI.scale(500, 250));
 		}
-	    } else if(key == ':') {
+	    } else if(ev.c == ':') {
 		entercmd();
-	    } else if(key != 0) {
-		wdgmsg("gk", (int)key);
+	    } else if(ev.c != 0) {
+		wdgmsg("gk", (int)ev.c, ev.mods);
 	    }
 	}
 	return(true);

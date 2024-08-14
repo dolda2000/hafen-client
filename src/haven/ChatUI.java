@@ -29,7 +29,6 @@ package haven;
 import java.util.*;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.event.KeyEvent;
 import java.awt.font.TextAttribute;
 import java.awt.font.TextHitInfo;
 import java.awt.image.BufferedImage;
@@ -40,7 +39,7 @@ import java.util.regex.*;
 import java.io.IOException;
 import java.awt.datatransfer.*;
 
-public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
+public class ChatUI extends Widget implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler {
     public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(UI.scale(12f)), TextAttribute.FOREGROUND, Color.BLACK)).aa(true);
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
     public static final int selw = UI.scale(130);
@@ -789,7 +788,7 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
 			hpos = history.size();
 		    }
 
-		    public boolean keydown(KeyEvent ev) {
+		    public boolean keydown(KeyDownEvent ev) {
 			if(ConsoleHost.kb_histprev.key().match(ev)) {
 			    if(hpos > 0) {
 				if(hpos == history.size())
@@ -1530,12 +1529,12 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
 	    cancel();
 	}
 
-	public boolean key(KeyEvent ev) {
+	public boolean key(KbdEvent ev) {
 	    if(key_esc.match(ev)) {
 		cancel();
 		return(true);
 	    } else {
-		return(buf.key(ev));
+		return(buf.key(ev.awt));
 	    }
 	}
     }
@@ -1571,10 +1570,10 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
 	}
     }
 
-    public boolean keydown(KeyEvent ev) {
-	boolean M = (ev.getModifiersEx() & (KeyEvent.META_DOWN_MASK | KeyEvent.ALT_DOWN_MASK)) != 0;
+    public boolean keydown(KeyDownEvent ev) {
+	boolean M = (ev.mods & KeyMatch.M) != 0;
 	if(qline != null) {
-	    if(M && (ev.getKeyCode() == KeyEvent.VK_UP)) {
+	    if(M && (ev.code == ev.awt.VK_UP)) {
 		Channel prev = this.sel;
 		while(chansel.up()) {
 		    if(this.sel instanceof EntryChannel)
@@ -1586,7 +1585,7 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
 		}
 		qline = new QuickLine((EntryChannel)sel);
 		return(true);
-	    } else if(M && (ev.getKeyCode() == KeyEvent.VK_DOWN)) {
+	    } else if(M && (ev.code == ev.awt.VK_DOWN)) {
 		Channel prev = this.sel;
 		while(chansel.down()) {
 		    if(this.sel instanceof EntryChannel)
@@ -1602,19 +1601,19 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
 	    qline.key(ev);
 	    return(true);
 	} else {
-	    if(M && (ev.getKeyCode() == KeyEvent.VK_UP)) {
+	    if(M && (ev.code == ev.awt.VK_UP)) {
 		chansel.up();
 		return(true);
-	    } else if(M && (ev.getKeyCode() == KeyEvent.VK_DOWN)) {
+	    } else if(M && (ev.code == ev.awt.VK_DOWN)) {
 		chansel.down();
 		return(true);
 	    }
-	    return(super.keydown(ev));
+	    return(false);
 	}
     }
 
-    public static final KeyBinding kb_quick = KeyBinding.get("chat-quick", KeyMatch.forcode(KeyEvent.VK_ENTER, 0));
-    public boolean globtype(char key, KeyEvent ev) {
+    public static final KeyBinding kb_quick = KeyBinding.get("chat-quick", KeyMatch.forcode(java.awt.event.KeyEvent.VK_ENTER, 0));
+    @Override public boolean globtype(GlobKeyEvent ev) {
 	if(kb_quick.key().match(ev)) {
 	    if(!visible && (sel instanceof EntryChannel)) {
 		qgrab = ui.grabkeys(this);
@@ -1622,6 +1621,6 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
 		return(true);
 	    }
 	}
-	return(super.globtype(key, ev));
+	return(false);
     }
 }
