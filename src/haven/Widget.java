@@ -1140,6 +1140,8 @@ public class Widget {
 	public KeyDownEvent(KeyEvent awt) {super(awt);}
 
 	protected boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "keydown", new Class<?>[] {KeyEvent.class}, awt))
+		return(true);
 	    if(w instanceof Handler)
 		return(((Handler)w).keydown(this));
 	    if(w.canactivate) {
@@ -1182,6 +1184,8 @@ public class Widget {
 	public KeyUpEvent(KeyEvent awt) {super(awt);}
 
 	public boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "keyup", new Class<?>[] {KeyEvent.class}, awt))
+		return(true);
 	    if(w instanceof Handler)
 		return(((Handler)w).keyup(this));
 	    return(super.shandle(w));
@@ -1200,6 +1204,8 @@ public class Widget {
 	}
 
 	protected boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "keydown", new Class<?>[] {Character.TYPE, KeyEvent.class}, awt.getKeyChar(), awt))
+		return(true);
 	    if(w instanceof Handler)
 		return(((Handler)w).globtype(this));
 	    KeyMatch gkey = w.gkey;
@@ -1335,16 +1341,7 @@ public class Widget {
 
     @Deprecated
     public boolean globtype(char key, KeyEvent ev) {
-	KeyMatch gkey = this.gkey;
-	if(kb_gkey != null)
-	    gkey = kb_gkey.key();
-	if((gkey != null) && gkey.match(ev))
-	    return(gkeytype(ev));
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(wdg.globtype(key, ev))
-		return(true);
-	}
-	return(false);
+	return(hackhandling.get().propagate(this));
     }
 
     public Widget setgkey(KeyBinding gkey) {
@@ -1356,77 +1353,12 @@ public class Widget {
 
     @Deprecated
     public boolean keydown(KeyEvent ev) {
-	if(canactivate) {
-	    if(key_act.match(ev)) {
-		wdgmsg("activate");
-		return(true);
-	    }
-	}
-	if(cancancel) {
-	    if(key_esc.match(ev)) {
-		wdgmsg("cancel");
-		return(true);
-	    }
-	}
-	if(focusctl) {
-	    if(focused != null) {
-		if(focused.keydown(ev))
-		    return(true);
-		if(focustab) {
-		    if(key_tab.match(ev)) {
-			Widget f = focused;
-			while(true) {
-			    if((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) == 0) {
-				Widget n = f.rnext();
-				f = ((n == null) || !n.hasparent(this))?child:n;
-			    } else {
-				Widget p = f.rprev();
-				f = ((p == null) || (p == this) || !p.hasparent(this))?lchild:p;
-			    }
-			    if((f.canfocus && f.tvisible()) || (f == focused))
-				break;
-			}
-			setfocus(f);
-			return(true);
-		    } else {
-			return(false);
-		    }
-		} else {
-		    return(false);
-		}
-	    } else {
-		return(false);
-	    }
-	} else {
-	    for(Widget wdg = child; wdg != null; wdg = wdg.next) {
-		if(wdg.visible()) {
-		    if(wdg.keydown(ev))
-			return(true);
-		}
-	    }
-	}
-	return(false);
+	return(hackhandling.get().propagate(this));
     }
 	
     @Deprecated
     public boolean keyup(KeyEvent ev) {
-	if(focusctl) {
-	    if(focused != null) {
-		if(focused.keyup(ev))
-		    return(true);
-		return(false);
-	    } else {
-		return(false);
-	    }
-	} else {
-	    for(Widget wdg = child; wdg != null; wdg = wdg.next) {
-		if(wdg.visible()) {
-		    if(wdg.keyup(ev))	
-			return(true);
-		}
-	    }
-	}
-	return(false);
+	return(hackhandling.get().propagate(this));
     }
 
     public Area area() {
