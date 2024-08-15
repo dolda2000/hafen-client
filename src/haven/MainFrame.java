@@ -46,7 +46,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	
     static {
 	try {
-	    Syste.setProperty("apple.awt.application.name", "Haven & Hearth");
+	    System.setProperty("apple.awt.application.name", "Haven & Hearth");
 	    javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
 	} catch(Exception e) {}
     }
