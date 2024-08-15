@@ -167,6 +167,12 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    throw(new Error(e));
 	}
 	setIconImage(icon);
+	try {
+	    Class<?> ctb = Class.forName("java.awt.Taskbar");
+	    Object tb = ctb.getMethod("getTaskbar").invoke(null);
+	    ctb.getMethod("setIconImage").invoke(tb, icon);
+	} catch(Exception e) {
+	}
     }
 
     private UIPanel renderer() {
