@@ -883,8 +883,10 @@ public class Widget {
 	}
 
 	protected boolean shandle(Widget w) {
+	    boolean pp = (w.parent != null);
 	    w.tick(this);
-	    return(false);
+	    /* XXX? This feels a bit hacky. */
+	    return(pp && (w.parent == null));
 	}
     }
 
