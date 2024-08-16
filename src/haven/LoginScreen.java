@@ -56,7 +56,7 @@ public class LoginScreen extends Widget {
 
     public static final KeyBinding kb_savtoken = KeyBinding.get("login/savtoken", KeyMatch.forchar('R', KeyMatch.M));
     public static final KeyBinding kb_deltoken = KeyBinding.get("login/deltoken", KeyMatch.forchar('F', KeyMatch.M));
-    public class Credbox extends Widget implements KbdEvent.Handler {
+    public class Credbox extends Widget {
 	public final UserEntry user;
 	private final TextEntry pass;
 	private final CheckBox savetoken;
@@ -216,7 +216,7 @@ public class LoginScreen extends Widget {
 		enter();
 		return(true);
 	    }
-	    return(false);
+	    return(super.keydown(ev));
 	}
 
 	public void show() {

@@ -30,7 +30,7 @@ import java.awt.Color;
 import java.awt.Font;
 import static java.lang.Math.PI;
 
-public class FlowerMenu extends Widget implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler {
+public class FlowerMenu extends Widget implements Widget.MouseEvent.Handler {
     public static final Color pink = new Color(255, 0, 128);
     public static final Color ptc = Color.YELLOW;
     public static final Text.Foundry ptf = new Text.Foundry(Text.dfont, 12);
@@ -255,7 +255,7 @@ public class FlowerMenu extends Widget implements Widget.MouseEvent.Handler, Wid
 	    kg.remove();
 	    return(true);
 	}
-	return(false);
+	return(super.keydown(ev));
     }
 
     public void choose(Petal option) {

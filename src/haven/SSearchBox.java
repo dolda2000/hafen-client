@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 import java.awt.Color;
 
-public abstract class SSearchBox<I, W extends Widget> extends SListBox<I, W> implements Widget.KbdEvent.Handler {
+public abstract class SSearchBox<I, W extends Widget> extends SListBox<I, W> {
     public String searching = null;
     private List<I> filtered = null;
     private Text info;
@@ -94,7 +94,7 @@ public abstract class SSearchBox<I, W extends Widget> extends SListBox<I, W> imp
 		return(true);
 	    }
 	}
-	return(false);
+	return(super.keydown(ev));
     }
 
     private void updinfo() {

@@ -205,7 +205,7 @@ public class KeyMatch {
 	return(null);
     }
 
-    public static class Capture extends Button implements Widget.KbdEvent.Handler {
+    public static class Capture extends Button {
 	public KeyMatch key;
 	private UI.Grab grab = null;
 
@@ -265,7 +265,7 @@ public class KeyMatch {
 
 	public boolean keydown(KeyDownEvent ev) {
 	    if(!ev.grabbed)
-		return(false);
+		return(super.keydown(ev));
 	    if(handle(ev.awt)) {
 		grab.remove();
 		grab = null;
@@ -298,7 +298,7 @@ public class KeyMatch {
 	return(buf.toString());
     }
 
-    public static class ModCapture extends Button implements Widget.KbdEvent.Handler {
+    public static class ModCapture extends Button  {
 	public final int mask;
 	public int match, nmatch;
 	private UI.Grab grab = null;
@@ -344,7 +344,7 @@ public class KeyMatch {
 
 	public boolean keyup(KeyUpEvent ev) {
 	    if(!ev.grabbed)
-		return(false);
+		return(super.keyup(ev));
 	    switch(ev.code) {
 	    case KeyEvent.VK_SHIFT: case KeyEvent.VK_CONTROL: case KeyEvent.VK_ALT:
 	    case KeyEvent.VK_META: case KeyEvent.VK_WINDOWS:
@@ -358,7 +358,7 @@ public class KeyMatch {
 
 	public boolean keydown(KeyDownEvent ev) {
 	    if(!ev.grabbed)
-		return(false);
+		return(super.keydown(ev));
 	    switch(ev.code) {
 	    case KeyEvent.VK_SHIFT: case KeyEvent.VK_CONTROL: case KeyEvent.VK_ALT:
 	    case KeyEvent.VK_META: case KeyEvent.VK_WINDOWS:

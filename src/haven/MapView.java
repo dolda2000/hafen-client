@@ -40,7 +40,7 @@ import haven.MCache.OverlayInfo;
 import haven.render.sl.Uniform;
 import haven.render.sl.Type;
 
-public class MapView extends PView implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler, DTarget, Console.Directory {
+public class MapView extends PView implements Widget.MouseEvent.Handler, DTarget, Console.Directory {
     public static boolean clickdb = false;
     public long plgob = -1;
     public Coord2d cc;
@@ -2079,7 +2079,7 @@ public class MapView extends PView implements Widget.MouseEvent.Handler, Widget.
 	}
 	if(camera.keydown(ev))
 	    return(true);
-	return(false);
+	return(super.keydown(ev));
     }
 
     public static final KeyBinding kb_grid = KeyBinding.get("grid", KeyMatch.forchar('G', KeyMatch.C));
@@ -2088,7 +2088,7 @@ public class MapView extends PView implements Widget.MouseEvent.Handler, Widget.
 	    showgrid(gridlines == null);
 	    return(true);
 	}
-	return(false);
+	return(super.globtype(ev));
     }
 
     public Object tooltip(Coord c, Widget prev) {

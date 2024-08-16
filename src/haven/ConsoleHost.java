@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 import java.awt.event.KeyEvent;
 
-public abstract class ConsoleHost extends Widget implements ReadLine.Owner, Widget.KbdEvent.Handler {
+public abstract class ConsoleHost extends Widget implements ReadLine.Owner {
     public static Text.Foundry cmdfoundry = new Text.Foundry(Text.mono, 12, new java.awt.Color(245, 222, 179));
     public ReadLine cmdline = null;
     private Text.Line cmdtext = null;
@@ -128,7 +128,7 @@ public abstract class ConsoleHost extends Widget implements ReadLine.Owner, Widg
     public boolean keydown(KeyDownEvent ev) {
 	if(cmdkey(ev.awt))
 	    return(true);
-	return(false);
+	return(super.keydown(ev));
     }
     
     public abstract void error(String msg);

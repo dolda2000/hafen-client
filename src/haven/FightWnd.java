@@ -558,7 +558,7 @@ public class FightWnd extends Widget {
 	protected List<Integer> items() {return(items);}
 	protected Widget makeitem(Integer n, int idx, Coord sz) {return(new Item(sz, n));}
 
-	public class Item extends Widget implements MouseEvent.Handler, KbdEvent.Handler, ReadLine.Owner {
+	public class Item extends Widget implements MouseEvent.Handler, ReadLine.Owner {
 	    public final int n;
 	    private Text.Line redit = null;
 	    private ReadLine ed;
@@ -641,7 +641,7 @@ public class FightWnd extends Widget {
 			return(ed.key(ev.awt));
 		    }
 		}
-		return(false);
+		return(super.keydown(ev));
 	    }
 	}
     }

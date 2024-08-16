@@ -5,7 +5,7 @@ import java.awt.image.BufferedImage;
 import haven.MenuGrid.Pagina;
 import haven.MenuGrid.PagButton;
 
-public class MenuSearch extends Window implements Widget.KbdEvent.Handler {
+public class MenuSearch extends Window {
     public final MenuGrid menu;
     public final Results rls;
     public final TextEntry sbox;

@@ -1116,12 +1116,6 @@ public class Widget {
 		c = 0;
 	    this.c = c;
 	}
-
-	public static interface Handler {
-	    public default boolean keydown(KeyDownEvent ev) {return(false);}
-	    public default boolean keyup(KeyUpEvent ev) {return(false);}
-	    public default boolean globtype(GlobKeyEvent ev) {return(false);}
-	}
     }
 
     public static abstract class FocusedKeyEvent extends KbdEvent {
@@ -1152,40 +1146,8 @@ public class Widget {
 	protected boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "keydown", new Class<?>[] {KeyEvent.class}, awt))
 		return(true);
-	    if((w instanceof Handler) && ((Handler)w).keydown(this))
+	    if(w.keydown(this))
 		return(true);
-	    if(w.canactivate) {
-		if(key_act.match(this)) {
-		    w.wdgmsg("activate");
-		    return(true);
-		}
-	    }
-	    if(w.cancancel) {
-		if(key_esc.match(this)) {
-		    w.wdgmsg("cancel");
-		    return(true);
-		}
-	    }
-	    if(propagate(w))
-		return(true);
-	    if(w.focusctl && w.focustab) {
-		Widget f = w.focused;
-		if(key_tab.match(awt) && (f != null)) {
-		    while(true) {
-			if((mods & KeyMatch.S) == 0) {
-			    Widget n = f.rnext();
-			    f = ((n == null) || !n.hasparent(w)) ? w.child : n;
-			} else {
-			    Widget p = f.rprev();
-			    f = ((p == null) || (p == w) || !p.hasparent(w)) ? w.lchild : p;
-			}
-			if((f.canfocus && f.tvisible()) || (f == w.focused))
-			    break;
-		    }
-		    w.setfocus(f);
-		    return(true);
-		}
-	    }
 	    return(super.shandle(w));
 	}
     }
@@ -1196,7 +1158,7 @@ public class Widget {
 	public boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "keyup", new Class<?>[] {KeyEvent.class}, awt))
 		return(true);
-	    if((w instanceof Handler) && ((Handler)w).keyup(this))
+	    if(w.keyup(this))
 		return(true);
 	    return(super.shandle(w));
 	}
@@ -1216,15 +1178,8 @@ public class Widget {
 	protected boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "keydown", new Class<?>[] {Character.TYPE, KeyEvent.class}, awt.getKeyChar(), awt))
 		return(true);
-	    if((w instanceof Handler) && ((Handler)w).globtype(this))
+	    if(w.globtype(this))
 		return(true);
-	    KeyMatch gkey = w.gkey;
-	    if(w.kb_gkey != null)
-		gkey = w.kb_gkey.key();
-	    if((gkey != null) && gkey.match(awt)) {
-		if(w.gkeytype(this))
-		    return(true);
-	    }
 	    return(super.shandle(w));
 	}
     }
@@ -1383,6 +1338,57 @@ public class Widget {
     public boolean gkeytype(GlobKeyEvent ev) {
 	wdgmsg("activate", UI.modflags(ev.awt));
 	return(true);
+    }
+
+    public boolean keydown(KeyDownEvent ev) {
+	if(canactivate) {
+	    if(key_act.match(ev)) {
+		wdgmsg("activate");
+		return(true);
+	    }
+	}
+	if(cancancel) {
+	    if(key_esc.match(ev)) {
+		wdgmsg("cancel");
+		return(true);
+	    }
+	}
+	if(ev.propagate(this))
+	    return(true);
+	if(focusctl && focustab) {
+	    Widget f = focused;
+	    if(key_tab.match(ev.awt) && (f != null)) {
+		while(true) {
+		    if((ev.mods & KeyMatch.S) == 0) {
+			Widget n = f.rnext();
+			f = ((n == null) || !n.hasparent(this)) ? this.child : n;
+		    } else {
+			Widget p = f.rprev();
+			f = ((p == null) || (p == this) || !p.hasparent(this)) ? this.lchild : p;
+		    }
+		    if((f.canfocus && f.tvisible()) || (f == focused))
+			break;
+		}
+		setfocus(f);
+		return(true);
+	    }
+	}
+	return(false);
+    }
+
+    public boolean keyup(KeyUpEvent ev) {
+	return(false);
+    }
+
+    public boolean globtype(GlobKeyEvent ev) {
+	KeyMatch gkey = this.gkey;
+	if(kb_gkey != null)
+	    gkey = kb_gkey.key();
+	if((gkey != null) && gkey.match(ev.awt)) {
+	    if(gkeytype(ev))
+		return(true);
+	}
+	return(false);
     }
 
     @Deprecated

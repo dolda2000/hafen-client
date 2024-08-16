@@ -29,7 +29,7 @@ package haven;
 import java.awt.Color;
 import java.util.*;
 
-public class Charlist extends Widget implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler {
+public class Charlist extends Widget implements Widget.MouseEvent.Handler {
     public static final Coord bsz = UI.scale(289, 96);
     public static final Text.Furnace tf = new PUtils.BlurFurn(new PUtils.TexFurn(new Text.Foundry(Text.fraktur, 20).aa(true), Window.ctex), UI.scale(2), UI.scale(2), Color.BLACK);
     public static final int margin = UI.scale(6);
@@ -235,6 +235,6 @@ public class Charlist extends Widget implements Widget.MouseEvent.Handler, Widge
 		wdgmsg("play", list.sel.name);
 	    return(true);
 	}
-	return(false);
+	return(super.keydown(ev));
     }
 }

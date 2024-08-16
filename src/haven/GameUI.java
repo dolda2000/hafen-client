@@ -34,7 +34,7 @@ import java.awt.image.WritableRaster;
 import haven.render.Location;
 import static haven.Inventory.invsq;
 
-public class GameUI extends ConsoleHost implements Widget.KbdEvent.Handler, Console.Directory, UI.MessageWidget {
+public class GameUI extends ConsoleHost implements Console.Directory, UI.MessageWidget {
     private static final int blpw = UI.scale(142), brpw = UI.scale(142);
     public final String chrid, genus;
     public final long plid;
@@ -1494,7 +1494,7 @@ public class GameUI extends ConsoleHost implements Widget.KbdEvent.Handler, Cons
 	    setfocus(map);
 	    return(true);
 	}
-	return(false);
+	return(super.globtype(ev));
     }
 
     private int uimode = 1;
@@ -1582,7 +1582,7 @@ public class GameUI extends ConsoleHost implements Widget.KbdEvent.Handler, Cons
 	wdgmsg("act", al);
     }
 
-    public class FKeyBelt extends Belt implements KbdEvent.Handler, DTarget, DropTarget {
+    public class FKeyBelt extends Belt implements DTarget, DropTarget {
 	public final int beltkeys[] = {KeyEvent.VK_F1, KeyEvent.VK_F2, KeyEvent.VK_F3, KeyEvent.VK_F4,
 				       KeyEvent.VK_F5, KeyEvent.VK_F6, KeyEvent.VK_F7, KeyEvent.VK_F8,
 				       KeyEvent.VK_F9, KeyEvent.VK_F10, KeyEvent.VK_F11, KeyEvent.VK_F12};
@@ -1632,12 +1632,12 @@ public class GameUI extends ConsoleHost implements Widget.KbdEvent.Handler, Cons
 		    }
 		}
 	    }
-	    return(false);
+	    return(super.globtype(ev));
 	}
     }
     
     private static final Tex nkeybg = Resource.loadtex("gfx/hud/hb-main");
-    public class NKeyBelt extends Belt implements KbdEvent.Handler {
+    public class NKeyBelt extends Belt {
 	public int curbelt = 0;
 	final Coord pagoff = UI.scale(new Coord(5, 25));
 
@@ -1704,7 +1704,7 @@ public class GameUI extends ConsoleHost implements Widget.KbdEvent.Handler, Cons
 	
 	public boolean globtype(GlobKeyEvent ev) {
 	    if((ev.code < KeyEvent.VK_0) || (ev.code > KeyEvent.VK_9))
-		return(false);
+		return(super.globtype(ev));
 	    int i = Utils.floormod(ev.code - KeyEvent.VK_0 - 1, 10);
 	    boolean M = (ev.mods & KeyMatch.M) != 0;
 	    if(M) {

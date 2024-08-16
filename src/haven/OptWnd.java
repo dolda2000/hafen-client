@@ -48,7 +48,7 @@ public class OptWnd extends Window {
 	}
     }
 
-    public class PButton extends Button implements KbdEvent.Handler {
+    public class PButton extends Button {
 	public final Panel tgt;
 	public final int key;
 
@@ -62,12 +62,12 @@ public class OptWnd extends Window {
 	    chpanel(tgt);
 	}
 
-	@Override public boolean keydown(KeyDownEvent ev) {
+	public boolean keydown(KeyDownEvent ev) {
 	    if((this.key != -1) && (ev.c == this.key)) {
 		click();
 		return(true);
 	    }
-	    return(false);
+	    return(super.keydown(ev));
 	}
     }
 
@@ -619,7 +619,7 @@ public class OptWnd extends Window {
     }
 
 
-    public static class PointBind extends Button implements MouseEvent.Handler, KbdEvent.Handler, CursorQuery.Handler {
+    public static class PointBind extends Button implements MouseEvent.Handler, CursorQuery.Handler {
 	public static final String msg = "Bind other elements...";
 	public static final Resource curs = Resource.local().loadwait("gfx/hud/curs/wrench");
 	private UI.Grab mg, kg;
@@ -711,7 +711,7 @@ public class OptWnd extends Window {
 
 	public boolean keydown(KeyDownEvent ev) {
 	    if(!ev.grabbed)
-		return(false);
+		return(super.keydown(ev));
 	    if(handle(ev.awt)) {
 		kg.remove();
 		kg = null;

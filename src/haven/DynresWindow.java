@@ -41,7 +41,7 @@ import javax.swing.JFileChooser;
 import static haven.PUtils.*;
 import static haven.render.Texture.Filter.*;
 
-public class DynresWindow extends Window implements Widget.KbdEvent.Handler {
+public class DynresWindow extends Window {
     public static final Config.Variable<URI> service = Config.Services.var("dynresurl", "");
     public static final Coord itemsz = UI.scale(128, 128);
     public final Future<List<Preview.Spec>> previews = Preview.Spec.fetch();

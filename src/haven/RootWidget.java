@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 import java.awt.Color;
 
-public class RootWidget extends ConsoleHost implements UI.MessageWidget, Widget.KbdEvent.Handler, Widget.CursorQuery.Handler, Console.Directory {
+public class RootWidget extends ConsoleHost implements UI.MessageWidget, Widget.CursorQuery.Handler, Console.Directory {
     public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
     public static final Resource defcurs = Resource.local().loadwait("gfx/hud/curs/arw");
     public boolean modtip = false;
@@ -55,27 +55,30 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget, Widget.
     }
 
     public boolean globtype(GlobKeyEvent ev) {
-	if(!ev.propagate(this)) {
-	    if(ev.c == '`') {
-		if(UIPanel.profile.get()) {
-		    add(new Profwnd(guprof, "UI profile"), UI.scale(100, 100));
-		    add(new Profwnd(grprof, "GL profile"), UI.scale(500, 100));
-		    /* XXXRENDER
-		    GameUI gi = findchild(GameUI.class);
-		    if((gi != null) && (gi.map != null))
-			add(new Profwnd(gi.map.prof, "Map profile"), UI.scale(100, 250));
-		    */
-		}
-		if(UIPanel.profilegpu.get()) {
-		    add(new Profwnd(ggprof, "GPU profile"), UI.scale(500, 250));
-		}
-	    } else if(ev.c == ':') {
-		entercmd();
-	    } else if(ev.c != 0) {
-		wdgmsg("gk", (int)ev.c, ev.mods);
+	if(ev.propagate(this))
+	    return(true);
+	if(ev.c == '`') {
+	    if(UIPanel.profile.get()) {
+		add(new Profwnd(guprof, "UI profile"), UI.scale(100, 100));
+		add(new Profwnd(grprof, "GL profile"), UI.scale(500, 100));
+		/* XXXRENDER
+		   GameUI gi = findchild(GameUI.class);
+		   if((gi != null) && (gi.map != null))
+		   add(new Profwnd(gi.map.prof, "Map profile"), UI.scale(100, 250));
+		*/
 	    }
+	    if(UIPanel.profilegpu.get()) {
+		add(new Profwnd(ggprof, "GPU profile"), UI.scale(500, 250));
+	    }
+	    return(true);
+	} else if(ev.c == ':') {
+	    entercmd();
+	    return(true);
+	} else if(ev.c != 0) {
+	    wdgmsg("gk", (int)ev.c, ev.mods);
+	    return(true);
 	}
-	return(true);
+	return(super.globtype(ev));
     }
 
     public void draw(GOut g) {

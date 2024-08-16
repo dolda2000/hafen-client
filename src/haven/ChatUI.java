@@ -39,7 +39,7 @@ import java.util.regex.*;
 import java.io.IOException;
 import java.awt.datatransfer.*;
 
-public class ChatUI extends Widget implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler {
+public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
     public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(UI.scale(12f)), TextAttribute.FOREGROUND, Color.BLACK)).aa(true);
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
     public static final int selw = UI.scale(130);
@@ -1608,12 +1608,12 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler, Widget.
 		chansel.down();
 		return(true);
 	    }
-	    return(false);
+	    return(super.keydown(ev));
 	}
     }
 
     public static final KeyBinding kb_quick = KeyBinding.get("chat-quick", KeyMatch.forcode(java.awt.event.KeyEvent.VK_ENTER, 0));
-    @Override public boolean globtype(GlobKeyEvent ev) {
+    public boolean globtype(GlobKeyEvent ev) {
 	if(kb_quick.key().match(ev)) {
 	    if(!visible && (sel instanceof EntryChannel)) {
 		qgrab = ui.grabkeys(this);
@@ -1621,6 +1621,6 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler, Widget.
 		return(true);
 	    }
 	}
-	return(false);
+	return(super.globtype(ev));
     }
 }

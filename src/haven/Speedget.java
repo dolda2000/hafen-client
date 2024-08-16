@@ -26,7 +26,7 @@
 
 package haven;
 
-public class Speedget extends Widget implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler {
+public class Speedget extends Widget implements Widget.MouseEvent.Handler {
     public static final Tex imgs[][];
     public static final String tips[];
     public static final Coord tsz;
@@ -140,6 +140,6 @@ public class Speedget extends Widget implements Widget.MouseEvent.Handler, Widge
 		return(true);
 	    }
 	}
-	return(false);
+	return(super.globtype(ev));
     }
 }

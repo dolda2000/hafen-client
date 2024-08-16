@@ -36,7 +36,7 @@ import java.awt.image.BufferedImage;
 import haven.Resource.AButton;
 import haven.ItemInfo.AttrCache;
 
-public class MenuGrid extends Widget implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler, KeyBinding.Bindable {
+public class MenuGrid extends Widget implements Widget.MouseEvent.Handler, KeyBinding.Bindable {
     public final static Tex bg = Inventory.invsq;
     public final static Coord bgsz = Inventory.sqsz;
     public final static RichText.Foundry ttfnd = new RichText.Foundry(TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, UI.scale(10f));
@@ -676,7 +676,7 @@ public class MenuGrid extends Widget implements Widget.MouseEvent.Handler, Widge
 		showkeys = true;
 	    return(true);
 	}
-	return(false);
+	return(super.globtype(ev));
     }
 
     public KeyBinding getbinding(Coord cc) {

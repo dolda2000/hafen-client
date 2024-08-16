@@ -32,7 +32,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import static haven.PUtils.*;
 
-public class Window extends Widget implements Widget.MouseEvent.Handler, Widget.KbdEvent.Handler, DTarget {
+public class Window extends Widget implements Widget.MouseEvent.Handler, DTarget {
     public static final Pipe.Op bgblend = FragColor.blend.nil;
     public static final Pipe.Op cblend  = FragColor.blend(new BlendMode(BlendMode.Function.ADD, BlendMode.Factor.SRC_ALPHA, BlendMode.Factor.INV_SRC_ALPHA,
 									BlendMode.Function.ADD, BlendMode.Factor.ONE, BlendMode.Factor.INV_SRC_ALPHA));
@@ -487,7 +487,7 @@ public class Window extends Widget implements Widget.MouseEvent.Handler, Widget.
 	    reqclose();
 	    return(true);
 	}
-	return(false);
+	return(super.keydown(ev));
     }
 
     public boolean drop(Coord cc, Coord ul) {

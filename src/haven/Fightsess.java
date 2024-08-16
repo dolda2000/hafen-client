@@ -31,7 +31,7 @@ import java.util.*;
 import java.awt.Color;
 import java.awt.event.KeyEvent;
 
-public class Fightsess extends Widget implements Widget.KbdEvent.Handler {
+public class Fightsess extends Widget {
     private static final Coord off = new Coord(UI.scale(32), UI.scale(32));
     public static final Tex cdframe = Resource.loadtex("gfx/hud/combat/cool");
     public static final Tex actframe = Buff.frame;
@@ -455,7 +455,7 @@ public class Fightsess extends Widget implements Widget.KbdEvent.Handler {
 	    fv.wdgmsg("bump", (int)fv.lsrel.get(0).gobid);
 	    return(true);
 	}
-	return(false);
+	return(super.globtype(ev));
     }
 
     public boolean keydown(KeyDownEvent ev) {
