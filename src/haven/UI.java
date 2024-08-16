@@ -754,9 +754,7 @@ public class UI {
 	    if(q.grabbed(true).dispatch(g.wdg))
 		return(q.ret);
 	}
-	Widget.CursorQuery q = new Widget.CursorQuery(c);
-	q.dispatch(root);
-	return(q.ret);
+	return(new Widget.CursorQuery(c).query(root));
     }
 
     private Widget prevtt = null;
