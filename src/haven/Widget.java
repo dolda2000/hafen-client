@@ -964,8 +964,8 @@ public class Widget {
 	protected boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "mousedown", new Class<?>[] {Coord.class, Integer.TYPE}, c, b))
 		return(true);
-	    if(w instanceof Handler)
-		return(((Handler)w).mousedown(this));
+	    if((w instanceof Handler) && ((Handler)w).mousedown(this))
+		return(true);
 	    return(super.shandle(w));
 	}
     }
@@ -983,8 +983,8 @@ public class Widget {
 	protected boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "mouseup", new Class<?>[] {Coord.class, Integer.TYPE}, c, b))
 		return(true);
-	    if(w instanceof Handler)
-		return(((Handler)w).mouseup(this));
+	    if((w instanceof Handler) && ((Handler)w).mouseup(this))
+		return(true);
 	    return(super.shandle(w));
 	}
     }
@@ -1031,8 +1031,8 @@ public class Widget {
 	public boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "mousewheel", new Class<?>[] {Coord.class, Integer.TYPE}, c, a))
 		return(true);
-	    if(w instanceof Handler)
-		return(((Handler)w).mousewheel(this));
+	    if((w instanceof Handler) && ((Handler)w).mousewheel(this))
+		return(true);
 	    return(super.shandle(w));
 	}
     }
@@ -1070,8 +1070,8 @@ public class Widget {
 	protected boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "mousehover", new Class<?>[] {Coord.class, Boolean.TYPE}, c, hovering))
 		return(true);
-	    if(w instanceof Handler)
-		return(((Handler)w).mousehover(this, hovering));
+	    if((w instanceof Handler) && ((Handler)w).mousehover(this, hovering))
+		return(true);
 	    return(super.shandle(w));
 	}
     }
@@ -1142,8 +1142,8 @@ public class Widget {
 	protected boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "keydown", new Class<?>[] {KeyEvent.class}, awt))
 		return(true);
-	    if(w instanceof Handler)
-		return(((Handler)w).keydown(this));
+	    if((w instanceof Handler) && ((Handler)w).keydown(this))
+		return(true);
 	    if(w.canactivate) {
 		if(key_act.match(this)) {
 		    w.wdgmsg("activate");
@@ -1186,8 +1186,8 @@ public class Widget {
 	public boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "keyup", new Class<?>[] {KeyEvent.class}, awt))
 		return(true);
-	    if(w instanceof Handler)
-		return(((Handler)w).keyup(this));
+	    if((w instanceof Handler) && ((Handler)w).keyup(this))
+		return(true);
 	    return(super.shandle(w));
 	}
     }
@@ -1206,8 +1206,8 @@ public class Widget {
 	protected boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "keydown", new Class<?>[] {Character.TYPE, KeyEvent.class}, awt.getKeyChar(), awt))
 		return(true);
-	    if(w instanceof Handler)
-		return(((Handler)w).globtype(this));
+	    if((w instanceof Handler) && ((Handler)w).globtype(this))
+		return(true);
 	    KeyMatch gkey = w.gkey;
 	    if(w.kb_gkey != null)
 		gkey = w.kb_gkey.key();
@@ -1246,8 +1246,8 @@ public class Widget {
 	}
 
 	protected boolean shandle(Widget w) {
-	    if(w instanceof Handler)
-		return(((Handler)w).getcurs(this));
+	    if((w instanceof Handler) && ((Handler)w).getcurs(this))
+		return(true);
 	    if(propagate(w))
 		return(true);
 	    if(w.cursor != null) {
