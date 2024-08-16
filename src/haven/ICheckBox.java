@@ -103,10 +103,4 @@ public class ICheckBox extends ACheckBox implements Widget.MouseEvent.Handler {
     public void mousemove(MouseMoveEvent ev) {
 	this.h = checkhit(ev.c);
     }
-
-    public Object tooltip(Coord c, Widget prev) {
-	if(!checkhit(c))
-	    return(null);
-	return(super.tooltip(c, prev));
-    }
 }

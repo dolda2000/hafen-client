@@ -1881,15 +1881,17 @@ public class Widget {
     public boolean tooltip(TooltipQuery ev) {
 	if(ev.propagate(this))
 	    return(true);
-	Object tip;
-	try {
-	    tip = tooltip(ev.c, ev.last);
-	} catch(Loading l) {
-	    tip = "...";
-	}
-	if(tip != null) {
-	    ev.set(tip, this);
-	    return(true);
+	if(checkhit(ev.c)) {
+	    Object tip;
+	    try {
+		tip = tooltip(ev.c, ev.last);
+	    } catch(Loading l) {
+		tip = "...";
+	    }
+	    if(tip != null) {
+		ev.set(tip, this);
+		return(true);
+	    }
 	}
 	return(false);
     }

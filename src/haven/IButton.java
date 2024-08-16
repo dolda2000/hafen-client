@@ -158,10 +158,4 @@ public class IButton extends SIWidget implements Widget.MouseEvent.Handler {
 	    redraw();
 	}
     }
-
-    public Object tooltip(Coord c, Widget prev) {
-	if(!checkhit(c))
-	    return(null);
-	return(super.tooltip(c, prev));
-    }
 }
