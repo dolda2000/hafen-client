@@ -46,40 +46,6 @@ public class ItemDrag extends WItem implements Widget.MouseEvent.Handler {
 	g.chcolor();
     }
 
-    public boolean dropon(Widget w, Coord c) {
-	if(w instanceof DTarget) {
-	    if(((DTarget)w).drop(c, c.add(doff.inv())))
-		return(true);
-	}
-	for(Widget wdg = w.lchild; wdg != null; wdg = wdg.prev) {
-	    if((wdg == this) || !wdg.visible())
-		continue;
-	    Coord cc = w.xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz)) {
-		if(dropon(wdg, c.add(cc.inv())))
-		    return(true);
-	    }
-	}
-	return(false);
-    }
-	
-    public boolean interact(Widget w, Coord c) {
-	if(w instanceof DTarget) {
-	    if(((DTarget)w).iteminteract(c, c.add(doff.inv())))
-		return(true);
-	}
-	for(Widget wdg = w.lchild; wdg != null; wdg = wdg.prev) {
-	    if((wdg == this) || !wdg.visible())
-		continue;
-	    Coord cc = w.xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz)) {
-		if(interact(wdg, c.add(cc.inv())))
-		    return(true);
-	    }
-	}
-	return(false);
-    }
-	
     public boolean mousedown(MouseDownEvent ev) {
 	if(ui.modctrl && !ui.modshift && !ui.modmeta) {
 	    /* XXX */
@@ -90,10 +56,10 @@ public class ItemDrag extends WItem implements Widget.MouseEvent.Handler {
 	    }
 	}
 	if(ev.b == 1) {
-	    dropon(parent, ev.c.add(this.c));
+	    new Drop(ev.c.add(this.c), this).dispatch(parent);
 	    return(true);
 	} else if(ev.b == 3) {
-	    interact(parent, ev.c.add(this.c));
+	    new Interact(ev.c.add(this.c), this).dispatch(parent);
 	    return(true);
 	}
 	return(false);

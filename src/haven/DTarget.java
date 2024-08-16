@@ -29,4 +29,48 @@ package haven;
 public interface DTarget {
     public boolean drop(Coord cc, Coord ul);
     public boolean iteminteract(Coord cc, Coord ul);
+
+    public default boolean drop(Drop ev) {
+	return(drop(ev.c, ev.c.sub(ev.src.doff)));
+    }
+    public default boolean iteminteract(Interact ev) {
+	return(iteminteract(ev.c, ev.c.sub(ev.src.doff)));
+    }
+
+    public abstract static class ItemEvent extends Widget.MouseEvent {
+	public final ItemDrag src;
+
+	public ItemEvent(Coord c, ItemDrag src) {
+	    super(c);
+	    this.src = src;
+	}
+	public ItemEvent(ItemEvent from, Coord c) {
+	    super(from, c);
+	    this.src = from.src;
+	}
+    }
+
+    public static class Drop extends ItemEvent {
+	public Drop(Coord c, ItemDrag src) {super(c, src);}
+	public Drop(Drop from, Coord c) {super(from, c);}
+	public Drop derive(Coord c) {return(new Drop(this, c));}
+
+	protected boolean shandle(Widget w) {
+	    if((w != src) && (w instanceof DTarget) && ((DTarget)w).drop(this))
+		return(true);
+	    return(super.shandle(w));
+	}
+    }
+
+    public static class Interact extends ItemEvent {
+	public Interact(Coord c, ItemDrag src) {super(c, src);}
+	public Interact(Interact from, Coord c) {super(from, c);}
+	public Interact derive(Coord c) {return(new Interact(this, c));}
+
+	protected boolean shandle(Widget w) {
+	    if((w != src) && (w instanceof DTarget) && ((DTarget)w).iteminteract(this))
+		return(true);
+	    return(super.shandle(w));
+	}
+    }
 }
