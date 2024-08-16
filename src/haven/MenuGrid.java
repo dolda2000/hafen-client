@@ -580,7 +580,7 @@ public class MenuGrid extends Widget implements Widget.MouseEvent.Handler, Widge
 	PagButton h = bhit(ev.c);
 	if((ev.b == 1) && (grab != null)) {
 	    if(dragging != null) {
-		ui.dropthing(ui.root, ui.mc, dragging);
+		DropTarget.dropthing(ui.root, ui.mc, dragging);
 		pressed = null;
 		dragging = null;
 	    } else if(pressed != null) {

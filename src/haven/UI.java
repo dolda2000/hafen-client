@@ -703,21 +703,6 @@ public class UI {
     private Coord wdgxlate(Coord c, Widget wdg) {
 	return(c.sub(wdg.rootpos()));
     }
-	
-    public boolean dropthing(Widget w, Coord c, Object thing) {
-	if(w instanceof DropTarget) {
-	    if(((DropTarget)w).dropthing(c, thing))
-		return(true);
-	}
-	for(Widget wdg = w.lchild; wdg != null; wdg = wdg.prev) {
-	    Coord cc = w.xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz)) {
-		if(dropthing(wdg, c.add(cc.inv()), thing))
-		    return(true);
-	    }
-	}
-	return(false);
-    }
 
     public void mousedown(MouseEvent ev, Coord c, int button) {
 	setmods(ev);

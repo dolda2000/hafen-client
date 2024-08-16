@@ -371,7 +371,7 @@ public class FightWnd extends Widget {
 		grab.remove();
 		grab = null;
 		if(drag != null) {
-		    ui.dropthing(ui.root, ev.c.add(rootpos()), drag);
+		    DropTarget.dropthing(ui.root, ev.c.add(rootpos()), drag);
 		    drag = null;
 		}
 		return(true);
