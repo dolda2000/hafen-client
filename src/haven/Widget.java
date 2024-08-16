@@ -763,7 +763,7 @@ public class Widget {
     }
 	
     public boolean checkhit(Coord c) {
-	return(true);
+	return(c.isect(Coord.z, sz));
     }
 
     public static abstract class Event {
