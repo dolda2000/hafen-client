@@ -1229,6 +1229,32 @@ public class Widget {
 	}
     }
 
+    public static abstract class QueryEvent<R> extends PointerEvent {
+	public final QueryEvent<R> root;
+	public R ret;
+
+	public QueryEvent(Coord c) {
+	    super(c);
+	    root = this;
+	}
+	public QueryEvent(QueryEvent<R> from, Coord c) {
+	    super(from, c);
+	    root = from.root;
+	}
+
+	/* Return value doesn't indicate anything, it's just to be
+	 * able to do return(ev.nset(res)). */
+	public boolean set(R ret) {
+	    root.ret = ret;
+	    return(true);
+	}
+
+	public R query(Widget w) {
+	    dispatch(w);
+	    return(ret);
+	}
+    }
+
     public static class TooltipQuery extends PointerEvent {
 	public final TooltipQuery root;
 	public final Widget last;
@@ -1262,26 +1288,9 @@ public class Widget {
 	}
     }
 
-    public static class CursorQuery extends PointerEvent {
-	public final CursorQuery root;
-	public Resource ret;
-
-	public CursorQuery(Coord c) {
-	    super(c);
-	    root = this;
-	}
-	public CursorQuery(CursorQuery from, Coord c) {
-	    super(from, c);
-	    root = from.root;
-	}
-
-	/* Return value doesn't indicate anything, it's just to be
-	 * able to do return(ev.nset(res)). */
-	public boolean set(Resource ret) {
-	    root.ret = ret;
-	    return(true);
-	}
-
+    public static class CursorQuery extends QueryEvent<Resource> {
+	public CursorQuery(Coord c) {super(c);}
+	public CursorQuery(CursorQuery from, Coord c) {super(from, c);}
 	public CursorQuery derive(Coord c) {return(new CursorQuery(this, c));}
 
 	public static interface Handler {
