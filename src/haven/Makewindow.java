@@ -373,26 +373,20 @@ public class Makewindow extends Widget {
 	Coord c;
 	if(!qmod.isEmpty()) {
 	    c = new Coord(qmx, qmy);
-	    try {
-		for(Indir<Resource> qm : qmod) {
-		    Coord tsz = qmicon(qm).sz();
-		    if(mc.isect(c, tsz))
-			return(qm.get().flayer(Resource.tooltip).t);
-		    c = c.add(tsz.x + UI.scale(1), 0);
-		}
-	    } catch(Loading l) {
+	    for(Indir<Resource> qm : qmod) {
+		Coord tsz = qmicon(qm).sz();
+		if(mc.isect(c, tsz))
+		    return(qm.get().flayer(Resource.tooltip).t);
+		c = c.add(tsz.x + UI.scale(1), 0);
 	    }
 	}
 	if(!tools.isEmpty()) {
 	    c = new Coord(toolx, qmy);
-	    try {
-		for(Indir<Resource> tool : tools) {
-		    Coord tsz = qmicon(tool).sz();
-		    if(mc.isect(c, tsz))
-			return(tool.get().flayer(Resource.tooltip).t);
-		    c = c.add(tsz.x + UI.scale(1), 0);
-		}
-	    } catch(Loading l) {
+	    for(Indir<Resource> tool : tools) {
+		Coord tsz = qmicon(tool).sz();
+		if(mc.isect(c, tsz))
+		    return(tool.get().flayer(Resource.tooltip).t);
+		c = c.add(tsz.x + UI.scale(1), 0);
 	    }
 	}
 	return(super.tooltip(mc, prev));

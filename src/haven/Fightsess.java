@@ -305,22 +305,20 @@ public class Fightsess extends Widget implements Widget.KbdEvent.Handler {
 	for(int i = 0; i < actions.length; i++) {
 	    Coord ca = pcc.add(actc(i));
 	    Indir<Resource> act = (actions[i] == null) ? null : actions[i].res;
-	    try {
-		if(act != null) {
-		    Tex img = act.get().flayer(Resource.imgc).tex();
-		    ca = ca.sub(img.sz().div(2));
-		    if(c.isect(ca, img.sz())) {
-			String tip = act.get().flayer(Resource.tooltip).t;
-			if(kb_acts[i].key() != KeyMatch.nil)
-			    tip += " ($b{$col[255,128,0]{" + kb_acts[i].key().name() + "}})";
-			if((acttip == null) || !acttip.text.equals(tip))
-			    acttip = RichText.render(tip, -1);
-			return(acttip);
-		    }
+	    if(act != null) {
+		Tex img = act.get().flayer(Resource.imgc).tex();
+		ca = ca.sub(img.sz().div(2));
+		if(c.isect(ca, img.sz())) {
+		    String tip = act.get().flayer(Resource.tooltip).t;
+		    if(kb_acts[i].key() != KeyMatch.nil)
+			tip += " ($b{$col[255,128,0]{" + kb_acts[i].key().name() + "}})";
+		    if((acttip == null) || !acttip.text.equals(tip))
+			acttip = RichText.render(tip, -1);
+		    return(acttip);
 		}
-	    } catch(Loading l) {}
+	    }
 	}
-	try {
+	{
 	    Indir<Resource> lastact = this.lastact1;
 	    if(lastact != null) {
 		Coord usesz = lastact.get().flayer(Resource.imgc).sz;
@@ -331,8 +329,8 @@ public class Fightsess extends Widget implements Widget.KbdEvent.Handler {
 		    return(lastacttip1);
 		}
 	    }
-	} catch(Loading l) {}
-	try {
+	}
+	{
 	    Indir<Resource> lastact = this.lastact2;
 	    if(lastact != null) {
 		Coord usesz = lastact.get().flayer(Resource.imgc).sz;
@@ -343,7 +341,7 @@ public class Fightsess extends Widget implements Widget.KbdEvent.Handler {
 		    return(lastacttip2);
 		}
 	    }
-	} catch(Loading l) {}
+	}
 	return(null);
     }
 

@@ -184,18 +184,14 @@ public class Buff extends Widget implements Widget.MouseEvent.Handler, ItemInfo.
 	double now = Utils.rtime();
 	if(prev != this)
 	    hoverstart = now;
-	try {
-	    if(now - hoverstart < 1.0) {
-		if(shorttip == null)
-		    shorttip = new TexI(shorttip());
-		return(shorttip);
-	    } else {
-		if(longtip == null)
-		    longtip = new TexI(longtip());
-		return(longtip);
-	    }
-	} catch(Loading e) {
-	    return("...");
+	if(now - hoverstart < 1.0) {
+	    if(shorttip == null)
+		shorttip = new TexI(shorttip());
+	    return(shorttip);
+	} else {
+	    if(longtip == null)
+		longtip = new TexI(longtip());
+	    return(longtip);
 	}
     }
 

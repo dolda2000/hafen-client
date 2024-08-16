@@ -90,25 +90,21 @@ public class WItem extends Widget implements Window.MouseEvent.Handler, DTarget 
 	} else {
 	    hoverstart = now;
 	}
-	try {
-	    List<ItemInfo> info = item.info();
-	    if(info.size() < 1)
-		return(null);
-	    if(info != ttinfo) {
-		shorttip = longtip = null;
-		ttinfo = info;
-	    }
-	    if(now - hoverstart < 1.0) {
-		if(shorttip == null)
-		    shorttip = new ShortTip(info);
-		return(shorttip);
-	    } else {
-		if(longtip == null)
-		    longtip = new LongTip(info);
-		return(longtip);
-	    }
-	} catch(Loading e) {
-	    return("...");
+	List<ItemInfo> info = item.info();
+	if(info.size() < 1)
+	    return(null);
+	if(info != ttinfo) {
+	    shorttip = longtip = null;
+	    ttinfo = info;
+	}
+	if(now - hoverstart < 1.0) {
+	    if(shorttip == null)
+		shorttip = new ShortTip(info);
+	    return(shorttip);
+	} else {
+	    if(longtip == null)
+		longtip = new LongTip(info);
+	    return(longtip);
 	}
     }
 

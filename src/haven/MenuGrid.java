@@ -507,12 +507,8 @@ public class MenuGrid extends Widget implements Widget.MouseEvent.Handler, Widge
 		hoverstart = now;
 	    boolean ttl = (now - hoverstart) > 0.5;
 	    if((pag != curttp) || (ttl != curttl)) {
-		try {
-		    BufferedImage ti = pag.rendertt(ttl);
-		    curtt = (ti == null) ? null : new TexI(ti);
-		} catch(Loading l) {
-		    return("...");
-		}
+		BufferedImage ti = pag.rendertt(ttl);
+		curtt = (ti == null) ? null : new TexI(ti);
 		curttp = pag;
 		curttl = ttl;
 	    }

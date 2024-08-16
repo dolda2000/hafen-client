@@ -79,10 +79,8 @@ public class ISBox extends Widget implements Widget.MouseEvent.Handler, DTarget 
     }
 
     public Object tooltip(Coord c, Widget prev) {
-	try {
-	    if(res.get().layer(Resource.tooltip) != null)
-		return(res.get().layer(Resource.tooltip).t);
-	} catch(Loading e) {}
+	if(res.get().layer(Resource.tooltip) != null)
+	    return(res.get().layer(Resource.tooltip).t);
 	return(null);
     }
 

@@ -93,18 +93,14 @@ public abstract class LayerMeter extends Widget implements ItemInfo.Owner {
 	double now = Utils.rtime();
 	if(prev != this)
 	    hoverstart = now;
-	try {
-	    if(now - hoverstart < 1.0) {
-		if(shorttip == null)
-		    shorttip = new TexI(ItemInfo.shorttip(info()));
-		return(shorttip);
-	    } else {
-		if(longtip == null)
-		    longtip = new TexI(ItemInfo.longtip(info()));
-		return(longtip);
-	    }
-	} catch(Loading l) {
-	    return("...");
+	if(now - hoverstart < 1.0) {
+	    if(shorttip == null)
+		shorttip = new TexI(ItemInfo.shorttip(info()));
+	    return(shorttip);
+	} else {
+	    if(longtip == null)
+		longtip = new TexI(ItemInfo.longtip(info()));
+	    return(longtip);
 	}
     }
 
