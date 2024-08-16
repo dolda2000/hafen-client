@@ -27,8 +27,8 @@
 package haven;
 
 public interface DTarget {
-    public boolean drop(Coord cc, Coord ul);
-    public boolean iteminteract(Coord cc, Coord ul);
+    public default boolean drop(Coord cc, Coord ul) {return(false);}
+    public default boolean iteminteract(Coord cc, Coord ul) {return(false);}
 
     public default boolean drop(Drop ev) {
 	return(drop(ev.c, ev.c.sub(ev.src.doff)));
