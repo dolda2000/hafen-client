@@ -720,12 +720,6 @@ public class Widget {
     }
 	
     public void tick(double dt) {
-	Widget next;
-	
-	for(Widget wdg = child; wdg != null; wdg = next) {
-	    next = wdg.next;
-	    wdg.tick(dt);
-	}
 	/* It would be very nice to do these things in harmless mix-in
 	 * classes, but alas, this is Java. */
 	anims.addAll(nanims);
@@ -737,10 +731,15 @@ public class Widget {
 	}
     }
 
+    public void tick(TickEvent ev) {
+	tick(ev.dt);
+    }
+
     public void gtick(haven.render.Render out) {
-	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
-	    wdg.gtick(out);
-	}
+    }
+
+    public void gtick(GTickEvent ev) {
+	gtick(ev.out);
     }
 
     public void draw(GOut g, boolean strict) {
@@ -869,7 +868,7 @@ public class Widget {
 	return(ev.shandle(this));
     }
 
-    public class TickEvent extends Event {
+    public static class TickEvent extends Event {
 	public final double dt;
 
 	public TickEvent(double dt) {
@@ -883,9 +882,14 @@ public class Widget {
 	    }
 	    return(true);
 	}
+
+	protected boolean shandle(Widget w) {
+	    w.tick(this);
+	    return(false);
+	}
     }
 
-    public class GTickEvent extends Event {
+    public static class GTickEvent extends Event {
 	public final haven.render.Render out;
 
 	public GTickEvent(haven.render.Render out) {
@@ -896,6 +900,11 @@ public class Widget {
 	    for(Widget wdg = from.child; wdg != null; wdg = wdg.next)
 		dispatch(wdg);
 	    return(true);
+	}
+
+	protected boolean shandle(Widget w) {
+	    w.gtick(this);
+	    return(false);
 	}
     }
 

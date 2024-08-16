@@ -358,7 +358,7 @@ public class UI {
 	double now = Utils.rtime();
 	double delta = now - lasttick;
 	lasttick = now;
-	root.tick(delta);
+	new Widget.TickEvent(delta).dispatch(root);
 	if(gprefsdirty) {
 	    gprefs.save();
 	    gprefsdirty = false;
@@ -366,7 +366,7 @@ public class UI {
     }
 
     public void gtick(Render out) {
-	root.gtick(out);
+	new Widget.GTickEvent(out).dispatch(root);
     }
 
     public void draw(GOut g) {
