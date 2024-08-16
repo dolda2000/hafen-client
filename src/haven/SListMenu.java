@@ -166,11 +166,6 @@ public abstract class SListMenu<I, W extends Widget> extends Widget implements W
 	super.destroy();
     }
 
-    public Object tooltip(Coord c, Widget prev) {
-	Object ret = super.tooltip(c, prev);
-	return((ret != null) ? ret : "");
-    }
-
     public SListMenu<I, W> addat(Widget wdg, Coord c) {
 	wdg.ui.root.add(this, wdg.rootpos(c));
 	return(this);

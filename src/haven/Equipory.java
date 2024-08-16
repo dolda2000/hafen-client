@@ -195,9 +195,6 @@ public class Equipory extends Widget implements DTarget {
     }
 
     public Object tooltip(Coord c, Widget prev) {
-	Object tt = super.tooltip(c, prev);
-	if(tt != null)
-	    return(tt);
 	int sl = epat(c);
 	if(sl >= 0)
 	    return(etts[sl]);

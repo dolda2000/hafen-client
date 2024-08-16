@@ -47,7 +47,6 @@ public class Widget {
     public Object tooltip = null;
     public KeyMatch gkey;
     public KeyBinding kb_gkey;
-    private Widget prevtt;
     static Map<String, Factory> types = new TreeMap<String, Factory>();
 
     @dolda.jglob.Discoverable
@@ -1228,6 +1227,39 @@ public class Widget {
 	}
     }
 
+    public static class TooltipQuery extends PointerEvent {
+	public final TooltipQuery root;
+	public final Widget last;
+	public Object ret;
+	public Widget from;
+
+	public TooltipQuery(Coord c, Widget last) {
+	    super(c);
+	    this.root = this;
+	    this.last = last;
+	}
+	public TooltipQuery(TooltipQuery from, Coord c) {
+	    super(from, c);
+	    this.root = from.root;
+	    this.last = from.last;
+	}
+	public TooltipQuery derive(Coord c) {return(new TooltipQuery(this, c));}
+
+	/* Return value doesn't indicate anything, it's just to be
+	 * able to do return(ev.nset(res)). */
+	public boolean set(Object ret, Widget from) {
+	    root.ret = ret;
+	    root.from = from;
+	    return(true);
+	}
+
+	protected boolean shandle(Widget w) {
+	    if(w.tooltip(this))
+		return(true);
+	    return(super.shandle(w));
+	}
+    }
+
     public static class CursorQuery extends PointerEvent {
 	public final CursorQuery root;
 	public Resource ret;
@@ -1843,26 +1875,18 @@ public class Widget {
     }
 
     public Object tooltip(Coord c, Widget prev) {
-	if(prev != this)
-	    prevtt = null;
-	if(tooltip != null) {
-	    prevtt = null;
-	    return(tooltip);
+	return(tooltip);
+    }
+
+    public boolean tooltip(TooltipQuery ev) {
+	if(ev.propagate(this))
+	    return(true);
+	Object tip = tooltip(ev.c, ev.last);
+	if(tip != null) {
+	    ev.set(tip, this);
+	    return(true);
 	}
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(!wdg.visible())
-		continue;
-	    Coord cc = xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz)) {
-		Object ret = wdg.tooltip(c.add(cc.inv()), prevtt);
-		if(ret != null) {
-		    prevtt = wdg;
-		    return(ret);
-		}
-	    }
-	}
-	prevtt = null;
-	return(null);
+	return(false);
     }
 
     public Widget settip(String text, boolean rich) {

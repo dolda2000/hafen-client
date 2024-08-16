@@ -156,7 +156,7 @@ public interface GLPanel extends UIPanel, UI.Context {
 	    Object tooltip;
 	    try {
 		synchronized(ui) {
-		    tooltip = ui.root.tooltip(ui.mc, ui.root);
+		    tooltip = ui.tooltip(ui.mc);
 		}
 	    } catch(Loading e) {
 		tooltip = "...";

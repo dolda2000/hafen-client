@@ -502,16 +502,6 @@ public class Window extends Widget implements Widget.MouseEvent.Handler, Widget.
 	return(false);
     }
 
-    public Object tooltip(Coord c, Widget prev) {
-	if(!checkhit(c))
-	    return(super.tooltip(c, prev));
-	Object ret = super.tooltip(c, prev);
-	if(ret != null)
-	    return(ret);
-	else
-	    return("");
-    }
-
     public void reqclose() {
 	wdgmsg("close");
     }

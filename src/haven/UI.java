@@ -774,6 +774,14 @@ public class UI {
 	return(q.ret);
     }
 
+    private Widget prevtt = null;
+    public Object tooltip(Coord c) {
+	Widget.TooltipQuery q = new Widget.TooltipQuery(c, prevtt);
+	q.dispatch(root);
+	prevtt = q.from;
+	return(q.ret);
+    }
+
     public static int modflags(InputEvent ev) {
 	int mod = ev.getModifiersEx();
 	return((((mod & InputEvent.SHIFT_DOWN_MASK) != 0) ? MOD_SHIFT : 0) |
