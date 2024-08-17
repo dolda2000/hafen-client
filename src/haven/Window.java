@@ -32,7 +32,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import static haven.PUtils.*;
 
-public class Window extends Widget implements DTarget {
+public class Window extends Widget {
     public static final Pipe.Op bgblend = FragColor.blend.nil;
     public static final Pipe.Op cblend  = FragColor.blend(new BlendMode(BlendMode.Function.ADD, BlendMode.Factor.SRC_ALPHA, BlendMode.Factor.INV_SRC_ALPHA,
 									BlendMode.Function.ADD, BlendMode.Factor.ONE, BlendMode.Factor.INV_SRC_ALPHA));
@@ -79,7 +79,6 @@ public class Window extends Widget implements DTarget {
 	Resource.loadsimg("gfx/hud/wnd/lg/cbtnd"),
 	Resource.loadsimg("gfx/hud/wnd/lg/cbtnh")};
     public Deco deco;
-    public boolean dt = false;
     public String cap;
     public TexRaw gbuf = null;
     private FragColor gout;
@@ -418,9 +417,7 @@ public class Window extends Widget implements DTarget {
     }
 
     public void uimsg(String msg, Object... args) {
-	if(msg == "dt") {
-	    dt = Utils.bv(args[0]);
-	} else if(msg == "cap") {
+	if(msg == "cap") {
 	    String cap = (String)args[0];
 	    chcap(cap.equals("") ? null : cap);
 	} else if(msg == "dhide") {
@@ -496,18 +493,6 @@ public class Window extends Widget implements DTarget {
 	    return(true);
 	}
 	return(super.keydown(ev));
-    }
-
-    public boolean drop(Coord cc, Coord ul) {
-	if(dt) {
-	    wdgmsg("drop", cc);
-	    return(true);
-	}
-	return(false);
-    }
-
-    public boolean iteminteract(Coord cc, Coord ul) {
-	return(false);
     }
 
     public void reqclose() {
