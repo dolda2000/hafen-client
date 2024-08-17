@@ -850,7 +850,7 @@ public class Widget {
 	}
     }
 
-    private Collection<EventListener<?>> listening = null;
+    private List<EventListener<?>> listening = null;
 
     public <E extends Event> void listen(Class<E> t, EventHandler<? super E> h) {
 	if(listening == null)
@@ -860,10 +860,10 @@ public class Widget {
 
     public boolean deafen(EventHandler<?> h) {
 	if(listening != null) {
-	    for(Iterator<EventListener<?>> i = listening.iterator(); i.hasNext();) {
-		EventListener<?> l = i.next();
+	    for(int i = 0; i < listening.size(); i++) {
+		EventListener<?> l = listening.get(i);
 		if(l.h == h) {
-		    i.remove();
+		    listening.remove(i);
 		    return(true);
 		}
 	    }
