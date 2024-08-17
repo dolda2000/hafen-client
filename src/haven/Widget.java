@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import java.lang.annotation.*;
 import java.lang.reflect.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
@@ -853,7 +854,7 @@ public class Widget {
 
     public <E extends Event> void listen(Class<E> t, EventHandler<? super E> h) {
 	if(listening == null)
-	    listening = new ArrayList<>(1);
+	    listening = new CopyOnWriteArrayList<>();
 	listening.add(new EventListener<>(t, h));
     }
 
