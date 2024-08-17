@@ -36,7 +36,7 @@ import haven.ItemInfo.AttrCache;
 import static haven.ItemInfo.find;
 import static haven.Inventory.sqsz;
 
-public class WItem extends Widget implements Window.MouseEvent.Handler, DTarget {
+public class WItem extends Widget implements DTarget {
     public static final Resource missing = Resource.local().loadwait("gfx/invobjs/missing");
     public final GItem item;
     private Resource cspr = null;
@@ -204,7 +204,7 @@ public class WItem extends Widget implements Window.MouseEvent.Handler, DTarget 
 	    item.wdgmsg("iact", ev.c, ui.modflags());
 	    return(true);
 	}
-	return(false);
+	return(super.mousedown(ev));
     }
 
     public boolean drop(Coord cc, Coord ul) {
@@ -221,6 +221,6 @@ public class WItem extends Widget implements Window.MouseEvent.Handler, DTarget 
 	    item.hovering(this);
 	    return(true);
 	}
-	return(false);
+	return(super.mousehover(ev, on));
     }
 }

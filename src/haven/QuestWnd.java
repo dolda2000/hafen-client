@@ -288,7 +288,7 @@ public class QuestWnd extends Widget {
 	    }
 	}
 
-	public static class QView extends Widget implements MouseEvent.Handler {
+	public static class QView extends Widget {
 	    public static final Text.Furnace qtfnd = new BlurFurn(new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD), 16).aa(true), 2, 1, Color.BLACK);
 	    public static final Text.Foundry qcfnd = new Text.Foundry(Text.sans, 12).aa(true);
 	    public final QVInfo info;
@@ -354,7 +354,7 @@ public class QuestWnd extends Widget {
 		    cw.questtab.showtab();
 		    return(true);
 		}
-		return(false);
+		return(super.mousedown(ev));
 	    }
 
 	    public void tick(double dt) {
@@ -546,7 +546,7 @@ public class QuestWnd extends Widget {
 	    super.tick(dt);
 	}
 
-	public class Item extends Widget implements MouseEvent.Handler {
+	public class Item extends Widget {
 	    public final Quest q;
 	    private final IconText nm;
 	    private Object dres, dtit;
@@ -578,7 +578,7 @@ public class QuestWnd extends Widget {
 	    }
 
 	    public boolean mousedown(MouseDownEvent ev) {
-		if(ev.propagate(this))
+		if(ev.propagate(this) || super.mousedown(ev))
 		    return(true);
 		if(ev.b == 1) {
 		    if((QuestWnd.this.quest != null) && (q.id == QuestWnd.this.quest.questid()))

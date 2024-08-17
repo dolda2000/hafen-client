@@ -145,7 +145,7 @@ public class WoundWnd extends Widget {
 	    super.tick(dt);
 	}
 
-	public class Item extends Widget implements MouseEvent.Handler, DTarget {
+	public class Item extends Widget implements DTarget {
 	    public final Wound w;
 	    private Widget qd, nm;
 	    private Object dres, dqd;
@@ -186,7 +186,7 @@ public class WoundWnd extends Widget {
 	    }
 
 	    public boolean mousedown(MouseDownEvent ev) {
-		if(ev.propagate(this))
+		if(ev.propagate(this) || super.mousedown(ev))
 		    return(true);
 		if(ev.b == 1) {
 		    WoundWnd.this.wdgmsg("wsel", w.id);

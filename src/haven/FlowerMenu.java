@@ -30,7 +30,7 @@ import java.awt.Color;
 import java.awt.Font;
 import static java.lang.Math.PI;
 
-public class FlowerMenu extends Widget implements Widget.MouseEvent.Handler {
+public class FlowerMenu extends Widget {
     public static final Color pink = new Color(255, 0, 128);
     public static final Color ptc = Color.YELLOW;
     public static final Text.Foundry ptf = new Text.Foundry(Text.dfont, 12);
@@ -50,7 +50,7 @@ public class FlowerMenu extends Widget implements Widget.MouseEvent.Handler {
 	}
     }
 
-    public class Petal extends Widget implements MouseEvent.Handler{
+    public class Petal extends Widget {
 	public String name;
 	public double ta, tr;
 	public int num;

@@ -31,7 +31,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.image.BufferedImage;
 
-public class Button extends SIWidget implements Widget.MouseEvent.Handler {
+public class Button extends SIWidget {
     public static final BufferedImage bl = Resource.loadsimg("gfx/hud/buttons/tbtn/left");
     public static final BufferedImage br = Resource.loadsimg("gfx/hud/buttons/tbtn/right");
     public static final BufferedImage bt = Resource.loadsimg("gfx/hud/buttons/tbtn/top");
@@ -184,6 +184,7 @@ public class Button extends SIWidget implements Widget.MouseEvent.Handler {
     }
     
     public void mousemove(MouseMoveEvent ev) {
+	super.mousemove(ev);
 	if(d != null) {
 	    boolean a = ev.c.isect(Coord.z, sz);
 	    if(a != this.a) {
@@ -203,7 +204,7 @@ public class Button extends SIWidget implements Widget.MouseEvent.Handler {
 
     public boolean mousedown(MouseDownEvent ev) {
 	if((ev.b != 1) || dis)
-	    return(false);
+	    return(super.mousedown(ev));
 	a = true;
 	d = ui.grabmouse(this);
 	depress();
@@ -223,6 +224,6 @@ public class Button extends SIWidget implements Widget.MouseEvent.Handler {
 	    }
 	    return(true);
 	}
-	return(false);
+	return(super.mouseup(ev));
     }
 }

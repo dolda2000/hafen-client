@@ -30,7 +30,7 @@ import java.util.*;
 import haven.render.*;
 import haven.render.Rendered;
 
-public class TestView extends PView implements Widget.MouseEvent.Handler {
+public class TestView extends PView {
     static final FastMesh borkamesh = Resource.remote().loadwait("gfx/test/borka").layer(FastMesh.MeshRes.class).m;
     static final Material borkamat = Resource.remote().loadwait("gfx/test/borka").layer(Material.Res.class).get();
     float dist = 15, e = (float)Math.PI * 3 / 2, a = (float)Math.PI / 2, rot = 0;

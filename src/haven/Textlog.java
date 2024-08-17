@@ -30,7 +30,7 @@ import java.util.*;
 import java.awt.Color;
 import java.awt.font.TextAttribute;
 
-public class Textlog extends Widget implements Widget.MouseEvent.Handler {
+public class Textlog extends Widget {
     static Tex texpap = Resource.loadtex("gfx/hud/texpap");
     static Tex schain = Resource.loadtex("gfx/hud/schain");
     static Tex sflarp = Resource.loadtex("gfx/hud/sflarp");
@@ -126,7 +126,7 @@ public class Textlog extends Widget implements Widget.MouseEvent.Handler {
 
     public boolean mousedown(MouseDownEvent ev) {
 	if(ev.b != 1)
-	    return(false);
+	    return(super.mousedown(ev));
 	int fx = sz.x - sflarp.sz().x;
 	int cx = fx + (sflarp.sz().x / 2) - (schain.sz().x / 2);
 	if((maxy > sz.y) && (ev.c.x >= fx)) {
@@ -134,7 +134,7 @@ public class Textlog extends Widget implements Widget.MouseEvent.Handler {
 	    update(ev.c);
 	    return(true);
 	}
-	return(false);
+	return(super.mousedown(ev));
     }
         
     public void mousemove(MouseMoveEvent ev) {
@@ -148,6 +148,6 @@ public class Textlog extends Widget implements Widget.MouseEvent.Handler {
 	    sdrag = null;
 	    return(true);
 	}
-	return(false);
+	return(super.mouseup(ev));
     }
 }

@@ -200,7 +200,7 @@ public class DynresWindow extends Window {
 	}
     }
 
-    public class Adder extends Widget implements MouseEvent.Handler, DropTarget {
+    public class Adder extends Widget implements DropTarget {
 	private final List<Future<BufferedImage>> processing = new LinkedList<>();
 	private SListMenu menu;
 
@@ -326,7 +326,7 @@ public class DynresWindow extends Window {
 		    });
 		return(true);
 	    }
-	    return(false);
+	    return(super.mousedown(ev));
 	}
 
 	private void copypal() {
@@ -412,7 +412,7 @@ public class DynresWindow extends Window {
 	return(super.keydown(ev));
     }
 
-    public class Image extends Widget implements MouseEvent.Handler, Transferable, ClipboardOwner {
+    public class Image extends Widget implements Transferable, ClipboardOwner {
 	public final UID id;
 	public final Indir<Resource> res;
 	private BufferedImage img;
@@ -641,7 +641,7 @@ public class DynresWindow extends Window {
 	    }
 	}
 
-	public static class View extends PView implements MouseEvent.Handler, Sprite.Owner {
+	public static class View extends PView implements Sprite.Owner {
 	    public final Spec spec;
 	    private final Indir<Resource> vres;
 	    private Sprite spr;
@@ -757,7 +757,7 @@ public class DynresWindow extends Window {
 		    grab = ui.grabmouse(this);
 		    return(true);
 		}
-		return(false);
+		return(super.mousedown(ev));
 	    }
 
 	    public boolean mouseup(MouseUpEvent ev) {
@@ -766,10 +766,11 @@ public class DynresWindow extends Window {
 		    grab = null;
 		    return(true);
 		}
-		return(false);
+		return(super.mouseup(ev));
 	    }
 
 	    public void mousemove(MouseMoveEvent ev) {
+		super.mousemove(ev);
 		if(grab != null) {
 		    tangl = dragangl + ((float)ev.c.x - dragstart.x) * 0.01f;
 		    telev = dragelev + ((float)ev.c.y - dragstart.y) * 0.01f;

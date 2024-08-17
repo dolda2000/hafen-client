@@ -26,7 +26,7 @@
 
 package haven;
 
-public class CheckBox extends ACheckBox implements Widget.MouseEvent.Handler {
+public class CheckBox extends ACheckBox {
     public static final Tex lbox = Resource.loadtex("gfx/hud/chkbox");
     public static final Tex lmark = Resource.loadtex("gfx/hud/chkmark");
     public static final Tex sbox = Resource.loadtex("gfx/hud/chkboxs");
@@ -76,6 +76,6 @@ public class CheckBox extends ACheckBox implements Widget.MouseEvent.Handler {
 	    click();
 	    return(true);
 	}
-	return(false);
+	return(super.mousedown(ev));
     }
 }

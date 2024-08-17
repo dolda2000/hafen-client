@@ -41,7 +41,7 @@ import static haven.MCache.cmaps;
 import static haven.MCache.tilesz;
 import static haven.OCache.posres;
 
-public class MiniMap extends Widget implements Widget.MouseEvent.Handler {
+public class MiniMap extends Widget {
     public static final Tex bg = Resource.loadtex("gfx/hud/mmap/ptex");
     public static final Tex nomap = Resource.loadtex("gfx/hud/mmap/nomap");
     public static final Tex plp = ((TexI)Resource.loadtex("gfx/hud/mmap/plp")).filter(Texture.Filter.LINEAR);
@@ -830,7 +830,7 @@ public class MiniMap extends Widget implements Widget.MouseEvent.Handler {
 	    }
 	    return(true);
 	}
-	return(false);
+	return(super.mousedown(ev));
     }
 
     public void mousemove(MouseMoveEvent ev) {
@@ -843,6 +843,7 @@ public class MiniMap extends Widget implements Widget.MouseEvent.Handler {
 		dragging = true;
 	    }
 	}
+	super.mousemove(ev);
     }
 
     public boolean mouseup(MouseUpEvent ev) {
@@ -862,7 +863,7 @@ public class MiniMap extends Widget implements Widget.MouseEvent.Handler {
 	dsicon = null;
 	dsmark = null;
 	dragging = false;
-	return(false);
+	return(super.mouseup(ev));
     }
 
     public boolean mousewheel(MouseWheelEvent ev) {

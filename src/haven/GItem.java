@@ -330,7 +330,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	this.hoverset = true;
     }
 
-    public static class HoverDeco extends Window.Deco implements MouseEvent.Handler {
+    public static class HoverDeco extends Window.Deco {
 	public static final Coord hovermarg = UI.scale(12, 12);
 	public static final Tex bg = Window.bg;
 	public static final IBox box = Window.wbox;
@@ -371,7 +371,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 		doff = ev.c;
 		return(true);
 	    }
-	    return(false);
+	    return(super.mousedown(ev));
 	}
 
 	public boolean mouseup(MouseUpEvent ev) {
@@ -380,10 +380,11 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 		dm = null;
 		return(true);
 	    }
-	    return(false);
+	    return(super.mouseup(ev));
 	}
 
 	public void mousemove(MouseMoveEvent ev) {
+	    super.mousemove(ev);
 	    if(dm != null) {
 		if(ev.c.dist(doff) > 10) {
 		    dm.remove();
@@ -396,7 +397,7 @@ public class GItem extends AWidget implements ItemInfo.SpriteOwner, GSprite.Owne
 	}
     }
 
-    public static class ContentsWindow extends Window implements MouseEvent.Handler {
+    public static class ContentsWindow extends Window {
 	public static final Coord overlap = UI.scale(2, 2);
 	public final GItem cont;
 	public final Widget inv;

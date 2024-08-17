@@ -28,7 +28,7 @@ package haven;
 
 import java.awt.Color;
 
-public class ISBox extends Widget implements Widget.MouseEvent.Handler, DTarget {
+public class ISBox extends Widget implements DTarget {
     public static final Color bgcol = new Color(43, 51, 44, 127);
     public static final IBox box = new IBox("gfx/hud/bosq", "tl", "tr", "bl", "br", "el", "er", "et", "eb") {
 	    public void draw(GOut g, Coord tl, Coord sz) {
@@ -92,7 +92,7 @@ public class ISBox extends Widget implements Widget.MouseEvent.Handler, DTarget 
                 wdgmsg("click");
             return(true);
         }
-        return(false);
+        return(super.mousedown(ev));
     }
 
     public boolean mousewheel(MouseWheelEvent ev) {

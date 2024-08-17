@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.function.*;
 import java.awt.image.BufferedImage;
 
-public abstract class SListMenu<I, W extends Widget> extends Widget implements Widget.MouseEvent.Handler {
+public abstract class SListMenu<I, W extends Widget> extends Widget {
     public static final Text.Foundry bigf = CharWnd.attrf;
     public static final Text.Foundry smallf = new Text.Foundry(Text.fraktur, 14).aa(true);
     public static final Tex bg = Window.bg;
@@ -58,7 +58,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget implements W
 	}
     }
 
-    public class InnerList extends SListBox<I, Item> implements MouseEvent.Handler {
+    public class InnerList extends SListBox<I, Item> {
 	private Coord mc = Coord.of(-1, -1);
 
 	private InnerList(Coord sz, int itemh) {
@@ -78,6 +78,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget implements W
 	}
 
 	public void mousemove(MouseMoveEvent ev) {
+	    super.mousemove(ev);
 	    this.mc = ev.c;
 	}
 
@@ -132,7 +133,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget implements W
 	    choice(null);
 	    return(true);
 	} else {
-	    return(false);
+	    return(super.mousedown(ev));
 	}
     }
 

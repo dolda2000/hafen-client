@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 import java.awt.Color;
 
-public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> implements Widget.MouseEvent.Handler, Scrollable {
+public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> implements Scrollable {
     public static final Color every = new Color(255, 255, 255, 16), other = new Color(255, 255, 255, 32);
     public final int itemh, marg;
     public final Scrollbar sb;
@@ -181,7 +181,7 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> im
     }
 
     public boolean mousewheel(MouseWheelEvent ev) {
-	if(ev.propagate(this))
+	if(ev.propagate(this) || super.mousewheel(ev))
 	    return(true);
 	int step = sz.y / 8;
 	if(maxy > 0)
@@ -202,7 +202,7 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> im
     }
 
     public boolean mousedown(MouseDownEvent ev) {
-	if(ev.propagate(this))
+	if(ev.propagate(this) || super.mousedown(ev))
 	    return(true);
 	int slot = slotat(ev.c);
 	if((slot >= 0) && slotclick(ev.c, slotat(ev.c), ev.b))

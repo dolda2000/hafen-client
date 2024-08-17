@@ -28,7 +28,7 @@ package haven;
 
 import java.awt.Color;
 
-public class RichTextBox extends Widget implements Widget.MouseEvent.Handler {
+public class RichTextBox extends Widget {
     private static final int margin1 = UI.scale(10);
     private static final int margin2 = 2 * margin1;
     public Color bg = Color.BLACK;

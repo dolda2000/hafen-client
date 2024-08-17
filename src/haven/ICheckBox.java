@@ -28,7 +28,7 @@ package haven;
 
 import java.awt.image.BufferedImage;
 
-public class ICheckBox extends ACheckBox implements Widget.MouseEvent.Handler {
+public class ICheckBox extends ACheckBox {
     public final Tex up, down, hoverup, hoverdown;
     private final BufferedImage img;
     public boolean h;
@@ -97,7 +97,7 @@ public class ICheckBox extends ACheckBox implements Widget.MouseEvent.Handler {
 	    click();
 	    return(true);
 	}
-	return(false);
+	return(super.mousedown(ev));
     }
 
     public void mousemove(MouseMoveEvent ev) {

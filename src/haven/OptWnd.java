@@ -619,7 +619,7 @@ public class OptWnd extends Window {
     }
 
 
-    public static class PointBind extends Button implements MouseEvent.Handler, CursorQuery.Handler {
+    public static class PointBind extends Button implements CursorQuery.Handler {
 	public static final String msg = "Bind other elements...";
 	public static final Resource curs = Resource.local().loadwait("gfx/hud/curs/wrench");
 	private UI.Grab mg, kg;

@@ -40,7 +40,7 @@ import haven.MCache.OverlayInfo;
 import haven.render.sl.Uniform;
 import haven.render.sl.Type;
 
-public class MapView extends PView implements Widget.MouseEvent.Handler, DTarget, Console.Directory {
+public class MapView extends PView implements DTarget, Console.Directory {
     public static boolean clickdb = false;
     public long plgob = -1;
     public Coord2d cc;

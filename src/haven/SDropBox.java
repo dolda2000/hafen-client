@@ -30,14 +30,14 @@ import java.util.*;
 import java.util.function.*;
 import java.awt.Color;
 
-public abstract class SDropBox<I, W extends Widget> extends SListWidget<I, W> implements Widget.MouseEvent.Handler {
+public abstract class SDropBox<I, W extends Widget> extends SListWidget<I, W> {
     public static final Tex dropimg = Resource.loadtex("gfx/hud/drop");
     public final int listh,itemh;
     protected final ACheckBox drop;
     private SDropList dl;
     private W curitem;
 
-    public class SDropList extends SListBox<I, Widget> implements MouseEvent.Handler {
+    public class SDropList extends SListBox<I, Widget> {
 	private UI.Grab grab = null;
 
 	protected SDropList() {
@@ -89,7 +89,7 @@ public abstract class SDropBox<I, W extends Widget> extends SListWidget<I, W> im
 		reqdestroy();
 		return(true);
 	    }
-	    return(false);
+	    return(super.mousedown(ev));
 	}
 
 	protected boolean unselect(int btn) {
@@ -167,7 +167,7 @@ public abstract class SDropBox<I, W extends Widget> extends SListWidget<I, W> im
 	    drop.click();
 	    return(true);
 	}
-	return(false);
+	return(super.mousedown(ev));
     }
 
     public static <I> SDropBox<I, Widget> of(int w, int listh, int itemh, List<? extends I>  items, BiFunction<? super I, ? super Coord, ? extends Widget> render, Consumer<? super I> change) {

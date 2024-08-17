@@ -28,7 +28,7 @@ package haven;
 
 import java.awt.image.BufferedImage;
 
-public class Img extends Widget implements Widget.MouseEvent.Handler {
+public class Img extends Widget {
     private Tex img;
     private BufferedImage rimg;
     public boolean hit = false, opaque = false;
@@ -104,6 +104,6 @@ public class Img extends Widget implements Widget.MouseEvent.Handler {
 	    wdgmsg("click", ev.c, ev.b, ui.modflags());
 	    return(true);
 	}
-	return(false);
+	return(super.mousedown(ev));
     }
 }

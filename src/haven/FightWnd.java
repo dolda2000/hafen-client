@@ -154,7 +154,7 @@ public class FightWnd extends Widget {
 	count.setcolor((u > maxact)?Color.RED:Color.WHITE);
     }
 
-    public static class ImageInfoBox extends Widget implements MouseEvent.Handler {
+    public static class ImageInfoBox extends Widget {
 	private Tex img;
 	private Indir<Tex> loading;
 	private final Scrollbar sb;
@@ -231,7 +231,7 @@ public class FightWnd extends Widget {
 	    return(new Item(sz, act));
 	}
 
-	public class Item extends Widget implements MouseEvent.Handler, DTarget {
+	public class Item extends Widget implements DTarget {
 	    public final Action item;
 	    private final Label use;
 	    private int u = -1, a = -1;
@@ -259,11 +259,11 @@ public class FightWnd extends Widget {
 		    setu(item.u - ev.a);
 		    return(true);
 		}
-		return(false);
+		return(super.mousewheel(ev));
 	    }
 
 	    public boolean mousedown(MouseDownEvent ev) {
-		if(ev.propagate(this))
+		if(ev.propagate(this) || super.mousedown(ev))
 		    return(true);
 		if(ev.b == 1) {
 		    change(item);
@@ -274,6 +274,7 @@ public class FightWnd extends Widget {
 	    }
 
 	    public void mousemove(MouseMoveEvent ev) {
+		super.mousemove(ev);
 		if((grab != null) && (ev.c.dist(dp) > 5)) {
 		    grab.remove();
 		    grab = null;
@@ -287,7 +288,7 @@ public class FightWnd extends Widget {
 		    grab = null;
 		    return(true);
 		}
-		return(false);
+		return(super.mouseup(ev));
 	    }
 
 	    public boolean setu(int u) {
@@ -389,7 +390,7 @@ public class FightWnd extends Widget {
     }
 
     public static final String[] keys = {"1", "2", "3", "4", "5", "\u21e71", "\u21e72", "\u21e73", "\u21e74", "\u21e75"};
-    public class BView extends Widget implements MouseEvent.Handler, DropTarget {
+    public class BView extends Widget implements DropTarget {
 	private UI.Grab grab;
 	private Action drag;
 	private Coord dp;
@@ -473,10 +474,11 @@ public class FightWnd extends Widget {
 		    return(true);
 		}
 	    }
-	    return(false);
+	    return(super.mousedown(ev));
 	}
 
 	public void mousemove(MouseMoveEvent ev) {
+	    super.mousemove(ev);
 	    if(dp != null) {
 		if(ev.c.dist(dp) > 5) {
 		    grab.remove();
@@ -496,7 +498,7 @@ public class FightWnd extends Widget {
 		dp = null;
 		return(true);
 	    }
-	    return(false);
+	    return(super.mouseup(ev));
 	}
 
 	private void animate(int s, Coord off) {
@@ -558,7 +560,7 @@ public class FightWnd extends Widget {
 	protected List<Integer> items() {return(items);}
 	protected Widget makeitem(Integer n, int idx, Coord sz) {return(new Item(sz, n));}
 
-	public class Item extends Widget implements MouseEvent.Handler, ReadLine.Owner {
+	public class Item extends Widget implements ReadLine.Owner {
 	    public final int n;
 	    private Text.Line redit = null;
 	    private ReadLine ed;
@@ -613,7 +615,7 @@ public class FightWnd extends Widget {
 		    }
 		    return(true);
 		}
-		return(false);
+		return(super.mousedown(ev));
 	    }
 
 	    public void done(ReadLine buf) {

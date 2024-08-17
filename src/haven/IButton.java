@@ -29,7 +29,7 @@ package haven;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
-public class IButton extends SIWidget implements Widget.MouseEvent.Handler {
+public class IButton extends SIWidget {
     public final BufferedImage up, down, hover;
     public boolean h = false, a = false;
     public Runnable action = null;

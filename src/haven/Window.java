@@ -32,7 +32,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import static haven.PUtils.*;
 
-public class Window extends Widget implements Widget.MouseEvent.Handler, DTarget {
+public class Window extends Widget implements DTarget {
     public static final Pipe.Op bgblend = FragColor.blend.nil;
     public static final Pipe.Op cblend  = FragColor.blend(new BlendMode(BlendMode.Function.ADD, BlendMode.Factor.SRC_ALPHA, BlendMode.Factor.INV_SRC_ALPHA,
 									BlendMode.Function.ADD, BlendMode.Factor.ONE, BlendMode.Factor.INV_SRC_ALPHA));
@@ -163,7 +163,7 @@ public class Window extends Widget implements Widget.MouseEvent.Handler, DTarget
 	public abstract Area contarea();
     }
 
-    public abstract static class DragDeco extends Deco implements MouseEvent.Handler {
+    public abstract static class DragDeco extends Deco {
 	public boolean mousedown(MouseDownEvent ev) {
 	    if(ev.propagate(this))
 		return(true);
@@ -175,11 +175,11 @@ public class Window extends Widget implements Widget.MouseEvent.Handler, DTarget
 		    wnd.drag(ev.c);
 		return(true);
 	    }
-	    return(false);
+	    return(super.mousedown(ev));
 	}
     }
 
-    public static class DefaultDeco extends DragDeco implements MouseEvent.Handler {
+    public static class DefaultDeco extends DragDeco {
 	public final boolean lg;
 	public final IButton cbtn;
 	public boolean dragsize;
@@ -454,7 +454,7 @@ public class Window extends Widget implements Widget.MouseEvent.Handler, DTarget
 	    raise();
 	    return(true);
 	}
-	return(false);
+	return(super.mousedown(ev));
     }
 
     public boolean mouseup(MouseUpEvent ev) {
@@ -463,10 +463,11 @@ public class Window extends Widget implements Widget.MouseEvent.Handler, DTarget
 	    dm = null;
 	    return(true);
 	}
-	return(false);
+	return(super.mouseup(ev));
     }
 
     public void mousemove(MouseMoveEvent ev) {
+	super.mousemove(ev);
 	if(dm != null)
 	    move(this.c.add(ev.c.sub(doff)));
     }

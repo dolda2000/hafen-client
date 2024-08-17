@@ -39,7 +39,7 @@ import java.util.regex.*;
 import java.io.IOException;
 import java.awt.datatransfer.*;
 
-public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
+public class ChatUI extends Widget {
     public static final RichText.Foundry fnd = new RichText.Foundry(new ChatParser(TextAttribute.FONT, Text.dfont.deriveFont(UI.scale(12f)), TextAttribute.FOREGROUND, Color.BLACK)).aa(true);
     public static final Text.Foundry qfnd = new Text.Foundry(Text.dfont, 12, new java.awt.Color(192, 255, 192));
     public static final int selw = UI.scale(130);
@@ -120,7 +120,7 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
 	}
     }
 
-    public static abstract class Channel extends Widget implements MouseEvent.Handler {
+    public static abstract class Channel extends Widget {
 	public final List<RenderedMessage> rmsgs = new ArrayList<>();
 	public int urgency = 0;
 	private final Scrollbar sb;
@@ -541,7 +541,7 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
 	private UI.Grab grab;
 	private boolean dragging;
 	public boolean mousedown(MouseDownEvent ev) {
-	    if(ev.propagate(this))
+	    if(ev.propagate(this) || super.mousedown(ev))
 		return(true);
 	    if(grab != null)
 		return(true);
@@ -564,6 +564,7 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
 	}
 
 	public void mousemove(MouseMoveEvent ev) {
+	    super.mousemove(ev);
 	    if(grab != null) {
 		CharPos ch = charat(ev.c);
 		if((ch != null) && !ch.equals(lasthit)) {
@@ -583,7 +584,7 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
 	}
 
 	public boolean mouseup(MouseUpEvent ev) {
-	    if(ev.propagate(this))
+	    if(ev.propagate(this) || super.mouseup(ev))
 		return(true);
 	    if((ev.b == 1) && (grab != null)) {
 		grab.remove();
@@ -1096,7 +1097,7 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
     
     private static final Tex chandiv = Resource.loadtex("gfx/hud/chat-cdiv");
     private static final Tex chanseld = Resource.loadtex("gfx/hud/chat-csel");
-    private class Selector extends Widget implements MouseEvent.Handler {
+    private class Selector extends Widget {
 	public final BufferedImage ctex = Resource.loadimg("gfx/hud/chantex");
 	public final Text.Foundry tf = new Text.Foundry(Text.serif.deriveFont(Font.BOLD, UI.scale(12))).aa(true);
 	public final Color[] uc = {
@@ -1550,11 +1551,12 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
 	    doff = c;
 	    return(true);
 	} else {
-	    return(false);
+	    return(super.mousedown(ev));
 	}
     }
 
     public void mousemove(MouseMoveEvent ev) {
+	super.mousemove(ev);
 	if(dm != null)
 	    resize(sz.x, Math.max(UI.scale(minh), Math.min(parent.sz.y - UI.scale(100), sz.y + doff.y - ev.c.y)));
     }
@@ -1566,7 +1568,7 @@ public class ChatUI extends Widget implements Widget.MouseEvent.Handler {
 	    Utils.setprefi("chatsize", UI.unscale(sz.y));
 	    return(true);
 	} else {
-	    return(false);
+	    return(super.mouseup(ev));
 	}
     }
 

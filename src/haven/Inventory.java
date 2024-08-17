@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 import java.awt.image.WritableRaster;
 
-public class Inventory extends Widget implements Widget.MouseEvent.Handler, DTarget {
+public class Inventory extends Widget implements DTarget {
     public static final Coord sqsz = UI.scale(new Coord(32, 32)).add(1, 1);
     public static final Tex invsq;
     public boolean dropul = true;

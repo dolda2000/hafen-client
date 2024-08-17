@@ -26,7 +26,7 @@
 
 package haven;
 
-public class Scrollbar extends Widget implements Widget.MouseEvent.Handler {
+public class Scrollbar extends Widget {
     public static final Tex schain = Resource.loadtex("gfx/hud/schain");
     public static final Tex sflarp = Resource.loadtex("gfx/hud/sflarp");
     public static final int chcut = UI.scale(7);
@@ -88,7 +88,7 @@ public class Scrollbar extends Widget implements Widget.MouseEvent.Handler {
 
     public boolean mousedown(MouseDownEvent ev) {
 	if(ev.b != 1)
-	    return(false);
+	    return(super.mousedown(ev));
 	if(!vis())
 	    return(false);
 	drag = ui.grabmouse(this);
@@ -97,13 +97,14 @@ public class Scrollbar extends Widget implements Widget.MouseEvent.Handler {
     }
 
     public void mousemove(MouseMoveEvent ev) {
+	super.mousemove(ev);
 	if(drag != null)
 	    update(ev.c);
     }
 
     public boolean mouseup(MouseUpEvent ev) {
 	if(ev.b != 1)
-	    return(false);
+	    return(super.mouseup(ev));
 	if(drag == null)
 	    return(false);
 	drag.remove();

@@ -28,7 +28,7 @@ package haven;
 
 import java.awt.image.BufferedImage;
 
-public class HSlider extends Widget implements Widget.MouseEvent.Handler {
+public class HSlider extends Widget {
     static final Tex sflarp = Resource.loadtex("gfx/hud/sflarp");
     static final Tex schain;
     static final int chcut = UI.scale(7);
@@ -77,22 +77,23 @@ public class HSlider extends Widget implements Widget.MouseEvent.Handler {
 
     public boolean mousedown(MouseDownEvent ev) {
 	if(ev.b != 1)
-	    return(false);
+	    return(super.mousedown(ev));
 	drag = ui.grabmouse(this);
 	update(ev.c);
 	return(true);
     }
     
     public void mousemove(MouseMoveEvent ev) {
+	super.mousemove(ev);
 	if(drag != null)
 	    update(ev.c);
     }
     
     public boolean mouseup(MouseUpEvent ev) {
 	if(ev.b != 1)
-	    return(false);
+	    return(super.mouseup(ev));
 	if(drag == null)
-	    return(false);
+	    return(super.mouseup(ev));
 	drag.remove();
 	drag = null;
 	fchanged();

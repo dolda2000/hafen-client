@@ -26,7 +26,7 @@
 
 package haven;
 
-public class Speedget extends Widget implements Widget.MouseEvent.Handler {
+public class Speedget extends Widget {
     public static final Tex imgs[][];
     public static final String tips[];
     public static final Coord tsz;

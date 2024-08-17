@@ -26,7 +26,7 @@
 
 package haven;
 
-public class GiveButton extends Widget implements Widget.MouseEvent.Handler {
+public class GiveButton extends Widget {
     public static Tex bg = Resource.loadtex("gfx/hud/combat/knapp/knapp");
     public static Tex ol = Resource.loadtex("gfx/hud/combat/knapp/ol");
     public static Tex or = Resource.loadtex("gfx/hud/combat/knapp/or");

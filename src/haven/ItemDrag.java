@@ -26,7 +26,7 @@
 
 package haven;
 
-public class ItemDrag extends WItem implements Widget.MouseEvent.Handler {
+public class ItemDrag extends WItem {
     public Coord doff;
     
     public ItemDrag(Coord dc, GItem item) {

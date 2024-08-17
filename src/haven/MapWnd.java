@@ -142,7 +142,7 @@ public class MapWnd extends Window implements Console.Directory {
 	    overlays.remove(tag);
     }
 
-    private class ViewFrame extends Frame implements MouseEvent.Handler {
+    private class ViewFrame extends Frame {
 	Coord sc = Coord.z;
 
 	ViewFrame() {
@@ -175,10 +175,11 @@ public class MapWnd extends Window implements Console.Directory {
 		MapWnd.this.drag(parentpos(MapWnd.this, c));
 		return(true);
 	    }
-	    return(false);
+	    return(super.mousedown(ev));
 	}
 
 	public void mousemove(MouseMoveEvent ev) {
+	    super.mousemove(ev);
 	    if(drag != null) {
 		Coord nsz = parentpos(MapWnd.this, ev.c).add(dragc);
 		nsz.x = Math.max(nsz.x, UI.scale(150));
@@ -193,7 +194,7 @@ public class MapWnd extends Window implements Console.Directory {
 		drag = null;
 		return(true);
 	    }
-	    return(false);
+	    return(super.mouseup(ev));
 	}
     }
 
@@ -577,7 +578,7 @@ public class MapWnd extends Window implements Console.Directory {
 	public List<ListMarker> allitems() {return(markers);}
 	public boolean searchmatch(ListMarker lm, String txt) {return(lm.mark.nm.toLowerCase().indexOf(txt.toLowerCase()) >= 0);}
 
-	public class Item extends IconText implements MouseEvent.Handler {
+	public class Item extends IconText {
 	    public final ListMarker lm;
 
 	    public Item(Coord sz, ListMarker lm) {
@@ -605,7 +606,7 @@ public class MapWnd extends Window implements Console.Directory {
 		    toggletype(lm.type);
 		    return(true);
 		}
-		return(false);
+		return(super.mousedown(ev));
 	    }
 	}
 

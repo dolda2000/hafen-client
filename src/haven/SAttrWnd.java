@@ -45,7 +45,7 @@ public class SAttrWnd extends Widget {
 	}
     }
 
-    public class SAttr extends Widget implements MouseEvent.Handler {
+    public class SAttr extends Widget {
 	public final String nm;
 	public final Text rnm;
 	public final Glob.CAttr attr;

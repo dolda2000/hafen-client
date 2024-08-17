@@ -168,7 +168,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	return(new ResBeltSlot(idx, rdt));
     }
 
-    public abstract class Belt extends Widget implements MouseEvent.Handler, DTarget, DropTarget {
+    public abstract class Belt extends Widget implements DTarget, DropTarget {
 	public Belt(Coord sz) {
 	    super(sz);
 	}
@@ -207,7 +207,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 		    GameUI.this.wdgmsg("setbelt", slot, null);
 		return(true);
 	    }
-	    return(false);
+	    return(super.mousedown(ev));
 	}
 
 	public boolean drop(Coord c, Coord ul) {

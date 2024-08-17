@@ -26,7 +26,7 @@
 
 package haven;
 
-public class Scrollport extends Widget implements Widget.MouseEvent.Handler {
+public class Scrollport extends Widget {
     public final Scrollbar bar;
     public final Scrollcont cont;
 

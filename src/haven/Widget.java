@@ -936,14 +936,6 @@ public class Widget {
     public static abstract class MouseEvent extends PointerEvent {
 	public MouseEvent(Coord c) {super(c);}
 	public MouseEvent(MouseEvent from, Coord c) {super(from, c);}
-
-	public static interface Handler {
-	    public default boolean mousedown(MouseDownEvent ev) {return(false);}
-	    public default boolean mouseup(MouseUpEvent ev) {return(false);}
-	    public default void mousemove(MouseMoveEvent ev) {}
-	    public default boolean mousewheel(MouseWheelEvent ev) {return(false);}
-	    public default boolean mousehover(MouseHoverEvent ev, boolean hivering) {return(false);}
-	}
     }
 
     public static abstract class MouseButtonEvent extends MouseEvent {
@@ -974,7 +966,7 @@ public class Widget {
 	protected boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "mousedown", new Class<?>[] {Coord.class, Integer.TYPE}, c, b))
 		return(true);
-	    if((w instanceof Handler) && ((Handler)w).mousedown(this))
+	    if(w.mousedown(this))
 		return(true);
 	    return(super.shandle(w));
 	}
@@ -993,7 +985,7 @@ public class Widget {
 	protected boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "mouseup", new Class<?>[] {Coord.class, Integer.TYPE}, c, b))
 		return(true);
-	    if((w instanceof Handler) && ((Handler)w).mouseup(this))
+	    if(w.mouseup(this))
 		return(true);
 	    return(super.shandle(w));
 	}
@@ -1018,8 +1010,7 @@ public class Widget {
 	public boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "mousemove", new Class<?>[] {Coord.class}, c))
 		return(true);
-	    if(w instanceof Handler)
-		((Handler)w).mousemove(this);
+	    w.mousemove(this);
 	    return(false);
 	}
     }
@@ -1041,7 +1032,7 @@ public class Widget {
 	public boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "mousewheel", new Class<?>[] {Coord.class, Integer.TYPE}, c, a))
 		return(true);
-	    if((w instanceof Handler) && ((Handler)w).mousewheel(this))
+	    if(w.mousewheel(this))
 		return(true);
 	    return(super.shandle(w));
 	}
@@ -1080,7 +1071,7 @@ public class Widget {
 	protected boolean shandle(Widget w) {
 	    if(hackhandle(this, w, "mousehover", new Class<?>[] {Coord.class, Boolean.TYPE}, c, hovering))
 		return(true);
-	    if((w instanceof Handler) && ((Handler)w).mousehover(this, hovering))
+	    if(w.mousehover(this, hovering))
 		return(true);
 	    return(super.shandle(w));
 	}
@@ -1287,6 +1278,12 @@ public class Widget {
 	    hackhandling.set(prev);
 	}
     }
+
+    public boolean mousedown(MouseDownEvent ev) {return(false);}
+    public boolean mouseup(MouseUpEvent ev) {return(false);}
+    public boolean mousewheel(MouseWheelEvent ev) {return(false);}
+    public void mousemove(MouseMoveEvent ev) {}
+    public boolean mousehover(MouseHoverEvent ev, boolean hovering) {return(false);}
 
     @Deprecated
     public boolean mousedown(Coord c, int button) {
