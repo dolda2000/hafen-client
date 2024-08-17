@@ -1301,14 +1301,18 @@ public class Widget {
 
     /* XXX: Remove me! */
     private static final ThreadLocal<Event> hackhandling = new ThreadLocal<>();
+    private static final Set<Pair<Class, String>> hackwarned = new HashSet<>();
     private static boolean hackhandle(Event ev, Widget w, String nm, Class<?>[] argt, Object... args) {
 	Event prev = hackhandling.get();
 	hackhandling.set(ev);
 	try {
-	    Method m = w.getClass().getMethod(nm, argt),
+	    Class<?> cls = w.getClass();
+	    Method m = cls.getMethod(nm, argt),
 		  wm = Widget.class.getMethod(nm, argt);
 	    if(Utils.eq(m, wm))
 		return(false);
+	    if(!cls.getName().startsWith("haven.res.") && hackwarned.add(new Pair<>(cls, nm)))
+		Warning.warn("hack-hacndling event %s for %s", nm, cls);
 	    Boolean ret = (Boolean)wm.invoke(w, args);
 	    return((ret == null) ? false : ret);
 	} catch(InvocationTargetException e) {
