@@ -473,10 +473,17 @@ public class Window extends Widget implements DTarget {
     }
 
     public boolean handle(Event ev) {
-	if(!ev.grabbed && (ev instanceof PointerEvent) && checkhit(((PointerEvent)ev).c)) {
-	    super.handle(ev);
-	    ev.propagate(this);
-	    return(true);
+	if(!ev.grabbed && (ev instanceof PointerEvent)) {
+	    if(deco != null) {
+		if(checkhit(((PointerEvent)ev).c)) {
+		    super.handle(ev);
+		    ev.propagate(this);
+		    return(true);
+		}
+	    } else {
+		super.handle(ev);
+		return(ev.propagate(this));
+	    }
 	}
 	return(super.handle(ev));
     }
