@@ -863,7 +863,7 @@ public class Widget {
 	return(false);
     }
 
-    public <H extends EventListener<?>> H listening(Class<H> cl) {
+    public <H extends EventHandler<?>> H listening(Class<H> cl) {
 	if(listening != null) {
 	    for(EventListener<?> l : listening) {
 		if(cl.isInstance(l.h))
