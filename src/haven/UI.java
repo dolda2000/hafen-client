@@ -619,7 +619,7 @@ public class UI {
 	    Widget wdg = getwidget(id);
 	    if(wdg != null) {
 		synchronized(UI.this) {
-		    wdg.uimsg(msg.intern(), args);
+		    new Widget.MessageEvent(msg, args).dispatch(wdg);
 		}
 	    } else {
 		throw(new UIException("Uimsg to non-existent widget " + id, msg, args));

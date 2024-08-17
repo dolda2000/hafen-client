@@ -909,6 +909,25 @@ public class Widget {
 	}
     }
 
+    public static class MessageEvent extends Event {
+	public final String msg;
+	public final Object[] args;
+
+	public MessageEvent(String msg, Object[] args) {
+	    this.msg = msg.intern();
+	    this.args = args;
+	}
+
+	protected boolean propagation(Widget from) {
+	    return(false);
+	}
+
+	protected boolean shandle(Widget w) {
+	    w.uimsg(msg, args);
+	    return(true);
+	}
+    }
+
     public static abstract class PointerEvent extends Event {
 	public final Coord c;
 
