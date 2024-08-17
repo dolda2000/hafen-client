@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import haven.Widget.*;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
@@ -526,17 +527,30 @@ public class UI {
 	return(g);
     }
 
+    public static class PointerGrab<E extends PointerEvent> implements EventHandler<E> {
+	public final Widget wdg;
+	public final Predicate<? super E> sel;
+
+	public PointerGrab(Widget wdg, Predicate<? super E> sel) {
+	    this.wdg = wdg;
+	    this.sel = sel;
+	}
+
+	public boolean handle(E ev) {
+	    if(sel.test(ev)) {
+		Coord xl = ev.c.sub(wdg.rootpos());
+		return(ev.derive(xl).dispatch(wdg));
+	    }
+	    return(false);
+	}
+    }
+
     public Grab grabmouse(Widget wdg) {
 	if(wdg == null) throw(new NullPointerException());
-	Grab g = grab(wdg, PointerEvent.class, ev -> {
-		if((ev instanceof MouseDownEvent) || (ev instanceof MouseUpEvent) ||
-		   (ev instanceof MouseWheelEvent) || (ev instanceof CursorQuery))
-		{
-		    Coord xl = ev.c.sub(wdg.rootpos());
-		    return(ev.derive(xl).dispatch(wdg));
-		}
-		return(false);
-	});
+	Grab g = grab(wdg, PointerEvent.class, new PointerGrab<>(wdg, ev -> (
+	    (ev instanceof MouseDownEvent) || (ev instanceof MouseUpEvent) ||
+	    (ev instanceof MouseWheelEvent) || (ev instanceof CursorQuery))
+	));
 	return(g);
     }
 
