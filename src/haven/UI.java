@@ -538,7 +538,7 @@ public class UI {
 
 	public boolean handle(E ev) {
 	    if(sel.test(ev)) {
-		Coord xl = ev.c.sub(wdg.rootpos());
+		Coord xl = ev.c.add(ev.target.rootpos()).sub(wdg.rootpos());
 		return(ev.derive(xl).dispatch(wdg));
 	    }
 	    return(false);
