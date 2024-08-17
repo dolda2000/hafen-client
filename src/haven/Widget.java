@@ -1240,11 +1240,6 @@ public class Widget {
 	    root.ret = ret;
 	    return(true);
 	}
-
-	public R query(Widget w) {
-	    dispatch(w);
-	    return(ret);
-	}
     }
 
     public static class TooltipQuery extends PointerEvent {

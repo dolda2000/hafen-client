@@ -600,6 +600,11 @@ public class UI {
 	return(ev.dispatch(to));
     }
 
+    public <E extends Event> E dispatchq(Widget to, E ev) {
+	dispatch(to, ev);
+	return(ev);
+    }
+
     public class DstWidget implements Runnable, Serializable {
 	public final int id;
 
@@ -768,15 +773,12 @@ public class UI {
     }
 
     public Resource getcurs(Coord c) {
-	CursorQuery q = new CursorQuery(c);
-	dispatch(root, q);
-	return(q.ret);
+	return(dispatchq(root, new CursorQuery(c)).ret);
     }
 
     private Widget prevtt = null;
     public Object tooltip(Coord c) {
-	Widget.TooltipQuery q = new Widget.TooltipQuery(c, prevtt);
-	dispatch(root, q);
+	Widget.TooltipQuery q = dispatchq(root, new Widget.TooltipQuery(c, prevtt));
 	prevtt = q.from;
 	return(q.ret);
     }

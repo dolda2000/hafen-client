@@ -99,7 +99,7 @@ public class KeyBinding {
 	}
 
 	public static KeyBinding getbinding(Widget wdg, Coord c) {
-	    return(new BindingQuery(c).query(wdg));
+	    return(wdg.ui.dispatchq(wdg, new BindingQuery(c)).ret);
 	}
     }
 }
