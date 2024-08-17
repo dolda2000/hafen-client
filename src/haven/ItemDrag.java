@@ -47,6 +47,8 @@ public class ItemDrag extends WItem {
     }
 
     public boolean mousedown(MouseDownEvent ev) {
+	if(!ev.grabbed)
+	    return(false);
 	if(ui.modctrl && !ui.modshift && !ui.modmeta) {
 	    /* XXX */
 	    GameUI gui = getparent(GameUI.class);
@@ -56,11 +58,11 @@ public class ItemDrag extends WItem {
 	    }
 	}
 	if(ev.b == 1) {
-	    ui.dispatch(parent, new Drop(ev.c.add(this.c), this));
-	    return(true);
+	    if(ui.dispatchq(parent, new Drop(ev.c.add(this.c), this)).handled)
+		return(true);
 	} else if(ev.b == 3) {
-	    ui.dispatch(parent, new Interact(ev.c.add(this.c), this));
-	    return(true);
+	    if(ui.dispatchq(parent, new Interact(ev.c.add(this.c), this)).handled)
+		return(true);
 	}
 	return(false);
     }

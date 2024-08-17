@@ -39,14 +39,18 @@ public interface DTarget {
 
     public abstract static class ItemEvent extends Widget.MouseEvent {
 	public final ItemDrag src;
+	public final ItemEvent root;
+	public boolean handled;
 
 	public ItemEvent(Coord c, ItemDrag src) {
 	    super(c);
 	    this.src = src;
+	    this.root = this;
 	}
 	public ItemEvent(ItemEvent from, Coord c) {
 	    super(from, c);
 	    this.src = from.src;
+	    this.root = from.root;
 	}
     }
 
@@ -56,8 +60,10 @@ public interface DTarget {
 	public Drop derive(Coord c) {return(new Drop(this, c));}
 
 	protected boolean shandle(Widget w) {
-	    if((w != src) && (w instanceof DTarget) && ((DTarget)w).drop(this))
+	    if((w != src) && (w instanceof DTarget) && ((DTarget)w).drop(this)) {
+		root.handled = true;
 		return(true);
+	    }
 	    return(super.shandle(w));
 	}
     }
@@ -68,8 +74,10 @@ public interface DTarget {
 	public Interact derive(Coord c) {return(new Interact(this, c));}
 
 	protected boolean shandle(Widget w) {
-	    if((w != src) && (w instanceof DTarget) && ((DTarget)w).iteminteract(this))
+	    if((w != src) && (w instanceof DTarget) && ((DTarget)w).iteminteract(this)) {
+		root.handled = true;
 		return(true);
+	    }
 	    return(super.shandle(w));
 	}
     }
