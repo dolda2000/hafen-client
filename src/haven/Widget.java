@@ -787,6 +787,13 @@ public class Widget {
 	public Widget handling;
 	private boolean phandled;
 
+	public Event() {
+	}
+
+	public Event(Event from) {
+	    this.grabbed = from.grabbed;
+	}
+
 	public Event grabbed(boolean g) {grabbed = g; return(this);}
 
 	protected abstract boolean propagation(Widget from);
@@ -950,7 +957,10 @@ public class Widget {
 	public PointerEvent(Coord c) {
 	    this.c = c;
 	}
-	public PointerEvent(PointerEvent from, Coord c) {this(c);}
+	public PointerEvent(PointerEvent from, Coord c) {
+	    super(from);
+	    this.c = c;
+	}
 
 	public abstract PointerEvent derive(Coord c);
 
