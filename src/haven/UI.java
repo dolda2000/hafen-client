@@ -590,6 +590,7 @@ public class UI {
     }
 
     public boolean dispatch(Widget to, Event ev) {
+	ev.target = to;
 	ev.grabbed = true;
 	for(Grab<?> g : grabs) {
 	    if(g.check(ev))

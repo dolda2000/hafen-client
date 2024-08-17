@@ -784,7 +784,7 @@ public class Widget {
 
     public static abstract class Event {
 	public boolean propagate, grabbed;
-	public Widget handling;
+	public Widget handling, target;
 	private boolean phandled;
 
 	public Event() {
