@@ -110,12 +110,12 @@ public interface DropTarget {
     }
 
     public static boolean dropthing(Widget wdg, Coord c, Object thing) {
-	return(new Drop(c, thing).dispatch(wdg));
+	return(wdg.ui.dispatch(wdg, new Drop(c, thing)));
     }
 
     public static boolean drophover(Widget wdg, Coord c, Object thing) {
 	Hover h = new Hover(c, thing);
-	h.dispatch(wdg);
+	wdg.ui.dispatch(wdg, h);
 	return(h.tgt != null);
     }
 }

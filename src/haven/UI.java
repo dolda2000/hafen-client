@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import haven.Widget.*;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.GraphicsDevice;
@@ -44,7 +45,7 @@ import haven.render.Render;
 public class UI {
     public static int MOD_SHIFT = KeyMatch.S, MOD_CTRL = KeyMatch.C, MOD_META = KeyMatch.M, MOD_SUPER = KeyMatch.SUPER;
     public RootWidget root;
-    private final LinkedList<Grab> keygrab = new LinkedList<Grab>(), mousegrab = new LinkedList<Grab>();
+    private final LinkedList<Grab> grabs = new LinkedList<Grab>();
     private final Map<Integer, Widget> widgets = new TreeMap<Integer, Widget>();
     private final Map<Widget, Integer> rwidgets = new HashMap<Widget, Integer>();
     Environment env;
@@ -358,7 +359,7 @@ public class UI {
 	double now = Utils.rtime();
 	double delta = now - lasttick;
 	lasttick = now;
-	new Widget.TickEvent(delta).dispatch(root);
+	dispatch(root, new Widget.TickEvent(delta));
 	if(gprefsdirty) {
 	    gprefs.save();
 	    gprefsdirty = false;
@@ -366,7 +367,7 @@ public class UI {
     }
 
     public void gtick(Render out) {
-	new Widget.GTickEvent(out).dispatch(root);
+	dispatch(root, new Widget.GTickEvent(out));
     }
 
     public void draw(GOut g) {
@@ -499,31 +500,53 @@ public class UI {
 	    addwidget(id, parent, pargs);
     }
 
-    public abstract class Grab {
-	public final Widget wdg;
-	public Grab(Widget wdg) {this.wdg = wdg;}
-	public abstract void remove();
+    public class Grab<E extends Event> {
+	public final Widget owner;
+	public final Class<E> etype;
+	public final EventHandler<? super E> handler;
+
+	private Grab(Widget owner, Class<E> etype, EventHandler<? super E> handler) {
+	    this.owner = owner;
+	    this.etype = etype;
+	    this.handler = handler;
+	}
+
+	public void remove() {
+	    grabs.remove(this);
+	}
+
+	private boolean check(Event ev) {
+	    return(etype.isInstance(ev) && handler.handle(etype.cast(ev)));
+	}
+    }
+
+    public <E extends Event>  Grab<E> grab(Widget owner, Class<E> etype, EventHandler<? super E> handler) {
+	Grab<E> g = new Grab<>(owner, etype, handler);
+	grabs.addFirst(g);
+	return(g);
     }
 
     public Grab grabmouse(Widget wdg) {
 	if(wdg == null) throw(new NullPointerException());
-	Grab g = new Grab(wdg) {
-		public void remove() {
-		    mousegrab.remove(this);
+	Grab g = grab(wdg, PointerEvent.class, ev -> {
+		if((ev instanceof MouseDownEvent) || (ev instanceof MouseUpEvent) ||
+		   (ev instanceof MouseWheelEvent) || (ev instanceof CursorQuery))
+		{
+		    Coord xl = ev.c.sub(wdg.rootpos());
+		    return(ev.derive(xl).dispatch(wdg));
 		}
-	    };
-	mousegrab.addFirst(g);
+		return(false);
+	});
 	return(g);
     }
 
     public Grab grabkeys(Widget wdg) {
 	if(wdg == null) throw(new NullPointerException());
-	Grab g = new Grab(wdg) {
-		public void remove() {
-		    keygrab.remove(this);
-		}
-	    };
-	keygrab.addFirst(g);
+	Grab g = grab(wdg, KbdEvent.class, ev -> {
+		if((ev instanceof KeyDownEvent) || (ev instanceof KeyUpEvent))
+		    return(ev.dispatch(wdg));
+		return(false);
+	});
 	return(g);
     }
 
@@ -540,14 +563,9 @@ public class UI {
     }
 	
     public void removed(Widget wdg) {
-	for(Iterator<Grab> i = mousegrab.iterator(); i.hasNext();) {
+	for(Iterator<Grab> i = grabs.iterator(); i.hasNext();) {
 	    Grab g = i.next();
-	    if(g.wdg.hasparent(wdg))
-		i.remove();
-	}
-	for(Iterator<Grab> i = keygrab.iterator(); i.hasNext();) {
-	    Grab g = i.next();
-	    if(g.wdg.hasparent(wdg))
+	    if(g.owner.hasparent(wdg))
 		i.remove();
 	}
     }
@@ -555,6 +573,16 @@ public class UI {
     public void destroy(Widget wdg) {
 	removeid(wdg);
 	wdg.reqdestroy();
+    }
+
+    public boolean dispatch(Widget to, Event ev) {
+	ev.grabbed = true;
+	for(Grab<?> g : grabs) {
+	    if(g.check(ev))
+		return(true);
+	}
+	ev.grabbed = false;
+	return(ev.dispatch(to));
     }
 
     public class DstWidget implements Runnable, Serializable {
@@ -619,7 +647,7 @@ public class UI {
 	    Widget wdg = getwidget(id);
 	    if(wdg != null) {
 		synchronized(UI.this) {
-		    new Widget.MessageEvent(msg, args).dispatch(wdg);
+		    dispatch(wdg, new Widget.MessageEvent(msg, args));
 		}
 	    } else {
 		throw(new UIException("Uimsg to non-existent widget " + id, msg, args));
@@ -683,55 +711,35 @@ public class UI {
 
     public void keydown(KeyEvent ev) {
 	setmods(ev);
-	for(Grab g : c(keygrab)) {
-	    if(new Widget.KeyDownEvent(ev).grabbed(true).dispatch(g.wdg))
-		return;
-	}
-	if(!new Widget.KeyDownEvent(ev).dispatch(root))
-	    new Widget.GlobKeyEvent(ev).dispatch(root);
+	if(!dispatch(root, new KeyDownEvent(ev)))
+	    dispatch(root, new GlobKeyEvent(ev));
     }
 	
     public void keyup(KeyEvent ev) {
 	setmods(ev);
-	for(Grab g : c(keygrab)) {
-	    if(new Widget.KeyUpEvent(ev).grabbed(true).dispatch(g.wdg))
-		return;
-	}
-	new Widget.KeyUpEvent(ev).dispatch(root);
-    }
-	
-    private Coord wdgxlate(Coord c, Widget wdg) {
-	return(c.sub(wdg.rootpos()));
+	dispatch(root, new KeyUpEvent(ev));
     }
 
     public void mousedown(MouseEvent ev, Coord c, int button) {
 	setmods(ev);
 	lcc = mc = c;
-	for(Grab g : c(mousegrab)) {
-	    if(new Widget.MouseDownEvent(wdgxlate(c, g.wdg), button).grabbed(true).dispatch(g.wdg))
-		return;
-	}
-	new Widget.MouseDownEvent(c, button).dispatch(root);
+	dispatch(root, new Widget.MouseDownEvent(c, button));
     }
 	
     public void mouseup(MouseEvent ev, Coord c, int button) {
 	setmods(ev);
 	mc = c;
-	for(Grab g : c(mousegrab)) {
-	    if(new Widget.MouseUpEvent(wdgxlate(c, g.wdg), button).grabbed(true).dispatch(g.wdg))
-		return;
-	}
-	new Widget.MouseUpEvent(c, button).dispatch(root);
+	dispatch(root, new Widget.MouseUpEvent(c, button));
     }
 	
     public void mousemove(MouseEvent ev, Coord c) {
 	setmods(ev);
 	mc = c;
-	new Widget.MouseMoveEvent(c).dispatch(root);
+	dispatch(root, new Widget.MouseMoveEvent(c));
     }
 
     public void mousehover(Coord c) {
-	new Widget.MouseHoverEvent(c).dispatch(root);
+	dispatch(root, new Widget.MouseHoverEvent(c));
     }
 
     public void setmousepos(Coord c) {
@@ -740,27 +748,20 @@ public class UI {
 	
     public void mousewheel(MouseEvent ev, Coord c, int amount) {
 	setmods(ev);
-	lcc = mc = c;
-	for(Grab g : c(mousegrab)) {
-	    if(new Widget.MouseWheelEvent(wdgxlate(c, g.wdg), amount).grabbed(true).dispatch(g.wdg))
-		return;
-	}
-	new Widget.MouseWheelEvent(c, amount).dispatch(root);
+	mc = c;
+	dispatch(root, new Widget.MouseWheelEvent(c, amount));
     }
 
     public Resource getcurs(Coord c) {
-	for(Grab g : mousegrab) {
-	    Widget.CursorQuery q = new Widget.CursorQuery(wdgxlate(c, g.wdg));
-	    if(q.grabbed(true).dispatch(g.wdg))
-		return(q.ret);
-	}
-	return(new Widget.CursorQuery(c).query(root));
+	CursorQuery q = new CursorQuery(c);
+	dispatch(root, q);
+	return(q.ret);
     }
 
     private Widget prevtt = null;
     public Object tooltip(Coord c) {
 	Widget.TooltipQuery q = new Widget.TooltipQuery(c, prevtt);
-	q.dispatch(root);
+	dispatch(root, q);
 	prevtt = q.from;
 	return(q.ret);
     }

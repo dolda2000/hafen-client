@@ -56,10 +56,10 @@ public class ItemDrag extends WItem {
 	    }
 	}
 	if(ev.b == 1) {
-	    new Drop(ev.c.add(this.c), this).dispatch(parent);
+	    ui.dispatch(parent, new Drop(ev.c.add(this.c), this));
 	    return(true);
 	} else if(ev.b == 3) {
-	    new Interact(ev.c.add(this.c), this).dispatch(parent);
+	    ui.dispatch(parent, new Interact(ev.c.add(this.c), this));
 	    return(true);
 	}
 	return(false);
