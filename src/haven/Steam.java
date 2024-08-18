@@ -35,6 +35,13 @@ import com.jogamp.common.util.cache.TempJarCache;
 
 public class Steam {
     private final Collection<Listener> listening = new HashSet<>();
+    private final API api = new API(this);
+
+    public static class SvcError extends RuntimeException {
+	public SvcError(String message) {super(message);}
+	public SvcError(Throwable cause) {super(cause.getMessage(), cause);}
+	public SvcError(String message, Throwable cause) {super(message, cause);}
+    }
 
     public static interface Listener {
 	public void callback(String id, Object[] args);
@@ -104,26 +111,6 @@ public class Steam {
 	}
     }
 
-    private static boolean loaded = false;
-    private static boolean inited = false;
-    private static boolean init() {
-	if(!loaded) {
-	    if(!SteamAPI.loadLibraries(new SteamLibraryLoaderJogl()))
-		return(false);
-	    loaded = true;
-	}
-	if(!inited) {
-	    try {
-		if(!SteamAPI.init())
-		    return(false);
-		inited = true;
-	    } catch(SteamException e) {
-		return(false);
-	    }
-	}
-	return(true);
-    }
-
     private Steam() {
 	Thread th = new HackThread(this::listen, "Steam callback thread");
 	th.setDaemon(true);
@@ -143,42 +130,80 @@ public class Steam {
     private static Steam instance = null;
     public static synchronized Steam get() {
 	if(instance == null) {
-	    if(!init())
+	    try {
+		if(!API.init())
+		    return(null);
+	    } catch(NoClassDefFoundError e) {
 		return(null);
+	    }
 	    instance = new Steam();
 	}
 	return(instance);
     }
 
-    private final SteamFriends friends = new SteamFriends(new SteamFriendsCallback() {
-	});
-    private final SteamUser user = new SteamUser(new SteamUserCallback() {
-	    public void onGetTicketForWebApi(SteamAuthTicket tkt, SteamResult result, byte[] data) {
-		post("onGetTicketForWebApi", tkt, result, data);
-	    }
+    private static class API {
+	final Steam host;
 
-	    public void onMicroTxnAuthorization(int appID, long orderID, boolean authorized) {
-		post("onMicroTxnAuthorization", appID, orderID, authorized);
+	private API(Steam host) {
+	    this.host = host;
+	}
+
+	final SteamFriends friends = new SteamFriends(new SteamFriendsCallback() {
+	    });
+	final SteamUser user = new SteamUser(new SteamUserCallback() {
+		public void onGetTicketForWebApi(SteamAuthTicket tkt, SteamResult result, byte[] data) {
+		    host.post("onGetTicketForWebApi", tkt, result, data);
+		}
+
+		public void onMicroTxnAuthorization(int appID, long orderID, boolean authorized) {
+		    host.post("onMicroTxnAuthorization", appID, orderID, authorized);
+		}
+	    });
+
+	private static boolean loaded = false, inited = false, failed = false;
+	private static synchronized boolean init() {
+	    if(failed)
+		return(false);
+	    if(!loaded) {
+		if(!SteamAPI.loadLibraries(new SteamLibraryLoaderJogl())) {
+		    failed = true;
+		    return(false);
+		}
+		loaded = true;
 	    }
-	});
+	    if(!inited) {
+		try {
+		    if(!SteamAPI.init()) {
+			failed = true;
+			return(false);
+		    }
+		    inited = true;
+		} catch(SteamException e) {
+		    failed = true;
+		    return(false);
+		}
+	    }
+	    return(true);
+	}
+    }
 
     public synchronized int userid() {
-	SteamID id = user.getSteamID();
+	SteamID id = api.user.getSteamID();
 	if(!id.isValid())
 	    return(-1);
 	return(id.getAccountID());
     }
 
     public synchronized String displayname() {
-	return(friends.getPersonaName());
+	return(api.friends.getPersonaName());
     }
 
     public synchronized void browse(URI uri, boolean modal) {
-	friends.activateGameOverlayToWebPage(uri.toString(), modal ? SteamFriends.OverlayToWebPageMode.Modal : SteamFriends.OverlayToWebPageMode.Default);
+	api.friends.activateGameOverlayToWebPage(uri.toString(), modal ? SteamFriends.OverlayToWebPageMode.Modal : SteamFriends.OverlayToWebPageMode.Default);
     }
 
     public synchronized void setrp(String key, String val) {
-	friends.setRichPresence(key, val);
+	api.friends.setRichPresence(key, val);
     }
 
     public void setparty(String pid, int sz) {
@@ -204,24 +229,24 @@ public class Steam {
 	public void close() {
 	    synchronized(Steam.this) {
 		if(!cancelled) {
-		    user.cancelAuthTicket(handle);
+		    api.user.cancelAuthTicket(handle);
 		    cancelled = true;
 		}
 	    }
 	}
     }
 
-    public WebTicket webticket() throws InterruptedException, SteamException {
+    public WebTicket webticket() throws InterruptedException {
 	try(Waiter w = new Waiter("onGetTicketForWebApi")) {
 	    SteamAuthTicket tkt;
 	    synchronized(this) {
-		tkt = user.getAuthTicketForWebApi();
+		tkt = api.user.getAuthTicketForWebApi();
 	    }
 	    while(true) {
 		Object[] cb = w.get();
 		if(tkt.equals(cb[0])) {
 		    if(cb[1] != SteamResult.OK)
-			throw(new SteamException("GetAuthTicketForWebApi failed: " + cb[1]));
+			throw(new SvcError("GetAuthTicketForWebApi failed: " + cb[1]));
 		    return(new WebTicket(tkt, (byte[])cb[2]));
 		}
 	    }

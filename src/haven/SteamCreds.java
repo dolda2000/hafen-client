@@ -55,7 +55,7 @@ public class SteamCreds extends AuthClient.Credentials {
 	    }
 	} catch(InterruptedException e) {
 	    throw(new IOException("interrupted", e));
-	} catch(SteamException e) {
+	} catch(Steam.SvcError e) {
 	    throw(new AuthException(e.getMessage()));
 	}
     }
