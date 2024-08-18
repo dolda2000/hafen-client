@@ -174,6 +174,12 @@ public class Resource implements Serializable {
 		    return(null);
 		return(this.getres(id));
 	    }
+	    if(desc instanceof Resource)
+		return(((Resource)desc).indir());
+	    if(desc instanceof Indir) {
+		@SuppressWarnings("unchecked") Indir<Resource> ret = (Indir<Resource>)desc;
+		return(ret);
+	    }
 	    throw(new ClassCastException("unknown type for resource id: " + desc));
 	}
 
