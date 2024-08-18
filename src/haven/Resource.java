@@ -389,7 +389,7 @@ public class Resource implements Serializable {
 	    /* This is kinda crazy, but it is, actually, how the Java
 	     * documentation recommends that it be done... */
 	    try {
-		return(new URI(new URI(raw.getScheme(), raw.getAuthority(), raw.getPath(), raw.getFragment()).toASCIIString()));
+		return(new URI(new URI(raw.getScheme(), raw.getUserInfo(), raw.getHost(), raw.getPort(), raw.getPath(), raw.getQuery(), raw.getFragment()).toASCIIString()));
 	    } catch(URISyntaxException e) {
 		throw(new IOException(e));
 	    }
