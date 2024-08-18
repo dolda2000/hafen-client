@@ -177,6 +177,20 @@ public class Steam {
 	friends.activateGameOverlayToWebPage(uri.toString(), modal ? SteamFriends.OverlayToWebPageMode.Modal : SteamFriends.OverlayToWebPageMode.Default);
     }
 
+    public synchronized void setrp(String key, String val) {
+	friends.setRichPresence(key, val);
+    }
+
+    public void setparty(String pid, int sz) {
+	if(pid != null) {
+	    setrp("steam_player_group", pid);
+	    setrp("steam_player_group_size", Integer.toString(sz));
+	} else {
+	    setrp("steam_player_group", null);
+	    setrp("steam_player_group_size", null);
+	}
+    }
+
     public class WebTicket implements AutoCloseable {
 	public final byte[] data;
 	private final SteamAuthTicket handle;
