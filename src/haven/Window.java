@@ -125,7 +125,8 @@ public class Window extends Widget implements DTarget {
 
     protected void added() {
 	super.added();
-	parent.setfocus(this);
+	if(visible())
+	    parent.setfocus(this);
 	initanim();
     }
 
