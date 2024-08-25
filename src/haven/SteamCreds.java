@@ -36,6 +36,7 @@ public class SteamCreds extends AuthClient.Credentials {
     public SteamCreds() throws IOException {
 	if((api = Steam.get()) == null)
 	    throw(new IOException("Steam is not running"));
+	Debug.dump(api.appid());
 	name = api.displayname();
     }
 

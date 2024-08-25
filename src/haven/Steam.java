@@ -148,6 +148,8 @@ public class Steam {
 	    this.host = host;
 	}
 
+	final SteamUtils utils = new SteamUtils(new SteamUtilsCallback() {
+	    });
 	final SteamFriends friends = new SteamFriends(new SteamFriendsCallback() {
 	    });
 	final SteamUser user = new SteamUser(new SteamUserCallback() {
@@ -185,6 +187,10 @@ public class Steam {
 	    }
 	    return(true);
 	}
+    }
+
+    public synchronized int appid() {
+	return(api.utils.getAppID());
     }
 
     public synchronized int userid() {
