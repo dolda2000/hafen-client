@@ -296,6 +296,7 @@ public class Steam {
 
     public synchronized byte[] readfile(String name) throws IOException {
 	try {
+	    checkcloud();
 	    int sz = api.rs.getFileSize(name);
 	    if(sz <= 0)
 		throw(new FileNotFoundException(name));
@@ -315,6 +316,7 @@ public class Steam {
 
     public synchronized void writefile(String name, byte[] data) throws IOException {
 	try {
+	    checkcloud();
 	    ByteBuffer buf = xfbuf(data.length);
 	    buf.put(data);
 	    buf.flip();
