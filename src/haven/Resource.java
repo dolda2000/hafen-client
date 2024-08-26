@@ -174,6 +174,12 @@ public class Resource implements Serializable {
 		    return(null);
 		return(this.getres(id));
 	    }
+	    if(desc instanceof Resource)
+		return(((Resource)desc).indir());
+	    if(desc instanceof Indir) {
+		@SuppressWarnings("unchecked") Indir<Resource> ret = (Indir<Resource>)desc;
+		return(ret);
+	    }
 	    throw(new ClassCastException("unknown type for resource id: " + desc));
 	}
 
@@ -383,7 +389,7 @@ public class Resource implements Serializable {
 	    /* This is kinda crazy, but it is, actually, how the Java
 	     * documentation recommends that it be done... */
 	    try {
-		return(new URI(new URI(raw.getScheme(), raw.getAuthority(), raw.getPath(), raw.getFragment()).toASCIIString()));
+		return(new URI(new URI(raw.getScheme(), raw.getUserInfo(), raw.getHost(), raw.getPort(), raw.getPath(), raw.getQuery(), raw.getFragment()).toASCIIString()));
 	    } catch(URISyntaxException e) {
 		throw(new IOException(e));
 	    }
