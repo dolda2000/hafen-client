@@ -27,6 +27,8 @@
 package haven;
 
 import java.util.*;
+import java.io.*;
+import java.nio.*;
 import java.net.*;
 import com.codedisaster.steamworks.*;
 import com.jogamp.common.os.Platform;
@@ -152,6 +154,17 @@ public class Steam {
 	    });
 	final SteamFriends friends = new SteamFriends(new SteamFriendsCallback() {
 	    });
+	final SteamRemoteStorage rs = new SteamRemoteStorage(new SteamRemoteStorageCallback() {
+		public void onFileReadAsyncComplete(SteamAPICall call, SteamResult result, int offset, int read) {
+		    byte[] data = null;
+		    if(result == SteamResult.OK) {
+			data = new byte[read];
+			if(!rs.fileReadAsyncComplete(call, ByteBuffer.wrap(data), read))
+			    data = null;
+		    }
+		    host.post("onFileReadAsyncComplete", call, result, offset, data);
+		}
+	    });
 	final SteamUser user = new SteamUser(new SteamUserCallback() {
 		public void onGetTicketForWebApi(SteamAuthTicket tkt, SteamResult result, byte[] data) {
 		    host.post("onGetTicketForWebApi", tkt, result, data);
@@ -256,6 +269,100 @@ public class Steam {
 		    return(new WebTicket(tkt, (byte[])cb[2]));
 		}
 	    }
+	}
+    }
+
+    public static enum StorageStatus {
+	OK, OFF_APP, OFF_USR,
+    }
+
+    public StorageStatus checkstorage() {
+	if(!api.rs.isCloudEnabledForApp())
+	    return(StorageStatus.OFF_APP);
+	if(!api.rs.isCloudEnabledForAccount())
+	    return(StorageStatus.OFF_USR);
+	return(StorageStatus.OK);
+    }
+
+    public void enablestorage(boolean on) {
+	api.rs.setCloudEnabledForApp(on);
+    }
+
+    private void checkcloud() throws IOException {
+	switch(checkstorage()) {
+	case OFF_APP: throw(new IOException("Steam cloud storage not enabled for app"));
+	case OFF_USR: throw(new IOException("Steam cloud storage locally disabled"));
+	}
+    }
+
+    public class FileReader {
+	public final String name;
+	public final int sz;
+
+	public FileReader(String name) throws IOException {
+	    checkcloud();
+	    this.name = name;
+	    this.sz = api.rs.getFileSize(name);
+	    if(!api.rs.fileExists(name) || this.sz == 0)
+		throw(new FileNotFoundException(name));
+	}
+
+	public byte[] read(int off, int len) throws IOException {
+	    if((off >= sz) || (len <= 0))
+		return(new byte[0]);
+	    len = Math.min(len, sz - off);
+	    try(Waiter w = new Waiter("onFileReadAsyncComplete")) {
+		SteamAPICall call = api.rs.fileReadAsync(name, off, len);
+		if(!call.isValid())
+		    throw(new IOException("Steam async read failed for unspecified reasons"));
+		while(true) {
+		    Object[] cb;
+		    try {
+			cb = w.get();
+		    } catch(InterruptedException e) {
+			throw((IOException)new java.nio.channels.ClosedByInterruptException().initCause(e));
+		    }
+		    if(cb[0] != call)
+			continue;
+		    if(cb[1] != SteamResult.OK)
+			throw(new IOException("Steam async read failed: " + cb[1]));
+		    if(((Number)cb[2]).intValue() != off)
+			throw(new IOException("Steam async read file offset unexpectedly mismatched: requested " + off + ", got " + cb[2]));
+		    return((byte[])cb[3]);
+		}
+	    }
+	}
+    }
+
+    public class FileWriter {
+	public final SteamUGCFileWriteStreamHandle h;
+	private boolean closed = false;
+
+	public FileWriter(String name) throws IOException {
+	    checkcloud();
+	    this.h = api.rs.fileWriteStreamOpen(name);
+	    if(SteamNativeHandle.getNativeHandle(this.h) == -1)
+		throw(new IOException("Steam cloud storage failed for unspecified reasons (quota exceeded?)"));
+	}
+
+	public void cancel() throws IOException {
+	    if(!closed && !api.rs.fileWriteStreamCancel(h))
+		throw(new IOException("Steam cloud abort failed for unspecified reasons"));
+	    closed = true;
+	}
+
+	public void close() throws IOException {
+	    if(!closed && !api.rs.fileWriteStreamClose(h))
+		throw(new IOException("Steam cloud commit failed for unspecified reasons"));
+	    closed = true;
+	}
+
+	public void write(byte[] data, int off, int len) throws IOException {
+	    ByteBuffer buf = ByteBuffer.allocateDirect(len);
+	    buf.put(data, off, len);
+	    buf.flip();
+	    if(!api.rs.fileWriteStreamWriteChunk(h, buf))
+		throw(new IOException("Steam cloud write failed for unspecified reasons (quota exceeded?)"));
 	}
     }
 
