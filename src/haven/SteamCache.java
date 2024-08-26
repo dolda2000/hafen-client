@@ -38,57 +38,14 @@ public class SteamCache implements ResCache {
     }
 
     public InputStream fetch(String name) throws IOException {
-	Steam.FileReader in = api.new FileReader(prefix + name);
-	class SteamStream extends InputStream {
-	    int off = 0;
-
-	    public int read() throws IOException {
-		if(off >= in.sz)
-		    return(-1);
-		return(in.read(off++, 1)[0]);
-	    }
-
-	    public int read(byte[] b) throws IOException {
-		return(read(b, 0, b.length));
-	    }
-
-	    public int read(byte[] b, int o, int l) throws IOException {
-		byte[] data = in.read(off, l);
-		System.arraycopy(data, 0, b, o, data.length);
-		off += data.length;
-		return(data.length);
-	    }
-	}
-	return(new BufferedInputStream(new SteamStream(), Math.min(in.sz, 1 << 18)));
+	return(new ByteArrayInputStream(api.readfile(name)));
     }
 
     public OutputStream store(String name) throws IOException {
-	Steam.FileWriter out = api.new FileWriter(prefix + name);
-	class SteamStream extends OutputStream {
-	    public void close() throws IOException {
-		out.close();
-	    }
-
-	    public void write(int b) throws IOException {
-		write(new byte[] {(byte)b});
-	    }
-
-	    public void write(byte[] b) throws IOException {
-		write(b, 0, b.length);
-	    }
-
-	    public void write(byte[] b, int off, int len) throws IOException {
-		out.write(b, off, len);
-	    }
-	}
-	SteamStream ret = new SteamStream();
-	Finalizer.finalize(ret, () -> {
-		try {
-		    out.cancel();
-		} catch(IOException e) {
-		    new Warning(e, "could not abort steam stream output").issue();
+	return(new ByteArrayOutputStream() {
+		public void close() throws IOException {
+		    api.writefile(name, toByteArray());
 		}
 	    });
-	return(new BufferedOutputStream(ret));
     }
 }

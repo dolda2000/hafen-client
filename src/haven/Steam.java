@@ -155,15 +155,6 @@ public class Steam {
 	final SteamFriends friends = new SteamFriends(new SteamFriendsCallback() {
 	    });
 	final SteamRemoteStorage rs = new SteamRemoteStorage(new SteamRemoteStorageCallback() {
-		public void onFileReadAsyncComplete(SteamAPICall call, SteamResult result, int offset, int read) {
-		    byte[] data = null;
-		    if(result == SteamResult.OK) {
-			data = new byte[read];
-			if(!rs.fileReadAsyncComplete(call, ByteBuffer.wrap(data), read))
-			    data = null;
-		    }
-		    host.post("onFileReadAsyncComplete", call, result, offset, data);
-		}
 	    });
 	final SteamUser user = new SteamUser(new SteamUserCallback() {
 		public void onGetTicketForWebApi(SteamAuthTicket tkt, SteamResult result, byte[] data) {
@@ -295,74 +286,42 @@ public class Steam {
 	}
     }
 
-    public class FileReader {
-	public final String name;
-	public final int sz;
+    private ByteBuffer xfbuf = null;
+    private ByteBuffer xfbuf(int sz) {
+	if((xfbuf == null) || (xfbuf.capacity() < sz))
+	    xfbuf = ByteBuffer.allocateDirect(sz);
+	xfbuf.clear();
+	return(xfbuf);
+    }
 
-	public FileReader(String name) throws IOException {
-	    checkcloud();
-	    this.name = name;
-	    this.sz = api.rs.getFileSize(name);
-	    if(!api.rs.fileExists(name) || this.sz == 0)
+    public synchronized byte[] readfile(String name) throws IOException {
+	try {
+	    int sz = api.rs.getFileSize(name);
+	    if(sz <= 0)
 		throw(new FileNotFoundException(name));
-	}
-
-	public byte[] read(int off, int len) throws IOException {
-	    if((off >= sz) || (len <= 0))
-		return(new byte[0]);
-	    len = Math.min(len, sz - off);
-	    try(Waiter w = new Waiter("onFileReadAsyncComplete")) {
-		SteamAPICall call = api.rs.fileReadAsync(name, off, len);
-		if(!call.isValid())
-		    throw(new IOException("Steam async read failed for unspecified reasons"));
-		while(true) {
-		    Object[] cb;
-		    try {
-			cb = w.get();
-		    } catch(InterruptedException e) {
-			throw((IOException)new java.nio.channels.ClosedByInterruptException().initCause(e));
-		    }
-		    if(cb[0] != call)
-			continue;
-		    if(cb[1] != SteamResult.OK)
-			throw(new IOException("Steam async read failed: " + cb[1]));
-		    if(((Number)cb[2]).intValue() != off)
-			throw(new IOException("Steam async read file offset unexpectedly mismatched: requested " + off + ", got " + cb[2]));
-		    return((byte[])cb[3]);
-		}
-	    }
+	    ByteBuffer buf = xfbuf(sz);
+	    buf.position(0).limit(sz);
+	    int rv = api.rs.fileRead(name, buf);
+	    if(rv == 0)
+		throw(new FileNotFoundException(name));
+	    buf.position(0).limit(rv);
+	    byte[] data = new byte[rv];
+	    buf.get(data);
+	    return(data);
+	} catch(SteamException e) {
+	    throw(new IOException(e));
 	}
     }
 
-    public class FileWriter {
-	public final SteamUGCFileWriteStreamHandle h;
-	private boolean closed = false;
-
-	public FileWriter(String name) throws IOException {
-	    checkcloud();
-	    this.h = api.rs.fileWriteStreamOpen(name);
-	    if(SteamNativeHandle.getNativeHandle(this.h) == -1)
-		throw(new IOException("Steam cloud storage failed for unspecified reasons (quota exceeded?)"));
-	}
-
-	public void cancel() throws IOException {
-	    if(!closed && !api.rs.fileWriteStreamCancel(h))
-		throw(new IOException("Steam cloud abort failed for unspecified reasons"));
-	    closed = true;
-	}
-
-	public void close() throws IOException {
-	    if(!closed && !api.rs.fileWriteStreamClose(h))
-		throw(new IOException("Steam cloud commit failed for unspecified reasons"));
-	    closed = true;
-	}
-
-	public void write(byte[] data, int off, int len) throws IOException {
-	    ByteBuffer buf = ByteBuffer.allocateDirect(len);
-	    buf.put(data, off, len);
+    public synchronized void writefile(String name, byte[] data) throws IOException {
+	try {
+	    ByteBuffer buf = xfbuf(data.length);
+	    buf.put(data);
 	    buf.flip();
-	    if(!api.rs.fileWriteStreamWriteChunk(h, buf))
-		throw(new IOException("Steam cloud write failed for unspecified reasons (quota exceeded?)"));
+	    if(!api.rs.fileWrite(name, buf))
+		throw(new IOException("Steam clould storage write failed for unspecified reasons (quota exceeded?)"));
+	} catch(SteamException e) {
+	    throw(new IOException(e));
 	}
     }
 
