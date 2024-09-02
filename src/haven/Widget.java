@@ -652,6 +652,20 @@ public class Widget {
 	this.focustab = focustab;
     }
 	
+    public static class HandlerMaker extends Resource.PublishedCode.Instancer.Chain<MessageHandler> {
+	public HandlerMaker() {super(MessageHandler.class);}
+	{
+	    add(new Direct<>(MessageHandler.class));
+	    add(new StaticCall<>(MessageHandler.class, "uimsg", Void.TYPE, new Class<?>[] {Widget.class, Object[].class},
+				 (handle) -> (tgt, args) -> handle.apply(new Object[] {tgt, args})));
+	}
+    }
+
+    @Resource.PublishedCode(name = "uimsg", instancer = HandlerMaker.class)
+    public static interface MessageHandler {
+	public void handle(Widget tgt, Object... args);
+    }
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "tabfocus") {
 	    setfocustab(Utils.bv(args[0]));
@@ -703,6 +717,8 @@ public class Widget {
 		    gkey = key;
 		}
 	    }
+	} else if(msg == "ext") {
+	    ui.sess.getresv(args[0]).get().getcode(MessageHandler.class, true).handle(this, Utils.splice(args, 1));
 	} else {
 	    new Warning("unhandled widget message: " + msg).issue();
 	}
