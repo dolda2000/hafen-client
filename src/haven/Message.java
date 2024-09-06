@@ -438,104 +438,108 @@ public abstract class Message {
 	return(this);
     }
 
-    public Message addlist(Object... args) {
-	for(Object o : args) {
-	    if(o == null) {
-		adduint8(T_NIL);
-	    } else if((o instanceof Byte) || (o instanceof Short) || (o instanceof Integer)) {
-		int v = ((Number)o).intValue();
-		if((v >= 0) && (v < 256)) {
-		    adduint8(T_UINT8);
-		    adduint8(v);
-		} else if((v >= 0) && (v < 65536)) {
-		    adduint8(T_UINT16);
-		    adduint16(v);
-		} else if((v >= -128) && (v < 0)) {
-		    adduint8(T_INT8);
-		    addint8((byte)v);
-		} else if((v >= -32768) && (v < 0)) {
-		    adduint8(T_INT16);
-		    addint16((short)v);
-		} else {
-		    adduint8(T_INT);
-		    addint32(v);
-		}
-	    } else if(o instanceof String) {
-		adduint8(T_STR);
-		addstring((String)o);
-	    } else if(o instanceof Coord) {
-		adduint8(T_COORD);
-		addcoord((Coord)o);
-	    } else if(o instanceof byte[]) {
-		byte[] b = (byte[])o;
-		adduint8(T_BYTES);
-		if(b.length < 128) {
-		    adduint8(b.length);
-		} else {
-		    adduint8(0x80);
-		    addint32(b.length);
-		}
-		addbytes(b);
-	    } else if(o instanceof Color) {
-		adduint8(T_COLOR);
-		addcolor((Color)o);
-	    } else if(o instanceof FColor) {
-		adduint8(T_FCOLOR);
-		addfcolor((FColor)o);
-	    } else if(o instanceof MiniFloat) {
-		adduint8(T_FLOAT8);
-		addint8(((MiniFloat)o).bits);
-	    } else if(o instanceof HalfFloat) {
-		adduint8(T_FLOAT16);
-		addint16(((HalfFloat)o).bits);
-	    } else if(o instanceof Float) {
-		adduint8(T_FLOAT32);
-		addfloat32(((Float)o).floatValue());
-	    } else if(o instanceof Double) {
-		adduint8(T_FLOAT64);
-		addfloat64(((Double)o).doubleValue());
-	    } else if(o instanceof UID) {
-		adduint8(T_UID);
-		addint64(((UID)o).longValue());
-	    } else if(o instanceof NormNumber.SNorm8) {
-		adduint8(T_SNORM8);
-		addint8(((NormNumber.SNorm8)o).val);
-	    } else if(o instanceof NormNumber.UNorm8) {
-		adduint8(T_UNORM8);
-		adduint8(((NormNumber.UNorm8)o).val & 0xff);
-	    } else if(o instanceof NormNumber.MNorm8) {
-		adduint8(T_MNORM8);
-		adduint8(((NormNumber.MNorm8)o).val & 0xff);
-	    } else if(o instanceof NormNumber.SNorm16) {
-		adduint8(T_SNORM16);
-		addint16(((NormNumber.SNorm16)o).val);
-	    } else if(o instanceof NormNumber.UNorm16) {
-		adduint8(T_UNORM16);
-		adduint16(((NormNumber.UNorm16)o).val & 0xffff);
-	    } else if(o instanceof NormNumber.MNorm16) {
-		adduint8(T_MNORM16);
-		adduint16(((NormNumber.MNorm16)o).val & 0xffff);
-	    } else if(o instanceof NormNumber.SNorm32) {
-		adduint8(T_SNORM32);
-		addint32(((NormNumber.SNorm32)o).val);
-	    } else if(o instanceof NormNumber.UNorm32) {
-		adduint8(T_UNORM32);
-		addint32(((NormNumber.UNorm32)o).val);
-	    } else if(o instanceof NormNumber.MNorm32) {
-		adduint8(T_MNORM32);
-		adduint32(((NormNumber.MNorm32)o).val);
-	    } else if(o instanceof Coord2d) {
-		adduint8(T_FCOORD64);
-		addfloat64(((Coord2d)o).x);
-		addfloat64(((Coord2d)o).y);
-	    } else if(o instanceof Object[]) {
-		adduint8(T_TTOL);
-		addlist((Object[])o);
-		adduint8(T_END);
+    public Message addtto(Object o) {
+	if(o == null) {
+	    adduint8(T_NIL);
+	} else if((o instanceof Byte) || (o instanceof Short) || (o instanceof Integer)) {
+	    int v = ((Number)o).intValue();
+	    if((v >= 0) && (v < 256)) {
+		adduint8(T_UINT8);
+		adduint8(v);
+	    } else if((v >= 0) && (v < 65536)) {
+		adduint8(T_UINT16);
+		adduint16(v);
+	    } else if((v >= -128) && (v < 0)) {
+		adduint8(T_INT8);
+		addint8((byte)v);
+	    } else if((v >= -32768) && (v < 0)) {
+		adduint8(T_INT16);
+		addint16((short)v);
 	    } else {
-		throw(new RuntimeException("Cannot encode a " + o.getClass() + " as TTO"));
+		adduint8(T_INT);
+		addint32(v);
 	    }
+	} else if(o instanceof String) {
+	    adduint8(T_STR);
+	    addstring((String)o);
+	} else if(o instanceof Coord) {
+	    adduint8(T_COORD);
+	    addcoord((Coord)o);
+	} else if(o instanceof byte[]) {
+	    byte[] b = (byte[])o;
+	    adduint8(T_BYTES);
+	    if(b.length < 128) {
+		adduint8(b.length);
+	    } else {
+		adduint8(0x80);
+		addint32(b.length);
+	    }
+	    addbytes(b);
+	} else if(o instanceof Color) {
+	    adduint8(T_COLOR);
+	    addcolor((Color)o);
+	} else if(o instanceof FColor) {
+	    adduint8(T_FCOLOR);
+	    addfcolor((FColor)o);
+	} else if(o instanceof MiniFloat) {
+	    adduint8(T_FLOAT8);
+	    addint8(((MiniFloat)o).bits);
+	} else if(o instanceof HalfFloat) {
+	    adduint8(T_FLOAT16);
+	    addint16(((HalfFloat)o).bits);
+	} else if(o instanceof Float) {
+	    adduint8(T_FLOAT32);
+	    addfloat32(((Float)o).floatValue());
+	} else if(o instanceof Double) {
+	    adduint8(T_FLOAT64);
+	    addfloat64(((Double)o).doubleValue());
+	} else if(o instanceof UID) {
+	    adduint8(T_UID);
+	    addint64(((UID)o).longValue());
+	} else if(o instanceof NormNumber.SNorm8) {
+	    adduint8(T_SNORM8);
+	    addint8(((NormNumber.SNorm8)o).val);
+	} else if(o instanceof NormNumber.UNorm8) {
+	    adduint8(T_UNORM8);
+	    adduint8(((NormNumber.UNorm8)o).val & 0xff);
+	} else if(o instanceof NormNumber.MNorm8) {
+	    adduint8(T_MNORM8);
+	    adduint8(((NormNumber.MNorm8)o).val & 0xff);
+	} else if(o instanceof NormNumber.SNorm16) {
+	    adduint8(T_SNORM16);
+	    addint16(((NormNumber.SNorm16)o).val);
+	} else if(o instanceof NormNumber.UNorm16) {
+	    adduint8(T_UNORM16);
+	    adduint16(((NormNumber.UNorm16)o).val & 0xffff);
+	} else if(o instanceof NormNumber.MNorm16) {
+	    adduint8(T_MNORM16);
+	    adduint16(((NormNumber.MNorm16)o).val & 0xffff);
+	} else if(o instanceof NormNumber.SNorm32) {
+	    adduint8(T_SNORM32);
+	    addint32(((NormNumber.SNorm32)o).val);
+	} else if(o instanceof NormNumber.UNorm32) {
+	    adduint8(T_UNORM32);
+	    addint32(((NormNumber.UNorm32)o).val);
+	} else if(o instanceof NormNumber.MNorm32) {
+	    adduint8(T_MNORM32);
+	    adduint32(((NormNumber.MNorm32)o).val);
+	} else if(o instanceof Coord2d) {
+	    adduint8(T_FCOORD64);
+	    addfloat64(((Coord2d)o).x);
+	    addfloat64(((Coord2d)o).y);
+	} else if(o instanceof Object[]) {
+	    adduint8(T_TTOL);
+	    addlist((Object[])o);
+	    adduint8(T_END);
+	} else {
+	    throw(new RuntimeException("Cannot encode a " + o.getClass() + " as TTO"));
 	}
+	return(this);
+    }
+
+    public Message addlist(Object... args) {
+	for(Object o : args)
+	    addtto(o);
 	return(this);
     }
 
