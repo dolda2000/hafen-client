@@ -60,6 +60,7 @@ public abstract class Message {
     public static final int T_SNORM32 = 29;
     public static final int T_UNORM32 = 30;
     public static final int T_MNORM32 = 31;
+    public static final int T_MAP = 32;
 
     private final static byte[] empty = new byte[0];
     public int rh = 0, rt = 0, wh = 0, wt = 0;
@@ -316,6 +317,8 @@ public abstract class Message {
 	case T_MNORM8:  return( NormNumber.decmnorm8(this));
 	case T_MNORM16: return(NormNumber.decmnorm16(this));
 	case T_MNORM32: return(NormNumber.decmnorm32(this));
+	case T_MAP:
+	    return(map());
 	default:
 	    throw(new FormatError("unknown type tag: " + type).msg(this));
 	}
@@ -336,6 +339,16 @@ public abstract class Message {
 	    ret.add(tto(t));
 	}
 	return(ret.toArray());
+    }
+
+    public Map<Object, Object> map() {
+	Object[] list = list();
+	if((list.length % 2) != 0)
+	    throw(new FormatError("map-list length not a multiple of two"));
+	Map<Object, Object> ret = new HashMap<>();
+	for(int i = 0; i < list.length; i += 2)
+	    ret.put(list[i], list[i + 1]);
+	return(ret);
     }
 
     public abstract void overflow(int min);
@@ -531,6 +544,10 @@ public abstract class Message {
 	    adduint8(T_TTOL);
 	    addlist((Object[])o);
 	    adduint8(T_END);
+	} else if(o instanceof Map) {
+	    adduint8(T_MAP);
+	    addmap((Map<?, ?>)o);
+	    adduint8(T_END);
 	} else {
 	    throw(new RuntimeException("Cannot encode a " + o.getClass() + " as TTO"));
 	}
@@ -540,6 +557,14 @@ public abstract class Message {
     public Message addlist(Object... args) {
 	for(Object o : args)
 	    addtto(o);
+	return(this);
+    }
+
+    public Message addmap(Map<?, ?> map) {
+	for(Map.Entry<?, ?> e : map.entrySet()) {
+	    addtto(e.getKey());
+	    addtto(e.getValue());
+	}
 	return(this);
     }
 
