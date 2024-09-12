@@ -240,7 +240,6 @@ public class Config {
 	    String val = props.getProperty(name);
 	    if(val == null)
 		return(null);
-	    Debug.dump(rel.resolve(parseuri(val)));
 	    return(rel.resolve(parseuri(val)));
 	}
 
