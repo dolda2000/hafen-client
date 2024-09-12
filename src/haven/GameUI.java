@@ -1472,7 +1472,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	if(key == ':') {
 	    entercmd();
 	    return(true);
-	} else if((Screenshooter.screenurl.get() != null) && kb_shoot.key().match(ev)) {
+	} else if(kb_shoot.key().match(ev) && (Screenshooter.screenurl.get() != null)) {
 	    Screenshooter.take(this, Screenshooter.screenurl.get());
 	    return(true);
 	} else if(kb_hide.key().match(ev)) {
