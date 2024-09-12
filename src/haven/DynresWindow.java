@@ -508,6 +508,10 @@ public class DynresWindow extends Window {
 	    }
 	    return(hovering);
 	}
+
+	public void setinfo(int fields, float outline) {
+	    settip(String.format("Fields: %,d\nContours: %.2f", fields, outline), true);
+	}
     }
 
     public static class Preview extends Widget {
@@ -936,7 +940,10 @@ public class DynresWindow extends Window {
     public void uimsg(String nm, Object... args) {
 	if(nm == "add") {
 	    UID id = (UID)args[0];
-	    imgs.add(add(new Image(UI.scale(128, 128), id)));
+	    Image img = add(new Image(UI.scale(128, 128), id));
+	    if(args.length > 1)
+		img.setinfo(Utils.iv(args[1]), Utils.fv(args[2]));
+	    imgs.add(img);
 	    arrange();
 	} else if(nm == "rem") {
 	    Image img = find((UID)args[0]);
