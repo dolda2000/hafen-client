@@ -191,6 +191,23 @@ public class Steam {
 	    }
 	    return(true);
 	}
+
+	int fileRead(String name, ByteBuffer buf) throws IOException {
+	    try {
+		return(rs.fileRead(name, buf));
+	    } catch(SteamException e) {
+		throw(new IOException(e));
+	    }
+	}
+
+	void fileWrite(String name, ByteBuffer data) throws IOException {
+	    try {
+		if(!rs.fileWrite(name, data))
+		    throw(new IOException("Steam clould storage write failed for unspecified reasons (quota exceeded?)"));
+	    } catch(SteamException e) {
+		throw(new IOException(e));
+	    }
+	}
     }
 
     public synchronized int appid() {
@@ -295,36 +312,27 @@ public class Steam {
     }
 
     public synchronized byte[] readfile(String name) throws IOException {
-	try {
-	    checkcloud();
-	    int sz = api.rs.getFileSize(name);
-	    if(sz <= 0)
-		throw(new FileNotFoundException(name));
-	    ByteBuffer buf = xfbuf(sz);
-	    buf.position(0).limit(sz);
-	    int rv = api.rs.fileRead(name, buf);
-	    if(rv == 0)
-		throw(new FileNotFoundException(name));
-	    buf.position(0).limit(rv);
-	    byte[] data = new byte[rv];
-	    buf.get(data);
-	    return(data);
-	} catch(SteamException e) {
-	    throw(new IOException(e));
-	}
+	checkcloud();
+	int sz = api.rs.getFileSize(name);
+	if(sz <= 0)
+	    throw(new FileNotFoundException(name));
+	ByteBuffer buf = xfbuf(sz);
+	buf.position(0).limit(sz);
+	int rv = api.fileRead(name, buf);
+	if(rv == 0)
+	    throw(new FileNotFoundException(name));
+	buf.position(0).limit(rv);
+	byte[] data = new byte[rv];
+	buf.get(data);
+	return(data);
     }
 
     public synchronized void writefile(String name, byte[] data) throws IOException {
-	try {
-	    checkcloud();
-	    ByteBuffer buf = xfbuf(data.length);
-	    buf.put(data);
-	    buf.flip();
-	    if(!api.rs.fileWrite(name, buf))
-		throw(new IOException("Steam clould storage write failed for unspecified reasons (quota exceeded?)"));
-	} catch(SteamException e) {
-	    throw(new IOException(e));
-	}
+	checkcloud();
+	ByteBuffer buf = xfbuf(data.length);
+	buf.put(data);
+	buf.flip();
+	api.fileWrite(name, buf);
     }
 
     public static void main(String[] args) throws Exception {
