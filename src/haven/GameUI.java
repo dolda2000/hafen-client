@@ -1293,7 +1293,8 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    String cur = polowners.get(id);
 	    if(map != null) {
 		if((o != null) && (cur == null)) {
-		    map.setpoltext(id, "Entering " + o);
+		    if(n)
+			map.setpoltext(id, "Entering " + o);
 		} else if((o == null) && (cur != null)) {
 		    map.setpoltext(id, "Leaving " + cur);
 		}
