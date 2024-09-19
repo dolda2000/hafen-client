@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import java.io.*;
 import java.nio.*;
+import java.nio.file.*;
 import java.net.*;
 import com.codedisaster.steamworks.*;
 import com.jogamp.common.os.Platform;
@@ -155,6 +156,8 @@ public class Steam {
 	final SteamFriends friends = new SteamFriends(new SteamFriendsCallback() {
 	    });
 	final SteamRemoteStorage rs = new SteamRemoteStorage(new SteamRemoteStorageCallback() {
+	    });
+	final SteamUGC ugc = new SteamUGC(new SteamUGCCallback() {
 	    });
 	final SteamUser user = new SteamUser(new SteamUserCallback() {
 		public void onGetTicketForWebApi(SteamAuthTicket tkt, SteamResult result, byte[] data) {
@@ -333,6 +336,46 @@ public class Steam {
 	buf.put(data);
 	buf.flip();
 	api.fileWrite(name, buf);
+    }
+
+    public class UGItem {
+	public final SteamPublishedFileID id;
+	private final SteamUGC.ItemInstallInfo iinf = new SteamUGC.ItemInstallInfo();
+	private final SteamUGC.ItemDownloadInfo dinf = new SteamUGC.ItemDownloadInfo();
+	private Collection<SteamUGC.ItemState> state;
+
+	public UGItem(SteamPublishedFileID id) {
+	    this.id = id;
+	    update();
+	}
+
+	public void update() {
+	    state = api.ugc.getItemState(id);
+	    if(state.contains(SteamUGC.ItemState.Installed))
+		api.ugc.getItemInstallInfo(id, iinf);
+	    if(state.contains(SteamUGC.ItemState.NeedsUpdate))
+		api.ugc.getItemDownloadInfo(id, dinf);
+	}
+
+	public Path path() {
+	    return(Utils.path(iinf.getFolder()));
+	}
+
+	public boolean installed() {return(state.contains(SteamUGC.ItemState.Installed));}
+	public boolean stale() {return(state.contains(SteamUGC.ItemState.NeedsUpdate));}
+	public boolean fetching() {return(state.contains(SteamUGC.ItemState.Downloading));}
+	public boolean pending() {return(state.contains(SteamUGC.ItemState.DownloadPending));}
+	public long got() {return(dinf.getBytesDownloaded());}
+	public long size() {return(dinf.getBytesTotal());}
+    }
+
+    public Collection<UGItem> ugitems() {
+	SteamPublishedFileID[] items = new SteamPublishedFileID[api.ugc.getNumSubscribedItems()];
+	int n = api.ugc.getSubscribedItems(items);
+	Collection<UGItem> ret = new ArrayList<>();
+	for(int i = 0; i < n; i++)
+	    ret.add(new UGItem(items[i]));
+	return(ret);
     }
 
     public static void main(String[] args) throws Exception {
