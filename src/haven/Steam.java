@@ -367,6 +367,10 @@ public class Steam {
 	    update();
 	}
 
+	public long fid() {
+	    return(SteamNativeHandle.getNativeHandle(id));
+	}
+
 	public void update() {
 	    state = api.ugc.getItemState(id);
 	    if(state.contains(SteamUGC.ItemState.Installed))
@@ -376,7 +380,10 @@ public class Steam {
 	}
 
 	public Path path() {
-	    return(Utils.path(iinf.getFolder()));
+	    String sp = iinf.getFolder();
+	    if(sp == null)
+		return(null);
+	    return(Utils.path(sp));
 	}
 
 	public boolean installed() {return(state.contains(SteamUGC.ItemState.Installed));}
@@ -412,7 +419,7 @@ public class Steam {
 	    }
 
 	    public void title(String title) {api.ugc.setItemTitle(id, title);}
-	    public void desription(String desc) {api.ugc.setItemDescription(id, desc);}
+	    public void description(String desc) {api.ugc.setItemDescription(id, desc);}
 	    public void metadata(String data) {api.ugc.setItemMetadata(id, data);}
 	    public void tags(String... tags) {api.ugc.setItemTags(id, tags);}
 	    public void contents(Path dir) {api.ugc.setItemContent(id, dir.toAbsolutePath().toString());}
@@ -455,8 +462,14 @@ public class Steam {
 
 	public boolean agreed = true;
 	public URI legalurl() {
-	    return(Utils.uri("steam://url/CommunityFilePage/" +  Long.toUnsignedString(SteamNativeHandle.getNativeHandle(UGItem.this.id))));
+	    return(Utils.uri("steam://url/CommunityFilePage/" +  Long.toUnsignedString(fid())));
 	}
+    }
+
+    public UGItem ugitem(long id) {
+	UGItem item = new UGItem(new SteamPublishedFileID(id));
+	/* XXX: Would be nice with a way to validate the ID. */
+	return(item);
     }
 
     public Collection<UGItem> ugitems() {
