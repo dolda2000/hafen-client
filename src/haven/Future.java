@@ -28,7 +28,7 @@ package haven;
 
 import java.util.function.*;
 
-public interface Future<T> {
+public interface Future<T> extends Indir<T> {
     public T get();
     public boolean done();
 
