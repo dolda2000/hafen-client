@@ -91,7 +91,7 @@ public class SteamWorkshop {
 		throw(new RuntimeException(e));
 	    }
 	    System.err.println("upload: note: creating new item");
-	    System.err.println("add the following line to workshop-client.properties to update an existing entry:");
+	    System.err.println("add the following line to workshop-client.properties to update this entry in the future:");
 	    System.err.printf("workshop-id=%d\n", item.fid());
 	}
 	UGItem.Update update = item.new Update();
