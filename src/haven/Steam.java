@@ -385,8 +385,8 @@ public class Steam {
 	    public void desription(String desc) {api.ugc.setItemDescription(id, desc);}
 	    public void metadata(String data) {api.ugc.setItemMetadata(id, data);}
 	    public void tags(String... tags) {api.ugc.setItemTags(id, tags);}
-	    public void contents(Path dir) {api.ugc.setItemContent(id, dir.toString());}
-	    public void preview(Path file) {api.ugc.setItemPreview(id, file.toString());}
+	    public void contents(Path dir) {api.ugc.setItemContent(id, dir.toAbsolutePath().toString());}
+	    public void preview(Path file) {api.ugc.setItemPreview(id, file.toAbsolutePath().toString());}
 
 	    public void setprivate()     {api.ugc.setItemVisibility(id, SteamRemoteStorage.PublishedFileVisibility.Private);}
 	    public void setfriendsonly() {api.ugc.setItemVisibility(id, SteamRemoteStorage.PublishedFileVisibility.FriendsOnly);}
