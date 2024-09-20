@@ -28,7 +28,7 @@ package haven;
 
 import java.io.PrintWriter;
 
-public class Chatwindow extends Window {
+public class Chatwindow extends Window implements Console.Host {
     private static final PrintWriter stdout = new PrintWriter(System.out);
     public final TextEntry in;
     public final Textlog out;
@@ -69,7 +69,7 @@ public class Chatwindow extends Window {
 			PrintWriter prev = ui.cons.out;
 			try {
 			    ui.cons.out = stdout;
-			    ui.cons.run(cmd.substring(1));
+			    ui.cons.run(this, cmd.substring(1));
 			    stdout.flush();
 			} catch(Exception e) {
 			    String msg = e.getMessage();

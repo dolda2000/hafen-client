@@ -30,9 +30,10 @@ import java.util.*;
 import java.io.*;
 
 public class Console {
-    static private Map<String, Command> scommands = new TreeMap<String, Command>();
-    private Map<String, Command> commands = new TreeMap<String, Command>();
-    private Collection<Directory> dirs = new LinkedList<Directory>();
+    private static final Map<String, Command> scommands = new TreeMap<String, Command>();
+    private final Map<String, Command> commands = new TreeMap<String, Command>();
+    private final Collection<Directory> dirs = new LinkedList<Directory>();
+    private final ThreadLocal<Host> host = new ThreadLocal<>();
     public PrintWriter out;
     
     {
@@ -45,6 +46,9 @@ public class Console {
     
     public static interface Directory {
 	public Map<String, Command> findcmds();
+    }
+
+    public static interface Host {
     }
     
     public static void setscmd(String name, Command cmd) {
@@ -86,17 +90,27 @@ public class Console {
 	return(findcmds().get(name));
     }
 
-    public void run(String[] args) throws Exception {
+    public void run(Host host, String[] args) throws Exception {
 	if(args.length < 1)
 	    return;
 	Command cmd = findcmd(args[0]);
 	if(cmd == null)
 	    throw(new Exception(args[0] + ": no such command"));
-	cmd.run(this, args);
+	Host ph = this.host.get();
+	try {
+	    this.host.set(host);
+	    cmd.run(this, args);
+	} finally {
+	    this.host.set(ph);
+	}
     }
     
-    public void run(String cmdl) throws Exception {
-	run(Utils.splitwords(cmdl));
+    public void run(Host host, String cmdl) throws Exception {
+	run(host, Utils.splitwords(cmdl));
+    }
+
+    public Host host() {
+	return(host.get());
     }
     
     public void clearout() {
