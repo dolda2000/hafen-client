@@ -393,11 +393,12 @@ public class Steam {
 	    public void setpublic()      {api.ugc.setItemVisibility(id, SteamRemoteStorage.PublishedFileVisibility.Public);}
 
 	    public void submit(String message) {
+		add((Listener)this);
 		api.ugc.submitItemUpdate(id, message);
 	    }
 
 	    public void callback(String id, Object[] args) {
-		if((id == "onSubmitItemUpdate") && (args[0] == UGItem.this.id)) {
+		if((id == "onSubmitItemUpdate") && Utils.eq(args[0], UGItem.this.id)) {
 		    remove((Listener)this);
 		    synchronized(this) {
 			agreed = !(Boolean)args[1];
