@@ -61,6 +61,7 @@ public abstract class Message {
     public static final int T_UNORM32 = 30;
     public static final int T_MNORM32 = 31;
     public static final int T_MAP = 32;
+    public static final int T_LONG = 33;
 
     private final static byte[] empty = new byte[0];
     public int rh = 0, rt = 0, wh = 0, wt = 0;
@@ -319,6 +320,8 @@ public abstract class Message {
 	case T_MNORM32: return(NormNumber.decmnorm32(this));
 	case T_MAP:
 	    return(map());
+	case T_LONG:
+	    return(int64());
 	default:
 	    throw(new FormatError("unknown type tag: " + type).msg(this));
 	}
@@ -454,23 +457,26 @@ public abstract class Message {
     public Message addtto(Object o) {
 	if(o == null) {
 	    adduint8(T_NIL);
-	} else if((o instanceof Byte) || (o instanceof Short) || (o instanceof Integer)) {
-	    int v = ((Number)o).intValue();
+	} else if((o instanceof Byte) || (o instanceof Short) || (o instanceof Integer) || (o instanceof Long)) {
+	    long v = ((Number)o).longValue();
 	    if((v >= 0) && (v < 256)) {
 		adduint8(T_UINT8);
-		adduint8(v);
+		adduint8((int)v);
 	    } else if((v >= 0) && (v < 65536)) {
 		adduint8(T_UINT16);
-		adduint16(v);
+		adduint16((int)v);
 	    } else if((v >= -128) && (v < 0)) {
 		adduint8(T_INT8);
 		addint8((byte)v);
 	    } else if((v >= -32768) && (v < 0)) {
 		adduint8(T_INT16);
 		addint16((short)v);
-	    } else {
+	    } else if((v >= Integer.MIN_VALUE) && (v <= Integer.MAX_VALUE)) {
 		adduint8(T_INT);
-		addint32(v);
+		addint32((int)v);
+	    } else {
+		adduint8(T_LONG);
+		addint64(v);
 	    }
 	} else if(o instanceof String) {
 	    adduint8(T_STR);
