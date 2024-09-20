@@ -158,6 +158,12 @@ public class Steam {
 	final SteamRemoteStorage rs = new SteamRemoteStorage(new SteamRemoteStorageCallback() {
 	    });
 	final SteamUGC ugc = new SteamUGC(new SteamUGCCallback() {
+		public void onCreateItem(SteamPublishedFileID id, boolean wla, SteamResult result) {
+		    host.post("onCreateItem", id, wla, result);
+		}
+		public void onSubmitItemUpdate(SteamPublishedFileID id, boolean wla, SteamResult result) {
+		    host.post("onSubmitItemUpdate", id, wla, result);
+		}
 	    });
 	final SteamUser user = new SteamUser(new SteamUserCallback() {
 		public void onGetTicketForWebApi(SteamAuthTicket tkt, SteamResult result, byte[] data) {
@@ -367,6 +373,59 @@ public class Steam {
 	public boolean pending() {return(state.contains(SteamUGC.ItemState.DownloadPending));}
 	public long got() {return(dinf.getBytesDownloaded());}
 	public long size() {return(dinf.getBytesTotal());}
+
+	public class Update implements Listener {
+	    public final SteamUGCUpdateHandle id;
+
+	    public Update() {
+		this.id = api.ugc.startItemUpdate(appid(), UGItem.this.id);
+	    }
+
+	    public void title(String title) {api.ugc.setItemTitle(id, title);}
+	    public void desription(String desc) {api.ugc.setItemDescription(id, desc);}
+	    public void metadata(String data) {api.ugc.setItemMetadata(id, data);}
+	    public void tags(String... tags) {api.ugc.setItemTags(id, tags);}
+	    public void contents(Path dir) {api.ugc.setItemContent(id, dir.toString());}
+	    public void preview(Path file) {api.ugc.setItemPreview(id, file.toString());}
+
+	    public void setprivate()     {api.ugc.setItemVisibility(id, SteamRemoteStorage.PublishedFileVisibility.Private);}
+	    public void setfriendsonly() {api.ugc.setItemVisibility(id, SteamRemoteStorage.PublishedFileVisibility.FriendsOnly);}
+	    public void setpublic()      {api.ugc.setItemVisibility(id, SteamRemoteStorage.PublishedFileVisibility.Public);}
+
+	    public void submit(String message) {
+		api.ugc.submitItemUpdate(id, message);
+	    }
+
+	    public void callback(String id, Object[] args) {
+		if((id == "onSubmitItemUpdate") && (args[0] == UGItem.this.id)) {
+		    remove((Listener)this);
+		    synchronized(this) {
+			agreed = !(Boolean)args[1];
+			done = (SteamResult)args[2];
+		    }
+		}
+	    }
+
+	    public SteamResult done = null;
+	    public boolean agreed;
+	    public SteamUGC.ItemUpdateStatus state = SteamUGC.ItemUpdateStatus.Invalid;
+	    public long prog, size;
+	    public void getprogress() {
+		synchronized(this) {
+		    if(done == null) {
+			SteamUGC.ItemUpdateInfo buf = new SteamUGC.ItemUpdateInfo();
+			state = api.ugc.getItemUpdateProgress(id, buf);
+			prog = buf.getBytesProcessed();
+			size = buf.getBytesTotal();
+		    }
+		}
+	    }
+	}
+
+	public boolean agreed = true;
+	public URI legalurl() {
+	    return(Utils.uri("steam://url/CommunityFilePage/" +  Long.toUnsignedString(SteamNativeHandle.getNativeHandle(UGItem.this.id))));
+	}
     }
 
     public Collection<UGItem> ugitems() {
@@ -376,6 +435,18 @@ public class Steam {
 	for(int i = 0; i < n; i++)
 	    ret.add(new UGItem(items[i]));
 	return(ret);
+    }
+
+    public UGItem mkugitem() throws InterruptedException {
+	try(Waiter w = new Waiter("onCreateItem")) {
+	    api.ugc.createItem(appid(), SteamRemoteStorage.WorkshopFileType.Community);
+	    Object[] cb = w.get();
+	    if(cb[2] != SteamResult.OK)
+		throw(new SvcError("CreateItem failed: " + cb[2]));
+	    UGItem ret = new UGItem((SteamPublishedFileID)cb[0]);
+	    ret.agreed = !(Boolean)cb[1];
+	    return(ret);
+	}
     }
 
     public static void main(String[] args) throws Exception {
