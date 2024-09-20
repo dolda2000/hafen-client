@@ -46,6 +46,15 @@ public class Steam {
 	public SvcError(String message, Throwable cause) {super(message, cause);}
     }
 
+    public static class ResultError extends SvcError {
+	public final SteamResult res;
+
+	public ResultError(String message, SteamResult res) {
+	    super(message);
+	    this.res = res;
+	}
+    }
+
     public static interface Listener {
 	public void callback(String id, Object[] args);
     }
@@ -163,6 +172,9 @@ public class Steam {
 		}
 		public void onSubmitItemUpdate(SteamPublishedFileID id, boolean wla, SteamResult result) {
 		    host.post("onSubmitItemUpdate", id, wla, result);
+		}
+		public void onUGCQueryCompleted(SteamUGCQuery query, int n, int total, boolean cached, SteamResult result) {
+		    host.post("onUGCQueryCompleted", query, n, total, cached, result);
 		}
 	    });
 	final SteamUser user = new SteamUser(new SteamUserCallback() {
@@ -374,6 +386,24 @@ public class Steam {
 	public long got() {return(dinf.getBytesDownloaded());}
 	public long size() {return(dinf.getBytesTotal());}
 
+	public class Details {
+	    public final String title, description;
+	    public final SteamID owner;
+
+	    public Details(SteamUGCDetails info) {
+		this.title = info.getTitle();
+		this.description = info.getDescription();
+		this.owner = info.getOwnerID();
+	    }
+	}
+
+	private Future<Details> details = null;
+	public Future<Details> details() {
+	    if(details == null)
+		ugqueryitems(Arrays.asList(this));
+	    return(details);
+	}
+
 	public class Update implements Listener {
 	    public final SteamUGCUpdateHandle id;
 
@@ -448,6 +478,61 @@ public class Steam {
 	    ret.agreed = !(Boolean)cb[1];
 	    return(ret);
 	}
+    }
+
+    public void ugqueryitems(Collection<UGItem> items) {
+	class Result extends Future.Simple<UGItem.Details> {
+	    final UGItem item;
+	    Result(UGItem item) {this.item = item;}
+	}
+	Collection<SteamPublishedFileID> ids = new ArrayList<>();
+	Map<SteamPublishedFileID, Result> futures = new HashMap<>();
+	for(UGItem item : items) {
+	    ids.add(item.id);
+	    Result future = new Result(item);
+	    item.details = future;
+	    futures.put(item.id, future);
+	}
+	SteamUGCQuery query = api.ugc.createQueryUGCDetailsRequest(ids);
+	class Callback implements Listener {
+	    public void callback(String id, Object[] args) {
+		if((id == "onUGCQueryCompleted") && Utils.eq(args[0], query)) {
+		    remove((Listener)this);
+		    try {
+			SteamResult res = (SteamResult)args[4];
+			if(res == SteamResult.OK) {
+			    int n = (Integer)args[1];
+			    SteamUGCDetails buf = new SteamUGCDetails();
+			    for(int i = 0; i < n; i++) {
+				api.ugc.getQueryUGCResult(query, i, buf);
+				Result future = futures.remove(buf.getPublishedFileID());
+				if(future == null)
+				    continue;
+				if(buf.getResult() == SteamResult.OK) {
+				    future.set(future.item.new Details(buf));
+				} else {
+				    future.error(new ResultError("UGC result failed: " + buf.getResult(), buf.getResult()));
+				}
+			    }
+			    if(!futures.isEmpty()) {
+				SvcError exc = new SvcError("no result received for query");
+				for(Result future : futures.values()) {
+				    future.error(exc);
+				}
+			    }
+			} else {
+			    ResultError exc = new ResultError("UGC query failed: " + res, res);
+			    for(Result future : futures.values())
+				future.error(exc);
+			}
+		    } finally {
+			api.ugc.releaseQueryUserUGCRequest(query);
+		    }
+		}
+	    }
+	}
+	add((Listener)new Callback());
+	api.ugc.sendQueryUGCRequest(query);
     }
 
     public static void main(String[] args) throws Exception {
