@@ -129,7 +129,7 @@ public class SteamWorkshop {
 	    }
 	    if((state == ItemUpdateStatus.UploadingContent) || (state == ItemUpdateStatus.UploadingPreviewFile)) {
 		if(!quiet && (update.size > 0))
-		    System.err.printf("upload: progress: %,d/%d\n", update.prog, update.size);
+		    System.err.printf("upload: progress: %,d/%,d\n", update.prog, update.size);
 	    }
 	    try {
 		Thread.sleep(100);
