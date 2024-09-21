@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.concurrent.*;
 import java.io.*;
 import java.nio.*;
 import java.nio.file.*;
@@ -37,7 +38,7 @@ import com.jogamp.common.jvm.JNILibLoaderBase;
 import com.jogamp.common.util.cache.TempJarCache;
 
 public class Steam {
-    private final Collection<Listener> listening = new HashSet<>();
+    private final Collection<Listener> listening = new CopyOnWriteArrayList<>();
     private final API api = new API(this);
 
     public static class SvcError extends RuntimeException {
