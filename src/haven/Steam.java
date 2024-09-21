@@ -177,6 +177,9 @@ public class Steam {
 		public void onUGCQueryCompleted(SteamUGCQuery query, int n, int total, boolean cached, SteamResult result) {
 		    host.post("onUGCQueryCompleted", query, n, total, cached, result);
 		}
+		public void onDownloadItemResult(int appid, SteamPublishedFileID item, SteamResult result) {
+		    host.post("onDownloadItemResult", appid, item, result);
+		}
 	    });
 	final SteamUser user = new SteamUser(new SteamUserCallback() {
 		public void onGetTicketForWebApi(SteamAuthTicket tkt, SteamResult result, byte[] data) {
@@ -385,6 +388,27 @@ public class Steam {
 	    if(sp == null)
 		return(null);
 	    return(Utils.path(sp));
+	}
+
+	public SteamResult dlresult = SteamResult.OK;
+	public void download(boolean prioritized) {
+	    synchronized(this) {
+		if(dlresult != null) {
+		    if(!api.ugc.downloadItem(this.id, prioritized))
+			throw(new SvcError("download failed for unspecified reasons"));
+		    dlresult = null;
+		    add(new Listener() {
+			    public void callback(String id, Object[] args) {
+				if((id == "onDownloadItemResult") && Utils.eq(args[1], UGItem.this.id)) {
+				    remove((Listener)this);
+				    synchronized(UGItem.this) {
+					dlresult = (SteamResult)args[2];
+				    }
+				}
+			    }
+			});
+		}
+	    }
 	}
 
 	public boolean installed() {return(state.contains(SteamUGC.ItemState.Installed));}
