@@ -44,11 +44,15 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
     DisplayMode fsmode = null, prefs = null;
     Coord prefssz = null;
 	
-    static {
+    public static void initawt() {
 	try {
 	    System.setProperty("apple.awt.application.name", "Haven & Hearth");
 	    javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
 	} catch(Exception e) {}
+    }
+
+    static {
+	initawt();
     }
 	
     DisplayMode findmode(int w, int h) {
