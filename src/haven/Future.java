@@ -26,7 +26,77 @@
 
 package haven;
 
-public interface Future<T> {
+import java.util.function.*;
+
+public interface Future<T> extends Indir<T> {
     public T get();
     public boolean done();
+
+    public static class PastException extends RuntimeException {
+	public PastException(Throwable cause) {
+	    super(cause);
+	}
+    }
+
+    public static class Simple<T> implements Future<T> {
+	private final Waitable.Queue wq = new Waitable.Queue();
+	private T val;
+	private Throwable exc;
+	private boolean set = false;
+
+	public boolean done() {
+	    synchronized(this) {
+		return(set);
+	    }
+	}
+
+	public static class NotDone extends Loading {
+	    public final transient Simple future;
+
+	    private NotDone(Simple future) {
+		this.future = future;
+	    }
+
+	    public void waitfor(Runnable callback, Consumer<Waitable.Waiting> reg) {
+		synchronized(future) {
+		    if(future.set) {
+			reg.accept(Waitable.Waiting.dummy);
+			callback.run();
+		    } else {
+			reg.accept(future.wq.add(callback));
+		    }
+		}
+	    }
+	}
+
+	public T get() {
+	    synchronized(this) {
+		if(!set)
+		    throw(new NotDone(this));
+		if(exc != null)
+		    throw(new PastException(exc));
+		return(val);
+	    }
+	}
+
+	public void set(T val) {
+	    synchronized(this) {
+		if(this.set)
+		    throw(new IllegalStateException());
+		this.val = val;
+		this.set = true;
+		this.wq.wnotify();
+	    }
+	}
+
+	public void error(Throwable cause) {
+	    synchronized(this) {
+		if(this.set)
+		    throw(new IllegalStateException());
+		this.exc = cause;
+		this.set = true;
+		this.wq.wnotify();
+	    }
+	}
+    }
 }
