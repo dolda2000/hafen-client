@@ -51,6 +51,8 @@ public interface EquipTarget {
     }
 
     public static Supplier<? extends Pipe.Op> eqpoint(EquipTarget tgt, String nm, Message dat, Object ctx) {
+	if(tgt == null)
+	    throw(new NoSuchTarget(null, nm, ctx));
 	Supplier<? extends Pipe.Op> ret = tgt.eqpoint(nm, dat);
 	if(ret == null)
 	    throw(new NoSuchTarget(tgt, nm, ctx));
