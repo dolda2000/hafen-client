@@ -35,6 +35,7 @@ import haven.Skeleton.PoseMod;
 
 public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
     public static final Collection<RMod> rmods = new ArrayList<>();
+    private static final ThreadLocal<Cons> curcons = new ThreadLocal<Cons>();
     private static RenderTree.Node[] noparts = {};
     private static final Ticker[] notickers = {};
     private static final EquipTarget[] noeqtgts = {};
@@ -144,18 +145,24 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	public void add(Part part) {parts.add(part);}
 
 	public void process() {
-	    while(!mods.isEmpty()) {
-		Mod min = null;
-		int mino = 0;
-		for(Mod mod : mods) {
-		    int o = mod.order();
-		    if((min == null) || (o < mino)) {
-			min = mod;
-			mino = o;
+	    Cons prev = curcons.get();
+	    curcons.set(this);
+	    try {
+		while(!mods.isEmpty()) {
+		    Mod min = null;
+		    int mino = 0;
+		    for(Mod mod : mods) {
+			int o = mod.order();
+			if((min == null) || (o < mino)) {
+			    min = mod;
+			    mino = o;
+			}
 		    }
+		    mods.remove(min);
+		    min.operate(this);
 		}
-		mods.remove(min);
-		min.operate(this);
+	    } finally {
+		curcons.set(prev);
 	    }
 	}
 
@@ -275,6 +282,10 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	return(new Cons());
     }
 
+    public static Cons curcons() {
+	return(curcons.get());
+    }
+
     protected void modifiers(Cons cons) {
 	for(Mod mod : resdata.mods)
 	    cons.add(mod);
@@ -376,6 +387,16 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    Supplier<? extends Pipe.Op> ret = tgt.eqpoint(nm, dat);
 	    if(ret != null)
 		return(ret);
+	}
+	Cons cons = curcons();
+	if(cons != null) {
+	    /* XXX? Not sure how nice this is, but equip-targets are
+	     * likely mostly needed during construction. */
+	    for(EquipTarget tgt : cons.eqtgts) {
+		Supplier<? extends Pipe.Op> ret = tgt.eqpoint(nm, dat);
+		if(ret != null)
+		    return(ret);
+	    }
 	}
 	return(null);
     }
