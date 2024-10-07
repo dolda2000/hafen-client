@@ -413,11 +413,12 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	}
     }
 
-    public static class RenderLinks extends Sprite.RecOwner implements Mod {
+    public static class RenderLinks implements Mod, Sprite.Owner {
+	public final ModSprite main;
 	public final RenderLink.Res[] rlinks;
 
 	public RenderLinks(ModSprite spr, RenderLink.Res[] rlinks) {
-	    spr.super();
+	    this.main = spr;
 	    this.rlinks = rlinks;
 	}
 
@@ -428,9 +429,30 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 		    Part part = new Part(lr.l.make(this));
 		    part.unwrap();
 		    cons.add(part);
+		    if(part.obj instanceof Sprite) {
+			Sprite spr = (Sprite)part.obj;
+			cons.tickers.add(new Ticker() {
+				public boolean tick(double dt) {return(spr.tick(dt));}
+				public void gtick(Render out) {spr.gtick(out);}
+			    });
+		    }
 		}
 	    }
 	}
+
+	private static final OwnerContext.ClassResolver<ModSprite> ctxr = new OwnerContext.ClassResolver<ModSprite>()
+	    .add(ModSprite.class, spr -> spr);
+	public <T> T context(Class<T> cl) {
+	    return(OwnerContext.orparent(cl, ctxr.context(cl, main, false), main.owner));
+	}
+	public Random mkrandoom() {
+	    return(main.owner.mkrandoom());
+	}
+	@Deprecated public Resource getres() {
+	    return(main.res);
+	}
+
+	public int order() {return(2000);}
 
 	@RMod.Global
 	public static class $res implements RMod {
