@@ -26,40 +26,26 @@
 
 package haven;
 
-import haven.render.*;
-import java.util.function.*;
+import java.io.*;
 
-public interface EquipTarget {
-    public final Supplier<Pipe.Op> nil = () -> Pipe.Op.nil;
+public class SteamCache implements ResCache {
+    private final Steam api;
+    private final String prefix;
 
-    public Supplier<? extends Pipe.Op> eqpoint(String nm, Message dat);
-
-    public static class NoSuchTarget extends IllegalArgumentException {
-	public final String tgt, nm, ctx;
-
-	public NoSuchTarget(EquipTarget tgt, String nm, Object ctx) {
-	    this.tgt = String.valueOf(tgt);
-	    this.nm = nm;
-	    this.ctx = (ctx == null) ? null : String.valueOf(ctx);
-	}
-
-	public String getMessage() {
-	    if(ctx == null)
-		return(String.format("No such eqpoint: %s on %s", nm, tgt));
-	    return(String.format("No such eqpoint: %s on %s, from %s", nm, tgt, ctx));
-	}
+    public SteamCache(Steam api) {
+	this.api = api;
+	this.prefix = String.format("%s/%s/", api.appid(), api.userid());
     }
 
-    public static Supplier<? extends Pipe.Op> eqpoint(EquipTarget tgt, String nm, Message dat, Object ctx) {
-	if(tgt == null)
-	    throw(new NoSuchTarget(null, nm, ctx));
-	Supplier<? extends Pipe.Op> ret = tgt.eqpoint(nm, dat);
-	if(ret == null)
-	    throw(new NoSuchTarget(tgt, nm, ctx));
-	return(ret);
+    public InputStream fetch(String name) throws IOException {
+	return(new ByteArrayInputStream(api.readfile(name)));
     }
 
-    public static Supplier<? extends Pipe.Op> eqpoint(EquipTarget tgt, String nm, Message dat) {
-	return(eqpoint(tgt, nm, dat, null));
+    public OutputStream store(String name) throws IOException {
+	return(new ByteArrayOutputStream() {
+		public void close() throws IOException {
+		    api.writefile(name, toByteArray());
+		}
+	    });
     }
 }

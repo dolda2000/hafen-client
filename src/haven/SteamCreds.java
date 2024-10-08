@@ -26,40 +26,37 @@
 
 package haven;
 
-import haven.render.*;
-import java.util.function.*;
+import java.io.*;
+import com.codedisaster.steamworks.*;
 
-public interface EquipTarget {
-    public final Supplier<Pipe.Op> nil = () -> Pipe.Op.nil;
+public class SteamCreds extends AuthClient.Credentials {
+    private final Steam api;
+    private final String name;
 
-    public Supplier<? extends Pipe.Op> eqpoint(String nm, Message dat);
-
-    public static class NoSuchTarget extends IllegalArgumentException {
-	public final String tgt, nm, ctx;
-
-	public NoSuchTarget(EquipTarget tgt, String nm, Object ctx) {
-	    this.tgt = String.valueOf(tgt);
-	    this.nm = nm;
-	    this.ctx = (ctx == null) ? null : String.valueOf(ctx);
-	}
-
-	public String getMessage() {
-	    if(ctx == null)
-		return(String.format("No such eqpoint: %s on %s", nm, tgt));
-	    return(String.format("No such eqpoint: %s on %s, from %s", nm, tgt, ctx));
-	}
+    public SteamCreds() throws IOException {
+	if((api = Steam.get()) == null)
+	    throw(new IOException("Steam is not running"));
+	name = api.displayname();
     }
 
-    public static Supplier<? extends Pipe.Op> eqpoint(EquipTarget tgt, String nm, Message dat, Object ctx) {
-	if(tgt == null)
-	    throw(new NoSuchTarget(null, nm, ctx));
-	Supplier<? extends Pipe.Op> ret = tgt.eqpoint(nm, dat);
-	if(ret == null)
-	    throw(new NoSuchTarget(tgt, nm, ctx));
-	return(ret);
-    }
+    public String name() {return(name);}
 
-    public static Supplier<? extends Pipe.Op> eqpoint(EquipTarget tgt, String nm, Message dat) {
-	return(eqpoint(tgt, nm, dat, null));
+    public String tryauth(AuthClient cl) throws IOException {
+	try(Steam.WebTicket tkt = api.webticket()) {
+	    Message rpl = cl.cmd("steam", Utils.byte2hex(tkt.data));
+	    String stat = rpl.string();
+	    if(stat.equals("ok")) {
+		String acct = rpl.string();
+		return(acct);
+	    } else if(stat.equals("no")) {
+		throw(new AuthException(rpl.string()));
+	    } else {
+		throw(new RuntimeException("Unexpected reply `" + stat + "' from auth server"));
+	    }
+	} catch(InterruptedException e) {
+	    throw(new IOException("interrupted", e));
+	} catch(Steam.SvcError e) {
+	    throw(new AuthException(e.getMessage()));
+	}
     }
 }

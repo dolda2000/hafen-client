@@ -1286,7 +1286,8 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	    String cur = polowners.get(id);
 	    if(map != null) {
 		if((o != null) && (cur == null)) {
-		    map.setpoltext(id, "Entering " + o);
+		    if(n)
+			map.setpoltext(id, "Entering " + o);
 		} else if((o == null) && (cur != null)) {
 		    map.setpoltext(id, "Leaving " + cur);
 		}
@@ -1465,7 +1466,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	if(ev.c == ':') {
 	    entercmd();
 	    return(true);
-	} else if((Screenshooter.screenurl.get() != null) && kb_shoot.key().match(ev)) {
+	} else if(kb_shoot.key().match(ev) && (Screenshooter.screenurl.get() != null)) {
 	    Screenshooter.take(this, Screenshooter.screenurl.get());
 	    return(true);
 	} else if(kb_hide.key().match(ev)) {

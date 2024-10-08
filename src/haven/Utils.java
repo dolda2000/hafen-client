@@ -1763,8 +1763,8 @@ public class Utils {
 
     public static URI uriparam(URI base, Object... pars) {
 	StringBuilder buf = new StringBuilder();
-	if(base.getQuery() != null)
-	    buf.append(base.getQuery());
+	if(base.getRawQuery() != null)
+	    buf.append(base.getRawQuery());
 	for(int i = 0; i < pars.length; i += 2) {
 	    if(buf.length() > 0)
 		buf.append('&');
@@ -1773,7 +1773,15 @@ public class Utils {
 	    buf.append(urlencode(String.valueOf(pars[i + 1])));
 	}
 	try {
-	    return(new URI(base.getScheme(), base.getAuthority(), base.getPath(), buf.toString(), base.getFragment()));
+	    /* The component constructors for URI don't properly
+	     * preserve quoted characters.
+	     *
+	     * It's all so tiresome. */
+	    String sbase = base.toString();
+	    int p = sbase.indexOf('?');
+	    if(p >= 0)
+		sbase = sbase.substring(0, p);
+	    return(new URI(sbase + '?' + buf.toString()));
 	} catch(URISyntaxException e) {
 	    throw(new RuntimeException(e));
 	}

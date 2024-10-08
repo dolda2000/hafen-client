@@ -29,12 +29,13 @@ package haven;
 import java.util.*;
 
 public class LoginScreen extends Widget {
+    public static final Config.Variable<String> authmech = Config.Variable.prop("haven.authmech", "native");
     public static final Text.Foundry
 	textf = new Text.Foundry(Text.sans, 16).aa(true),
 	textfs = new Text.Foundry(Text.sans, 14).aa(true);
     public static final Tex bg = Resource.loadtex("gfx/loginscr");
     public static final Position bgc = new Position(UI.scale(420, 300));
-    public final Credbox login;
+    public final Widget login;
     public final String hostname;
     private Text error, progress;
     private Button optbtn;
@@ -51,7 +52,17 @@ public class LoginScreen extends Widget {
 	add(new Img(bg), Coord.z);
 	optbtn = adda(new Button(UI.scale(100), "Options"), pos("cbl").add(10, -10), 0, 1);
 	optbtn.setgkey(GameUI.kb_opt);
-	adda(login = new Credbox(), bgc.adds(0, 10), 0.5, 0.0).hide();
+	switch(authmech.get()) {
+	case "native":
+	    login = new Credbox();
+	    break;
+	case "steam":
+	    login = new Steambox();
+	    break;
+	default:
+	    throw(new RuntimeException("Unknown authmech: " + authmech.get()));
+	}
+	adda(login, bgc.adds(0, 10), 0.5, 0.0).hide();
     }
 
     public static final KeyBinding kb_savtoken = KeyBinding.get("login/savtoken", KeyMatch.forchar('R', KeyMatch.M));
@@ -226,6 +237,42 @@ public class LoginScreen extends Widget {
 	    checktoken();
 	    if(pwbox.visible && !user.text().equals(""))
 		setfocus(pass);
+	}
+    }
+
+    private static boolean steam_autologin = true;
+    public class Steambox extends Widget {
+
+	private Steambox() {
+	    super(UI.scale(200, 150));
+	    Widget prev = adda(new Label("Logging in with Steam", textf), sz.x / 2, 0, 0.5, 0);
+	    adda(new IButton("gfx/hud/buttons/login", "u", "d", "o") {
+		    protected void depress() {ui.sfx(Button.clbtdown.stream());}
+		    protected void unpress() {ui.sfx(Button.clbtup.stream());}
+		    public void click() {enter();}
+		},
+		prev.pos("bl").adds(0, 10).x(sz.x / 2), 0.5, 0.0)
+		.setgkey(key_act);
+	}
+
+	private AuthClient.Credentials creds() throws java.io.IOException {
+	    return(new SteamCreds());
+	}
+
+	private void enter() {
+	    try {
+		LoginScreen.this.wdgmsg("login", creds(), false);
+	    } catch(java.io.IOException e) {
+		error(e.getMessage());
+	    }
+	}
+
+	public void tick(double dt) {
+	    super.tick(dt);
+	    if(steam_autologin) {
+		enter();
+		steam_autologin = false;
+	    }
 	}
     }
 

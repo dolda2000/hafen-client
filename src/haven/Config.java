@@ -198,9 +198,11 @@ public class Config {
 
     public static class Services {
 	public static final Variable<URI> directory = Config.Variable.propu("haven.svcdir", "");
+	public final URI rel;
 	public final Properties props;
 
-	public Services(Properties props) {
+	public Services(URI rel, Properties props) {
+	    this.rel = rel;
 	    this.props = props;
 	}
 
@@ -220,7 +222,7 @@ public class Config {
 		    props.put(p[0], p[1]);
 		}
 	    }
-	    return(new Services(props));
+	    return(new Services(uri, props));
 	}
 
 	private static Services global = null;
@@ -234,13 +236,20 @@ public class Config {
 	    }
 	}
 
+	public URI geturi(String name) {
+	    String val = props.getProperty(name);
+	    if(val == null)
+		return(null);
+	    return(rel.resolve(parseuri(val)));
+	}
+
 	public static Variable<URI> var(String name, String defval) {
 	    URI def = parseuri(defval);
 	    return new Variable<URI>(cfg -> {
 		    String pv = cfg.getprop("haven." + name, null);
-		    if(pv == null)
-			pv = Services.get().props.getProperty(name);
-		    return((pv == null) ? def : parseuri(pv));
+		    if(pv != null)
+			return(parseuri(pv));
+		    return(Services.get().geturi(name));
 	    });
 	}
     }
