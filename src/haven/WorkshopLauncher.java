@@ -267,6 +267,11 @@ public class WorkshopLauncher {
 		    }
 		}});
 		add(memo = new JCheckBox("Remember this choice (until subscriptions are changed)"));
+		add(new JLabel("<html><body style=\"width: 400px\"><hr>" +
+			       "<span style=\"color: #ff0000\">WARNING</span>: " +
+			       "Please keep in mind that custom clients are independent programs, " +
+			       "and can do with your computer whatever any other downloaded program may do. " +
+			       "You should only use clients by authors you trust.</body></html>"));
 		add(new JPanel() {{
 		    setLayout(new FlowLayout(FlowLayout.LEADING));
 		    setAlignmentX(0);
