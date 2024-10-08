@@ -102,7 +102,7 @@ public class SteamWorkshop {
 	update.title(nm);
 	String desc = props.getProperty("description");
 	if(desc == null) err("upload: %s: lacks description property\n", pfile);
-	update.description(nm);
+	update.description(desc);
 	String pv = props.getProperty("preview-image");
 	if(pv == null) err("upload: %s: lacks preview-image property\n", pfile);
 	Path pvf = dir.resolve(pv);
