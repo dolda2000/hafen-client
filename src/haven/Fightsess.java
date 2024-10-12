@@ -459,7 +459,7 @@ public class Fightsess extends Widget {
     }
 
     public boolean keydown(KeyDownEvent ev) {
-	return(ev.grabbed);
+	return(false);
     }
 
     public boolean keyup(KeyUpEvent ev) {
