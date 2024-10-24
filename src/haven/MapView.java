@@ -1998,7 +1998,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	parent.setfocus(this);
 	Loader.Future<Plob> placing_l = this.placing;
 	if(ev.b == 2) {
-	    if((camdrag == null) && ((Camera)camera).click(c)) {
+	    if((camdrag == null) && camera.click(c)) {
 		camdrag = ui.grabmouse(this);
 	    }
 	} else if((placing_l != null) && placing_l.done()) {
@@ -2017,7 +2017,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    grab.mmousemove(ev.c);
 	Loader.Future<Plob> placing_l = this.placing;
 	if(camdrag != null) {
-	    ((Camera)camera).drag(ev.c);
+	    camera.drag(ev.c);
 	} else if((placing_l != null) && placing_l.done()) {
 	    Plob placing = placing_l.get();
 	    if((placing.lastmc == null) || !placing.lastmc.equals(ev.c)) {
@@ -2048,7 +2048,7 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    if(placing.adjust.rotate(placing, ev.a, ui.modflags()))
 		return(true);
 	}
-	return(((Camera)camera).wheel(ev.c, ev.a));
+	return(camera.wheel(ev.c, ev.a));
     }
     
     public boolean drop(final Coord cc, Coord ul) {
