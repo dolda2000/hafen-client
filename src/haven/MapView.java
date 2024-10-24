@@ -1891,8 +1891,6 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	}
     }
 
-    private UI.Grab camdrag = null;
-    
     public abstract class Maptest {
 	private final Coord pc;
 
@@ -1994,11 +1992,13 @@ public class MapView extends PView implements DTarget, Console.Directory {
 	    this.grab = null;
     }
     
+    private UI.Grab camdrag = null;
+
     public boolean mousedown(Coord c, int button) {
 	parent.setfocus(this);
 	Loader.Future<Plob> placing_l = this.placing;
 	if(button == 2) {
-	    if(((Camera)camera).click(c)) {
+	    if((camdrag == null) && ((Camera)camera).click(c)) {
 		camdrag = ui.grabmouse(this);
 	    }
 	} else if((placing_l != null) && placing_l.done()) {
