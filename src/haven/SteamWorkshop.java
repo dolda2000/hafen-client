@@ -95,28 +95,39 @@ public class SteamWorkshop {
 	    System.err.printf("workshop-id=%d\n", item.fid());
 	}
 	UGItem.Update update = item.new Update();
+	String prop;
 	update.tags("Client");
 	update.contents(dir);
-	String nm = props.getProperty("name");
-	if(nm == null) err("upload: %s: lacks name property\n", pfile);
-	update.title(nm);
-	String desc = props.getProperty("description");
-	if(desc == null) err("upload: %s: lacks description property\n", pfile);
-	update.description(desc);
-	String pv = props.getProperty("preview-image");
-	if(pv == null) err("upload: %s: lacks preview-image property\n", pfile);
-	Path pvf = dir.resolve(pv);
+	if((prop = props.getProperty("name")) == null)
+	    err("upload: %s: lacks name property\n", pfile);
+	update.title(prop);
+	if((prop = props.getProperty("description-file")) != null) {
+	    try {
+		update.description(new String(Files.readAllBytes(dir.resolve(prop)), Utils.utf8));
+	    } catch(NoSuchFileException e) {
+		err("upload: description file %s: no such file", prop);
+	    } catch(IOException e) {
+		throw(new RuntimeException(e));
+	    }
+	} else if((prop = props.getProperty("description")) != null) {
+	    update.description(prop);
+	} else {
+	    err("upload: %s: lacks description or description-file property\n", pfile);
+	}
+	if((prop = props.getProperty("preview-image")) == null)
+	    err("upload: %s: lacks preview-image property\n", pfile);
+	Path pvf = dir.resolve(prop);
 	if(!Files.exists(pvf))
 	    err("upload: preview file %s: no such file", pvf);
 	update.preview(pvf);
-	String vis = props.getProperty("visibility");
-	if(vis == null) err("upload: %s: lacks visibility property\n", pfile);
-	switch(vis) {
+	if((prop = props.getProperty("visibility")) == null)
+	    err("upload: %s: lacks visibility property\n", pfile);
+	switch(prop) {
 	case "private": update.setprivate(); break;
 	case "friends": update.setfriendsonly(); break;
 	case "public": update.setpublic(); break;
 	default:
-	    err("upload: visibility is not one of `private', `friends' or `public': %s", vis);
+	    err("upload: visibility is not one of `private', `friends' or `public': %s", prop);
 	}
 	update.submit(opt.rest.length > 1 ? opt.rest[1] : null);
 	ItemUpdateStatus state = null;

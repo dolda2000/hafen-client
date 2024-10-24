@@ -270,7 +270,7 @@ public class Makewindow extends Widget {
 	    } else {
 		hoverstart = now;
 	    }
-	    if(now - hoverstart >= 1.0) {
+	    if(now - hoverstart < 1.0) {
 		if(stip == null) {
 		    BufferedImage tip = spec.shorttip();
 		    Tex tt = (tip == null) ? null : new TexI(tip);
