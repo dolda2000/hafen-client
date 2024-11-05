@@ -1073,7 +1073,7 @@ public class Resource implements Serializable {
 	    }
 	    sz = Utils.imgsz(img);
 	    if(tsz == null)
-		tsz = sz;
+		tsz = sz.add(o);
 	    ssz = Coord.of(Math.round(UI.scale(sz.x / scale)), Math.round(UI.scale(sz.y / scale)));
 	    stsz = Coord.of(Math.round(UI.scale(tsz.x / scale)), Math.round(UI.scale(tsz.y / scale)));
 	    if(tsz != null) {
