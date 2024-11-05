@@ -421,11 +421,13 @@ public class MapWnd extends Window implements Console.Directory {
 	public Tex icon() {
 	    if(icon == null) {
 		Resource.Image fg = MiniMap.DisplayMarker.flagfg, bg = MiniMap.DisplayMarker.flagbg;
-		WritableRaster buf = PUtils.imgraster(new Coord(Math.max(fg.o.x + fg.sz.x, bg.o.x + bg.sz.x),
-								Math.max(fg.o.y + fg.sz.y, bg.o.y + bg.sz.y)));
-		PUtils.blit(buf, PUtils.coercergba(fg.img).getRaster(), fg.o);
+		Coord tsz = Coord.of(Math.max(fg.tsz.x, bg.tsz.x), Math.max(fg.tsz.y, bg.tsz.y));
+		Coord bsz = Coord.of(Math.max(tsz.x, tsz.y));
+		Coord o = bsz.sub(tsz);
+		WritableRaster buf = PUtils.imgraster(bsz);
+		PUtils.blit(buf, PUtils.coercergba(fg.img).getRaster(), fg.o.add(o));
 		PUtils.colmul(buf, col);
-		PUtils.alphablit(buf, PUtils.coercergba(bg.img).getRaster(), bg.o);
+		PUtils.alphablit(buf, PUtils.coercergba(bg.img).getRaster(), bg.o.add(o));
 		icon = new TexI(PUtils.uiscale(PUtils.rasterimg(buf), new Coord(iconsz, iconsz)));
 	    }
 	    return(icon);
