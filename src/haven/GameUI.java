@@ -1564,9 +1564,9 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	msg(msg, color, color);
     }
 
-    public void msg(String msg, Color color, Audio.Clip sfx) {
-	msg(msg, color);
-	ui.sfxrl(sfx);
+    public void msg(UI.UIMessage msg) {
+	msg(msg.message(), msg.color());
+	ui.sfxrl(msg.sfx());
     }
 
     public void error(String msg) {

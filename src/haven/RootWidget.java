@@ -95,16 +95,14 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget, Console
 	    } else {
 		ui.loader.defer(() -> {
 			int a = 0;
-			String text = (String)args[a++];
-			Color color = Color.WHITE;
+			UI.SimpleMessage info = new UI.InfoMessage((String)args[a++]);
 			if(args[a] instanceof Color)
-			    color = (Color)args[a++];
-			Audio.Clip sfx = msgsfx;
+			    info.color = (Color)args[a++];
 			if(args.length > a) {
 			    Indir<Resource> res = ui.sess.getresv(args[a++]);
-			    sfx = (res == null) ? null : Audio.resclip(res.get());
+			    info.sfx = (res == null) ? null : Audio.resclip(res.get());
 			}
-			ui.msg(text, color, sfx);
+			ui.msg(info);
 		    }, null);
 	    }
 	} else if(msg == "sfx") {
@@ -140,9 +138,9 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget, Console
 	msgtime = Utils.rtime();
     }
 
-    public void msg(String msg, Color color, Audio.Clip sfx) {
-	msg(msg, color);
-	ui.sfxrl(sfx);
+    public void msg(UI.UIMessage msg) {
+	msg(msg.message(), msg.color());
+	ui.sfxrl(msg.sfx());
     }
 
     public void error(String msg) {

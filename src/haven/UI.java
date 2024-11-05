@@ -635,11 +635,62 @@ public class UI {
 	submitcmd(new Command(new UiMessage(id, msg, args)).dep(id, true));
     }
 
-    public static interface MessageWidget {
-	public static final Audio.Clip errsfx = Audio.resclip(Resource.local().loadwait("sfx/error"));
-	public static final Audio.Clip msgsfx = Audio.resclip(Resource.local().loadwait("sfx/msg"));
+    public static interface UIMessage {
+	public String message();
+	public default Color color() {return(Color.WHITE);}
+	public default Audio.Clip sfx() {return(null);}
+    }
 
-	public void msg(String msg, Color color, Audio.Clip sfx);
+    public static class SimpleMessage implements UIMessage {
+	public static final Audio.Clip nosfx = () -> null;
+	public String msg;
+	public Color color;
+	public Audio.Clip sfx;
+
+	public SimpleMessage(String msg, Color color, Audio.Clip sfx) {
+	    this.msg = msg;
+	    this.color = color;
+	    this.sfx = sfx;
+	}
+	public SimpleMessage(String msg) {
+	    this(msg, null, null);
+	}
+
+	public String message() {return(msg);}
+	public Color color() {return((color == null) ? defcolor() : color);}
+	public Audio.Clip sfx() {
+	    if(sfx == null)
+		return(defsfx());
+	    if(sfx == nosfx)
+		return(null);
+	    return(sfx);
+	}
+
+	protected Color defcolor() {return(Color.WHITE);}
+	protected Audio.Clip defsfx() {return(null);}
+    }
+
+    public static class ErrorMessage extends SimpleMessage {
+	public static final Color color = new Color(192, 0, 0);
+	public static final Audio.Clip sfx = Audio.resclip(Resource.local().loadwait("sfx/error"));
+
+	public ErrorMessage(String msg) {super(msg);}
+
+	protected Color defcolor() {return(color);}
+	protected Audio.Clip defsfx() {return(sfx);}
+    }
+
+    public static class InfoMessage extends SimpleMessage {
+	public static final Audio.Clip sfx = Audio.resclip(Resource.local().loadwait("sfx/msg"));
+
+	public InfoMessage(String msg) {super(msg);}
+	public InfoMessage(String msg, Color color, Audio.Clip sfx) {super(msg, color, sfx);}
+
+	protected Audio.Clip defsfx() {return(sfx);}
+    }
+
+    public static interface MessageWidget {
+	public void msg(UIMessage msg);
 
 	public static MessageWidget find(Widget w) {
 	    for(Widget ch = w.child; ch != null; ch = ch.next) {
@@ -653,20 +704,22 @@ public class UI {
 	}
     }
 
-    public void msg(String msg, Color color, Audio.Clip sfx) {
-	if(color == null)
-	    color = Color.WHITE;
+    public void msg(UIMessage msg) {
 	MessageWidget h = MessageWidget.find(root);
 	if(h != null)
-	    h.msg(msg, color, sfx);
+	    h.msg(msg);
+    }
+
+    public void msg(String msg, Color color, Audio.Clip sfx) {
+	msg(new SimpleMessage(msg, color, sfx));
     }
 
     public void error(String msg) {
-	msg(msg, new Color(192, 0, 0), MessageWidget.errsfx);
+	msg(new ErrorMessage(msg));
     }
 
     public void msg(String msg) {
-	msg(msg, Color.WHITE, MessageWidget.msgsfx);
+	msg(new InfoMessage(msg));
     }
 
     private void setmods(InputEvent ev) {
