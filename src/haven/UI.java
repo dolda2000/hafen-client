@@ -639,6 +639,22 @@ public class UI {
 	public String message();
 	public default Color color() {return(Color.WHITE);}
 	public default Audio.Clip sfx() {return(null);}
+
+	public static class FactMaker extends Resource.PublishedCode.Instancer.Chain<Factory> {
+	    public FactMaker() {super(Factory.class);}
+	    {
+		add(new Direct<>(Factory.class));
+		add(new StaticCall<>(Factory.class, "mkmessage", UIMessage.class, new Class<?>[] {OwnerContext.class, Object[].class},
+				     (make) -> (owner, args) -> make.apply(new Object[] {owner, args})));
+		add(new Construct<>(Factory.class, UIMessage.class, new Class<?>[] {OwnerContext.class, Object[].class},
+				     (cons) -> (owner, args) -> cons.apply(new Object[] {owner, args})));
+	    }
+	}
+
+	@Resource.PublishedCode(name = "msg")
+	public static interface Factory {
+	    public UIMessage format(OwnerContext owner, Object... args);
+	}
     }
 
     public static class SimpleMessage implements UIMessage {

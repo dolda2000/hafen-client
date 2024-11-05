@@ -105,6 +105,16 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget, Console
 			ui.msg(info);
 		    }, null);
 	    }
+	} else if(msg == "msg2") {
+	    ui.loader.defer(() -> {
+		    Resource res = ui.sess.getresv(args[0]).get();
+		    UI.UIMessage.Factory fac = res.getcode(UI.UIMessage.Factory.class, true);
+		    ui.msg(fac.format(new OwnerContext() {
+			    public <T> T context(Class<T> cl) {
+				return(wdgctx.context(cl, RootWidget.this));
+			    }
+			}, Utils.splice(args, 1)));
+		}, null);
 	} else if(msg == "sfx") {
 	    int a = 0;
 	    Indir<Resource> resid = ui.sess.getresv(args[a++]);
