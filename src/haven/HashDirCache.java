@@ -299,7 +299,24 @@ public class HashDirCache implements ResCache {
 	FileChannel fp = open2(tmp, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 	writehead(fp, name);
 	OutputStream st = Channels.newOutputStream(fp);
+	class Cleaner implements Finalizer.Cleaner {
+	    boolean closed = false;
+
+	    public void clean() {
+		if(!closed) {
+		    try {
+			st.close();
+			Files.delete(tmp);
+		    } catch(IOException e) {
+			new Warning(e, "cleaning unclosed cache-stream").issue();
+		    }
+		}
+	    }
+	}
+	Cleaner cleaner = new Cleaner();
 	return(new OutputStream() {
+		private Runnable clean = Finalizer.finalize(this, cleaner);
+
 		public void write(int b) throws IOException {
 		    st.write(b);
 		}
@@ -317,6 +334,8 @@ public class HashDirCache implements ResCache {
 				return(Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING));
 			    }
 			});
+		    cleaner.closed = true;
+		    clean.run();
 		}
 	    });
     }

@@ -254,6 +254,10 @@ public class Steam {
 	api.friends.activateGameOverlayToWebPage(uri.toString(), modal ? SteamFriends.OverlayToWebPageMode.Modal : SteamFriends.OverlayToWebPageMode.Default);
     }
 
+    public synchronized void overlaypos(String pos) {
+	api.utils.setOverlayNotificationPosition(Enum.valueOf(SteamUtils.NotificationPosition.class, pos));
+    }
+
     public synchronized void setrp(String key, String val) {
 	api.friends.setRichPresence(key, val);
     }
