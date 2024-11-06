@@ -500,8 +500,10 @@ public class WorkshopLauncher {
 	    MainFrame.main(args);
 	    return;
 	}
-	if(!launchlast(clients))
+	if(!launchlast(clients)) {
+	    api.overlaypos("TopRight");
 	    SwingUtilities.invokeLater(() -> centerwnd(new Chooser(clients)));
+	}
     }
 
     public static void main(final String[] args) {
