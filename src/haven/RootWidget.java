@@ -108,7 +108,7 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget, Console
 	} else if(msg == "msg2") {
 	    ui.loader.defer(() -> {
 		    Resource res = ui.sess.getresv(args[0]).get();
-		    UI.UIMessage.Factory fac = res.getcode(UI.UIMessage.Factory.class, true);
+		    UI.Notice.Factory fac = res.getcode(UI.Notice.Factory.class, true);
 		    ui.msg(fac.format(new OwnerContext() {
 			    public <T> T context(Class<T> cl) {
 				return(wdgctx.context(cl, RootWidget.this));
@@ -148,7 +148,7 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget, Console
 	msgtime = Utils.rtime();
     }
 
-    public void msg(UI.UIMessage msg) {
+    public void msg(UI.Notice msg) {
 	msg(msg.message(), msg.color());
 	ui.sfxrl(msg.sfx());
     }

@@ -635,7 +635,7 @@ public class UI {
 	submitcmd(new Command(new UiMessage(id, msg, args)).dep(id, true));
     }
 
-    public static interface UIMessage {
+    public static interface Notice {
 	public String message();
 	public default Color color() {return(Color.WHITE);}
 	public default Audio.Clip sfx() {return(null);}
@@ -644,20 +644,20 @@ public class UI {
 	    public FactMaker() {super(Factory.class);}
 	    {
 		add(new Direct<>(Factory.class));
-		add(new StaticCall<>(Factory.class, "mkmessage", UIMessage.class, new Class<?>[] {OwnerContext.class, Object[].class},
+		add(new StaticCall<>(Factory.class, "mkmessage", Notice.class, new Class<?>[] {OwnerContext.class, Object[].class},
 				     (make) -> (owner, args) -> make.apply(new Object[] {owner, args})));
-		add(new Construct<>(Factory.class, UIMessage.class, new Class<?>[] {OwnerContext.class, Object[].class},
+		add(new Construct<>(Factory.class, Notice.class, new Class<?>[] {OwnerContext.class, Object[].class},
 				     (cons) -> (owner, args) -> cons.apply(new Object[] {owner, args})));
 	    }
 	}
 
 	@Resource.PublishedCode(name = "msg")
 	public static interface Factory {
-	    public UIMessage format(OwnerContext owner, Object... args);
+	    public Notice format(OwnerContext owner, Object... args);
 	}
     }
 
-    public static class SimpleMessage implements UIMessage {
+    public static class SimpleMessage implements Notice {
 	public static final Audio.Clip nosfx = () -> null;
 	public String msg;
 	public Color color;
@@ -706,7 +706,7 @@ public class UI {
     }
 
     public static interface MessageWidget {
-	public void msg(UIMessage msg);
+	public void msg(Notice msg);
 
 	public static MessageWidget find(Widget w) {
 	    for(Widget ch = w.child; ch != null; ch = ch.next) {
@@ -720,7 +720,7 @@ public class UI {
 	}
     }
 
-    public void msg(UIMessage msg) {
+    public void msg(Notice msg) {
 	MessageWidget h = MessageWidget.find(root);
 	if(h != null)
 	    h.msg(msg);
