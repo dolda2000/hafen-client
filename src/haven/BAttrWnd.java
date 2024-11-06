@@ -357,9 +357,7 @@ public class BAttrWnd extends Widget {
 	    if(trev != null) {
 		try {
 		    Collections.sort(etr, dcmp);
-		    GameUI gui = getparent(GameUI.class);
-		    if(gui != null)
-			gui.msg(String.format("You gained " + Loading.waitfor(trev).flayer(Event.class).nm), Color.WHITE);
+		    ui.msg(String.format("You gained " + Loading.waitfor(trev).flayer(Event.class).nm));
 		    trol = new TexI(mktrol(etr, trev));
 		    trtm = Utils.rtime();
 		    trev = null;
