@@ -416,6 +416,10 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	return(ret);
     }
 
+    private void announce(Pagina pag) {
+	ui.loader.defer(() -> ui.msg("New discovery: " + pag.button().name(), Color.WHITE, null), null);
+    }
+
     public MenuGrid() {
 	super(bgsz.mul(gsz).add(1, 1));
     }
@@ -626,8 +630,10 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 			    pag.sdt = data;
 			    pag.invalidate();
 			}
-			if((fl & 8) != 0)
+			if((fl & 8) != 0) {
 			    pag.anew = 2;
+			    announce(pag);
+			}
 			Object[] rawinfo = ((fl & 16) != 0) ? (Object[])args[a++] : new Object[0];
 			if(!Arrays.deepEquals(pag.rawinfo, rawinfo)) {
 			    pag.rawinfo = rawinfo;

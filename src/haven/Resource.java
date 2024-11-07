@@ -1032,7 +1032,7 @@ public class Resource implements Serializable {
 	public final int id;
 	public final Map<String, byte[]> kvdata;
 	public float scale = 1;
-	public Coord sz, o, so, tsz, ssz;
+	public Coord sz, o, so, tsz, ssz, stsz;
 
 	public Image(Message buf) {
 	    z = buf.int16();
@@ -1073,14 +1073,15 @@ public class Resource implements Serializable {
 	    }
 	    sz = Utils.imgsz(img);
 	    if(tsz == null)
-		tsz = sz;
-	    ssz = new Coord(Math.round(UI.scale(sz.x / scale)), Math.round(UI.scale(sz.y / scale)));
+		tsz = sz.add(o);
+	    ssz = Coord.of(Math.round(UI.scale(sz.x / scale)), Math.round(UI.scale(sz.y / scale)));
+	    stsz = Coord.of(Math.round(UI.scale(tsz.x / scale)), Math.round(UI.scale(tsz.y / scale)));
 	    if(tsz != null) {
-		/* This seems kind of ugly, but I'm not sure how to
-		 * otherwise handle upwards rounding of both offset
+		/* This seems all kinds of ugly, but I'm not sure how
+		 * to otherwise handle upwards rounding of both offset
 		 * and size getting the image out of the intended
 		 * area. */
-		so = new Coord(Math.min(so.x, tsz.x - ssz.x), Math.min(so.y, sz.y - ssz.y));
+		so = new Coord(Math.min(so.x, stsz.x - ssz.x), Math.min(so.y, stsz.y - ssz.y));
 	    }
 	    scaled = PUtils.uiscale(img, ssz);
 	    if(false && !hasscale)

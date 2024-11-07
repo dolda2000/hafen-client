@@ -1543,19 +1543,20 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	resize(parent.sz);
     }
     
-    public void msg(String msg, Color color, Color logcol) {
+    public static interface LogMessage extends UI.Notice {
+	public ChatUI.Channel.Message logmessage();
+    }
+
+    public void msg(UI.Notice msg) {
+	ChatUI.Channel.Message logged;
+	if(msg instanceof LogMessage)
+	    logged = ((LogMessage)msg).logmessage();
+	else
+	    logged = new ChatUI.Channel.SimpleMessage(msg.message(), msg.color());
 	msgtime = Utils.rtime();
-	lastmsg = RootWidget.msgfoundry.render(msg, color);
-	syslog.append(msg, logcol);
-    }
-
-    public void msg(String msg, Color color) {
-	msg(msg, color, color);
-    }
-
-    public void msg(String msg, Color color, Audio.Clip sfx) {
-	msg(msg, color);
-	ui.sfxrl(sfx);
+	lastmsg = RootWidget.msgfoundry.render(msg.message(), msg.color());
+	syslog.append(logged);
+	ui.sfxrl(msg.sfx());
     }
 
     public void error(String msg) {
