@@ -182,7 +182,11 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		authed: try(AuthClient auth = new AuthClient(authserver, authport)) {
 		    authaddr = auth.address();
 		    if(!Arrays.equals(inittoken, getprefb("lasttoken-" + mangleuser(inituser), hostname, null, false))) {
-			String authed = new AuthClient.TokenCred(inituser, inittoken).tryauth(auth);
+			String authed = null;
+			try {
+			    authed = new AuthClient.TokenCred(inituser, inittoken).tryauth(auth);
+			} catch(AuthClient.Credentials.AuthException e) {
+			}
 			setpref("lasttoken-" + mangleuser(inituser), Utils.byte2hex(inittoken));
 			if(authed != null) {
 			    acctname = authed;
@@ -192,13 +196,13 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			}
 		    }
 		    if((token = gettoken(inituser, hostname)) != null) {
-			String authed = new AuthClient.TokenCred(inituser, token).tryauth(auth);
-			if(authed == null) {
-			    settoken(inituser, hostname, null);
-			} else {
+			try {
+			    String authed = new AuthClient.TokenCred(inituser, token).tryauth(auth);
 			    acctname = authed;
 			    cookie = auth.getcookie();
 			    break authed;
+			} catch(AuthClient.Credentials.AuthException e) {
+			    settoken(inituser, hostname, null);
 			}
 		    }
 		    ui.uimsg(1, "error", "Launcher login expired");
