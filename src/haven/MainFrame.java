@@ -274,7 +274,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    try {
 		AuthClient cl = new AuthClient((Bootstrap.authserv.get() == null) ? Bootstrap.defserv.get() : Bootstrap.authserv.get(), Bootstrap.authport.get());
 		try {
-		    if((username = cl.trytoken(username, Utils.hex2byte(token))) == null)
+		    if((username = new AuthClient.TokenCred(username, Utils.hex2byte(token)).tryauth(cl)) == null)
 			throw(new ConnectionError("authentication with saved token failed"));
 		    cookie = cl.getcookie();
 		} finally {
