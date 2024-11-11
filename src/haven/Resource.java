@@ -1837,6 +1837,12 @@ public class Resource implements Serializable {
 	return(null);
     }
 
+    public <L> L flayer(Class<L> cl, Predicate<? super L> sel) {
+	L l = layer(cl, sel);
+	if(l == null) throw(new NoSuchLayerException("no " + cl + " in " + name + " selected by " + sel));
+	return(l);
+    }
+
     public <I, L extends IDLayer<I>> L layer(Class<L> cl, I id) {
 	used = true;
 	for(Layer l : layers) {
