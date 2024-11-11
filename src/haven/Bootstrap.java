@@ -182,7 +182,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		authed: try(AuthClient auth = new AuthClient(authserver, authport)) {
 		    authaddr = auth.address();
 		    if(!Arrays.equals(inittoken, getprefb("lasttoken-" + mangleuser(inituser), hostname, null, false))) {
-			String authed = auth.trytoken(inituser, inittoken);
+			String authed = new AuthClient.TokenCred(inituser, inittoken).tryauth(auth);
 			setpref("lasttoken-" + mangleuser(inituser), Utils.byte2hex(inittoken));
 			if(authed != null) {
 			    acctname = authed;
@@ -192,7 +192,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			}
 		    }
 		    if((token = gettoken(inituser, hostname)) != null) {
-			String authed = auth.trytoken(inituser, token);
+			String authed = new AuthClient.TokenCred(inituser, token).tryauth(auth);
 			if(authed == null) {
 			    settoken(inituser, hostname, null);
 			} else {

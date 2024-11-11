@@ -108,32 +108,6 @@ public class AuthClient implements Closeable {
 	return(sk.getRemoteSocketAddress());
     }
 
-    public String trypasswd(String user, byte[] phash) throws IOException {
-	Message rpl = cmd("pw", user, phash);
-	String stat = rpl.string();
-	if(stat.equals("ok")) {
-	    String acct = rpl.string();
-	    return(acct);
-	} else if(stat.equals("no")) {
-	    return(null);
-	} else {
-	    throw(new RuntimeException("Unexpected reply `" + stat + "' from auth server"));
-	}
-    }
-
-    public String trytoken(String user, byte[] token) throws IOException {
-	Message rpl = cmd("token", user, token);
-	String stat = rpl.string();
-	if(stat.equals("ok")) {
-	    String acct = rpl.string();
-	    return(acct);
-	} else if(stat.equals("no")) {
-	    return(null);
-	} else {
-	    throw(new RuntimeException("Unexpected reply `" + stat + "' from auth server"));
-	}
-    }
-    
     public byte[] getcookie() throws IOException {
 	Message rpl = cmd("cookie");
 	String stat = rpl.string();
