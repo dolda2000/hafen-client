@@ -53,6 +53,28 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
 	}
     }
 
+    private void sendua(String key, String... vals) {
+	PMessage msg = new PMessage(RMessage.RMSG_USERAGENT);
+	msg.addstring(key);
+	for(String val : vals)
+	    msg.addstring(val);
+	sess.queuemsg(msg);
+    }
+
+    private void sendua(UI ui) {
+	try {
+	    sendua("confid", Config.confid);
+	    sendua("java", Utils.getprop("java.vm.name", ""), Utils.getprop("java.version", ""));
+	    sendua("os", Utils.getprop("os.name", ""), Utils.getprop("os.arch", ""), Utils.getprop("os.version", ""));
+	    sendua("heap", String.valueOf(Runtime.getRuntime().maxMemory()));
+	    sendua("cpu", String.valueOf(Runtime.getRuntime().availableProcessors()));
+	    haven.render.Environment env = ui.getenv();
+	    sendua("render", env.getClass().getSimpleName(), env.caps().vendor(), env.caps().device(), env.caps().driver());
+	} catch(Exception e) {
+	    new Warning(e).issue();
+	}
+    }
+
     public void ret(Session sess) {
 	this.sess.postuimsg(new Return(sess));
     }
@@ -60,6 +82,7 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
     public UI.Runner run(UI ui) throws InterruptedException {
 	try {
 	    ui.setreceiver(this);
+	    sendua(ui);
 	    while(true) {
 		PMessage msg = sess.getuimsg();
 		if(msg == null) {

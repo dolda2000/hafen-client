@@ -44,6 +44,7 @@ public class RMessage extends PMessage {
     public static final int RMSG_FRAGMENT = 14;
     public static final int RMSG_ADDWDG = 15;
     public static final int RMSG_WDGBAR = 16;
+    public static final int RMSG_USERAGENT = 17;
 
     public double last = 0;
     public int retx = 0;
