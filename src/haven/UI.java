@@ -28,6 +28,7 @@ package haven;
 
 import java.util.*;
 import java.util.function.*;
+import java.util.concurrent.*;
 import haven.Widget.*;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
@@ -46,7 +47,7 @@ import haven.render.Render;
 public class UI {
     public static int MOD_SHIFT = KeyMatch.S, MOD_CTRL = KeyMatch.C, MOD_META = KeyMatch.M, MOD_SUPER = KeyMatch.SUPER;
     public RootWidget root;
-    private final LinkedList<Grab> grabs = new LinkedList<Grab>();
+    private final List<Grab> grabs = new CopyOnWriteArrayList<Grab>();
     private final Map<Integer, Widget> widgets = new TreeMap<Integer, Widget>();
     private final Map<Widget, Integer> rwidgets = new HashMap<Widget, Integer>();
     Environment env;
@@ -523,7 +524,7 @@ public class UI {
 
     public <E extends Event>  Grab<E> grab(Widget owner, Class<E> etype, EventHandler<? super E> handler) {
 	Grab<E> g = new Grab<>(owner, etype, handler);
-	grabs.addFirst(g);
+	grabs.add(0, g);
 	return(g);
     }
 
@@ -577,10 +578,9 @@ public class UI {
     }
 	
     public void removed(Widget wdg) {
-	for(Iterator<Grab> i = grabs.iterator(); i.hasNext();) {
-	    Grab g = i.next();
+	for(Grab g : grabs) {
 	    if(g.owner.hasparent(wdg))
-		i.remove();
+		grabs.remove(g);
 	}
     }
 
