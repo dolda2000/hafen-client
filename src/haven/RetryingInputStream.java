@@ -26,6 +26,7 @@
 
 package haven;
 
+import java.util.*;
 import java.util.function.*;
 import java.io.*;
 
@@ -35,6 +36,7 @@ public abstract class RetryingInputStream extends InputStream {
     private long pos;
     private int retries;
     private IOException lasterr;
+    private Collection<Throwable> suppressed = new ArrayList<>();
 
     protected InputStream create() throws IOException {
 	throw(new IOException("RetryingInputStream must override at least some version of create()"));
@@ -51,7 +53,10 @@ public abstract class RetryingInputStream extends InputStream {
 	if(lasterr instanceof FileNotFoundException)
 	    throw(lasterr);
 	if(retries >= sleep.length) {
-	    throw(new IOException("already retried " + retries + " times", lasterr));
+	    IOException exc = new IOException("already retried " + retries + " times", lasterr);
+	    for(Throwable t : suppressed)
+		exc.addSuppressed(t);
+	    throw(exc);
 	} else {
 	    try {
 		Thread.sleep((int)(sleep[retries] * 1000));
@@ -81,6 +86,8 @@ public abstract class RetryingInputStream extends InputStream {
     private void failed(IOException err) throws IOException {
 	if(fatal)
 	    throw(err);
+	if(lasterr != null)
+	    suppressed.add(lasterr);
 	lasterr = err;
 	if(cur != null) {
 	    try {
