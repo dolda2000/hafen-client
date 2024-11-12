@@ -86,12 +86,12 @@ public class MapWnd extends Window implements Console.Directory {
 	recenter();
 	toolbar = add(new Widget(Coord.z));
 	toolbar.add(new Img(Resource.loadtex("gfx/hud/mmap/fgwdg")) {
-		public boolean mousedown(Coord c, int button) {
-		    if((button == 1) && checkhit(c)) {
-			MapWnd.this.drag(parentpos(MapWnd.this, c));
+		public boolean mousedown(MouseDownEvent ev) {
+		    if((ev.b == 1) && checkhit(ev.c)) {
+			MapWnd.this.drag(parentpos(MapWnd.this, ev.c));
 			return(true);
 		    }
-		    return(super.mousedown(c, button));
+		    return(super.mousedown(ev));
 		}
 	    }, Coord.z);
 	toolbar.add(new IButton("gfx/hud/mmap/home", "", "-d", "-h") {
@@ -120,10 +120,10 @@ public class MapWnd extends Window implements Console.Directory {
 		})
 	    .settip("Compact mode").setgkey(kb_compact);
 	toolbar.add(new ICheckBox("gfx/hud/mmap/prov", "", "-d", "-h", "-dh") {
-		public boolean mousewheel(Coord c, int amount) {
-		    if(!checkhit(c) || !ui.modshift || !a)
-			return(super.mousewheel(c, amount));
-		    olalpha = Utils.clip(olalpha + (amount * -32), 32, 256);
+		public boolean mousewheel(MouseWheelEvent ev) {
+		    if(!checkhit(ev.c) || !ui.modshift || !a)
+			return(super.mousewheel(ev));
+		    olalpha = Utils.clip(olalpha + (ev.a * -32), 32, 256);
 		    return(true);
 		}
 	    })
@@ -162,39 +162,39 @@ public class MapWnd extends Window implements Console.Directory {
 
 	private UI.Grab drag;
 	private Coord dragc;
-	public boolean mousedown(Coord c, int button) {
-	    Coord cc = c.sub(sc);
-	    if((button == 1) && compact() && (cc.x < sizer.sz().x) && (cc.y < sizer.sz().y) && (cc.y >= sizer.sz().y - UI.scale(25) + (sizer.sz().x - cc.x))) {
+	public boolean mousedown(MouseDownEvent ev) {
+	    Coord c = ev.c, cc = c.sub(sc);
+	    if((ev.b == 1) && compact() && (cc.x < sizer.sz().x) && (cc.y < sizer.sz().y) && (cc.y >= sizer.sz().y - UI.scale(25) + (sizer.sz().x - cc.x))) {
 		if(drag == null) {
 		    drag = ui.grabmouse(this);
 		    dragc = csz().sub(parentpos(MapWnd.this, c));
 		    return(true);
 		}
 	    }
-	    if((button == 1) && (checkhit(c) || ui.modshift)) {
+	    if((ev.b == 1) && (checkhit(c) || ui.modshift)) {
 		MapWnd.this.drag(parentpos(MapWnd.this, c));
 		return(true);
 	    }
-	    return(super.mousedown(c, button));
+	    return(super.mousedown(ev));
 	}
 
-	public void mousemove(Coord c) {
+	public void mousemove(MouseMoveEvent ev) {
+	    super.mousemove(ev);
 	    if(drag != null) {
-		Coord nsz = parentpos(MapWnd.this, c).add(dragc);
+		Coord nsz = parentpos(MapWnd.this, ev.c).add(dragc);
 		nsz.x = Math.max(nsz.x, UI.scale(150));
 		nsz.y = Math.max(nsz.y, UI.scale(150));
 		MapWnd.this.resize(nsz);
 	    }
-	    super.mousemove(c);
 	}
 
-	public boolean mouseup(Coord c, int button) {
-	    if((button == 1) && (drag != null)) {
+	public boolean mouseup(MouseUpEvent ev) {
+	    if((ev.b == 1) && (drag != null)) {
 		drag.remove();
 		drag = null;
 		return(true);
 	    }
-	    return(super.mouseup(c, button));
+	    return(super.mouseup(ev));
 	}
     }
 
@@ -266,7 +266,7 @@ public class MapWnd extends Window implements Console.Directory {
 	}
     }
 
-    private class View extends MiniMap {
+    private class View extends MiniMap implements CursorQuery.Handler {
 	View(MapFile file) {
 	    super(file);
 	}
@@ -327,12 +327,12 @@ public class MapWnd extends Window implements Console.Directory {
 	    return(false);
 	}
 
-	public boolean mousedown(Coord c, int button) {
-	    if(domark && (button == 3)) {
+	public boolean mousedown(MouseDownEvent ev) {
+	    if(domark && (ev.b == 3)) {
 		domark = false;
 		return(true);
 	    }
-	    super.mousedown(c, button);
+	    super.mousedown(ev);
 	    return(true);
 	}
 
@@ -343,10 +343,10 @@ public class MapWnd extends Window implements Console.Directory {
 	    super.draw(g);
 	}
 
-	public Resource getcurs(Coord c) {
+	public boolean getcurs(CursorQuery ev) {
 	    if(domark)
-		return(markcurs);
-	    return(super.getcurs(c));
+		return(ev.set(markcurs));
+	    return(false);
 	}
     }
 
@@ -580,32 +580,41 @@ public class MapWnd extends Window implements Console.Directory {
 	public List<ListMarker> allitems() {return(markers);}
 	public boolean searchmatch(ListMarker lm, String txt) {return(lm.mark.nm.toLowerCase().indexOf(txt.toLowerCase()) >= 0);}
 
+	public class Item extends IconText {
+	    public final ListMarker lm;
+
+	    public Item(Coord sz, ListMarker lm) {
+		super(sz);
+		this.lm = lm;
+	    }
+
+	    protected BufferedImage img() {throw(new RuntimeException());}
+	    protected String text() {return(lm.mark.nm);}
+	    protected boolean valid(String text) {return(Utils.eq(text, text()));}
+
+	    protected void drawicon(GOut g) {
+		try {
+		    Tex icon = lm.type.icon();
+		    if(markcfg.filter(lm.type))
+			g.chcolor(255, 255, 255, 128);
+		    g.aimage(icon, Coord.of(sz.y / 2), 0.5, 0.5);
+		    g.chcolor();
+		} catch(Loading l) {
+		}
+	    }
+
+	    public boolean mousedown(MouseDownEvent ev) {
+		if(ev.c.x < sz.y) {
+		    toggletype(lm.type);
+		    return(true);
+		}
+		return(super.mousedown(ev));
+	    }
+	}
+
 	public Widget makeitem(ListMarker lm, int idx, Coord sz) {
 	    Widget ret = new ItemWidget<ListMarker>(this, sz, lm);
-	    ret.add(new IconText(sz) {
-		    protected BufferedImage img() {throw(new RuntimeException());}
-		    protected String text() {return(lm.mark.nm);}
-		    protected boolean valid(String text) {return(Utils.eq(text, text()));}
-
-		    protected void drawicon(GOut g) {
-			try {
-			    Tex icon = lm.type.icon();
-			    if(markcfg.filter(lm.type))
-				g.chcolor(255, 255, 255, 128);
-			    g.aimage(icon, Coord.of(sz.y / 2), 0.5, 0.5);
-			    g.chcolor();
-			} catch(Loading l) {
-			}
-		    }
-
-		    public boolean mousedown(Coord c, int button) {
-			if(c.x < sz.y) {
-			    toggletype(lm.type);
-			    return(true);
-			}
-			return(super.mousedown(c, button));
-		    }
-		}, Coord.z);
+	    ret.add(new Item(sz, lm), Coord.z);
 	    return(ret);
 	}
 

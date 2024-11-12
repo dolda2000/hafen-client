@@ -253,8 +253,8 @@ public class SkillWnd extends Widget {
 		g.image((cr == sel) ? credosfr : credoufr, Coord.z);
 	    }
 
-	    public boolean mousedown(Coord c, int button) {
-		if(button == 1) {
+	    public boolean mousedown(MouseDownEvent ev) {
+		if(ev.b == 1) {
 		    change(cr);
 		}
 		return(true);
@@ -350,8 +350,8 @@ public class SkillWnd extends Widget {
 	    loading = true;
 	}
 
-	public boolean mousedown(Coord c, int button) {
-	    if(super.mousedown(c, button))
+	public boolean mousedown(MouseDownEvent ev) {
+	    if(ev.propagate(this) || super.mousedown(ev))
 		return(true);
 	    change(null);
 	    return(true);

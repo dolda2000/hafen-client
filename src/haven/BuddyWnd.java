@@ -195,9 +195,9 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 	    g.chcolor();
 	}
 
-	public boolean mousedown(Coord c, int button) {
+	public boolean mousedown(MouseDownEvent ev) {
 	    selector.select(group);
-	    return (true);
+	    return(true);
 	}
 
 	public void select() {
@@ -382,10 +382,10 @@ public class BuddyWnd extends Widget implements Iterable<BuddyWnd.Buddy> {
 			g.chcolor();
 		    }
 
-		    public boolean mousedown(Coord c, int button) {
-			if(button == 1)
+		    public boolean mousedown(MouseDownEvent ev) {
+			if(ev.b == 1)
 			    change(item);
-			else if(button == 3)
+			else if(ev.b == 3)
 			    opts(b, ui.mc);
 			return(true);
 		    }

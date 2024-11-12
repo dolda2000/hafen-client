@@ -185,14 +185,14 @@ public class WoundWnd extends Widget {
 		super.draw(g);
 	    }
 
-	    public boolean mousedown(Coord c, int button) {
-		if(super.mousedown(c, button))
+	    public boolean mousedown(MouseDownEvent ev) {
+		if(ev.propagate(this) || super.mousedown(ev))
 		    return(true);
-		if(button == 1) {
+		if(ev.b == 1) {
 		    WoundWnd.this.wdgmsg("wsel", w.id);
 		    return(true);
-		} else if(button == 3) {
-		    WoundWnd.this.wdgmsg("wclick", w.id, button, ui.modflags());
+		} else if(ev.b == 3) {
+		    WoundWnd.this.wdgmsg("wclick", w.id, ev.b, ui.modflags());
 		    return(true);
 		}
 		return(false);

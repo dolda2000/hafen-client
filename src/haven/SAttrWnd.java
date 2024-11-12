@@ -126,8 +126,8 @@ public class SAttrWnd extends Widget {
 	    updcost();
 	}
 
-	public boolean mousewheel(Coord c, int a) {
-	    adj(-a);
+	public boolean mousewheel(MouseWheelEvent ev) {
+	    adj(-ev.a);
 	    return(true);
 	}
     }

@@ -63,8 +63,8 @@ public class RichTextBox extends Widget {
 	sb.val = 0;
     }
     
-    public boolean mousewheel(Coord c, int amount) {
-	sb.ch(amount * margin2);
+    public boolean mousewheel(MouseWheelEvent ev) {
+	sb.ch(ev.a * margin2);
 	return(true);
     }
 

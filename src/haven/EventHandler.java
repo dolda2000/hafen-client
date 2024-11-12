@@ -26,48 +26,20 @@
 
 package haven;
 
-public class ItemDrag extends WItem {
-    public Coord doff;
-    
-    public ItemDrag(Coord dc, GItem item) {
-	super(item);
-	z(100);
-	this.doff = dc;
-    }
+public interface EventHandler<E> {
+    public boolean handle(E ev);
 
-    protected void added() {
-	this.c = parent.ui.mc.add(doff.inv());
-	ui.grabmouse(this);
-    }
-    
-    public void drawmain(GOut g, GSprite spr) {
-	g.chcolor(255, 255, 255, 128);
-	super.drawmain(g, spr);
-	g.chcolor();
-    }
+    public static class Listener<E> {
+	public final Class<E> t;
+	public final EventHandler<? super E> h;
 
-    public boolean mousedown(MouseDownEvent ev) {
-	if(!ev.grabbed)
-	    return(false);
-	if(ui.modctrl && !ui.modshift && !ui.modmeta) {
-	    /* XXX */
-	    GameUI gui = getparent(GameUI.class);
-	    if((gui != null) && (gui.map != null)) {
-		ui.modctrl = false;
-		return(ev.derive(gui.map.rootxlate(ev.c.add(rootpos()))).dispatch(gui.map));
-	    }
+	public Listener(Class<E> t, EventHandler<? super E> h) {
+	    this.t = t;
+	    this.h = h;
 	}
-	if(ev.b == 1) {
-	    if(ui.dispatchq(parent, new Drop(ev.c.add(this.c), this)).handled)
-		return(true);
-	} else if(ev.b == 3) {
-	    if(ui.dispatchq(parent, new Interact(ev.c.add(this.c), this)).handled)
-		return(true);
-	}
-	return(false);
-    }
 
-    public void mousemove(MouseMoveEvent ev) {
-	this.c = this.c.add(ev.c.sub(doff));
+	public boolean check(Object ev) {
+	    return(t.isInstance(ev) ? h.handle(t.cast(ev)) : false);
+	}
     }
 }

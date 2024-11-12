@@ -102,10 +102,9 @@ public class Charlist extends Widget {
 	    super.draw(g);
 	}
 
-	public boolean mousedown(Coord c, int button) {
-	    super.mousedown(c, button);
+	public boolean mousedown(MouseDownEvent ev) {
 	    list.change(chr);
-	    return(true);
+	    return(super.mousedown(ev));
 	}
     }
 
@@ -118,7 +117,7 @@ public class Charlist extends Widget {
 	protected Charbox makeitem(Char chr, int idx, Coord sz) {return(new Charbox(chr));}
 
 	protected void drawslot(GOut g, Char item, int idx, Area area) {}
-	public boolean mousewheel(Coord c, int amount) {return(false);}
+	public boolean mousewheel(MouseWheelEvent ev) {return(false);}
 	protected boolean unselect(int button) {return(false);}
 	protected boolean autoscroll() {return(false);}
 
@@ -158,15 +157,8 @@ public class Charlist extends Widget {
 	scrolltgt = Utils.clip(((scrolltgt < 0) ? list.scrollval() : scrolltgt) + ((bsz.y + margin) * amount), list.scrollmin(), list.scrollmax());
     }
 
-    public boolean mousedown(Coord c, int button) {
-	boolean hit = false;
-	if(super.mousedown(c, button))
-	    return(true);
-	return(hit);
-    }
-
-    public boolean mousewheel(Coord c, int amount) {
-	scroll(amount);
+    public boolean mousewheel(MouseWheelEvent ev) {
+	scroll(ev.a);
 	return(true);
     }
 
@@ -229,20 +221,20 @@ public class Charlist extends Widget {
 	}
     }
 
-    public boolean keydown(java.awt.event.KeyEvent ev) {
-	if(ev.getKeyCode() == ev.VK_UP) {
+    public boolean keydown(KeyDownEvent ev) {
+	if(ev.code == ev.awt.VK_UP) {
 	    if(!chars.isEmpty())
 		list.change(chars.get(Math.max(chars.indexOf(list.sel) - 1, 0)));
 	    return(true);
-	} else if(ev.getKeyCode() == ev.VK_DOWN) {
+	} else if(ev.code == ev.awt.VK_DOWN) {
 	    if(!chars.isEmpty())
 		list.change(chars.get(Math.min(chars.indexOf(list.sel) + 1, chars.size() - 1)));
 	    return(true);
-	} else if(ev.getKeyCode() == ev.VK_ENTER) {
+	} else if(ev.code == ev.awt.VK_ENTER) {
 	    if(list.sel != null)
 		wdgmsg("play", list.sel.name);
 	    return(true);
 	}
-	return(false);
+	return(super.keydown(ev));
     }
 }

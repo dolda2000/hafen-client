@@ -165,7 +165,7 @@ public class Button extends SIWidget {
 	    action.run();
     }
 
-    public boolean gkeytype(java.awt.event.KeyEvent ev) {
+    public boolean gkeytype(GlobKeyEvent ev) {
 	click();
 	return(true);
     }
@@ -183,9 +183,10 @@ public class Button extends SIWidget {
 	}
     }
     
-    public void mousemove(Coord c) {
+    public void mousemove(MouseMoveEvent ev) {
+	super.mousemove(ev);
 	if(d != null) {
-	    boolean a = c.isect(Coord.z, sz);
+	    boolean a = ev.c.isect(Coord.z, sz);
 	    if(a != this.a) {
 		this.a = a;
 		redraw();
@@ -201,9 +202,9 @@ public class Button extends SIWidget {
 	ui.sfx(click);
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if((button != 1) || dis)
-	    return(false);
+    public boolean mousedown(MouseDownEvent ev) {
+	if((ev.b != 1) || dis)
+	    return(super.mousedown(ev));
 	a = true;
 	d = ui.grabmouse(this);
 	depress();
@@ -211,18 +212,18 @@ public class Button extends SIWidget {
 	return(true);
     }
 	
-    public boolean mouseup(Coord c, int button) {
-	if((d != null) && button == 1) {
+    public boolean mouseup(MouseUpEvent ev) {
+	if((d != null) && ev.b == 1) {
 	    d.remove();
 	    d = null;
 	    a = false;
 	    redraw();
-	    if(c.isect(new Coord(0, 0), sz)) {
+	    if(ev.c.isect(Coord.z, sz)) {
 		unpress();
 		click();
 	    }
 	    return(true);
 	}
-	return(false);
+	return(super.mouseup(ev));
     }
 }

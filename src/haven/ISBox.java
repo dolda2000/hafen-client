@@ -79,28 +79,26 @@ public class ISBox extends Widget implements DTarget {
     }
 
     public Object tooltip(Coord c, Widget prev) {
-	try {
-	    if(res.get().layer(Resource.tooltip) != null)
-		return(res.get().layer(Resource.tooltip).t);
-	} catch(Loading e) {}
+	if(res.get().layer(Resource.tooltip) != null)
+	    return(res.get().layer(Resource.tooltip).t);
 	return(null);
     }
 
-    public boolean mousedown(Coord c, int button) {
-        if(button == 1) {
+    public boolean mousedown(MouseDownEvent ev) {
+        if(ev.b == 1) {
             if(ui.modshift)
                 wdgmsg("xfer");
             else
                 wdgmsg("click");
             return(true);
         }
-        return(false);
+        return(super.mousedown(ev));
     }
 
-    public boolean mousewheel(Coord c, int amount) {
-	if(amount < 0)
+    public boolean mousewheel(MouseWheelEvent ev) {
+	if(ev.a < 0)
 	    wdgmsg("xfer2", -1, ui.modflags());
-	if(amount > 0)
+	if(ev.a > 0)
 	    wdgmsg("xfer2", 1, ui.modflags());
 	return(true);
     }

@@ -90,25 +90,21 @@ public class WItem extends Widget implements DTarget {
 	} else {
 	    hoverstart = now;
 	}
-	try {
-	    List<ItemInfo> info = item.info();
-	    if(info.size() < 1)
-		return(null);
-	    if(info != ttinfo) {
-		shorttip = longtip = null;
-		ttinfo = info;
-	    }
-	    if(now - hoverstart < 1.0) {
-		if(shorttip == null)
-		    shorttip = new ShortTip(info);
-		return(shorttip);
-	    } else {
-		if(longtip == null)
-		    longtip = new LongTip(info);
-		return(longtip);
-	    }
-	} catch(Loading e) {
-	    return("...");
+	List<ItemInfo> info = item.info();
+	if(info.size() < 1)
+	    return(null);
+	if(info != ttinfo) {
+	    shorttip = longtip = null;
+	    ttinfo = info;
+	}
+	if(now - hoverstart < 1.0) {
+	    if(shorttip == null)
+		shorttip = new ShortTip(info);
+	    return(shorttip);
+	} else {
+	    if(longtip == null)
+		longtip = new LongTip(info);
+	    return(longtip);
 	}
     }
 
@@ -192,23 +188,23 @@ public class WItem extends Widget implements DTarget {
 	}
     }
 
-    public boolean mousedown(Coord c, int btn) {
-	if(btn == 1) {
+    public boolean mousedown(MouseDownEvent ev) {
+	if(ev.b == 1) {
 	    if(ui.modshift) {
 		int n = ui.modctrl ? -1 : 1;
-		item.wdgmsg("transfer", c, n);
+		item.wdgmsg("transfer", ev.c, n);
 	    } else if(ui.modctrl) {
 		int n = ui.modmeta ? -1 : 1;
-		item.wdgmsg("drop", c, n);
+		item.wdgmsg("drop", ev.c, n);
 	    } else {
-		item.wdgmsg("take", c);
+		item.wdgmsg("take", ev.c);
 	    }
 	    return(true);
-	} else if(btn == 3) {
-	    item.wdgmsg("iact", c, ui.modflags());
+	} else if(ev.b == 3) {
+	    item.wdgmsg("iact", ev.c, ui.modflags());
 	    return(true);
 	}
-	return(false);
+	return(super.mousedown(ev));
     }
 
     public boolean drop(Coord cc, Coord ul) {
@@ -220,12 +216,11 @@ public class WItem extends Widget implements DTarget {
 	return(true);
     }
 
-    public boolean mousehover(Coord c, boolean on) {
-	boolean ret = super.mousehover(c, on);
+    public boolean mousehover(MouseHoverEvent ev, boolean on) {
 	if(on && (item.contents != null)) {
 	    item.hovering(this);
 	    return(true);
 	}
-	return(ret);
+	return(super.mousehover(ev, on));
     }
 }

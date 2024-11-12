@@ -154,12 +154,8 @@ public interface GLPanel extends UIPanel, UI.Context {
 	private Disposable freetooltex = null;
 	private void drawtooltip(UI ui, GOut g) {
 	    Object tooltip;
-	    try {
-		synchronized(ui) {
-		    tooltip = ui.root.tooltip(ui.mc, ui.root);
-		}
-	    } catch(Loading e) {
-		tooltip = "...";
+	    synchronized(ui) {
+		tooltip = ui.tooltip(ui.mc);
 	    }
 	    Indir<Tex> tt = null;
 	    if(Utils.eq(tooltip, prevtooltip)) {

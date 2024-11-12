@@ -180,14 +180,14 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> im
 	return((c.y + cury) / (itemh + marg));
     }
 
-    public boolean mousewheel(Coord c, int amount) {
-	if(super.mousewheel(c, amount))
+    public boolean mousewheel(MouseWheelEvent ev) {
+	if(ev.propagate(this) || super.mousewheel(ev))
 	    return(true);
 	int step = sz.y / 8;
 	if(maxy > 0)
 	    step = Math.min(step, maxy / 8);
 	step = Math.max(step, itemh);
-	cury = Math.max(Math.min(cury + (step * amount), maxy), 0);
+	cury = Math.max(Math.min(cury + (step * ev.a), maxy), 0);
 	return(true);
     }
 
@@ -201,13 +201,13 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> im
 	return(false);
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if(super.mousedown(c, button))
+    public boolean mousedown(MouseDownEvent ev) {
+	if(ev.propagate(this) || super.mousedown(ev))
 	    return(true);
-	int slot = slotat(c);
-	if((slot >= 0) && slotclick(c, slotat(c), button))
+	int slot = slotat(ev.c);
+	if((slot >= 0) && slotclick(ev.c, slotat(ev.c), ev.b))
 	    return(true);
-	return(unselect(button));
+	return(unselect(ev.b));
     }
 
     public void resize(Coord sz) {

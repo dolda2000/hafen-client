@@ -54,8 +54,8 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	    this.item = item;
 	}
 
-	public boolean mousedown(Coord c, int button) {
-	    if(super.mousedown(c, button))
+	public boolean mousedown(MouseDownEvent ev) {
+	    if(ev.propagate(this) || super.mousedown(ev))
 		return(true);
 	    list.change(item);
 	    return(true);

@@ -90,9 +90,9 @@ public class IButton extends SIWidget {
     public void draw(BufferedImage buf) {
 	Graphics g = buf.getGraphics();
 	BufferedImage img;
-	if(a)
+	if(a && h)
 	    img = down;
-	else if(h)
+	else if(h || (d != null))
 	    img = hover;
 	else
 	    img = up;
@@ -113,7 +113,7 @@ public class IButton extends SIWidget {
 	    action.run();
     }
 
-    public boolean gkeytype(java.awt.event.KeyEvent ev) {
+    public boolean gkeytype(GlobKeyEvent ev) {
 	click();
 	return(true);
     }
@@ -124,10 +124,10 @@ public class IButton extends SIWidget {
     protected void unpress() {
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if(button != 1)
+    public boolean mousedown(MouseDownEvent ev) {
+	if(ev.b != 1)
 	    return(false);
-	if(!checkhit(c))
+	if(!checkhit(ev.c))
 	    return(false);
 	a = true;
 	d = ui.grabmouse(this);
@@ -136,12 +136,13 @@ public class IButton extends SIWidget {
 	return(true);
     }
 
-    public boolean mouseup(Coord c, int button) {
-	if((d != null) && button == 1) {
+    public boolean mouseup(MouseUpEvent ev) {
+	if((d != null) && (ev.b == 1)) {
 	    d.remove();
 	    d = null;
-	    mousemove(c);
-	    if(checkhit(c)) {
+	    a = false;
+	    redraw();
+	    if(checkhit(ev.c)) {
 		unpress();
 		click();
 	    }
@@ -150,23 +151,11 @@ public class IButton extends SIWidget {
 	return(false);
     }
 
-    public void mousemove(Coord c) {
-	boolean h = checkhit(c);
-	boolean a = false;
-	if(d != null) {
-	    a = h;
-	    h = true;
-	}
-	if((h != this.h) || (a != this.a)) {
+    public void mousemove(MouseMoveEvent ev) {
+	boolean h = checkhit(ev.c);
+	if(h != this.h) {
 	    this.h = h;
-	    this.a = a;
 	    redraw();
 	}
-    }
-
-    public Object tooltip(Coord c, Widget prev) {
-	if(!checkhit(c))
-	    return(null);
-	return(super.tooltip(c, prev));
     }
 }

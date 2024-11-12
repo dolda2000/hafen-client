@@ -149,8 +149,8 @@ public abstract class GridList<T> extends Widget {
 	super.draw(g);
     }
 
-    public boolean mousewheel(Coord c, int amount) {
-	sb.ch(amount * 20);
+    public boolean mousewheel(MouseWheelEvent ev) {
+	sb.ch(ev.a * 20);
 	return(true);
     }
 
@@ -200,14 +200,14 @@ public abstract class GridList<T> extends Widget {
 	    change(item);
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if(super.mousedown(c, button))
+    public boolean mousedown(MouseDownEvent ev) {
+	if(ev.propagate(this) || super.mousedown(ev))
 	    return(true);
-	T item = itemat(c);
-	if((item == null) && (button == 1))
+	T item = itemat(ev.c);
+	if((item == null) && (ev.b == 1))
 	    change(null);
 	else if(item != null)
-	    itemclick(item, button);
+	    itemclick(item, ev.b);
 	return(true);
     }
 
