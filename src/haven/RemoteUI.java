@@ -70,10 +70,12 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
 	    sendua("mem.heap", String.valueOf(Runtime.getRuntime().maxMemory()));
 	    sendua("cpu.num", String.valueOf(Runtime.getRuntime().availableProcessors()));
 	    haven.render.Environment env = ui.getenv();
-	    sendua("render.env", env.getClass().getSimpleName());
-	    sendua("render.vendor", env.caps().vendor());
-	    sendua("render.device", env.caps().device());
-	    sendua("render.driver", env.caps().driver());
+	    if(env != null) {
+		sendua("render.env", env.getClass().getSimpleName());
+		sendua("render.vendor", env.caps().vendor());
+		sendua("render.device", env.caps().device());
+		sendua("render.driver", env.caps().driver());
+	    }
 	} catch(Exception e) {
 	    new Warning(e).issue();
 	}
