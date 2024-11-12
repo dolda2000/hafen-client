@@ -53,23 +53,27 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
 	}
     }
 
-    private void sendua(String key, String... vals) {
+    private void sendua(String key, String val) {
 	PMessage msg = new PMessage(RMessage.RMSG_USERAGENT);
-	msg.addstring(key);
-	for(String val : vals)
-	    msg.addstring(val);
+	msg.addstring(key).addstring(val);
 	sess.queuemsg(msg);
     }
 
     private void sendua(UI ui) {
 	try {
-	    sendua("confid", Config.confid);
-	    sendua("java", Utils.getprop("java.vm.name", ""), Utils.getprop("java.version", ""));
-	    sendua("os", Utils.getprop("os.name", ""), Utils.getprop("os.arch", ""), Utils.getprop("os.version", ""));
-	    sendua("heap", String.valueOf(Runtime.getRuntime().maxMemory()));
-	    sendua("cpu", String.valueOf(Runtime.getRuntime().availableProcessors()));
+	    sendua("conf.id", Config.confid);
+	    sendua("java.vm", Utils.getprop("java.vm.name", ""));
+	    sendua("java.version", Utils.getprop("java.version", ""));
+	    sendua("os.name", Utils.getprop("os.name", ""));
+	    sendua("os.arch", Utils.getprop("os.arch", ""));
+	    sendua("os.version", Utils.getprop("os.version", ""));
+	    sendua("mem.heap", String.valueOf(Runtime.getRuntime().maxMemory()));
+	    sendua("cpu.num", String.valueOf(Runtime.getRuntime().availableProcessors()));
 	    haven.render.Environment env = ui.getenv();
-	    sendua("render", env.getClass().getSimpleName(), env.caps().vendor(), env.caps().device(), env.caps().driver());
+	    sendua("render.env", env.getClass().getSimpleName());
+	    sendua("render.vendor", env.caps().vendor());
+	    sendua("render.device", env.caps().device());
+	    sendua("render.driver", env.caps().driver());
 	} catch(Exception e) {
 	    new Warning(e).issue();
 	}
