@@ -34,7 +34,7 @@ import java.awt.image.WritableRaster;
 import haven.render.Location;
 import static haven.Inventory.invsq;
 
-public class GameUI extends ConsoleHost implements Console.Directory, UI.MessageWidget {
+public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.Handler {
     private static final int blpw = UI.scale(142), brpw = UI.scale(142);
     public final String chrid, genus;
     public final long plid;
@@ -1547,7 +1547,10 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	public ChatUI.Channel.Message logmessage();
     }
 
-    public void msg(UI.Notice msg) {
+    public boolean msg(UI.NoticeEvent ev) {
+	if(ev.propagate(this))
+	    return(true);
+	UI.Notice msg = ev.msg;
 	ChatUI.Channel.Message logged;
 	if(msg instanceof LogMessage)
 	    logged = ((LogMessage)msg).logmessage();
@@ -1557,6 +1560,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Message
 	lastmsg = RootWidget.msgfoundry.render(msg.message(), msg.color());
 	syslog.append(logged);
 	ui.sfxrl(msg.sfx());
+	return(true);
     }
 
     public void error(String msg) {

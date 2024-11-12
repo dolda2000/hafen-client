@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 import java.awt.Color;
 
-public class RootWidget extends ConsoleHost implements UI.MessageWidget, Widget.CursorQuery.Handler, Console.Directory {
+public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Widget.CursorQuery.Handler, Console.Directory {
     public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
     public static final Resource defcurs = Resource.local().loadwait("gfx/hud/curs/arw");
     public boolean modtip = false;
@@ -160,9 +160,12 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget, Widget.
 	msgtime = Utils.rtime();
     }
 
-    public void msg(UI.Notice msg) {
-	msg(msg.message(), msg.color());
-	ui.sfxrl(msg.sfx());
+    public boolean msg(UI.NoticeEvent ev) {
+	if(ev.propagate(this))
+	    return(true);
+	msg(ev.msg.message(), ev.msg.color());
+	ui.sfxrl(ev.msg.sfx());
+	return(true);
     }
 
     public void error(String msg) {
