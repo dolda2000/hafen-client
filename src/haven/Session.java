@@ -130,10 +130,12 @@ public class Session implements Resource.Resolver {
 	    }
 
 	    public String toString() {
-		if(res == null) {
-		    return("<res:" + resid + ">");
-		} else {
+		if(res != null) {
 		    return("<" + res + ">");
+		} else if(resnm != null) {
+		    return("<!" + resnm + ":" + resver + ">");
+		} else {
+		    return("<res:" + resid + ">");
 		}
 	    }
 
