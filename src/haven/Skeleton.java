@@ -487,6 +487,7 @@ public class Skeleton {
 	return(new PoseMod(ModOwner.nil) {
 		public boolean stat() {return(true);}
 		public boolean done() {return(false);}
+		public String toString() {return("#<nil-mod>");}
 	    });
     }
 
@@ -529,6 +530,10 @@ public class Skeleton {
 			    return(true);
 		    }
 		    return(false);
+		}
+
+		public String toString() {
+		    return("#<combined " + Arrays.asList(mods) + ">");
 		}
 	    });
     }
