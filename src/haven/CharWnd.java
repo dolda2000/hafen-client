@@ -280,7 +280,10 @@ public class CharWnd extends Window {
 		String attr = (String)args[a++];
 		int base = Utils.iv(args[a++]);
 		int comp = Utils.iv(args[a++]);
-		ui.sess.glob.cattr(attr, base, comp);
+		ItemInfo.Raw info = ItemInfo.Raw.nil;
+		if(args[a] instanceof Object[])
+		    info = new ItemInfo.Raw((Object[])args[a++]);
+		ui.sess.glob.cattr(attr, base, comp, info);
 	    }
 	} else if(nm == "exp") {
 	    exp = Utils.iv(args[0]);

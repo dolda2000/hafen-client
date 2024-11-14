@@ -48,6 +48,7 @@ public abstract class ItemInfo {
     }
 
     public static class Raw {
+	public static final Raw nil = new Raw(new Object[0], 0);
 	public final Object[] data;
 	public final double time;
 
