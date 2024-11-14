@@ -281,7 +281,7 @@ public class CharWnd extends Window {
 		int base = Utils.iv(args[a++]);
 		int comp = Utils.iv(args[a++]);
 		ItemInfo.Raw info = ItemInfo.Raw.nil;
-		if(args[a] instanceof Object[])
+		if((a < args.length) && (args[a] instanceof Object[]))
 		    info = new ItemInfo.Raw((Object[])args[a++]);
 		ui.sess.glob.cattr(attr, base, comp, info);
 	    }
