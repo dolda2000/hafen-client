@@ -59,11 +59,11 @@ public class BAttrWnd extends Widget {
 
 	private Attr(Glob glob, String attr, Color bg) {
 	    super(new Coord(attrw, attrf.height() + UI.scale(2)));
-	    Resource res = Resource.local().loadwait("gfx/hud/chr/" + attr);
 	    this.nm = attr;
+	    this.attr = glob.getcattr(attr);
+	    Resource res = Loading.waitfor(this.attr.res());
 	    this.rnm = attrf.render(res.flayer(Resource.tooltip).t);
 	    this.img = new TexI(convolve(res.flayer(Resource.imgc).img, new Coord(this.sz.y, this.sz.y), iconfilter));
-	    this.attr = glob.getcattr(attr);
 	    this.bg = bg;
 	}
 
@@ -73,12 +73,8 @@ public class BAttrWnd extends Widget {
 		Color c = Color.WHITE;
 		if(ccv > cbv) {
 		    c = buff;
-		    tooltip = String.format("%d + %d", cbv, ccv - cbv);
 		} else if(ccv < cbv) {
 		    c = debuff;
-		    tooltip = String.format("%d - %d", cbv, cbv - ccv);
-		} else {
-		    tooltip = null;
 		}
 		ct = attrf.render(Integer.toString(ccv), c);
 	    }
@@ -98,6 +94,27 @@ public class BAttrWnd extends Widget {
 	    g.aimage(rnm.tex(), cn.add(img.sz().x + UI.scale(10), 1), 0, 0.5);
 	    if(ct != null)
 		g.aimage(ct.tex(), cn.add(sz.x - UI.scale(7), 1), 1, 0.5);
+	}
+
+	private List<ItemInfo> tipinfo;
+	private Tex tipimg = null;
+	public Object tooltip(Coord c, Widget prev) {
+	    List<ItemInfo> info = attr.info();
+	    if((tipimg != null) && (info != tipinfo)) {
+		tipimg.dispose();
+		tipimg = null;
+	    }
+	    if(tipimg == null) {
+		try {
+		    if(info.isEmpty())
+			return(null);
+		    tipimg = new TexI(ItemInfo.longtip(info));
+		    tipinfo = info;
+		} catch(Loading l) {
+		    return("...");
+		}
+	    }
+	    return(tipimg);
 	}
 
 	public void lvlup() {

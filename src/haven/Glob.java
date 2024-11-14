@@ -102,6 +102,10 @@ public class Glob {
 	    this.binfo = null;
 	}
 
+	public Indir<Resource> res() {
+	    return(Resource.local().load("gfx/hud/chr/" + nm));
+	}
+
 	private static final OwnerContext.ClassResolver<CAttr> ctxr = new OwnerContext.ClassResolver<CAttr>()
 	    .add(CAttr.class, attr -> attr)
 	    .add(Glob.class, attr-> attr.glob)
@@ -110,8 +114,14 @@ public class Glob {
 
 	private List<ItemInfo> binfo = null;
 	public List<ItemInfo> info() {
-	    if(binfo == null)
+	    if(binfo == null) {
 		binfo = ItemInfo.buildinfo(this, info);
+		Resource.Pagina pag = res().get().layer(Resource.pagina);
+		if(pag != null)
+		    binfo.add(new ItemInfo.Pagina(this, pag.text));
+		if(!binfo.isEmpty())
+		    binfo.add(new ItemInfo.Name(this, res().get().flayer(Resource.tooltip).t));
+	    }
 	    return(binfo);
 	}
     }
