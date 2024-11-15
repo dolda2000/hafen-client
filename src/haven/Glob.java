@@ -114,15 +114,16 @@ public class Glob {
 
 	private List<ItemInfo> binfo = null;
 	public List<ItemInfo> info() {
-	    if(binfo == null) {
-		binfo = ItemInfo.buildinfo(this, info);
+	    if(this.binfo == null) {
+		List<ItemInfo> binfo = ItemInfo.buildinfo(this, info);
 		Resource.Pagina pag = res().get().layer(Resource.pagina);
 		if(pag != null)
 		    binfo.add(new ItemInfo.Pagina(this, pag.text));
 		if(!binfo.isEmpty())
 		    binfo.add(new ItemInfo.Name(this, res().get().flayer(Resource.tooltip).t));
+		this.binfo = binfo;
 	    }
-	    return(binfo);
+	    return(this.binfo);
 	}
     }
     
