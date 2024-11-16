@@ -196,6 +196,8 @@ public class CharWnd extends Window {
 	}
 
 	private static final OwnerContext.ClassResolver<AttrWdg> ctxr = new OwnerContext.ClassResolver<AttrWdg>()
+	    .add(AttrWdg.class, wdg -> wdg)
+	    .add(CharWnd.class, wdg -> wdg.getparent(CharWnd.class))
 	    .add(Glob.CAttr.class, wdg -> wdg.attr)
 	    .add(Glob.class, wdg -> wdg.attr.glob)
 	    .add(Session.class, wdg -> wdg.ui.sess);
