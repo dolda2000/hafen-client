@@ -45,10 +45,8 @@ public class SAttrWnd extends Widget {
 	}
     }
 
-    public class SAttr extends Widget {
-	public final String nm;
+    public class SAttr extends CharWnd.AttrWdg {
 	public final Text rnm;
-	public final Glob.CAttr attr;
 	public final Tex img;
 	public final Color bg;
 	public int tbv, cost;
@@ -57,9 +55,7 @@ public class SAttrWnd extends Widget {
 	private int cbv, ccv;
 
 	private SAttr(Glob glob, String attr, Color bg) {
-	    super(new Coord(attrw, attrf.height() + UI.scale(2)));
-	    this.nm = attr;
-	    this.attr = glob.getcattr(attr);
+	    super(Coord.of(attrw, attrf.height() + UI.scale(2)), glob, attr);
 	    Resource res = Loading.waitfor(this.attr.res());
 	    this.img = new TexI(convolve(res.flayer(Resource.imgc).img, new Coord(this.sz.y, this.sz.y), iconfilter));
 	    this.rnm = attrf.render(res.flayer(Resource.tooltip).t);
@@ -100,27 +96,6 @@ public class SAttrWnd extends Widget {
 	    g.aimage(img, cn.add(5, 0), 0, 0.5);
 	    g.aimage(rnm.tex(), cn.add(img.sz().x + UI.scale(10), 1), 0, 0.5);
 	    g.aimage(ct.tex(), cn.add(sub.c.x - UI.scale(5), 1), 1, 0.5);
-	}
-
-	private List<ItemInfo> tipinfo;
-	private Tex tipimg = null;
-	public Object tooltip(Coord c, Widget prev) {
-	    List<ItemInfo> info = attr.info();
-	    if((tipimg != null) && (info != tipinfo)) {
-		tipimg.dispose();
-		tipimg = null;
-	    }
-	    if(tipimg == null) {
-		try {
-		    if(info.isEmpty())
-			return(null);
-		    tipimg = new TexI(ItemInfo.longtip(info));
-		    tipinfo = info;
-		} catch(Loading l) {
-		    return("...");
-		}
-	    }
-	    return(tipimg);
 	}
 
 	private void updcost() {

@@ -79,7 +79,7 @@ public class Glob {
 	}
     }
 
-    public static class CAttr implements ItemInfo.Owner {
+    public static class CAttr {
 	public final Glob glob;
 	public final String nm;
 	public int base, comp;
@@ -99,31 +99,10 @@ public class Glob {
 	    this.base = base;
 	    this.comp = comp;
 	    this.info = info;
-	    this.binfo = null;
 	}
 
 	public Indir<Resource> res() {
 	    return(Resource.local().load("gfx/hud/chr/" + nm));
-	}
-
-	private static final OwnerContext.ClassResolver<CAttr> ctxr = new OwnerContext.ClassResolver<CAttr>()
-	    .add(CAttr.class, attr -> attr)
-	    .add(Glob.class, attr-> attr.glob)
-	    .add(Session.class, attr -> attr.glob.sess);
-	public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
-
-	private List<ItemInfo> binfo = null;
-	public List<ItemInfo> info() {
-	    if(this.binfo == null) {
-		List<ItemInfo> binfo = ItemInfo.buildinfo(this, info);
-		Resource.Pagina pag = res().get().layer(Resource.pagina);
-		if(pag != null)
-		    binfo.add(new ItemInfo.Pagina(this, pag.text));
-		if(!binfo.isEmpty())
-		    binfo.add(new ItemInfo.Name(this, res().get().flayer(Resource.tooltip).t));
-		this.binfo = binfo;
-	    }
-	    return(this.binfo);
 	}
     }
     
