@@ -89,27 +89,28 @@ public class HttpStatus extends HackThread {
 	handle(words);
     }
 
+    private static final int[] delays = {1, 2, 5, 10, 60};
     private InputStream cur = null;
     public void run() {
-	boolean again = false;
+	int retries = 0;
 	while(!quit) {
-	    if(again) {
+	    if(retries > 0) {
 		try {
-		    Thread.sleep(1000);
+		    Thread.sleep(delays[retries - 1] * 1000);
 		} catch(InterruptedException e2) {
 		    continue;
 		}
 	    }
-	    again = true;
+	    if(retries < delays.length)
+		retries++;
 	    try {
 		synchronized(this) {
 		    syn = false;
 		    status = "";
 		    notifyAll();
 		}
-		URLConnection c = src.openConnection();
+		URLConnection c = Http.open(src);
 		c.setUseCaches(false);
-		c.addRequestProperty("User-Agent", "Haven-Status/1.0");
 		InputStream fp = c.getInputStream();
 		try {
 		    synchronized(this) {
@@ -134,6 +135,8 @@ public class HttpStatus extends HackThread {
 			    }
 			    break;
 			}
+			if(syn)
+			    retries = 1;
 		    }
 		} finally {
 		    fp.close();
