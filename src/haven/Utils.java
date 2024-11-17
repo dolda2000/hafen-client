@@ -79,12 +79,16 @@ public class Utils {
 	}
     }
 
-    public static URL url(String url) {
+    public static URL url(URI uri) {
 	try {
-	    return(uri(url).toURL());
+	    return(uri.toURL());
 	} catch(MalformedURLException e) {
-	    throw(new IllegalArgumentException(url, e));
+	    throw(new IllegalArgumentException(uri.toString(), e));
 	}
+    }
+
+    public static URL url(String url) {
+	return(url(uri(url)));
     }
 
     public static Path path(String path) {
