@@ -119,7 +119,10 @@ public class HttpStatus extends HackThread {
 		    int len = 0;
 		    while(true) {
 			int off = len;
-			len += fp.read(buf, off, buf.length - len);
+			int rv = fp.read(buf, len, buf.length - len);
+			if(rv < 0)
+			    break;
+			len += rv;
 			line: while(true) {
 			    for(int i = off; i < len; i++) {
 				if(buf[i] == 10) {
