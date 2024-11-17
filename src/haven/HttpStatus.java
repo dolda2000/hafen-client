@@ -30,32 +30,21 @@ import java.io.*;
 import java.net.*;
 
 public class HttpStatus extends HackThread {
-    public final URL src;
+    public static final Config.Variable<URI> mond = Config.Services.var("srvmon", "");
+    public final URI src;
     public boolean syn = false;
     public String status;
     public int users;
     private boolean quit = false;
 
-    public HttpStatus(URL src) {
+    public HttpStatus(URI src) {
 	super("Server status updater");
 	setDaemon(true);
 	this.src = src;
     }
 
-    private static URL defsrc(String host) {
-	try {
-	    return(new URI("http", host, "/mt/srv-mon", null).toURL());
-	} catch(URISyntaxException | MalformedURLException e) {
-	    throw(new RuntimeException(e));
-	}
-    }
-
-    public HttpStatus(String host) {
-	this(defsrc(host));
-    }
-
     public HttpStatus() {
-	this(defsrc(Bootstrap.defserv.get()));
+	this(mond.get());
     }
 
     private void handle(String... words) {
@@ -109,7 +98,7 @@ public class HttpStatus extends HackThread {
 		    status = "";
 		    notifyAll();
 		}
-		URLConnection c = Http.open(src);
+		URLConnection c = Http.open(src.toURL());
 		c.setUseCaches(false);
 		InputStream fp = c.getInputStream();
 		try {

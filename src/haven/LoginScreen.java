@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.net.URI;
 
 public class LoginScreen extends Widget {
     public static final Config.Variable<String> authmech = Config.Variable.prop("haven.authmech", "native");
@@ -280,9 +281,9 @@ public class LoginScreen extends Widget {
 	public final HttpStatus stat;
 	public final double ax;
 
-	public StatusLabel(String host, double ax) {
+	public StatusLabel(URI svc, double ax) {
 	    super(new Coord(UI.scale(150), FastText.h * 2));
-	    this.stat = new HttpStatus(host);
+	    this.stat = new HttpStatus(svc);
 	    this.ax = ax;
 	}
 
