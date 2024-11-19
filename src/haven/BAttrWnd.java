@@ -349,7 +349,7 @@ public class BAttrWnd extends Widget {
 	    if(trev != null) {
 		try {
 		    Collections.sort(etr, dcmp);
-		    ui.msg(String.format("You gained " + Loading.waitfor(trev).flayer(Event.class).nm));
+		    ui.loader.defer(() -> ui.msg(String.format("You gained " + trev.get().flayer(Event.class).nm), Color.WHITE, null), null);
 		    trol = new TexI(mktrol(etr, trev));
 		    trtm = Utils.rtime();
 		    trev = null;
