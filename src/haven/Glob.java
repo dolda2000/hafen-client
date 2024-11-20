@@ -94,8 +94,6 @@ public class Glob {
 	}
 	
 	public void update(int base, int comp, ItemInfo.Raw info) {
-	    if((base == this.base) && (comp == this.comp))
-		return;
 	    this.base = base;
 	    this.comp = comp;
 	    this.info = info;
