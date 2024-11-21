@@ -284,25 +284,38 @@ public class LoginScreen extends Widget {
 	public final double ax;
 
 	public StatusLabel(URI svc, double ax) {
-	    super(new Coord(UI.scale(150), FastText.h * 2));
+	    super(new Coord(UI.scale(150), Text.std.height() * 2));
 	    this.stat = new HttpStatus(svc);
 	    this.ax = ax;
 	}
 
+	private Text[] lines = new Text[2];
 	public void draw(GOut g) {
 	    int x = (int)Math.round(sz.x * ax);
+	    String[] buf = {null, null};
 	    synchronized(stat) {
-		if(!stat.syn || (stat.status == ""))
-		    return;
-		if(stat.status == "up") {
-		    FastText.aprintf(g, new Coord(x, FastText.h * 0), ax, 0, "Server status: Up");
-		    FastText.aprintf(g, new Coord(x, FastText.h * 1), ax, 0, "Hearthlings playing: %,d", stat.users);
+		if(!stat.syn || (stat.status == "")) {
+		} else if(stat.status == "up") {
+		    buf[0] = "Server status: Up";
+		    buf[1] = String.format("Hearthlings playing: %,d", stat.users);
 		} else if(stat.status == "down") {
-		    FastText.aprintf(g, new Coord(x, FastText.h * 0), ax, 0, "Server status: Down");
+		    buf[0] = "Server status: Down";
 		} else if(stat.status == "shutdown") {
-		    FastText.aprintf(g, new Coord(x, FastText.h * 0), ax, 0, "Server status: Shutting down");
+		    buf[0] = "Server status: Shutting down";
 		} else if(stat.status == "crashed") {
-		    FastText.aprintf(g, new Coord(x, FastText.h * 0), ax, 0, "Server status: Crashed");
+		    buf[0] = "Server status: Crashed";
+		}
+	    }
+	    for(int i = 0, y = 0; i < 2; i++) {
+		if((lines[i] != null) && !Utils.eq(buf[i], lines[i].text)) {
+		    lines[i].dispose();
+		    lines[i] = null;
+		}
+		if(buf[i] != null)
+		    lines[i] = Text.render(buf[i]);
+		if(lines[i] != null) {
+		    g.image(lines[i].tex(), Coord.of((int)((sz.x - lines[i].sz().x) * ax), y));
+		    y += lines[i].sz().y;
 		}
 	    }
 	}
