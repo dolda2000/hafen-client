@@ -56,6 +56,25 @@ public class WoundWnd extends Widget {
 	}
     }
 
+    public static class WoundPagina extends ItemInfo.Tip {
+	public final String str;
+
+	public WoundPagina(Owner owner, String str) {
+	    super(owner);
+	    this.str = str;
+	}
+
+	public void layout(Layout l) {
+	    BufferedImage t = ifnd.render(str, l.width).img;
+	    if(t != null) {
+		l.cmp.add(t, Coord.of(0, l.cmp.sz.y));
+		l.cmp.sz = l.cmp.sz.add(0, UI.scale(10));
+	    }
+	}
+
+	public int order() {return(10);}
+    }
+
     public static class Wound implements ItemInfo.ResOwner {
 	public final Glob glob;
 	public final int id, parentid;
@@ -84,7 +103,7 @@ public class WoundWnd extends Widget {
 		List<ItemInfo> info = ItemInfo.buildinfo(this, rawinfo);
 		Resource.Pagina pag = res.get().layer(Resource.pagina);
 		if(pag != null)
-		    info.add(new ItemInfo.Pagina(this, pag.text));
+		    info.add(new WoundPagina(this, pag.text));
 		this.info = info;
 	    }
 	    return(info);
