@@ -185,6 +185,29 @@ public class CharWnd extends Window {
 	}
     }
 
+    public static interface IconInfo {
+	public void draw(BufferedImage img, Graphics g);
+
+	public static BufferedImage render(BufferedImage base, List<ItemInfo> info) {
+	    BufferedImage ret = base;
+	    Graphics g = null;
+	    for(ItemInfo inf : info) {
+		if(inf instanceof IconInfo) {
+		    if(g == null) {
+			BufferedImage buf = TexI.mkbuf(PUtils.imgsz(ret));
+			g = buf.getGraphics();
+			g.drawImage(ret, 0, 0, null);
+			ret = buf;
+		    }
+		    ((IconInfo)inf).draw(ret, g);
+		}
+	    }
+	    if(g != null)
+		g.dispose();
+	    return(ret);
+	}
+    }
+
     public abstract static class AttrWdg extends Widget implements ItemInfo.Owner {
 	public final String nm;
 	public final Glob.CAttr attr;

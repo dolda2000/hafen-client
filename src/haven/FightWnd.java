@@ -47,10 +47,6 @@ public class FightWnd extends Widget {
     private final Label count;
     private final Map<Indir<Resource>, Object[]> actrawinfo = new HashMap<>();
 
-    public static interface IconInfo {
-	public void draw(BufferedImage img, Graphics g);
-    }
-
     private static final OwnerContext.ClassResolver<FightWnd> actxr = new OwnerContext.ClassResolver<FightWnd>()
 	.add(FightWnd.class, wdg -> wdg)
 	.add(Glob.class, wdg -> wdg.ui.sess.glob)
@@ -102,21 +98,7 @@ public class FightWnd extends Widget {
 	public <T> T context(Class<T> cl) {return(actxr.context(cl, FightWnd.this));}
 
 	public BufferedImage rendericon() {
-	    BufferedImage ret = res.get().flayer(Resource.imgc).scaled();
-	    Graphics g = null;
-	    for(ItemInfo inf : info()) {
-		if(inf instanceof IconInfo) {
-		    if(g == null) {
-			BufferedImage buf = TexI.mkbuf(PUtils.imgsz(ret));
-			g = buf.getGraphics();
-			ret = buf;
-		    }
-		    ((IconInfo)inf).draw(ret, g);
-		}
-	    }
-	    if(g != null)
-		g.dispose();
-	    return(ret);
+	    return(CharWnd.IconInfo.render(res.get().flayer(Resource.imgc).scaled(), info()));
 	}
 
 	private Tex icon = null;
