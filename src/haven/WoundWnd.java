@@ -124,6 +124,7 @@ public class WoundWnd extends Widget {
 
     public static class WoundBox extends ImageInfoBox implements Wound.Info {
 	public final int id;
+	private List<ItemInfo> info;
 
 	public WoundBox(int id) {
 	    super(Coord.z);
@@ -132,11 +133,16 @@ public class WoundWnd extends Widget {
 
 	protected void added() {
 	    resize(parent.sz);
-	    set(() -> new TexI(renderinfo(sz.x - Scrollbar.width - (marg().x * 2))));
 	}
 
 	public Wound wound() {
 	    return(getparent(WoundWnd.class).wounds.get(id));
+	}
+
+	public void tick(double dt) {
+	    super.tick(dt);
+	    if(this.info != wound().info())
+		set(() -> new TexI(renderinfo(sz.x - Scrollbar.width - (marg().x * 2))));
 	}
 
 	public void drawbg(GOut g) {}
@@ -154,6 +160,7 @@ public class WoundWnd extends Widget {
 		if((inf != nm) && (inf instanceof ItemInfo.Tip))
 		    l.add((ItemInfo.Tip)inf);
 	    }
+	    this.info = info;
 	    return(l.render());
 	}
 
