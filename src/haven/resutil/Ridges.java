@@ -611,10 +611,11 @@ public class Ridges implements MapMesh.ConsHooks {
 	} else {
 	    try {
 		modelcomplex(tc, b);
-	    } catch(ArrayIndexOutOfBoundsException e) {
+	    } catch(ArrayIndexOutOfBoundsException | NegativeArraySizeException e) {
 		/* XXX: Just ignore for now, until I can find the
 		 * cause of this. */
-	    } catch(NegativeArraySizeException e) {
+		Coord gc = tc.add(m.ul);
+		new Warning(e, String.format("ridge crash at %s in %x", gc, m.map.getgridt(gc).id)).issue();
 	    }
 	    return(true);
 	}
