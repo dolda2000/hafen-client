@@ -27,9 +27,12 @@
 package haven;
 
 import java.util.*;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 import static haven.CharWnd.*;
 
 public class WoundWnd extends Widget {
+    public static final Text.Foundry namef = new Text.Foundry(Text.serif.deriveFont(java.awt.Font.BOLD), 16).aa(true);
     public final Widget woundbox;
     public final WoundList wounds;
     public Wound.Info wound;
@@ -41,58 +44,108 @@ public class WoundWnd extends Widget {
 	}
     }
 
-    public static class Wound {
+    public static interface QuickInfo {
+	public default Widget qwdg(int h) {
+	    if(qstr() == null)
+		return(null);
+	    return(new Label(qstr(), attrf));
+	}
+
+	public default String qstr() {
+	    return(null);
+	}
+    }
+
+    public static class Wound implements ItemInfo.ResOwner {
+	public final Glob glob;
 	public final int id, parentid;
 	public Indir<Resource> res;
-	public Object qdata;
 	public int level;
+	public ItemInfo.Raw rawinfo;
 	private String sortkey = "\uffff";
 
-	private Wound(int id, Indir<Resource> res, Object qdata, int parentid) {
+	private Wound(Glob glob, int id, Indir<Resource> res, int parentid) {
+	    this.glob = glob;
 	    this.id = id;
 	    this.res = res;
-	    this.qdata = qdata;
 	    this.parentid = parentid;
 	}
 
-	public static class Box extends LoadingTextBox implements Info {
-	    public final int id;
-	    public final Indir<Resource> res;
+	private static final OwnerContext.ClassResolver<Wound> ctxr = new OwnerContext.ClassResolver<Wound>()
+	    .add(Wound.class, wnd -> wnd)
+	    .add(Glob.class, wnd -> wnd.glob)
+	    .add(Session.class, wnd -> wnd.glob.sess);
+	public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
+	public Resource resource() {return(res.get());}
 
-	    public Box(int id, Indir<Resource> res) {
-		super(Coord.z, "", ifnd);
-		bg = null;
-		this.id = id;
-		this.res = res;
-		settext(new Indir<String>() {public String get() {return(rendertext());}});
+	private List<ItemInfo> info;
+	public List<ItemInfo> info() {
+	    if(info == null) {
+		List<ItemInfo> info = ItemInfo.buildinfo(this, rawinfo);
+		Resource.Pagina pag = res.get().layer(Resource.pagina);
+		if(pag != null)
+		    info.add(new ItemInfo.Pagina(this, pag.text));
+		this.info = info;
 	    }
-
-	    protected void added() {
-		resize(parent.sz);
-	    }
-
-	    public String rendertext() {
-		StringBuilder buf = new StringBuilder();
-		Resource res = this.res.get();
-		buf.append("$img[" + res.name + "]\n\n");
-		buf.append("$b{$font[serif,16]{" + res.flayer(Resource.tooltip).t + "}}\n\n\n");
-		buf.append(res.flayer(Resource.pagina).text);
-		return(buf.toString());
-	    }
-
-	    public int woundid() {return(id);}
+	    return(info);
 	}
 
-	@RName("wound")
-	public static class $wound implements Factory {
-	    public Widget create(UI ui, Object[] args) {
-		int id = Utils.iv(args[0]);
-		Indir<Resource> res = ui.sess.getresv(args[1]);
-		return(new Box(id, res));
-	    }
+	public BufferedImage icon() {
+	    return(CharWnd.IconInfo.render(res.get().flayer(Resource.imgc).scaled(), info()));
 	}
+
+	public String name() {
+	    return(ItemInfo.find(ItemInfo.Name.class, info()).str.text);
+	}
+
 	public interface Info {
 	    public int woundid();
+	}
+    }
+
+    public static class WoundBox extends ImageInfoBox implements Wound.Info {
+	public final int id;
+
+	public WoundBox(int id) {
+	    super(Coord.z);
+	    this.id = id;
+	}
+
+	protected void added() {
+	    resize(parent.sz);
+	    set(() -> new TexI(renderinfo(sz.x - Scrollbar.width - (marg().x * 2))));
+	}
+
+	public Wound wound() {
+	    return(getparent(WoundWnd.class).wounds.get(id));
+	}
+
+	public void drawbg(GOut g) {}
+
+	public BufferedImage renderinfo(int width) {
+	    Wound wnd = wound();
+	    ItemInfo.Layout l = new ItemInfo.Layout(wnd);
+	    l.width = width;
+	    List<ItemInfo> info = wnd.info();
+	    l.cmp.add(wnd.icon(), Coord.z);
+	    ItemInfo.Name nm = ItemInfo.find(ItemInfo.Name.class, info);
+	    l.cmp.add(namef.render(nm.str.text).img, Coord.of(0, l.cmp.sz.y + UI.scale(10)));
+	    l.cmp.sz = l.cmp.sz.add(0, UI.scale(10));
+	    for(ItemInfo inf : info) {
+		if((inf != nm) && (inf instanceof ItemInfo.Tip))
+		    l.add((ItemInfo.Tip)inf);
+	    }
+	    return(l.render());
+	}
+
+	public int woundid() {return(id);}
+    }
+
+    @RName("wound")
+    public static class $wound implements Factory {
+	public Widget create(UI ui, Object[] args) {
+	    int id = Utils.iv(args[0]);
+	    return(new WoundBox(id));
 	}
     }
 
@@ -148,7 +201,7 @@ public class WoundWnd extends Widget {
 	public class Item extends Widget implements DTarget {
 	    public final Wound w;
 	    private Widget qd, nm;
-	    private Object dres, dqd;
+	    private Object dres, dinfo;
 
 	    public Item(Coord sz, Wound w) {
 		super(sz);
@@ -159,14 +212,19 @@ public class WoundWnd extends Widget {
 	    private void update() {
 		if(qd != null) {qd.reqdestroy(); qd = null;}
 		if(nm != null) {nm.reqdestroy(); nm = null;}
+		List<ItemInfo> info = null;
+		try {
+		    info = w.info();
+		} catch(Loading l) {}
+		QuickInfo qdata = (info == null) ? null : ItemInfo.find(QuickInfo.class, info);
 		int nw = sz.x;
-		if(w.qdata != null) {
-		    qd = adda(new Label(w.qdata.toString(), attrf), sz.x - UI.scale(1), sz.y / 2, 1.0, 0.5);
+		if(qdata != null) {
+		    qd = adda(qdata.qwdg(sz.y), sz.x - UI.scale(1), sz.y / 2, 1.0, 0.5);
 		    nw = qd.c.x - UI.scale(5);
 		}
 		int x = w.level * itemh;
-		nm = adda(IconText.of(Coord.of(nw - x, sz.y), w.res), x, sz.y / 2, 0.0, 0.5);
-		this.dqd = w.qdata;
+		nm = adda(IconText.of(Coord.of(nw - x, sz.y), w::icon, w::name), x, sz.y / 2, 0.0, 0.5);
+		this.dinfo = info;
 		this.dres = w.res;
 	    }
 
@@ -180,7 +238,11 @@ public class WoundWnd extends Widget {
 	    }
 
 	    public void draw(GOut g) {
-		if(!Utils.eq(dres, w.res) || !Utils.eq(dqd, w.qdata))
+		Object cinfo = null;
+		try {
+		    cinfo = w.info();
+		} catch(Loading l) {}
+		if(!Utils.eq(dres, w.res) || (dinfo != cinfo))
 		    update();
 		super.draw(g);
 	    }
@@ -272,15 +334,15 @@ public class WoundWnd extends Widget {
 	int id = Utils.iv(args[a]);
 	Indir<Resource> res = (args[a + 1] == null) ? null : ui.sess.getresv(args[a + 1]);
 	if(res != null) {
-	    Object qdata = args[a + 2];
 	    int parentid = (len > 3) ? ((args[a + 3] == null) ? -1 : Utils.iv(args[a + 3])) : -1;
 	    Wound w = wounds.get(id);
 	    if(w == null) {
-		wounds.add(new Wound(id, res, qdata, parentid));
+		wounds.add(w =new Wound(ui.sess.glob, id, res, parentid));
 	    } else {
 		w.res = res;
-		w.qdata = qdata;
 	    }
+	    w.rawinfo = new ItemInfo.Raw(Utils.splice(args, a + 4, len - 4));
+	    w.info = null;
 	    wounds.loading = true;
 	} else {
 	    wounds.remove(id);
