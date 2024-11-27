@@ -93,6 +93,24 @@ public class Tileset extends Resource.Layer {
 	    }
 	}
 
+	public static class GridObj extends Obj {
+	    public GridObj(Buffer buf, Coord2d c, double a) {
+		super(buf, c, a);
+	    }
+
+	    public GridObj(Buffer buf) {
+		this(buf, buf.area.ul.mul(tilesz), 0);
+	    }
+
+	    public Placer placer() {
+		return(glob.map.mapplace);
+	    }
+
+	    protected Pipe.Op getmapstate(Coord3f pc) {
+		return(null);
+	    }
+	}
+
 	public static class Buffer {
 	    public final Glob glob;
 	    public final Area area;
