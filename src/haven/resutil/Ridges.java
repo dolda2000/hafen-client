@@ -57,12 +57,14 @@ public class Ridges implements MapMesh.ConsHooks {
     public static class RPart extends MPart {
 	public float[] rcx, rcy;
 	public int[] rn;
+	public int[][] ledge, uedge;
 	public float[] rh;
 
-	public RPart(Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f, float[] rcx, float[] rcy, int[] rn, float[] rh) {
+	public RPart(Coord lc, Coord gc, Surface.Vertex[] v, float[] tcx, float[] tcy, int[] f, float[] rcx, float[] rcy, int[] rn, float[] rh, int[][] ledge, int[][] uedge) {
 	    super(lc, gc, v, tcx, tcy, f);
 	    this.rcx = rcx; this.rcy = rcy;
 	    this.rn = rn; this.rh = rh;
+	    this.ledge = ledge; this.uedge = uedge;
 	}
 
 	public RPart(RPart... parts) {super(parts);}
@@ -102,6 +104,26 @@ public class Ridges implements MapMesh.ConsHooks {
 		    if(nid < 0)
 			continue;
 		    this.rh[nid] = parts[i].rh[o];
+		}
+	    }
+	    {
+		int nu = 0, nl = 0;
+		for(int i = 0; i < parts.length; i++) {
+		    nl += parts[i].ledge.length;
+		    nu += parts[i].uedge.length;
+		}
+		this.ledge = new int[nl][]; this.uedge = new int[nu][];
+	    }
+	    for(int i = 0, nl = 0, nu = 0; i < parts.length; i++) {
+		for(int o = 0; o < parts[i].ledge.length; o++, nl++) {
+		    this.ledge[nl] = new int[parts[i].ledge[o].length];
+		    for(int u = 0; u < parts[i].ledge[o].length; u++)
+			this.ledge[nl][u] = vmap[i][parts[i].ledge[o][u]];
+		}
+		for(int o = 0; o < parts[i].uedge.length; o++, nu++) {
+		    this.uedge[nu] = new int[parts[i].uedge[o].length];
+		    for(int u = 0; u < parts[i].uedge[o].length; u++)
+			this.uedge[nu][u] = vmap[i][parts[i].uedge[o][u]];
 		}
 	    }
 	}
@@ -303,6 +325,7 @@ public class Ridges implements MapMesh.ConsHooks {
 	    rcx[i + n] = 1; rcy[i + n] = (rh == 0)?0:((r[i].z - r[0].z) / rh);
 	    rn[i + n] = 1;
 	}
+	int[][] ledge = {{0, n}}, uedge = {{n - 1, n + m - 1}};
 	int[] fa = new int[(n + m - 2) * 3];
 	int fi = 0;
 	int a = 0, b = 0;
@@ -321,7 +344,7 @@ public class Ridges implements MapMesh.ConsHooks {
 	    }
 	}
 	mkfaces(va, fa);
-	return(new RPart(tc, tc.add(this.m.ul), va, tcx, tcy, fa, rcx, rcy, rn, rhs));
+	return(new RPart(tc, tc.add(this.m.ul), va, tcx, tcy, fa, rcx, rcy, rn, rhs, ledge, uedge));
     }
 
     private void modelcap(Coord tc, int dir) {
@@ -611,10 +634,11 @@ public class Ridges implements MapMesh.ConsHooks {
 	} else {
 	    try {
 		modelcomplex(tc, b);
-	    } catch(ArrayIndexOutOfBoundsException e) {
+	    } catch(ArrayIndexOutOfBoundsException | NegativeArraySizeException e) {
 		/* XXX: Just ignore for now, until I can find the
 		 * cause of this. */
-	    } catch(NegativeArraySizeException e) {
+		Coord gc = tc.add(m.ul);
+		new Warning(e, String.format("ridge crash at %s in %x", gc, m.map.getgridt(gc).id)).issue();
 	    }
 	    return(true);
 	}
@@ -684,6 +708,12 @@ public class Ridges implements MapMesh.ConsHooks {
 	    return(false);
 	cons.faces(m, ridge);
 	return(true);
+    }
+
+    public RPart getrdesc(Coord tc) {
+	/* XXX? It is somewhat dubious that these aren't thrown away
+	 * in cleanup(), but for now they are useful. */
+	return((RPart)this.ridge[ms.ts.o(tc)]);
     }
 
     public boolean clean() {
