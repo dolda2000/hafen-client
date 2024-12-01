@@ -141,8 +141,10 @@ public class WoundWnd extends Widget {
 
 	public void tick(double dt) {
 	    super.tick(dt);
-	    if(this.info != wound().info())
-		set(() -> new TexI(renderinfo(sz.x - Scrollbar.width - (marg().x * 2))));
+	    try {
+		if(this.info != wound().info())
+		    set(() -> new TexI(renderinfo(sz.x - Scrollbar.width - (marg().x * 2))));
+	    } catch(Loading l) {}
 	}
 
 	public void drawbg(GOut g) {}
