@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import dolda.coe.*;
 import java.awt.Color;
 
@@ -330,11 +331,19 @@ public abstract class Message {
 	}
     }
 
-    public Object tto() {
-	return(tto(uint8()));
+    public Object tto(int type, Function<Object, ? extends Object> mapper) {
+	Object ret = tto(type);
+	if(mapper != null)
+	    ret = mapper.apply(ret);
+	return(ret);
     }
 
-    public Object[] list() {
+    public Object tto(Function<Object, ? extends Object> mapper) {
+	return(tto(uint8(), mapper));
+    }
+    public Object tto() {return(tto(null));}
+
+    public Object[] list(Function<Object, ? extends Object> mapper) {
 	ArrayList<Object> ret = new ArrayList<Object>();
 	while(true) {
 	    if(eom())
@@ -346,9 +355,10 @@ public abstract class Message {
 	}
 	return(ret.toArray());
     }
+    public Object[] list() {return(list(null));}
 
-    public Map<Object, Object> map() {
-	Object[] list = list();
+    public Map<Object, Object> map(Function<Object, ? extends Object> mapper) {
+	Object[] list = list(mapper);
 	if((list.length % 2) != 0)
 	    throw(new FormatError("map-list length not a multiple of two"));
 	Map<Object, Object> ret = new HashMap<>();
@@ -356,6 +366,7 @@ public abstract class Message {
 	    ret.put(list[i], list[i + 1]);
 	return(ret);
     }
+    public Map<Object, Object> map() {return(map(null));}
 
     public abstract void overflow(int min);
 
