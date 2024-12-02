@@ -62,6 +62,7 @@ public abstract class Message {
     public static final int T_MNORM32 = 31;
     public static final int T_MAP = 32;
     public static final int T_LONG = 33;
+    public static final int T_RESSPEC = 34;
 
     private final static byte[] empty = new byte[0];
     public int rh = 0, rt = 0, wh = 0, wt = 0;
@@ -322,6 +323,8 @@ public abstract class Message {
 	    return(map());
 	case T_LONG:
 	    return(int64());
+	case T_RESSPEC:
+	    return(new Resource.Spec(null, string(), uint16()));
 	default:
 	    throw(new FormatError("unknown type tag: " + type).msg(this));
 	}
@@ -546,6 +549,10 @@ public abstract class Message {
 	    adduint8(T_FCOORD64);
 	    addfloat64(((Coord2d)o).x);
 	    addfloat64(((Coord2d)o).y);
+	} else if(o instanceof Resource.Named) {
+	    adduint8(T_RESSPEC);
+	    addstring(((Resource.Named)o).name);
+	    adduint16(((Resource.Named)o).ver);
 	} else if(o instanceof Object[]) {
 	    adduint8(T_TTOL);
 	    addlist((Object[])o);
