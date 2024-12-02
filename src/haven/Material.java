@@ -341,7 +341,7 @@ public class Material implements Pipe.Op {
 	    Res ret = new Res(res, id);
 	    while(!buf.eom()) {
 		String nm = buf.string();
-		Object[] args = buf.list();
+		Object[] args = buf.list(new Resource.PoolMapper(res.pool));
 		ResCons2 cons = rnames.get(nm);
 		if(cons != null)
 		    ret.left.add(cons.cons(res, args));

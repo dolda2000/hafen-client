@@ -265,7 +265,7 @@ public class Tileset extends Resource.Layer {
 		int ver = buf.uint8();
 		if(ver == 1) {
 		    this.res = new Resource.Spec(res.pool, buf.string(), buf.uint16());
-		    this.args = buf.list();
+		    this.args = buf.list(resmapper());
 		} else {
 		    throw(new Resource.LoadException("unknown flavobj version: " + ver, res));
 		}
@@ -325,7 +325,7 @@ public class Tileset extends Resource.Layer {
 	    switch(p) {
 	    case 0:
 		tn = buf.string();
-		ta = buf.list();
+		ta = buf.list(resmapper());
 		break;
 	    case 1:
 		int flnum = buf.uint16();
