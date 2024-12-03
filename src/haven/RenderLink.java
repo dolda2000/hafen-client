@@ -180,7 +180,7 @@ public interface RenderLink {
 	public static Parameters parse(Resource res, Message buf) {
 	    String nm = buf.string();
 	    int ver = buf.uint16();
-	    Object[] args = buf.list();
+	    Object[] args = buf.list(new Resource.PoolMapper(res.pool));
 	    return(new Parameters(res, res.pool.load(nm, ver), args));
 	}
 
