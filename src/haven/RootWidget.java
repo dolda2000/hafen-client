@@ -156,11 +156,9 @@ public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Widget
 	msgtime = Utils.rtime();
     }
 
-    public boolean msg(UI.NoticeEvent ev) {
-	if(ev.propagate(this))
-	    return(true);
-	msg(ev.msg.message(), ev.msg.color());
-	ui.sfxrl(ev.msg.sfx());
+    public boolean msg(UI.Notice msg) {
+	msg(msg.message(), msg.color());
+	ui.sfxrl(msg.sfx());
 	return(true);
     }
 
