@@ -298,9 +298,9 @@ public class LoginScreen extends Widget {
 		} else if(stat.status == "up") {
 		    buf[0] = "Server status: Up";
 		    buf[1] = String.format("Hearthlings playing: %,d", stat.users);
-		} else if(stat.status == "down") {
-		    buf[0] = "Server status: Down";
 		} else if(stat.status == "shutdown") {
+		    buf[0] = "Server status: Down";
+		} else if(stat.status == "terminating") {
 		    buf[0] = "Server status: Shutting down";
 		} else if(stat.status == "crashed") {
 		    buf[0] = "Server status: Crashed";
