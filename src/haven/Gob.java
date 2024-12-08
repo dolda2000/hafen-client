@@ -632,7 +632,10 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
     }
 
     public void delattr(Class<? extends GAttrib> c) {
-	setattr(attrclass(c), null);
+	Class<? extends GAttrib> ac = attrclass(c);
+	GAttrib attr = this.attr.get(ac);
+	if(c.isInstance(attr))
+	    setattr(attrclass(c), null);
     }
 
     public Supplier<? extends Pipe.Op> eqpoint(String nm, Message dat) {
