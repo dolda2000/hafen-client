@@ -112,4 +112,8 @@ public abstract class Drawable extends GAttrib implements RenderTree.Node {
 
     public void gtick(Render g) {
     }
+
+    public String toString() {
+	return(String.format("#<%s %s>", this.getClass().getSimpleName(), getres()));
+    }
 }
