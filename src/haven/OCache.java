@@ -308,7 +308,7 @@ public class OCache implements Iterable<Gob> {
 		sdt = new MessageBuf(sdt);
 		Gob.Overlay nol = null;
 		if(ol == null) {
-		    if(prs || (Gob.olidcmp(olid, g.lastolid) > 0)) {
+		    if(prs || (g.lastolid == 0) || (Gob.olidcmp(olid, g.lastolid) > 0)) {
 			nol = new Gob.Overlay(g, olid, new OlSprite(res, sdt));
 			nol.old = msg.old;
 			g.addol(nol, false);
