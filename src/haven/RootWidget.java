@@ -157,6 +157,8 @@ public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Widget
     }
 
     public boolean msg(UI.Notice msg) {
+	if(msg.handler(this))
+	    return(true);
 	msg(msg.message(), msg.color());
 	ui.sfxrl(msg.sfx());
 	return(true);

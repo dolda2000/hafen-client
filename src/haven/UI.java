@@ -688,6 +688,7 @@ public class UI {
 	public default Color color() {return(Color.WHITE);}
 	public default Audio.Clip sfx() {return(null);}
 	public default boolean handle(Widget w) {return(false);}
+	public default boolean handler(Widget w) {return(false);}
 
 	public static interface Handler {
 	    public default boolean msg(Notice msg) {

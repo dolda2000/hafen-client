@@ -1548,6 +1548,8 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
     }
 
     public boolean msg(UI.Notice msg) {
+	if(msg.handler(this))
+	    return(true);
 	ChatUI.Channel.Message logged;
 	if(msg instanceof LogMessage)
 	    logged = ((LogMessage)msg).logmessage();
