@@ -32,23 +32,24 @@ import java.awt.Color;
 import java.awt.image.*;
 
 public class FoodInfo extends ItemInfo.Tip {
-    public final double end, glut, cons;
+    public final double end, glut, sev, cons;
     public final Event[] evs;
     public final Effect[] efs;
     public final int[] types;
 
-    public FoodInfo(Owner owner, double end, double glut, double cons, Event[] evs, Effect[] efs, int[] types) {
+    public FoodInfo(Owner owner, double end, double glut, double cons, double sev, Event[] evs, Effect[] efs, int[] types) {
 	super(owner);
 	this.end = end;
 	this.glut = glut;
+	this.sev = sev;
 	this.cons = cons;
 	this.evs = evs;
 	this.efs = efs;
 	this.types = types;
     }
 
-    public FoodInfo(Owner owner, double end, double glut, Event[] evs, Effect[] efs, int[] types) {
-	this(owner, end, glut, 0, evs, efs, types);
+    public FoodInfo(Owner owner, double end, double glut, double cons, Event[] evs, Effect[] efs, int[] types) {
+	this(owner, end, glut, cons, 0, evs, efs, types);
     }
 
     public static class Event {
@@ -71,23 +72,24 @@ public class FoodInfo extends ItemInfo.Tip {
 	public Effect(List<ItemInfo> info, double p) {this.info = info; this.p = p;}
     }
 
-    public BufferedImage tipimg() {
+    public void layout(Layout l) {
 	String head = String.format("Energy: $col[128,128,255]{%s%%}, Hunger: $col[255,192,128]{%s\u2030}", Utils.odformat2(end * 100, 2), Utils.odformat2(glut * 1000, 2));
 	if(cons != 0)
 	    head += String.format(", Satiation: $col[192,192,128]{%s%%}", Utils.odformat2(cons * 100, 2));
-	BufferedImage base = RichText.render(head, 0).img;
-	Collection<BufferedImage> imgs = new LinkedList<BufferedImage>();
-	imgs.add(base);
+	l.cmp.add(RichText.render(head, 0).img, Coord.of(0, l.cmp.sz.y));
 	for(int i = 0; i < evs.length; i++) {
 	    Color col = Utils.blendcol(evs[i].ev.col, Color.WHITE, 0.5);
-	    imgs.add(catimgsh(5, evs[i].img, RichText.render(String.format("%s: $col[%d,%d,%d]{%s}", evs[i].ev.nm, col.getRed(), col.getGreen(), col.getBlue(), Utils.odformat2(evs[i].a, 2)), 0).img));
+	    l.cmp.add(catimgsh(5, evs[i].img, RichText.render(String.format("%s: %s{%s}", evs[i].ev.nm, RichText.Parser.col2a(col), Utils.odformat2(evs[i].a, 2)), 0).img),
+		      Coord.of(UI.scale(5), l.cmp.sz.y));
 	}
+	if(sev > 0)
+	    l.cmp.add(RichText.render(String.format("Total: $col[128,192,255]{%s} ($col[128,192,255]{%s}/\u2030 hunger)", Utils.odformat2(sev, 2), Utils.odformat2(sev / (1000 * glut), 2)), 0).img,
+		      Coord.of(UI.scale(5), l.cmp.sz.y));
 	for(int i = 0; i < efs.length; i++) {
 	    BufferedImage efi = ItemInfo.longtip(efs[i].info);
 	    if(efs[i].p != 1)
 		efi = catimgsh(5, efi, RichText.render(String.format("$i{($col[192,192,255]{%d%%} chance)}", (int)Math.round(efs[i].p * 100)), 0).img);
-	    imgs.add(efi);
+	    l.cmp.add(efi, Coord.of(UI.scale(5), l.cmp.sz.y));
 	}
-	return(catimgs(0, imgs.toArray(new BufferedImage[0])));
     }
 }
