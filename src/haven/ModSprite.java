@@ -278,6 +278,16 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	imods.add(mod);
     }
 
+    public <T> T imod(Class<T> cl) {
+	if(imods == null)
+	    return(null);
+	for(Mod mod : imods) {
+	    if(cl.isInstance(mod))
+		return(cl.cast(mod));
+	}
+	return(null);
+    }
+
     protected Cons cons() {
 	return(new Cons());
     }
