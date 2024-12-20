@@ -75,10 +75,10 @@ public abstract class Sprite implements RenderTree.Node {
 	    add(new Direct<>(Factory.class));
 	    add(new StaticCall<>(Factory.class, "mksprite", Sprite.class, new Class<?>[] {Owner.class, Resource.class, Message.class},
 				 (make) -> (owner, res, sdt) -> make.apply(new Object[] {owner, res, sdt})));
-	    add(new Construct<>(Factory.class, Sprite.class, new Class<?>[] {Owner.class, Resource.class},
-				(cons) -> (owner, res, sdt) -> cons.apply(new Object[] {owner, res})));
 	    add(new Construct<>(Factory.class, Sprite.class, new Class<?>[] {Owner.class, Resource.class, Message.class},
 				(cons) -> (owner, res, sdt) -> cons.apply(new Object[] {owner, res, sdt})));
+	    add(new Construct<>(Factory.class, Sprite.class, new Class<?>[] {Owner.class, Resource.class},
+				(cons) -> (owner, res, sdt) -> cons.apply(new Object[] {owner, res})));
 	}}
 
     @Resource.PublishedCode(name = "spr", instancer = FactMaker.class)
