@@ -430,6 +430,10 @@ public class Utils {
 	}
     }
 
+    public static String sv(Object arg) {
+	return((String)arg);
+    }
+
     public static int iv(Object arg) {
 	return(((Number)arg).intValue());
     }
