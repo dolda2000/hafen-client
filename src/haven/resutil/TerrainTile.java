@@ -221,6 +221,12 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		    if(desc[1] instanceof Integer) {
 			int mid = Utils.iv(desc[1]);
 			commat = res.flayer(Material.Res.class, mid).get();
+		    } else if(desc[1] instanceof Indir) {
+			if(desc.length > 2) {
+			    commat = Utils.irv(desc[1]).get().flayer(Material.Res.class, Utils.iv(desc[3])).get();
+			} else {
+			    commat = Material.fromres((Material.Owner)null, Utils.irv(desc[1]).get(), Message.nil);
+			}
 		    } else if(desc[1] instanceof String) {
 			String mnm = (String)desc[1];
 			int mver = Utils.iv(desc[2]);
@@ -252,7 +258,7 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		    NodeWrap mat = NodeWrap.compose(commat, res.flayer(Material.Res.class, mid).get());
 		    var.add(new Var(mat, thrl, thrh, nz));
 		} else if(p.equals("trans")) {
-		    Resource tres = set.getres().pool.load((String)desc[1], Utils.iv(desc[2])).get();
+		    Resource tres = ((desc[1] instanceof Indir) ? Utils.irv(desc[1]) : set.getres().pool.load((String)desc[1], Utils.iv(desc[2]))).get();
 		    trans = tres.layer(Tileset.class);
 		}
 	    }
@@ -382,7 +388,8 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 		    Object[] desc = (Object[])rdesc;
 		    String p = (String)desc[0];
 		    if(p.equals("rmat")) {
-			Resource mres = set.getres().pool.load((String)desc[1], Utils.iv(desc[2])).get();
+			int a = 1;
+			Resource mres = ((desc[a] instanceof Indir) ? Utils.irv(desc[a++]) : set.getres().pool.load((String)desc[a++], Utils.iv(desc[a++]))).get();
 			mat = mres.flayer(Material.Res.class).get();
 			if(desc.length > 3)
 			    texh = Utils.fv(desc[3]);

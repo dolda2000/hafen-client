@@ -140,16 +140,14 @@ public abstract class TexRender implements Tex, Disposable {
 	public static final boolean defclip = true;
 
 	public Material.Res.Resolver cons(final Resource res, Object... args) {
-	    final Indir<Resource> tres;
-	    final int tid;
-	    int a = 0;
-	    if(args[a] instanceof String) {
-		tres = res.pool.load((String)args[a], Utils.iv(args[a + 1]));
-		if(args.length > a + 2)
-		    tid = Utils.iv(args[a + 2]);
-		else
-		    tid = -1;
-		a += 3;
+	    Indir<Resource> tres;
+	    int tid, a = 0;
+	    if(args[a] instanceof Indir) {
+		tres = Utils.irv(args[a++]);
+		tid = (args.length > a) ? Utils.iv(args[a++]) : -1;
+	    } else if(args[a] instanceof String) {
+		tres = res.pool.load((String)args[a++], Utils.iv(args[a++]));
+		tid = (args.length > a) ? Utils.iv(args[a++]) : -1;
 	    } else {
 		tres = res.indir();
 		tid = Utils.iv(args[a]);
@@ -163,7 +161,7 @@ public abstract class TexRender implements Tex, Disposable {
 		else if(f.equals("c"))
 		    tclip = true;
 	    }
-	    final boolean clip = tclip; /* ¦] */
+	    boolean clip = tclip; /* ¦] */
 	    return(new Material.Res.Resolver() {
 		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
 			TexRender tex;
