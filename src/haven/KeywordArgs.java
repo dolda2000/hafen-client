@@ -68,6 +68,10 @@ public class KeywordArgs {
 	this(argv, null, pos);
     }
 
+    public boolean has(String nm) {
+	return(parsed.containsKey(nm));
+    }
+
     public Object get(String nm, Object def) {
 	return(parsed.getOrDefault(nm, def));
     }
@@ -87,5 +91,9 @@ public class KeywordArgs {
 	if(!parsed.containsKey(nm))
 	    throw(new MissingArgumentException(nm, argv));
 	return(parsed.get(nm));
+    }
+
+    public Optional<Object> oget(String nm) {
+	return(Optional.ofNullable(parsed.get(nm)));
     }
 }
