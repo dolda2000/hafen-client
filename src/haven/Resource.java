@@ -1186,7 +1186,7 @@ public class Resource implements Serializable {
 	    int ver = buf.uint8();
 	    if(ver != 1)
 		throw(new LoadException("Unknown property layer version: " + ver, getres()));
-	    Object[] raw = buf.list();
+	    Object[] raw = buf.list(resmapper());
 	    for(int a = 0; a < raw.length - 1; a += 2)
 		props.put((String)raw[a], raw[a + 1]);
 	}
