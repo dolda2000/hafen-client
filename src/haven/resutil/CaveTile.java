@@ -69,19 +69,9 @@ public class CaveTile extends Tiler {
     @ResName("cave")
     public static class Factory implements Tiler.Factory {
 	public Tiler create(int id, Tileset set) {
-	    Material wtex = null;
-	    Tiler ground = null;
-	    for(Object rdesc : set.ta) {
-		Object[] desc = (Object[])rdesc;
-		String p = (String)desc[0];
-		if(p.equals("wmat")) {
-		    wtex = set.getres().flayer(Material.Res.class, Utils.iv(desc[1])).get();
-		} else if(p.equals("gnd")) {
-		    Resource gres = set.getres().pool.load((String)desc[1], Utils.iv(desc[2])).get();
-		    Tileset ts = gres.flayer(Tileset.class);
-		    ground = ts.tfac().create(id, ts);
-		}
-	    }
+	    KeywordArgs desc = new KeywordArgs(set.ta, set.getres().pool);
+	    Material wtex = set.getres().flayer(Material.Res.class, Utils.iv(desc.get("wmat"))).get();
+	    Tiler ground = desc.oget("gnd").map(r -> Utils.irv(r).get().flayer(Tileset.class)).map(ts -> ts.tfac().create(id, ts)).orElse(null);
 	    return(new CaveTile(id, set, wtex, ground));
 	}
     }
