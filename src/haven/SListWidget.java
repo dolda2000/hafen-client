@@ -64,6 +64,10 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 
     public static abstract class TextItem extends Widget {
 	public TextItem(Coord sz) {super(sz);}
+	public TextItem(int w) {
+	    super();
+	    resize(Coord.of(w, foundry().height()));
+	}
 
 	protected abstract String text();
 	protected int margin() {return(-1);}
@@ -123,6 +127,10 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 
     public static abstract class IconText extends Widget {
 	public IconText(Coord sz) {super(sz);}
+	public IconText(int w) {
+	    super();
+	    resize(Coord.of(w, foundry().height()));
+	}
 
 	protected abstract BufferedImage img();
 	protected abstract String text();
