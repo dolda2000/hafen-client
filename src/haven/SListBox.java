@@ -58,7 +58,7 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> im
     public void scrollval(int val) {cury = val;}
 
     @SuppressWarnings("unchecked")
-    public void tick(double dt) {
+    public void update() {
 	boolean reset = this.reset;
 	this.reset = false;
 	List<? extends I> items = items();
@@ -131,7 +131,19 @@ public abstract class SListBox<I, W extends Widget> extends SListWidget<I, W> im
 		    curw.get(curi[i]).move(Coord.of(0, ((i + curo) * (itemh + marg)) - sy));
 	    }
 	}
+    }
+
+    public void tick(double dt) {
+	update();
 	super.tick(dt);
+    }
+
+    public int totalh() {
+	return(Math.max((items().size() * (itemh + marg)) - marg, 0));
+    }
+
+    public void minimize() {
+	resizeh(Math.min(sz.y, totalh()));
     }
 
     public void reset() {
