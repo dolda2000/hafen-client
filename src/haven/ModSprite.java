@@ -127,7 +127,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 			return(Pipe.Op.compose(ops));
 		    };
 		}
-		ret = RUtils.StateTickNode.from(ret, rst);
+		ret = RUtils.StateTickNode.of(ret, rst);
 	    }
 	    return(ret);
 	}

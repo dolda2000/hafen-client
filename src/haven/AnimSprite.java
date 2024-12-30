@@ -59,7 +59,7 @@ public class AnimSprite extends Sprite {
 	    if((mr.mat != null) && ((mr.id < 0) || (((1 << mr.id) & mask) != 0))) {
 		for(MeshAnim.Animation anim : anims) {
 		    if(anim.desc().animp(mr.m)) {
-			rl.add(RUtils.StateTickNode.from(mr.mat.get().apply(anim.desc().apply(mr.m)), anim::state));
+			rl.add(RUtils.StateTickNode.of(mr.mat.get().apply(anim.desc().apply(mr.m)), anim::state));
 			continue mesh;
 		    }
 		}

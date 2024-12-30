@@ -157,7 +157,7 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Spri
 		return(Pipe.Op.compose(ops));
 	    };
 	}
-	return(RUtils.StateTickNode.from(wrap, rst));
+	return(RUtils.StateTickNode.of(wrap, rst));
     }
 
     public void iparts(int mask, Collection<RenderTree.Node> rbuf, Collection<Runnable> tbuf, Collection<Consumer<Render>> gbuf) {
