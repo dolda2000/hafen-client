@@ -29,12 +29,12 @@ package haven;
 import java.util.*;
 import haven.render.*;
 
-public class SprDrawable extends Drawable {
+public class SprDrawable extends Drawable implements Sprite.Owner {
     public final Sprite spr;
 
     public SprDrawable(Gob gob, Sprite.Mill<?> mk) {
 	super(gob);
-	this.spr = mk.create(gob);
+	this.spr = mk.create(this);
     }
 
     public SprDrawable(Gob gob, Sprite spr) {
@@ -60,7 +60,15 @@ public class SprDrawable extends Drawable {
 	spr.gtick(g);
     }
 
+    /* This is only deprecated becuase Sprite.Owner.getres is. Its
+     * override from Drawable is not considered deprecated. */
+    @Deprecated
     public Resource getres() {
 	return(null);
     }
+
+    private static final ClassResolver<SprDrawable> ctxr = new ClassResolver<SprDrawable>()
+	.add(SprDrawable.class, d -> d);
+    public <T> T context(Class<T> cl) {return(OwnerContext.orparent(cl, ctxr.context(cl, this, false), gob));}
+    public Random mkrandoom() {return(gob.mkrandoom());}
 }
