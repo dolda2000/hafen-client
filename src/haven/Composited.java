@@ -35,7 +35,7 @@ import haven.Skeleton.PoseMod;
 public class Composited implements RenderTree.Node, EquipTarget {
     public final Skeleton skel;
     public final Pose pose;
-    public final Sprite.Owner eqowner;
+    public final OwnerContext eqowner;
     public Collection<Model> mod = new ArrayList<Model>();
     public Collection<Equipped> equ = new ArrayList<Equipped>();
     public Poses poses = new Poses();
@@ -117,7 +117,7 @@ public class Composited implements RenderTree.Node, EquipTarget {
 	protected void done() {}
     }
 
-    public Composited(Skeleton skel, Sprite.Owner eqowner) {
+    public Composited(Skeleton skel, OwnerContext eqowner) {
 	this.skel = skel;
 	this.pose = skel.new Pose(skel.bindpose);
 	this.eqowner = eqowner;
@@ -206,7 +206,7 @@ public class Composited implements RenderTree.Node, EquipTarget {
     private static final OwnerContext.ClassResolver<Equipped> eqctxr = new OwnerContext.ClassResolver<Equipped>()
 	.add(Equipped.class, eq -> eq)
 	.add(Composited.class, eq -> eq.comp());
-    public class Equipped implements Sprite.Owner, RandomSource {
+    public class Equipped implements Sprite.Owner {
 	public final Sprite spr;
 	private final RUtils.StateNode<Sprite> n;
 	public final ED desc;
@@ -259,7 +259,12 @@ public class Composited implements RenderTree.Node, EquipTarget {
 	}
 
 	public Random mkrandoom() {
-	    return((eqowner != null) ? eqowner.mkrandoom() : new Random());
+	    if(eqowner != null) {
+		RandomSource rnd = eqowner.fcontext(RandomSource.class, false);
+		if(rnd != null)
+		    return(rnd.mkrandoom());
+	    }
+	    return(new Random());
 	}
 
 	public Composited comp() {
@@ -275,7 +280,7 @@ public class Composited implements RenderTree.Node, EquipTarget {
     @Deprecated
     public class SpriteEqu extends Equ<Sprite> {
 	private SpriteEqu(ED ed) {
-	    super(Sprite.create(eqowner, ed.res.res.get(), ed.res.sdt.clone()), ed);
+	    super(Sprite.create(null, ed.res.res.get(), ed.res.sdt.clone()), ed);
 	}
 
 	public void tick(double dt) {
