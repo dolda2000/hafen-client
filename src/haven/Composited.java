@@ -509,9 +509,6 @@ public class Composited implements RenderTree.Node, EquipTarget {
 		mod = new Model(mr.m, md.id);
 		if(mr.rdat.containsKey("cz"))
 		    mod.z = Integer.parseInt(mr.rdat.get("cz"));
-		/* XXX: Actually set comp-z on borka meshes and remove me. */
-		if(md.mod.get().name.equals("gfx/borka/male") || md.mod.get().name.equals("gfx/borka/female"))
-		    mod.z = -1;
 		for(ResData lres : md.tex)
 		    mod.addlay(Material.fromres(matowner, lres.res.get(), new MessageBuf(lres.sdt)));
 		md.real = mod;
