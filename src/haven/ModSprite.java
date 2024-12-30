@@ -688,7 +688,8 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    return(ret);
 	}
 	public double getv() {
-	    return((spr.owner instanceof Skeleton.ModOwner) ? ((Skeleton.ModOwner)spr.owner).getv() : 0);
+	    Skeleton.ModOwner parent = spr.owner.fcontext(Skeleton.ModOwner.class, false);
+	    return((parent == null) ? 0 : parent.getv());
 	}
 
 	public void age() {
