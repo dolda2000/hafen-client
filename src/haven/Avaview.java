@@ -135,8 +135,7 @@ public class Avaview extends PView {
 
     private void initcomp(Composite gc) {
 	if((comp == null) || (comp.skel != gc.comp.skel)) {
-	    comp = new Composited(gc.comp.skel);
-	    comp.eqowner = avaowner;
+	    comp = new Composited(gc.comp.skel, avaowner);
 	    if(compslot != null) {
 		compslot.remove();
 		compslot = null;
@@ -200,8 +199,7 @@ public class Avaview extends PView {
 	    Desc d = avadesc;
 	    if((d.base != lbase) || (comp == null)) {
 		Resource base = d.base.get();
-		comp = new Composited(base.flayer(Skeleton.Res.class).s);
-		comp.eqowner = avaowner;
+		comp = new Composited(base.flayer(Skeleton.Res.class).s, avaowner);
 		lbase = d.base;
 		basic(Camera.class, makecam(base, comp, camnm));
 		updposes();

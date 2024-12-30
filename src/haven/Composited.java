@@ -35,12 +35,12 @@ import haven.Skeleton.PoseMod;
 public class Composited implements RenderTree.Node, EquipTarget {
     public final Skeleton skel;
     public final Pose pose;
+    public final Sprite.Owner eqowner;
     public Collection<Model> mod = new ArrayList<Model>();
     public Collection<Equipped> equ = new ArrayList<Equipped>();
     public Poses poses = new Poses();
     public List<MD> cmod = new LinkedList<MD>();
     public List<ED> cequ = new LinkedList<ED>();
-    public Sprite.Owner eqowner = null;
     private final Collection<RenderTree.Slot> slots = new ArrayList<>(1);
 
     public class Poses {
@@ -117,9 +117,14 @@ public class Composited implements RenderTree.Node, EquipTarget {
 	protected void done() {}
     }
 
-    public Composited(Skeleton skel) {
+    public Composited(Skeleton skel, Sprite.Owner eqowner) {
 	this.skel = skel;
 	this.pose = skel.new Pose(skel.bindpose);
+	this.eqowner = eqowner;
+    }
+
+    public Composited(Skeleton skel) {
+	this(skel, null);
     }
 
     public static class ModOrder extends Rendered.Order<ModOrder> {
