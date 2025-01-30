@@ -194,7 +194,15 @@ public class NewsFeed extends SListBox<NewsFeed.Entry, Widget> {
     }
 
     public static List<Entry> fetch() throws IOException {
-	try(InputStream fp = Http.fetch(feed.get().toURL())) {
+	URL url = feed.get().toURL();
+	try(InputStream fp = new RetryingInputStream() {
+		protected InputStream create() throws IOException {
+		    URLConnection conn = url.openConnection();
+		    conn.addRequestProperty("User-Agent", Http.USER_AGENT);
+		    return(conn.getInputStream());
+		}
+	    })
+	{
 	    DocumentBuilderFactory conf = DocumentBuilderFactory.newInstance();
 	    conf.setNamespaceAware(true);
 	    List<Entry> ret = new ArrayList<>();
