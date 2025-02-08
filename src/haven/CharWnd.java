@@ -185,6 +185,150 @@ public class CharWnd extends Window {
 	}
     }
 
+    public static class ImageInfoBox extends Widget {
+	private Tex img;
+	private Indir<Tex> loading;
+	private final Scrollbar sb;
+
+	public ImageInfoBox(Coord sz) {
+	    super(sz);
+	    sb = adda(new Scrollbar(sz.y, 0, 1), sz.x, 0, 1, 0);
+	}
+
+	public void drawbg(GOut g) {
+	    g.chcolor(0, 0, 0, 128);
+	    g.frect(Coord.z, sz);
+	    g.chcolor();
+	}
+
+	public Coord marg() {return(UI.scale(10, 10));}
+
+	public void tick(double dt) {
+	    if(loading != null) {
+		try {
+		    set(loading.get());
+		    loading = null;
+		} catch(Loading l) {
+		}
+	    }
+	    super.tick(dt);
+	}
+
+	public void draw(GOut g) {
+	    drawbg(g);
+	    if(img != null)
+		g.image(img, marg().sub(0, sb.val));
+	    super.draw(g);
+	}
+
+	public void set(Tex img) {
+	    this.img = img;
+	    if(img != null) {
+		sb.max = img.sz().y + (marg().y * 2) - sz.y;
+		sb.val = 0;
+	    } else {
+		sb.max = sb.val = 0;
+	    }
+	}
+	public void set(Indir<Tex> loading) {
+	    this.loading = loading;
+	}
+
+	public boolean mousewheel(MouseWheelEvent ev) {
+	    sb.ch(ev.a * 20);
+	    return(true);
+	}
+
+	public void resize(Coord sz) {
+	    super.resize(sz);
+	    sb.c = new Coord(sz.x - sb.sz.x, 0);
+	    sb.resize(sz.y);
+	    set(img);
+	}
+    }
+
+    public static interface IconInfo {
+	public void draw(BufferedImage img, Graphics g);
+
+	public static BufferedImage render(BufferedImage base, List<ItemInfo> info) {
+	    BufferedImage ret = base;
+	    Graphics g = null;
+	    for(ItemInfo inf : info) {
+		if(inf instanceof IconInfo) {
+		    if(g == null) {
+			BufferedImage buf = TexI.mkbuf(PUtils.imgsz(ret));
+			g = buf.getGraphics();
+			g.drawImage(ret, 0, 0, null);
+			ret = buf;
+		    }
+		    ((IconInfo)inf).draw(ret, g);
+		}
+	    }
+	    if(g != null)
+		g.dispose();
+	    return(ret);
+	}
+    }
+
+    public abstract static class AttrWdg extends Widget implements ItemInfo.Owner {
+	public final String nm;
+	public final Glob.CAttr attr;
+
+	public AttrWdg(Coord sz, Glob glob, String attr) {
+	    super(sz);
+	    this.nm = attr;
+	    this.attr = glob.getcattr(attr);
+	}
+
+	private static final OwnerContext.ClassResolver<AttrWdg> ctxr = new OwnerContext.ClassResolver<AttrWdg>()
+	    .add(AttrWdg.class, wdg -> wdg)
+	    .add(CharWnd.class, wdg -> wdg.getparent(CharWnd.class))
+	    .add(Glob.CAttr.class, wdg -> wdg.attr)
+	    .add(Glob.class, wdg -> wdg.attr.glob)
+	    .add(Session.class, wdg -> wdg.ui.sess);
+	public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
+
+	private ItemInfo.Raw rinfo = null;
+	private List<ItemInfo> binfo = null;
+	public List<ItemInfo> info() {
+	    if(attr.info != this.rinfo) {
+		this.binfo = null;
+		this.rinfo = attr.info;
+	    }
+	    if(this.binfo == null) {
+		List<ItemInfo> binfo = ItemInfo.buildinfo(this, this.rinfo);
+		Resource.Pagina pag = attr.res().get().layer(Resource.pagina);
+		if(pag != null)
+		    binfo.add(new ItemInfo.Pagina(this, pag.text));
+		if(!binfo.isEmpty())
+		    binfo.add(new ItemInfo.Name(this, attr.res().get().flayer(Resource.tooltip).t));
+		this.binfo = binfo;
+	    }
+	    return(this.binfo);
+	}
+
+	private List<ItemInfo> tipinfo;
+	private Tex tipimg = null;
+	public Object tooltip(Coord c, Widget prev) {
+	    List<ItemInfo> info = info();
+	    if((tipimg != null) && (info != tipinfo)) {
+		tipimg.dispose();
+		tipimg = null;
+	    }
+	    if(tipimg == null) {
+		try {
+		    if(info.isEmpty())
+			return(null);
+		    tipimg = new TexI(ItemInfo.longtip(info));
+		    tipinfo = info;
+		} catch(Loading l) {
+		    return("...");
+		}
+	    }
+	    return(tipimg);
+	}
+    }
+
     @RName("chr")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
@@ -280,7 +424,10 @@ public class CharWnd extends Window {
 		String attr = (String)args[a++];
 		int base = Utils.iv(args[a++]);
 		int comp = Utils.iv(args[a++]);
-		ui.sess.glob.cattr(attr, base, comp);
+		ItemInfo.Raw info = ItemInfo.Raw.nil;
+		if((a < args.length) && (args[a] instanceof Object[]))
+		    info = new ItemInfo.Raw((Object[])args[a++]);
+		ui.sess.glob.cattr(attr, base, comp, info);
 	    }
 	} else if(nm == "exp") {
 	    exp = Utils.iv(args[0]);

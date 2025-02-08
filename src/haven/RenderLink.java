@@ -180,7 +180,7 @@ public interface RenderLink {
 	public static Parameters parse(Resource res, Message buf) {
 	    String nm = buf.string();
 	    int ver = buf.uint16();
-	    Object[] args = buf.list();
+	    Object[] args = buf.list(new Resource.PoolMapper(res.pool));
 	    return(new Parameters(res, res.pool.load(nm, ver), args));
 	}
 
@@ -203,39 +203,19 @@ public interface RenderLink {
 	    super(ArgLink.class);
 	    add(new Direct<>(ArgLink.class));
 	    add(new StaticCall<>(ArgLink.class, "mkrlink", RenderLink.class, new Class<?>[] {Resource.class, Object[].class},
-				 (make) -> new ArgLink() {
-					 @Override public RenderLink parse(Resource res, Object... args) {
-					     return(make.apply(new Object[] {res, args}));
-					 }
-
-					 public Node create(Owner owner, Resource res, Object... args) {
-					     throw(new RuntimeException("unimplemented ArgLink.create() called"));
-					 }
-				     }));
+				 (make) -> (res, args) -> make.apply(new Object[] {res, args})));
 	    add(new Construct<>(ArgLink.class, RenderLink.class, new Class<?>[] {Resource.class, Object[].class},
-				(cons) -> new ArgLink() {
-					@Override public RenderLink parse(Resource res, Object... args) {
-					    return(cons.apply(new Object[] {res, args}));
-					}
-
-					public Node create(Owner owner, Resource res, Object... args) {
-					    throw(new RuntimeException("unimplemented ArgLink.create() called"));
-					}
-				    }));
+				(cons) -> (res, args) -> cons.apply(new Object[] {res, args})));
 	    add(new StaticCall<>(ArgLink.class, "mkrlink", Node.class, new Class<?>[] {Owner.class, Resource.class, Object[].class},
-				 (make) -> (owner, res, args) -> make.apply(new Object[] {owner, res, args})));
+				 (make) -> (res, args) -> (owner) -> make.apply(new Object[] {owner, res, args})));
 	    add(new Construct<>(ArgLink.class, Node.class, new Class<?>[] {Owner.class, Resource.class, Object[].class},
-				(cons) -> (owner, res, args) -> cons.apply(new Object[] {owner, res, args})));
+				(cons) -> (res, args) -> (owner) -> cons.apply(new Object[] {owner, res, args})));
 	}
     }
 
     @Resource.PublishedCode(name = "rlink", instancer = ArgMaker.class)
     public interface ArgLink {
-	public default RenderLink parse(Resource res, Object... args) {
-	    return(owner -> this.create(owner, res, args));
-	}
-	@Deprecated
-	public Node create(Owner owner, Resource res, Object... args);
+	public RenderLink parse(Resource res, Object... args);
     }
 
     @Resource.LayerName("rlink")

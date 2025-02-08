@@ -28,11 +28,8 @@ package haven;
 
 import java.util.*;
 import java.awt.Color;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 
 public abstract class SSearchBox<I, W extends Widget> extends SListBox<I, W> {
-    private static final int C = 1, M = 2;
     public String searching = null;
     private List<I> filtered = null;
     private Text info;
@@ -55,16 +52,9 @@ public abstract class SSearchBox<I, W extends Widget> extends SListBox<I, W> {
 	this(sz, itemh, 0);
     }
 
-    public boolean keydown(KeyEvent ev) {
-	int mod = 0;
-	if((ev.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0) mod |= C;
-	if((ev.getModifiersEx() & (InputEvent.META_DOWN_MASK | InputEvent.ALT_DOWN_MASK)) != 0) mod |= M;
-	char c = ev.getKeyChar();
-	if(c == ev.CHAR_UNDEFINED)
-	    c = '\0';
-	int code = ev.getKeyCode();
-	if(mod == 0) {
-	    if(c == 8) {
+    public boolean keydown(KeyDownEvent ev) {
+	if((ev.mods & (KeyMatch.C | KeyMatch.M)) == 0) {
+	    if(ev.c == 8) {
 		if(searching != null) {
 		    search(searching.substring(0, searching.length() - 1));
 		    return(true);
@@ -79,7 +69,7 @@ public abstract class SSearchBox<I, W extends Widget> extends SListBox<I, W> {
 		    stopsearch();
 		    return(true);
 		}
-	    } else if(code == KeyEvent.VK_UP) {
+	    } else if(ev.code == ev.awt.VK_UP) {
 		List<? extends I> items = items();
 		if(items.size() > 0) {
 		    int p = items.indexOf(sel);
@@ -89,7 +79,7 @@ public abstract class SSearchBox<I, W extends Widget> extends SListBox<I, W> {
 		    display(p);
 		}
 		return(true);
-	    } else if(code == KeyEvent.VK_DOWN) {
+	    } else if(ev.code == ev.awt.VK_DOWN) {
 		List<? extends I> items = items();
 		if(items.size() > 0) {
 		    int p = items.indexOf(sel);
@@ -99,8 +89,8 @@ public abstract class SSearchBox<I, W extends Widget> extends SListBox<I, W> {
 		    display(p);
 		}
 		return(true);
-	    } else if(c >= 32) {
-		search(((searching == null) ? "" : searching) + c);
+	    } else if(ev.c >= 32) {
+		search(((searching == null) ? "" : searching) + ev.c);
 		return(true);
 	    }
 	}
@@ -163,8 +153,8 @@ public abstract class SSearchBox<I, W extends Widget> extends SListBox<I, W> {
 	stopsearch();
     }
 
-    public boolean mousedown(Coord c, int button) {
+    public boolean mousedown(MouseDownEvent ev) {
 	parent.setfocus(this);
-	return(super.mousedown(c, button));
+	return(super.mousedown(ev));
     }
 }

@@ -192,7 +192,7 @@ public interface UIPanel extends Runnable {
 		return;
 	    synchronized(ui) {
 		Coord c = Coord.of(ev.getLocation().x, ev.getLocation().y);
-		if(DropTarget.drophover(ui.root, c, true, SystemDrop.of(ev)))
+		if(DropTarget.drophover(ui.root, c, SystemDrop.of(ev)))
 		    ev.acceptDrag(ev.getDropAction());
 		else
 		    ev.rejectDrag();
@@ -205,7 +205,7 @@ public interface UIPanel extends Runnable {
 		return;
 	    synchronized(ui) {
 		Coord c = Coord.of(ev.getLocation().x, ev.getLocation().y);
-		if(ui.dropthing(ui.root, c, SystemDrop.of(ev)))
+		if(DropTarget.dropthing(ui.root, c, SystemDrop.of(ev)))
 		    ev.dropComplete(true);
 		else
 		    ev.rejectDrop();

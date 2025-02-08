@@ -34,7 +34,7 @@ import java.nio.*;
 import java.lang.ref.*;
 
 public class Session implements Resource.Resolver {
-    public static final int PVER = 28;
+    public static final int PVER = 29;
 
     public static final int MSG_SESS = 0;
     public static final int MSG_REL = 1;
@@ -130,10 +130,12 @@ public class Session implements Resource.Resolver {
 	    }
 
 	    public String toString() {
-		if(res == null) {
-		    return("<res:" + resid + ">");
-		} else {
+		if(res != null) {
 		    return("<" + res + ">");
+		} else if(resnm != null) {
+		    return("<!" + resnm + ":" + resver + ">");
+		} else {
+		    return("<res:" + resid + ">");
 		}
 	    }
 

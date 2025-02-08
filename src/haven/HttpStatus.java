@@ -30,32 +30,21 @@ import java.io.*;
 import java.net.*;
 
 public class HttpStatus extends HackThread {
-    public final URL src;
+    public static final Config.Variable<URI> mond = Config.Services.var("srvmon", "");
+    public final URI src;
     public boolean syn = false;
     public String status;
     public int users;
     private boolean quit = false;
 
-    public HttpStatus(URL src) {
+    public HttpStatus(URI src) {
 	super("Server status updater");
 	setDaemon(true);
 	this.src = src;
     }
 
-    private static URL defsrc(String host) {
-	try {
-	    return(new URI("http", host, "/mt/srv-mon", null).toURL());
-	} catch(URISyntaxException | MalformedURLException e) {
-	    throw(new RuntimeException(e));
-	}
-    }
-
-    public HttpStatus(String host) {
-	this(defsrc(host));
-    }
-
     public HttpStatus() {
-	this(defsrc(Bootstrap.defserv.get()));
+	this(mond.get());
     }
 
     private void handle(String... words) {
@@ -89,27 +78,28 @@ public class HttpStatus extends HackThread {
 	handle(words);
     }
 
+    private static final int[] delays = {1, 2, 5, 10, 60};
     private InputStream cur = null;
     public void run() {
-	boolean again = false;
+	int retries = 0;
 	while(!quit) {
-	    if(again) {
+	    if(retries > 0) {
 		try {
-		    Thread.sleep(1000);
+		    Thread.sleep(delays[retries - 1] * 1000);
 		} catch(InterruptedException e2) {
 		    continue;
 		}
 	    }
-	    again = true;
+	    if(retries < delays.length)
+		retries++;
 	    try {
 		synchronized(this) {
 		    syn = false;
 		    status = "";
 		    notifyAll();
 		}
-		URLConnection c = src.openConnection();
+		URLConnection c = Http.open(src.toURL());
 		c.setUseCaches(false);
-		c.addRequestProperty("User-Agent", "Haven-Status/1.0");
 		InputStream fp = c.getInputStream();
 		try {
 		    synchronized(this) {
@@ -119,7 +109,10 @@ public class HttpStatus extends HackThread {
 		    int len = 0;
 		    while(true) {
 			int off = len;
-			len += fp.read(buf, off, buf.length - len);
+			int rv = fp.read(buf, len, buf.length - len);
+			if(rv < 0)
+			    break;
+			len += rv;
 			line: while(true) {
 			    for(int i = off; i < len; i++) {
 				if(buf[i] == 10) {
@@ -131,6 +124,8 @@ public class HttpStatus extends HackThread {
 			    }
 			    break;
 			}
+			if(syn)
+			    retries = 1;
 		    }
 		} finally {
 		    fp.close();

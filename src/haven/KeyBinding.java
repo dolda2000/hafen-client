@@ -81,23 +81,25 @@ public class KeyBinding {
     public static interface Bindable {
 	public KeyBinding getbinding(Coord cc);
 
-	public static KeyBinding getbinding(Widget wdg, Coord c) {
-	    if(wdg instanceof Bindable) {
-		KeyBinding ret = ((Bindable)wdg).getbinding(c);
-		if(ret != null)
-		    return(ret);
-	    }
-	    for(Widget w = wdg.lchild; w != null; w = w.prev) {
-		if(!w.visible)
-		    continue;
-		Coord cc = w.xlate(w.c, true);
-		if(c.isect(cc, w.sz) && w.checkhit(c.sub(cc))) {
-		    KeyBinding ret = getbinding(w, c.add(cc.inv()));
+	public static class BindingQuery extends Widget.QueryEvent<KeyBinding> {
+	    public BindingQuery(Coord c) {super(c);}
+	    public BindingQuery(BindingQuery from, Coord c) {super(from, c);}
+	    public BindingQuery derive(Coord c) {return(new BindingQuery(this, c));}
+
+	    protected boolean shandle(Widget w) {
+		if(w instanceof Bindable) {
+		    KeyBinding ret = ((Bindable)w).getbinding(c);
 		    if(ret != null)
-			return(ret);
+			return(set(ret));
 		}
+		if(w.kb_gkey != null)
+		    return(set(w.kb_gkey));
+		return(super.shandle(w));
 	    }
-	    return(wdg.kb_gkey);
+	}
+
+	public static KeyBinding getbinding(Widget wdg, Coord c) {
+	    return(wdg.ui.dispatchq(wdg, new BindingQuery(c)).ret);
 	}
     }
 }

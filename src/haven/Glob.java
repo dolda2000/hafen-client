@@ -80,20 +80,27 @@ public class Glob {
     }
 
     public static class CAttr {
+	public final Glob glob;
 	public final String nm;
 	public int base, comp;
+	public ItemInfo.Raw info;
 	
-	public CAttr(String nm, int base, int comp) {
+	public CAttr(Glob glob, String nm, int base, int comp, ItemInfo.Raw info) {
+	    this.glob = glob;
 	    this.nm = nm.intern();
 	    this.base = base;
 	    this.comp = comp;
+	    this.info = info;
 	}
 	
-	public void update(int base, int comp) {
-	    if((base == this.base) && (comp == this.comp))
-		return;
+	public void update(int base, int comp, ItemInfo.Raw info) {
 	    this.base = base;
 	    this.comp = comp;
+	    this.info = info;
+	}
+
+	public Indir<Resource> res() {
+	    return(Resource.local().load("gfx/hud/chr/" + nm));
 	}
     }
     
@@ -312,21 +319,21 @@ public class Glob {
 	synchronized(cattr) {
 	    CAttr a = cattr.get(nm);
 	    if(a == null) {
-		a = new CAttr(nm, 0, 0);
+		a = new CAttr(this, nm, 0, 0, ItemInfo.Raw.nil);
 		cattr.put(nm, a);
 	    }
 	    return(a);
 	}
     }
 
-    public void cattr(String nm, int base, int comp) {
+    public void cattr(String nm, int base, int comp, ItemInfo.Raw info) {
 	synchronized(cattr) {
 	    CAttr a = cattr.get(nm);
 	    if(a == null) {
-		a = new CAttr(nm, base, comp);
+		a = new CAttr(this, nm, base, comp, info);
 		cattr.put(nm, a);
 	    } else {
-		a.update(base, comp);
+		a.update(base, comp, info);
 	    }
 	}
     }

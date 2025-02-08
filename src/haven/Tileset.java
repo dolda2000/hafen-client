@@ -93,6 +93,24 @@ public class Tileset extends Resource.Layer {
 	    }
 	}
 
+	public static class GridObj extends Obj {
+	    public GridObj(Buffer buf, Coord2d c, double a) {
+		super(buf, c, a);
+	    }
+
+	    public GridObj(Buffer buf) {
+		this(buf, buf.area.ul.mul(tilesz), 0);
+	    }
+
+	    public Placer placer() {
+		return(glob.map.mapplace);
+	    }
+
+	    protected Pipe.Op getmapstate(Coord3f pc) {
+		return(null);
+	    }
+	}
+
 	public static class Buffer {
 	    public final Glob glob;
 	    public final Area area;
@@ -247,7 +265,7 @@ public class Tileset extends Resource.Layer {
 		int ver = buf.uint8();
 		if(ver == 1) {
 		    this.res = new Resource.Spec(res.pool, buf.string(), buf.uint16());
-		    this.args = buf.list();
+		    this.args = buf.list(resmapper());
 		} else {
 		    throw(new Resource.LoadException("unknown flavobj version: " + ver, res));
 		}
@@ -307,7 +325,7 @@ public class Tileset extends Resource.Layer {
 	    switch(p) {
 	    case 0:
 		tn = buf.string();
-		ta = buf.list();
+		ta = buf.list(resmapper());
 		break;
 	    case 1:
 		int flnum = buf.uint16();

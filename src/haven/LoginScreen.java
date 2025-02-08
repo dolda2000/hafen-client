@@ -27,7 +27,7 @@
 package haven;
 
 import java.util.*;
-import java.awt.event.KeyEvent;
+import java.net.URI;
 
 public class LoginScreen extends Widget {
     public static final Config.Variable<String> authmech = Config.Variable.prop("haven.authmech", "native");
@@ -53,6 +53,8 @@ public class LoginScreen extends Widget {
 	add(new Img(bg), Coord.z);
 	optbtn = adda(new Button(UI.scale(100), "Options"), pos("cbl").add(10, -10), 0, 1);
 	optbtn.setgkey(GameUI.kb_opt);
+	if(HttpStatus.mond.get() != null)
+	    adda(new StatusLabel(HttpStatus.mond.get(), 1.0), sz.x - UI.scale(10), UI.scale(10), 1.0, 0.0);
 	switch(authmech.get()) {
 	case "native":
 	    login = new Credbox();
@@ -98,7 +100,7 @@ public class LoginScreen extends Widget {
 		changed();
 	    }
 
-	    public boolean keydown(KeyEvent ev) {
+	    public boolean keydown(KeyDownEvent ev) {
 		if(ConsoleHost.kb_histprev.key().match(ev)) {
 		    if(hpos < history.size() - 1) {
 			if(hpos < 0)
@@ -223,7 +225,7 @@ public class LoginScreen extends Widget {
 	    return(ret);
 	}
 
-	public boolean keydown(KeyEvent ev) {
+	public boolean keydown(KeyDownEvent ev) {
 	    if(key_act.match(ev)) {
 		enter();
 		return(true);
@@ -281,26 +283,39 @@ public class LoginScreen extends Widget {
 	public final HttpStatus stat;
 	public final double ax;
 
-	public StatusLabel(String host, double ax) {
-	    super(new Coord(UI.scale(150), FastText.h * 2));
-	    this.stat = new HttpStatus(host);
+	public StatusLabel(URI svc, double ax) {
+	    super(new Coord(UI.scale(150), Text.std.height() * 2));
+	    this.stat = new HttpStatus(svc);
 	    this.ax = ax;
 	}
 
+	private Text[] lines = new Text[2];
 	public void draw(GOut g) {
 	    int x = (int)Math.round(sz.x * ax);
+	    String[] buf = {null, null};
 	    synchronized(stat) {
-		if(!stat.syn || (stat.status == ""))
-		    return;
-		if(stat.status == "up") {
-		    FastText.aprintf(g, new Coord(x, FastText.h * 0), ax, 0, "Server status: Up");
-		    FastText.aprintf(g, new Coord(x, FastText.h * 1), ax, 0, "Hearthlings playing: %,d", stat.users);
-		} else if(stat.status == "down") {
-		    FastText.aprintf(g, new Coord(x, FastText.h * 0), ax, 0, "Server status: Down");
+		if(!stat.syn || (stat.status == "")) {
+		} else if(stat.status == "up") {
+		    buf[0] = "Server status: Up";
+		    buf[1] = String.format("Hearthlings playing: %,d", stat.users);
 		} else if(stat.status == "shutdown") {
-		    FastText.aprintf(g, new Coord(x, FastText.h * 0), ax, 0, "Server status: Shutting down");
+		    buf[0] = "Server status: Down";
+		} else if(stat.status == "terminating") {
+		    buf[0] = "Server status: Shutting down";
 		} else if(stat.status == "crashed") {
-		    FastText.aprintf(g, new Coord(x, FastText.h * 0), ax, 0, "Server status: Crashed");
+		    buf[0] = "Server status: Crashed";
+		}
+	    }
+	    for(int i = 0, y = 0; i < 2; i++) {
+		if((lines[i] != null) && !Utils.eq(buf[i], lines[i].text)) {
+		    lines[i].dispose();
+		    lines[i] = null;
+		}
+		if(buf[i] != null)
+		    lines[i] = Text.render(buf[i]);
+		if(lines[i] != null) {
+		    g.image(lines[i].tex(), Coord.of((int)((sz.x - lines[i].sz().x) * ax), y));
+		    y += lines[i].sz().y;
 		}
 	    }
 	}

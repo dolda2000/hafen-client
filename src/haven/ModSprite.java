@@ -127,7 +127,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 			return(Pipe.Op.compose(ops));
 		    };
 		}
-		ret = RUtils.StateTickNode.from(ret, rst);
+		ret = RUtils.StateTickNode.of(ret, rst);
 	    }
 	    return(ret);
 	}
@@ -276,6 +276,16 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	if(imods == null)
 	    imods = new ArrayList<>();
 	imods.add(mod);
+    }
+
+    public <T> T imod(Class<T> cl) {
+	if(imods == null)
+	    return(null);
+	for(Mod mod : imods) {
+	    if(cl.isInstance(mod))
+		return(cl.cast(mod));
+	}
+	return(null);
     }
 
     protected Cons cons() {

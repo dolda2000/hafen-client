@@ -82,8 +82,8 @@ public class Profdisp extends Widget {
 	g.image(sscl, new Coord(prof.hist.length + UI.scale(2), sy - (sscl.sz().y / 2)));
     }
 
-    public boolean keydown(java.awt.event.KeyEvent ev) {
-	if(ev.getKeyChar() == 'd') {
+    public boolean keydown(KeyDownEvent ev) {
+	if(ev.c == 'd') {
 	    prof.dump(System.err);
 	    return(true);
 	}

@@ -85,10 +85,7 @@ public class Cal extends Widget {
     }
 
     public Object tooltip(Coord c, Widget prev) {
-	if(checkhit(c)) {
-	    Astronomy a = ui.sess.glob.ast;
-	    return(String.format("%s day of the %s month of the %s year", ord((int)Math.floor(a.md) + 1), ord((int)Math.floor(a.ym) + 1), ord((int)Math.floor(a.years) + 1)));
-	}
-	return(super.tooltip(c, prev));
+	Astronomy a = ui.sess.glob.ast;
+	return(String.format("%s day of the %s month of the %s year", ord((int)Math.floor(a.md) + 1), ord((int)Math.floor(a.ym) + 1), ord((int)Math.floor(a.years) + 1)));
     }
 }

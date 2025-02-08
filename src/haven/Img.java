@@ -99,11 +99,11 @@ public class Img extends Widget {
 	return(rimg.getRaster().getSample(c.x, c.y, 3) >= 128);
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if(hit && checkhit(c)) {
-	    wdgmsg("click", c, button, ui.modflags());
+    public boolean mousedown(MouseDownEvent ev) {
+	if(hit && checkhit(ev.c)) {
+	    wdgmsg("click", ev.c, ev.b, ui.modflags());
 	    return(true);
 	}
-	return(false);
+	return(super.mousedown(ev));
     }
 }

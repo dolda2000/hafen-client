@@ -242,9 +242,12 @@ public class Material implements Pipe.Op {
     @ResName("mlink")
     public static class $mlink implements ResCons2 {
 	public Res.Resolver cons(final Resource res, Object... args) {
-	    final Indir<Resource> lres;
-	    final int id;
-	    if(args[0] instanceof String) {
+	    Indir<Resource> lres;
+	    int id;
+	    if(args[0] instanceof Indir) {
+		lres = Utils.irv(args[0]);
+		id = (args.length > 1) ? Utils.iv(args[1]) : -1;
+	    } else if(args[0] instanceof String) {
 		lres = res.pool.load((String)args[0], Utils.iv(args[1]));
 		id = (args.length > 2) ? Utils.iv(args[2]) : -1;
 	    } else {
@@ -341,7 +344,7 @@ public class Material implements Pipe.Op {
 	    Res ret = new Res(res, id);
 	    while(!buf.eom()) {
 		String nm = buf.string();
-		Object[] args = buf.list();
+		Object[] args = buf.list(new Resource.PoolMapper(res.pool));
 		ResCons2 cons = rnames.get(nm);
 		if(cons != null)
 		    ret.left.add(cons.cons(res, args));

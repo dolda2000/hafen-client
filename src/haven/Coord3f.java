@@ -52,6 +52,7 @@ public class Coord3f {
     public static Coord3f of(float x, float y, float z) {return(new Coord3f(x, y, z));}
     public static Coord3f of(Coord3f c) {return(of(c.x, c.y, c.z));}
     public static Coord3f of(HomoCoord4f c) {return(of(c.x, c.y, c.z));}
+    public static Coord3f of(Coord c) {return(of(c.x, c.y, 0));}
     
     public boolean equals(Coord3f o) {
 	return((o.x == x) && (o.y == y) && (o.z == z));

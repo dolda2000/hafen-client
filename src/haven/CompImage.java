@@ -37,6 +37,11 @@ public class CompImage {
     public interface Image {
 	public void draw(Graphics g, Coord c);
 	public Coord sz();
+
+	public static final Image nil = new Image() {
+		public void draw(Graphics g, Coord c) {}
+		public Coord sz() {return(Coord.z);}
+	    };
     }
 
     private static class Placed {

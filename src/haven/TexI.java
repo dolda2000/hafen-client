@@ -35,7 +35,7 @@ import haven.render.Texture2D.Sampler2D;
 import haven.render.DataBuffer;
 
 public class TexI implements Tex {
-    public static ComponentColorModel glcm = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), new int[] {8, 8, 8, 8}, true, false, ComponentColorModel.TRANSLUCENT, java.awt.image.DataBuffer.TYPE_BYTE);
+    public static ComponentColorModel glcm = PUtils.cm_rgba;
     public final BufferedImage back;
     protected final Coord sz;
     protected final Coord tdim;

@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import dolda.coe.*;
 import java.awt.Color;
 
@@ -62,6 +63,7 @@ public abstract class Message {
     public static final int T_MNORM32 = 31;
     public static final int T_MAP = 32;
     public static final int T_LONG = 33;
+    public static final int T_RESSPEC = 34;
 
     private final static byte[] empty = new byte[0];
     public int rh = 0, rt = 0, wh = 0, wt = 0;
@@ -266,7 +268,7 @@ public abstract class Message {
 	return(uint32() / 0x100000000p0);
     }
 
-    public Object tto(int type) {
+    public Object tto0(int type, Function<Object, ? extends Object> mapper) {
 	switch(type) {
 	case T_INT:
 	    return(int32());
@@ -287,7 +289,7 @@ public abstract class Message {
 	case T_FCOLOR:
 	    return(fcolor());
 	case T_TTOL:
-	    return(list());
+	    return(list(mapper));
 	case T_NIL:
 	    return(null);
 	case T_UID:
@@ -319,19 +321,30 @@ public abstract class Message {
 	case T_MNORM16: return(NormNumber.decmnorm16(this));
 	case T_MNORM32: return(NormNumber.decmnorm32(this));
 	case T_MAP:
-	    return(map());
+	    return(map(mapper));
 	case T_LONG:
 	    return(int64());
+	case T_RESSPEC:
+	    return(new Resource.Spec(null, string(), uint16()));
 	default:
 	    throw(new FormatError("unknown type tag: " + type).msg(this));
 	}
     }
 
-    public Object tto() {
-	return(tto(uint8()));
+    public Object tto(int type, Function<Object, ? extends Object> mapper) {
+	Object ret = tto0(type, mapper);
+	if(mapper != null)
+	    ret = mapper.apply(ret);
+	return(ret);
     }
+    public Object tto(int type) {return(tto(type, null));}
 
-    public Object[] list() {
+    public Object tto(Function<Object, ? extends Object> mapper) {
+	return(tto(uint8(), mapper));
+    }
+    public Object tto() {return(tto(null));}
+
+    public Object[] list(Function<Object, ? extends Object> mapper) {
 	ArrayList<Object> ret = new ArrayList<Object>();
 	while(true) {
 	    if(eom())
@@ -339,13 +352,14 @@ public abstract class Message {
 	    int t = uint8();
 	    if(t == T_END)
 		break;
-	    ret.add(tto(t));
+	    ret.add(tto(t, mapper));
 	}
 	return(ret.toArray());
     }
+    public Object[] list() {return(list(null));}
 
-    public Map<Object, Object> map() {
-	Object[] list = list();
+    public Map<Object, Object> map(Function<Object, ? extends Object> mapper) {
+	Object[] list = list(mapper);
 	if((list.length % 2) != 0)
 	    throw(new FormatError("map-list length not a multiple of two"));
 	Map<Object, Object> ret = new HashMap<>();
@@ -353,6 +367,7 @@ public abstract class Message {
 	    ret.put(list[i], list[i + 1]);
 	return(ret);
     }
+    public Map<Object, Object> map() {return(map(null));}
 
     public abstract void overflow(int min);
 
@@ -546,6 +561,10 @@ public abstract class Message {
 	    adduint8(T_FCOORD64);
 	    addfloat64(((Coord2d)o).x);
 	    addfloat64(((Coord2d)o).y);
+	} else if(o instanceof Resource.Named) {
+	    adduint8(T_RESSPEC);
+	    addstring(((Resource.Named)o).name);
+	    adduint16(((Resource.Named)o).ver);
 	} else if(o instanceof Object[]) {
 	    adduint8(T_TTOL);
 	    addlist((Object[])o);

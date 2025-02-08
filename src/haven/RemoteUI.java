@@ -53,6 +53,35 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
 	}
     }
 
+    private void sendua(String key, String val) {
+	PMessage msg = new PMessage(RMessage.RMSG_USERAGENT);
+	msg.addstring(key).addstring(val);
+	sess.queuemsg(msg);
+    }
+
+    private void sendua(UI ui) {
+	try {
+	    sendua("conf.id", Config.confid);
+	    sendua("java.vm", Utils.getprop("java.vm.name", ""));
+	    sendua("java.version", Utils.getprop("java.version", ""));
+	    sendua("os.name", Utils.getprop("os.name", ""));
+	    sendua("os.arch", Utils.getprop("os.arch", ""));
+	    sendua("os.version", Utils.getprop("os.version", ""));
+	    sendua("mem.heap", String.valueOf(Runtime.getRuntime().maxMemory()));
+	    sendua("cpu.num", String.valueOf(Runtime.getRuntime().availableProcessors()));
+	    sendua("ui.scale", String.format("%.2f", UI.scale(1.0)));
+	    haven.render.Environment env = ui.getenv();
+	    if(env != null) {
+		sendua("render.env", env.getClass().getSimpleName());
+		sendua("render.vendor", env.caps().vendor());
+		sendua("render.device", env.caps().device());
+		sendua("render.driver", env.caps().driver());
+	    }
+	} catch(Exception e) {
+	    new Warning(e).issue();
+	}
+    }
+
     public void ret(Session sess) {
 	this.sess.postuimsg(new Return(sess));
     }
@@ -60,6 +89,7 @@ public class RemoteUI implements UI.Receiver, UI.Runner {
     public UI.Runner run(UI ui) throws InterruptedException {
 	try {
 	    ui.setreceiver(this);
+	    sendua(ui);
 	    while(true) {
 		PMessage msg = sess.getuimsg();
 		if(msg == null) {

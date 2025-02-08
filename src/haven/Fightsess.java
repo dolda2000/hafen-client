@@ -29,7 +29,6 @@ package haven;
 import haven.render.*;
 import java.util.*;
 import java.awt.Color;
-import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 public class Fightsess extends Widget {
@@ -306,22 +305,20 @@ public class Fightsess extends Widget {
 	for(int i = 0; i < actions.length; i++) {
 	    Coord ca = pcc.add(actc(i));
 	    Indir<Resource> act = (actions[i] == null) ? null : actions[i].res;
-	    try {
-		if(act != null) {
-		    Tex img = act.get().flayer(Resource.imgc).tex();
-		    ca = ca.sub(img.sz().div(2));
-		    if(c.isect(ca, img.sz())) {
-			String tip = act.get().flayer(Resource.tooltip).t;
-			if(kb_acts[i].key() != KeyMatch.nil)
-			    tip += " ($b{$col[255,128,0]{" + kb_acts[i].key().name() + "}})";
-			if((acttip == null) || !acttip.text.equals(tip))
-			    acttip = RichText.render(tip, -1);
-			return(acttip);
-		    }
+	    if(act != null) {
+		Tex img = act.get().flayer(Resource.imgc).tex();
+		ca = ca.sub(img.sz().div(2));
+		if(c.isect(ca, img.sz())) {
+		    String tip = act.get().flayer(Resource.tooltip).t;
+		    if(kb_acts[i].key() != KeyMatch.nil)
+			tip += " ($b{$col[255,128,0]{" + kb_acts[i].key().name() + "}})";
+		    if((acttip == null) || !acttip.text.equals(tip))
+			acttip = RichText.render(tip, -1);
+		    return(acttip);
 		}
-	    } catch(Loading l) {}
+	    }
 	}
-	try {
+	{
 	    Indir<Resource> lastact = this.lastact1;
 	    if(lastact != null) {
 		Coord usesz = lastact.get().flayer(Resource.imgc).sz;
@@ -332,8 +329,8 @@ public class Fightsess extends Widget {
 		    return(lastacttip1);
 		}
 	    }
-	} catch(Loading l) {}
-	try {
+	}
+	{
 	    Indir<Resource> lastact = this.lastact2;
 	    if(lastact != null) {
 		Coord usesz = lastact.get().flayer(Resource.imgc).sz;
@@ -344,7 +341,7 @@ public class Fightsess extends Widget {
 		    return(lastacttip2);
 		}
 	    }
-	} catch(Loading l) {}
+	}
 	return(null);
     }
 
@@ -406,7 +403,7 @@ public class Fightsess extends Widget {
 
     private UI.Grab holdgrab = null;
     private int held = -1;
-    public boolean globtype(char key, KeyEvent ev) {
+    public boolean globtype(GlobKeyEvent ev) {
 	// ev = new KeyEvent((java.awt.Component)ev.getSource(), ev.getID(), ev.getWhen(), ev.getModifiersEx(), ev.getKeyCode(), ev.getKeyChar(), ev.getKeyLocation());
 	{
 	    int n = -1;
@@ -441,8 +438,8 @@ public class Fightsess extends Widget {
 		return(true);
 	    }
 	}
-	if(kb_relcycle.key().match(ev, KeyMatch.S)) {
-	    if((ev.getModifiersEx() & KeyEvent.SHIFT_DOWN_MASK) == 0) {
+	if(kb_relcycle.key().match(ev.awt, KeyMatch.S)) {
+	    if((ev.mods & KeyMatch.S) == 0) {
 		Fightview.Relation cur = fv.current;
 		if(cur != null) {
 		    fv.lsrel.remove(cur);
@@ -458,15 +455,15 @@ public class Fightsess extends Widget {
 	    fv.wdgmsg("bump", (int)fv.lsrel.get(0).gobid);
 	    return(true);
 	}
-	return(super.globtype(key, ev));
+	return(super.globtype(ev));
     }
 
-    public boolean keydown(KeyEvent ev) {
+    public boolean keydown(KeyDownEvent ev) {
 	return(false);
     }
 
-    public boolean keyup(KeyEvent ev) {
-	if((holdgrab != null) && (kb_acts[held].key().match(ev, KeyMatch.MODS))) {
+    public boolean keyup(KeyUpEvent ev) {
+	if(ev.grabbed && (kb_acts[held].key().match(ev.awt, KeyMatch.MODS))) {
 	    MapView map = getparent(GameUI.class).map;
 	    new Release(held);
 	    holdgrab.remove();

@@ -27,6 +27,9 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
+import java.util.concurrent.*;
+import haven.Widget.*;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.GraphicsDevice;
@@ -44,7 +47,7 @@ import haven.render.Render;
 public class UI {
     public static int MOD_SHIFT = KeyMatch.S, MOD_CTRL = KeyMatch.C, MOD_META = KeyMatch.M, MOD_SUPER = KeyMatch.SUPER;
     public RootWidget root;
-    private final LinkedList<Grab> keygrab = new LinkedList<Grab>(), mousegrab = new LinkedList<Grab>();
+    private final List<Grab> grabs = new CopyOnWriteArrayList<Grab>();
     private final Map<Integer, Widget> widgets = new TreeMap<Integer, Widget>();
     private final Map<Widget, Integer> rwidgets = new HashMap<Widget, Integer>();
     Environment env;
@@ -358,7 +361,7 @@ public class UI {
 	double now = Utils.rtime();
 	double delta = now - lasttick;
 	lasttick = now;
-	root.tick(delta);
+	dispatch(root, new Widget.TickEvent(delta));
 	if(gprefsdirty) {
 	    gprefs.save();
 	    gprefsdirty = false;
@@ -366,7 +369,7 @@ public class UI {
     }
 
     public void gtick(Render out) {
-	root.gtick(out);
+	dispatch(root, new Widget.GTickEvent(out));
     }
 
     public void draw(GOut g) {
@@ -499,31 +502,66 @@ public class UI {
 	    addwidget(id, parent, pargs);
     }
 
-    public abstract class Grab {
+    public class Grab<E extends Event> {
+	public final Widget owner;
+	public final Class<E> etype;
+	public final EventHandler<? super E> handler;
+
+	private Grab(Widget owner, Class<E> etype, EventHandler<? super E> handler) {
+	    this.owner = owner;
+	    this.etype = etype;
+	    this.handler = handler;
+	}
+
+	public void remove() {
+	    grabs.remove(this);
+	}
+
+	private boolean check(Event ev) {
+	    return(etype.isInstance(ev) && handler.handle(etype.cast(ev)));
+	}
+    }
+
+    public <E extends Event>  Grab<E> grab(Widget owner, Class<E> etype, EventHandler<? super E> handler) {
+	Grab<E> g = new Grab<>(owner, etype, handler);
+	grabs.add(0, g);
+	return(g);
+    }
+
+    public static class PointerGrab<E extends PointerEvent> implements EventHandler<E> {
 	public final Widget wdg;
-	public Grab(Widget wdg) {this.wdg = wdg;}
-	public abstract void remove();
+	public final Predicate<? super E> sel;
+
+	public PointerGrab(Widget wdg, Predicate<? super E> sel) {
+	    this.wdg = wdg;
+	    this.sel = sel;
+	}
+
+	public boolean handle(E ev) {
+	    if(sel.test(ev)) {
+		Coord xl = ev.c.add(ev.target.rootpos()).sub(wdg.rootpos());
+		return(ev.derive(xl).dispatch(wdg));
+	    }
+	    return(false);
+	}
     }
 
     public Grab grabmouse(Widget wdg) {
 	if(wdg == null) throw(new NullPointerException());
-	Grab g = new Grab(wdg) {
-		public void remove() {
-		    mousegrab.remove(this);
-		}
-	    };
-	mousegrab.addFirst(g);
+	Grab g = grab(wdg, PointerEvent.class, new PointerGrab<>(wdg, ev -> (
+	    (ev instanceof MouseDownEvent) || (ev instanceof MouseUpEvent) ||
+	    (ev instanceof MouseWheelEvent) || (ev instanceof CursorQuery))
+	));
 	return(g);
     }
 
     public Grab grabkeys(Widget wdg) {
 	if(wdg == null) throw(new NullPointerException());
-	Grab g = new Grab(wdg) {
-		public void remove() {
-		    keygrab.remove(this);
-		}
-	    };
-	keygrab.addFirst(g);
+	Grab g = grab(wdg, KbdEvent.class, ev -> {
+		if((ev instanceof KeyDownEvent) || (ev instanceof KeyUpEvent))
+		    return(ev.dispatch(wdg));
+		return(false);
+	});
 	return(g);
     }
 
@@ -540,21 +578,31 @@ public class UI {
     }
 	
     public void removed(Widget wdg) {
-	for(Iterator<Grab> i = mousegrab.iterator(); i.hasNext();) {
-	    Grab g = i.next();
-	    if(g.wdg.hasparent(wdg))
-		i.remove();
-	}
-	for(Iterator<Grab> i = keygrab.iterator(); i.hasNext();) {
-	    Grab g = i.next();
-	    if(g.wdg.hasparent(wdg))
-		i.remove();
+	for(Grab g : grabs) {
+	    if(g.owner.hasparent(wdg))
+		grabs.remove(g);
 	}
     }
 
     public void destroy(Widget wdg) {
 	removeid(wdg);
 	wdg.reqdestroy();
+    }
+
+    public boolean dispatch(Widget to, Event ev) {
+	ev.target = to;
+	ev.grabbed = true;
+	for(Grab<?> g : grabs) {
+	    if(g.check(ev))
+		return(true);
+	}
+	ev.grabbed = false;
+	return(ev.dispatch(to));
+    }
+
+    public <E extends Event> E dispatchq(Widget to, E ev) {
+	dispatch(to, ev);
+	return(ev);
     }
 
     public class DstWidget implements Runnable, Serializable {
@@ -619,7 +667,7 @@ public class UI {
 	    Widget wdg = getwidget(id);
 	    if(wdg != null) {
 		synchronized(UI.this) {
-		    wdg.uimsg(msg.intern(), args);
+		    dispatch(wdg, new Widget.MessageEvent(msg, args));
 		}
 	    } else {
 		throw(new UIException("Uimsg to non-existent widget " + id, msg, args));
@@ -635,38 +683,127 @@ public class UI {
 	submitcmd(new Command(new UiMessage(id, msg, args)).dep(id, true));
     }
 
-    public static interface MessageWidget {
-	public static final Audio.Clip errsfx = Audio.resclip(Resource.local().loadwait("sfx/error"));
-	public static final Audio.Clip msgsfx = Audio.resclip(Resource.local().loadwait("sfx/msg"));
+    public static interface Notice {
+	public String message();
+	public default Color color() {return(Color.WHITE);}
+	public default Audio.Clip sfx() {return(null);}
+	public default boolean handle(Widget w) {return(false);}
+	public default boolean handler(Widget w) {return(false);}
 
-	public void msg(String msg, Color color, Audio.Clip sfx);
-
-	public static MessageWidget find(Widget w) {
-	    for(Widget ch = w.child; ch != null; ch = ch.next) {
-		MessageWidget ret = find(ch);
-		if(ret != null)
-		    return(ret);
+	public static interface Handler {
+	    public default boolean msg(Notice msg) {
+		return(false);
 	    }
-	    if(w instanceof MessageWidget)
-		return((MessageWidget)w);
-	    return(null);
+	    public default boolean msg(NoticeEvent ev) {
+		if(ev.propagate((Widget)this))
+		    return(true);
+		return(msg(ev.msg));
+	    }
+	}
+
+	public static class FactMaker extends Resource.PublishedCode.Instancer.Chain<Factory> {
+	    public FactMaker() {super(Factory.class);}
+	    {
+		add(new Direct<>(Factory.class));
+		add(new StaticCall<>(Factory.class, "mkmessage", Notice.class, new Class<?>[] {OwnerContext.class, Object[].class},
+				     (make) -> (owner, args) -> make.apply(new Object[] {owner, args})));
+		add(new Construct<>(Factory.class, Notice.class, new Class<?>[] {OwnerContext.class, Object[].class},
+				     (cons) -> (owner, args) -> cons.apply(new Object[] {owner, args})));
+	    }
+	}
+
+	@Resource.PublishedCode(name = "msg", instancer = FactMaker.class)
+	public static interface Factory {
+	    public Notice format(OwnerContext owner, Object... args);
 	}
     }
 
+    public static class SimpleMessage implements Notice {
+	public static final Audio.Clip nosfx = () -> null;
+	public String msg;
+	public Color color;
+	public Audio.Clip sfx;
+
+	public SimpleMessage(String msg, Color color, Audio.Clip sfx) {
+	    this.msg = msg;
+	    this.color = color;
+	    this.sfx = sfx;
+	}
+	public SimpleMessage(String msg) {
+	    this(msg, null, null);
+	}
+
+	public String message() {return(msg);}
+	public Color color() {return((color == null) ? defcolor() : color);}
+	public Audio.Clip sfx() {
+	    if(sfx == null)
+		return(defsfx());
+	    if(sfx == nosfx)
+		return(null);
+	    return(sfx);
+	}
+
+	protected Color defcolor() {return(Color.WHITE);}
+	protected Audio.Clip defsfx() {return(null);}
+    }
+
+    public static class ErrorMessage extends SimpleMessage {
+	public static final Color color = new Color(192, 0, 0);
+	public static final Audio.Clip sfx = Audio.resclip(Resource.local().loadwait("sfx/error"));
+
+	public ErrorMessage(String msg) {super(msg);}
+
+	protected Color defcolor() {return(color);}
+	protected Audio.Clip defsfx() {return(sfx);}
+    }
+
+    public static class InfoMessage extends SimpleMessage {
+	public static final Audio.Clip sfx = Audio.resclip(Resource.local().loadwait("sfx/msg"));
+
+	public InfoMessage(String msg) {super(msg);}
+	public InfoMessage(String msg, Color color, Audio.Clip sfx) {super(msg, color, sfx);}
+
+	protected Audio.Clip defsfx() {return(sfx);}
+    }
+
+    public static class NoticeEvent extends Widget.Event {
+	public final Notice msg;
+
+	public NoticeEvent(Notice msg) {
+	    this.msg = msg;
+	}
+
+	protected boolean propagation(Widget from) {
+	    for(Widget wdg = from.child; wdg != null; wdg = wdg.next) {
+		if(dispatch(wdg))
+		    return(true);
+	    }
+	    return(false);
+	}
+
+	protected boolean shandle(Widget w) {
+	    if(msg.handle(w))
+		return(true);
+	    if((w instanceof Notice.Handler) && ((Notice.Handler)w).msg(this))
+		return(true);
+	    return(false);
+	}
+    }
+
+    public void msg(Notice msg) {
+	dispatch(root, new NoticeEvent(msg));
+    }
+
     public void msg(String msg, Color color, Audio.Clip sfx) {
-	if(color == null)
-	    color = Color.WHITE;
-	MessageWidget h = MessageWidget.find(root);
-	if(h != null)
-	    h.msg(msg, color, sfx);
+	msg(new SimpleMessage(msg, color, sfx));
     }
 
     public void error(String msg) {
-	msg(msg, new Color(192, 0, 0), MessageWidget.errsfx);
+	msg(new ErrorMessage(msg));
     }
 
     public void msg(String msg) {
-	msg(msg, Color.WHITE, MessageWidget.msgsfx);
+	msg(new InfoMessage(msg));
     }
 
     private void setmods(InputEvent ev) {
@@ -683,74 +820,35 @@ public class UI {
 
     public void keydown(KeyEvent ev) {
 	setmods(ev);
-	for(Grab g : c(keygrab)) {
-	    if(g.wdg.keydown(ev))
-		return;
-	}
-	if(!root.keydown(ev)) {
-	    char key = ev.getKeyChar();
-	    if(key == ev.CHAR_UNDEFINED)
-		key = 0;
-	    root.globtype(key, ev);
-	}
+	if(!dispatch(root, new KeyDownEvent(ev)))
+	    dispatch(root, new GlobKeyEvent(ev));
     }
 	
     public void keyup(KeyEvent ev) {
 	setmods(ev);
-	for(Grab g : c(keygrab)) {
-	    if(g.wdg.keyup(ev))
-		return;
-	}
-	root.keyup(ev);
-    }
-	
-    private Coord wdgxlate(Coord c, Widget wdg) {
-	return(c.sub(wdg.rootpos()));
-    }
-	
-    public boolean dropthing(Widget w, Coord c, Object thing) {
-	if(w instanceof DropTarget) {
-	    if(((DropTarget)w).dropthing(c, thing))
-		return(true);
-	}
-	for(Widget wdg = w.lchild; wdg != null; wdg = wdg.prev) {
-	    Coord cc = w.xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz)) {
-		if(dropthing(wdg, c.add(cc.inv()), thing))
-		    return(true);
-	    }
-	}
-	return(false);
+	dispatch(root, new KeyUpEvent(ev));
     }
 
     public void mousedown(MouseEvent ev, Coord c, int button) {
 	setmods(ev);
 	lcc = mc = c;
-	for(Grab g : c(mousegrab)) {
-	    if(g.wdg.mousedown(wdgxlate(c, g.wdg), button))
-		return;
-	}
-	root.mousedown(c, button);
+	dispatch(root, new Widget.MouseDownEvent(c, button));
     }
 	
     public void mouseup(MouseEvent ev, Coord c, int button) {
 	setmods(ev);
 	mc = c;
-	for(Grab g : c(mousegrab)) {
-	    if(g.wdg.mouseup(wdgxlate(c, g.wdg), button))
-		return;
-	}
-	root.mouseup(c, button);
+	dispatch(root, new Widget.MouseUpEvent(c, button));
     }
 	
     public void mousemove(MouseEvent ev, Coord c) {
 	setmods(ev);
 	mc = c;
-	root.mousemove(c);
+	dispatch(root, new Widget.MouseMoveEvent(c));
     }
 
     public void mousehover(Coord c) {
-	root.mousehover(c, true);
+	dispatch(root, new Widget.MouseHoverEvent(c));
     }
 
     public void setmousepos(Coord c) {
@@ -759,21 +857,19 @@ public class UI {
 	
     public void mousewheel(MouseEvent ev, Coord c, int amount) {
 	setmods(ev);
-	lcc = mc = c;
-	for(Grab g : c(mousegrab)) {
-	    if(g.wdg.mousewheel(wdgxlate(c, g.wdg), amount))
-		return;
-	}
-	root.mousewheel(c, amount);
+	mc = c;
+	dispatch(root, new Widget.MouseWheelEvent(c, amount));
     }
 
     public Resource getcurs(Coord c) {
-	for(Grab g : mousegrab) {
-	    Resource ret = g.wdg.getcurs(wdgxlate(c, g.wdg));
-	    if(ret != null)
-		return(ret);
-	}
-	return(root.getcurs(c));
+	return(dispatchq(root, new CursorQuery(c)).ret);
+    }
+
+    private Widget prevtt = null;
+    public Object tooltip(Coord c) {
+	Widget.TooltipQuery q = dispatchq(root, new Widget.TooltipQuery(c, prevtt));
+	prevtt = q.from;
+	return(q.ret);
     }
 
     public static int modflags(InputEvent ev) {

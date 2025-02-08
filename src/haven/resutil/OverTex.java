@@ -98,13 +98,14 @@ public class OverTex extends State {
     @Material.ResName("otex")
     public static class $ctex implements Material.ResCons2 {
 	public Material.Res.Resolver cons(final Resource res, Object... args) {
-	    final Indir<Resource> tres;
-	    final int tid;
-	    int a = 0;
-	    if(args[a] instanceof String) {
-		tres = res.pool.load((String)args[a], Utils.iv(args[a + 1]));
-		tid = Utils.iv(args[a + 2]);
-		a += 3;
+	    Indir<Resource> tres;
+	    int tid, a = 0;
+	    if(args[a] instanceof Indir) {
+		tres = Utils.irv(args[a++]);
+		tid = (args.length > 0) ? Utils.iv(args[a++]) : -1;
+	    } else if(args[a] instanceof String) {
+		tres = res.pool.load((String)args[a++], Utils.iv(args[a++]));
+		tid = (args.length > 0) ? Utils.iv(args[a++]) : -1;
 	    } else {
 		tres = res.indir();
 		tid = Utils.iv(args[a]);

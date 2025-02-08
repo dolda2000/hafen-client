@@ -84,7 +84,8 @@ public class TestView extends PView {
 					    Projection.frustum(-field, field, -aspect * field, aspect * field, 1, 5000)));
     }
 
-    public void mousemove(Coord c) {
+    public void mousemove(MouseMoveEvent ev) {
+	Coord c = ev.c;
 	if(c.x < 0 || c.x >= sz.x || c.y < 0 || c.y >= sz.y)
 	    return;
 	this.e = (float)Math.PI * 2 * ((float)c.y / (float)sz.y);
@@ -92,8 +93,8 @@ public class TestView extends PView {
 	setcam();
     }
 
-    public boolean mousewheel(Coord c, int amount) {
-	float d = this.dist + (amount * 5);
+    public boolean mousewheel(MouseWheelEvent ev) {
+	float d = this.dist + (ev.a * 5);
 	if(d < 5)
 	    d = 5;
 	this.dist = d;

@@ -315,8 +315,8 @@ public class DynresWindow extends Window {
 		});
 	}
 
-	public boolean mousedown(Coord c, int btn) {
-	    if(btn == 2) {
+	public boolean mousedown(MouseDownEvent ev) {
+	    if(ev.b == 2) {
 		create(() -> {
 			try {
 			    return(getpaste(java.awt.Toolkit.getDefaultToolkit().getSystemSelection()));
@@ -326,7 +326,7 @@ public class DynresWindow extends Window {
 		    });
 		return(true);
 	    }
-	    return(super.mousedown(c, btn));
+	    return(super.mousedown(ev));
 	}
 
 	private void copypal() {
@@ -340,7 +340,7 @@ public class DynresWindow extends Window {
 	    }
 	}
 
-	public boolean mousehover(Coord c, boolean hovering) {
+	public boolean mousehover(MouseHoverEvent ev, boolean hovering) {
 	    boolean menuhover = (menu != null) && (menu.parent != null) && menu.rootarea().contains(ui.mc);
 	    if((hovering || menuhover) && (menu == null)) {
 		menu = SListMenu.of(UI.scale(250, 200), null,
@@ -352,7 +352,7 @@ public class DynresWindow extends Window {
 		menu.reqdestroy();
 		menu = null;
 	    }
-	    return(hovering);
+	    return(true);
 	}
 
 	public boolean drophover(Coord c, boolean hovering, Object thing) {
@@ -400,19 +400,16 @@ public class DynresWindow extends Window {
 	}
     }
 
-    public boolean keydown(KeyEvent ev) {
-	if(super.keydown(ev))
-	    return(true);
+    public boolean keydown(KeyDownEvent ev) {
 	if(adder != null) {
-	    int mod = UI.modflags(ev);
-	    if((ev.getKeyChar() == 22) ||
-	       ((ev.getKeyCode() == KeyEvent.VK_INSERT) && (mod == KeyMatch.S)))
+	    if(((ev.c == 'v') && (ev.mods == KeyMatch.C)) ||
+	       ((ev.code == KeyEvent.VK_INSERT) && (ev.mods == KeyMatch.S)))
 		{
 		    adder.paste();
 		    return(true);
 		}
 	}
-	return(false);
+	return(super.keydown(ev));
     }
 
     public class Image extends Widget implements Transferable, ClipboardOwner {
@@ -493,7 +490,7 @@ public class DynresWindow extends Window {
 	public void lostOwnership(Clipboard c, Transferable t) {
 	}
 
-	public boolean mousehover(Coord c, boolean hovering) {
+	public boolean mousehover(MouseHoverEvent ev, boolean hovering) {
 	    boolean menuhover = (menu != null) && (menu.parent != null) && menu.rootarea().contains(ui.mc);
 	    if((hovering || menuhover) && (menu == null)) {
 		menu = SListMenu.of(UI.scale(250, 200), null,
@@ -506,7 +503,7 @@ public class DynresWindow extends Window {
 		menu.reqdestroy();
 		menu = null;
 	    }
-	    return(hovering);
+	    return(true);
 	}
 
 	public void setinfo(int fields, float outline) {
@@ -748,38 +745,39 @@ public class DynresWindow extends Window {
 	    public Random mkrandoom() {return(new Random());}
 	    @SuppressWarnings("deprecation") public Resource getres() {throw(new UnsupportedOperationException());}
 
-	    public boolean mousewheel(Coord c, int amount) {
-		tfield += amount * 10;
+	    public boolean mousewheel(MouseWheelEvent ev) {
+		tfield += ev.a * 10;
 		return(true);
 	    }
 
 	    private Coord dragstart;
 	    private UI.Grab grab;
 	    private float dragelev, dragangl;
-	    public boolean mousedown(Coord c, int btn) {
-		if((btn == 1) && (grab == null)) {
-		    dragstart = c;
+	    public boolean mousedown(MouseDownEvent ev) {
+		if((ev.b == 1) && (grab == null)) {
+		    dragstart = ev.c;
 		    dragelev = telev;
 		    dragangl = tangl;
 		    grab = ui.grabmouse(this);
 		    return(true);
 		}
-		return(super.mousedown(c, btn));
+		return(super.mousedown(ev));
 	    }
 
-	    public boolean mouseup(Coord c, int btn) {
-		if((btn == 1) && (grab != null)) {
+	    public boolean mouseup(MouseUpEvent ev) {
+		if((ev.b == 1) && (grab != null)) {
 		    grab.remove();
 		    grab = null;
+		    return(true);
 		}
-		return(super.mouseup(c, btn));
+		return(super.mouseup(ev));
 	    }
 
-	    public void mousemove(Coord c) {
-		super.mousemove(c);
+	    public void mousemove(MouseMoveEvent ev) {
+		super.mousemove(ev);
 		if(grab != null) {
-		    tangl = dragangl + ((float)c.x - dragstart.x) * 0.01f;
-		    telev = dragelev + ((float)c.y - dragstart.y) * 0.01f;
+		    tangl = dragangl + ((float)ev.c.x - dragstart.x) * 0.01f;
+		    telev = dragelev + ((float)ev.c.y - dragstart.y) * 0.01f;
 		}
 	    }
 	}

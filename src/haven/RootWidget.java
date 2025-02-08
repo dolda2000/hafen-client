@@ -28,9 +28,8 @@ package haven;
 
 import java.util.*;
 import java.awt.Color;
-import java.awt.event.KeyEvent;
 
-public class RootWidget extends ConsoleHost implements UI.MessageWidget, Console.Directory {
+public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Widget.CursorQuery.Handler, Console.Directory {
     public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
     public static final Resource defcurs = Resource.local().loadwait("gfx/hud/curs/arw");
     public boolean modtip = false;
@@ -42,31 +41,44 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget, Console
 	super(ui, new Coord(0, 0), sz);
 	setfocusctl(true);
 	hasfocus = true;
-	cursor = defcurs.indir();
     }
 	
-    public boolean globtype(char key, KeyEvent ev) {
-	if(!super.globtype(key, ev)) {
-	    if(key == '`') {
-		if(UIPanel.profile.get()) {
-		    add(new Profwnd(guprof, "UI profile"), UI.scale(100, 100));
-		    add(new Profwnd(grprof, "GL profile"), UI.scale(500, 100));
-		    /* XXXRENDER
-		    GameUI gi = findchild(GameUI.class);
-		    if((gi != null) && (gi.map != null))
-			add(new Profwnd(gi.map.prof, "Map profile"), UI.scale(100, 250));
-		    */
-		}
-		if(UIPanel.profilegpu.get()) {
-		    add(new Profwnd(ggprof, "GPU profile"), UI.scale(500, 250));
-		}
-	    } else if(key == ':') {
-		entercmd();
-	    } else if(key != 0) {
-		wdgmsg("gk", (int)key);
-	    }
+    public boolean getcurs(CursorQuery ev) {
+	Resource ret = defcurs;
+	if(cursor != null) {
+	    try {
+		ret = cursor.get();
+	    } catch(Loading l) {}
 	}
-	return(true);
+	ev.set(ret);
+	return(false);
+    }
+
+    public boolean globtype(GlobKeyEvent ev) {
+	if(ev.propagate(this))
+	    return(true);
+	if(ev.c == '`') {
+	    if(UIPanel.profile.get()) {
+		add(new Profwnd(guprof, "UI profile"), UI.scale(100, 100));
+		add(new Profwnd(grprof, "GL profile"), UI.scale(500, 100));
+		/* XXXRENDER
+		   GameUI gi = findchild(GameUI.class);
+		   if((gi != null) && (gi.map != null))
+		   add(new Profwnd(gi.map.prof, "Map profile"), UI.scale(100, 250));
+		*/
+	    }
+	    if(UIPanel.profilegpu.get()) {
+		add(new Profwnd(ggprof, "GPU profile"), UI.scale(500, 250));
+	    }
+	    return(true);
+	} else if(ev.c == ':') {
+	    entercmd();
+	    return(true);
+	} else if(ev.c != 0) {
+	    wdgmsg("gk", (int)ev.c, ev.mods);
+	    return(true);
+	}
+	return(super.globtype(ev));
     }
 
     public void draw(GOut g) {
@@ -93,20 +105,24 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget, Console
 	    if(args.length == 1) {
 		ui.msg((String)args[0]);
 	    } else {
-		ui.loader.defer(() -> {
-			int a = 0;
-			String text = (String)args[a++];
-			Color color = Color.WHITE;
-			if(args[a] instanceof Color)
-			    color = (Color)args[a++];
-			Audio.Clip sfx = msgsfx;
-			if(args.length > a) {
-			    Indir<Resource> res = ui.sess.getresv(args[a++]);
-			    sfx = (res == null) ? null : Audio.resclip(res.get());
-			}
-			ui.msg(text, color, sfx);
-		    }, null);
+		int a = 0;
+		UI.SimpleMessage info = new UI.InfoMessage((String)args[a++]);
+		if(args[a] instanceof Color)
+		    info.color = (Color)args[a++];
+		if(args.length > a) {
+		    Indir<Resource> res = ui.sess.getresv(args[a++]);
+		    info.sfx = (res == null) ? null : Audio.resclip(res.get());
+		}
+		ui.msg(info);
 	    }
+	} else if(msg == "msg2") {
+	    Resource res = ui.sess.getresv(args[0]).get();
+	    UI.Notice.Factory fac = res.getcode(UI.Notice.Factory.class, true);
+	    ui.msg(fac.format(new OwnerContext() {
+		    public <T> T context(Class<T> cl) {
+			return(wdgctx.context(cl, RootWidget.this));
+		    }
+		}, Utils.splice(args, 1)));
 	} else if(msg == "sfx") {
 	    int a = 0;
 	    Indir<Resource> resid = ui.sess.getresv(args[a++]);
@@ -140,9 +156,12 @@ public class RootWidget extends ConsoleHost implements UI.MessageWidget, Console
 	msgtime = Utils.rtime();
     }
 
-    public void msg(String msg, Color color, Audio.Clip sfx) {
-	msg(msg, color);
-	ui.sfxrl(sfx);
+    public boolean msg(UI.Notice msg) {
+	if(msg.handler(this))
+	    return(true);
+	msg(msg.message(), msg.color());
+	ui.sfxrl(msg.sfx());
+	return(true);
     }
 
     public void error(String msg) {

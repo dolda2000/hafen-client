@@ -79,12 +79,16 @@ public class Utils {
 	}
     }
 
-    public static URL url(String url) {
+    public static URL url(URI uri) {
 	try {
-	    return(uri(url).toURL());
+	    return(uri.toURL());
 	} catch(MalformedURLException e) {
-	    throw(new IllegalArgumentException(url, e));
+	    throw(new IllegalArgumentException(uri.toString(), e));
 	}
+    }
+
+    public static URL url(String url) {
+	return(url(uri(url)));
     }
 
     public static Path path(String path) {
@@ -426,6 +430,10 @@ public class Utils {
 	}
     }
 
+    public static String sv(Object arg) {
+	return((String)arg);
+    }
+
     public static int iv(Object arg) {
 	return(((Number)arg).intValue());
     }
@@ -444,6 +452,11 @@ public class Utils {
 
     public static boolean bv(Object arg) {
 	return(iv(arg) != 0);
+    }
+
+    public static Indir<Resource> irv(Object arg) {
+	Indir<?> s = (Indir)arg;
+	return(() -> (Resource)s.get());
     }
 
     /* Nested format: [[KEY, VALUE], [KEY, VALUE], ...] */

@@ -45,10 +45,8 @@ public class SAttrWnd extends Widget {
 	}
     }
 
-    public class SAttr extends Widget {
-	public final String nm;
+    public class SAttr extends CharWnd.AttrWdg {
 	public final Text rnm;
-	public final Glob.CAttr attr;
 	public final Tex img;
 	public final Color bg;
 	public int tbv, cost;
@@ -57,12 +55,10 @@ public class SAttrWnd extends Widget {
 	private int cbv, ccv;
 
 	private SAttr(Glob glob, String attr, Color bg) {
-	    super(new Coord(attrw, attrf.height() + UI.scale(2)));
-	    Resource res = Resource.local().loadwait("gfx/hud/chr/" + attr);
-	    this.nm = attr;
+	    super(Coord.of(attrw, attrf.height() + UI.scale(2)), glob, attr);
+	    Resource res = Loading.waitfor(this.attr.res());
 	    this.img = new TexI(convolve(res.flayer(Resource.imgc).img, new Coord(this.sz.y, this.sz.y), iconfilter));
 	    this.rnm = attrf.render(res.flayer(Resource.tooltip).t);
-	    this.attr = glob.getcattr(attr);
 	    this.bg = bg;
 	    add = adda(new IButton("gfx/hud/buttons/add", "u", "d", "h").action(() -> adj(1)),
 		       sz.x - UI.scale(5), sz.y / 2, 1, 0.5);
@@ -81,12 +77,8 @@ public class SAttrWnd extends Widget {
 		Color c = Color.WHITE;
 		if(ccv > cbv) {
 		    c = buff;
-		    tooltip = String.format("%d + %d", cbv, ccv - cbv);
 		} else if(ccv < cbv) {
 		    c = debuff;
-		    tooltip = String.format("%d - %d", cbv, cbv - ccv);
-		} else {
-		    tooltip = null;
 		}
 		if(tbv > 0)
 		    c = tbuff;
@@ -126,8 +118,8 @@ public class SAttrWnd extends Widget {
 	    updcost();
 	}
 
-	public boolean mousewheel(Coord c, int a) {
-	    adj(-a);
+	public boolean mousewheel(MouseWheelEvent ev) {
+	    adj(-ev.a);
 	    return(true);
 	}
     }

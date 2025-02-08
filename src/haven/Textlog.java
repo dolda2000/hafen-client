@@ -106,8 +106,8 @@ public class Textlog extends Widget {
 	}
     }
         
-    public boolean mousewheel(Coord c, int amount) {
-	cury += amount * 20;
+    public boolean mousewheel(MouseWheelEvent ev) {
+	cury += ev.a * 20;
 	if(cury < sz.y)
 	    cury = sz.y;
 	if(cury > maxy)
@@ -115,36 +115,39 @@ public class Textlog extends Widget {
 	return(true);
     }
         
-    public boolean mousedown(Coord c, int button) {
-	if(button != 1)
-	    return(false);
+    private void update(Coord c) {
+	double a = (double)(c.y - (sflarp.sz().y / 2)) / (double)(sz.y - sflarp.sz().y);
+	if(a < 0)
+	    a = 0;
+	if(a > 1)
+	    a = 1;
+	cury = (int)(a * (maxy - sz.y)) + sz.y;
+    }
+
+    public boolean mousedown(MouseDownEvent ev) {
+	if(ev.b != 1)
+	    return(super.mousedown(ev));
 	int fx = sz.x - sflarp.sz().x;
 	int cx = fx + (sflarp.sz().x / 2) - (schain.sz().x / 2);
-	if((maxy > sz.y) && (c.x >= fx)) {
+	if((maxy > sz.y) && (ev.c.x >= fx)) {
 	    sdrag = ui.grabmouse(this);
-	    mousemove(c);
+	    update(ev.c);
 	    return(true);
 	}
-	return(false);
+	return(super.mousedown(ev));
     }
         
-    public void mousemove(Coord c) {
-	if(sdrag != null) {
-	    double a = (double)(c.y - (sflarp.sz().y / 2)) / (double)(sz.y - sflarp.sz().y);
-	    if(a < 0)
-		a = 0;
-	    if(a > 1)
-		a = 1;
-	    cury = (int)(a * (maxy - sz.y)) + sz.y;
-	}
+    public void mousemove(MouseMoveEvent ev) {
+	if(sdrag != null)
+	    update(ev.c);
     }
         
-    public boolean mouseup(Coord c, int button) {
-	if((button == 1) && (sdrag != null)) {
+    public boolean mouseup(MouseUpEvent ev) {
+	if((ev.b == 1) && (sdrag != null)) {
 	    sdrag.remove();
 	    sdrag = null;
 	    return(true);
 	}
-	return(false);
+	return(super.mouseup(ev));
     }
 }

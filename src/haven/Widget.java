@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import java.lang.annotation.*;
 import java.lang.reflect.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
@@ -47,7 +48,6 @@ public class Widget {
     public Object tooltip = null;
     public KeyMatch gkey;
     public KeyBinding kb_gkey;
-    private Widget prevtt;
     static Map<String, Factory> types = new TreeMap<String, Factory>();
 
     @dolda.jglob.Discoverable
@@ -736,12 +736,6 @@ public class Widget {
     }
 	
     public void tick(double dt) {
-	Widget next;
-	
-	for(Widget wdg = child; wdg != null; wdg = next) {
-	    next = wdg.next;
-	    wdg.tick(dt);
-	}
 	/* It would be very nice to do these things in harmless mix-in
 	 * classes, but alas, this is Java. */
 	anims.addAll(nanims);
@@ -753,10 +747,15 @@ public class Widget {
 	}
     }
 
+    public void tick(TickEvent ev) {
+	tick(ev.dt);
+    }
+
     public void gtick(haven.render.Render out) {
-	for(Widget wdg = child; wdg != null; wdg = wdg.next) {
-	    wdg.gtick(out);
-	}
+    }
+
+    public void gtick(GTickEvent ev) {
+	gtick(ev.out);
     }
 
     public void draw(GOut g, boolean strict) {
@@ -781,74 +780,561 @@ public class Widget {
     }
 	
     public boolean checkhit(Coord c) {
-	return(true);
+	return(c.isect(Coord.z, sz));
     }
 
+    public static abstract class Event {
+	public boolean propagate, grabbed;
+	public Widget handling, target;
+	private boolean phandled;
+
+	public Event() {
+	}
+
+	public Event(Event from) {
+	    this.grabbed = from.grabbed;
+	}
+
+	public Event grabbed(boolean g) {grabbed = g; return(this);}
+
+	protected abstract boolean propagation(Widget from);
+
+	public void stop() {
+	    if(propagate) {
+		propagate = false;
+		phandled = false;
+	    }
+	}
+
+	protected boolean shandle(Widget w) {
+	    return(false);
+	}
+
+	public boolean propagate(Widget from) {
+	    if(!propagate)
+		return(phandled);
+	    phandled = propagation(from);
+	    propagate = false;
+	    return(phandled);
+	}
+
+	public boolean dispatch(Widget w) {
+	    Widget phandling = handling;
+	    handling = w;
+	    try {
+		propagate = true;
+		if(w.handle(this))
+		    return(true);
+		return(propagate(w));
+	    } finally {
+		handling = phandling;
+	    }
+	}
+    }
+
+    private List<EventHandler.Listener<?>> listening = null;
+
+    public <E> void listen(Class<E> t, EventHandler<? super E> h) {
+	if(listening == null)
+	    listening = new CopyOnWriteArrayList<>();
+	listening.add(new EventHandler.Listener<>(t, h));
+    }
+
+    public boolean deafen(EventHandler<?> h) {
+	if(listening != null) {
+	    for(int i = 0; i < listening.size(); i++) {
+		EventHandler.Listener<?> l = listening.get(i);
+		if(l.h == h) {
+		    listening.remove(i);
+		    return(true);
+		}
+	    }
+	}
+	return(false);
+    }
+
+    public <H extends EventHandler<?>> H listening(Class<H> cl) {
+	if(listening != null) {
+	    for(EventHandler.Listener<?> l : listening) {
+		if(cl.isInstance(l.h))
+		    return(cl.cast(l.h));
+	    }
+	}
+	return(null);
+    }
+
+    public boolean handle(Event ev) {
+	if(listening != null) {
+	    for(EventHandler.Listener<?> l : listening) {
+		if(l.check(ev))
+		    return(true);
+	    }
+	}
+	return(ev.shandle(this));
+    }
+
+    public static class TickEvent extends Event {
+	public final double dt;
+
+	public TickEvent(double dt) {
+	    this.dt = dt;
+	}
+
+	protected boolean propagation(Widget from) {
+	    for(Widget next, wdg = from.child; wdg != null; wdg = next) {
+		next = wdg.next;
+		dispatch(wdg);
+	    }
+	    return(true);
+	}
+
+	protected boolean shandle(Widget w) {
+	    boolean pp = (w.parent != null);
+	    w.tick(this);
+	    /* XXX? This feels a bit hacky. */
+	    return(pp && (w.parent == null));
+	}
+    }
+
+    public static class GTickEvent extends Event {
+	public final haven.render.Render out;
+
+	public GTickEvent(haven.render.Render out) {
+	    this.out = out;
+	}
+
+	protected boolean propagation(Widget from) {
+	    for(Widget wdg = from.child; wdg != null; wdg = wdg.next)
+		dispatch(wdg);
+	    return(true);
+	}
+
+	protected boolean shandle(Widget w) {
+	    w.gtick(this);
+	    return(false);
+	}
+    }
+
+    public static class MessageEvent extends Event {
+	public final String msg;
+	public final Object[] args;
+
+	public MessageEvent(String msg, Object[] args) {
+	    this.msg = msg.intern();
+	    this.args = args;
+	}
+
+	protected boolean propagation(Widget from) {
+	    return(false);
+	}
+
+	protected boolean shandle(Widget w) {
+	    w.uimsg(msg, args);
+	    return(true);
+	}
+    }
+
+    public static abstract class PointerEvent extends Event {
+	public final Coord c;
+
+	public PointerEvent(Coord c) {
+	    this.c = c;
+	}
+	public PointerEvent(PointerEvent from, Coord c) {
+	    super(from);
+	    this.c = c;
+	}
+
+	public abstract PointerEvent derive(Coord c);
+
+	protected boolean propagation(Widget from) {
+	    for(Widget wdg = from.lchild; wdg != null; wdg = wdg.prev) {
+		if(!wdg.visible())
+		    continue;
+		Coord cc = from.xlate(wdg.c, true);
+		if(c.isect(cc, wdg.sz)) {
+		    if(derive(c.sub(cc)).dispatch(wdg))
+			return(true);
+		}
+	    }
+	    return(false);
+	}
+    }
+
+    public static abstract class MouseEvent extends PointerEvent {
+	public MouseEvent(Coord c) {super(c);}
+	public MouseEvent(MouseEvent from, Coord c) {super(from, c);}
+    }
+
+    public static abstract class MouseButtonEvent extends MouseEvent {
+	public final int b;
+
+	public MouseButtonEvent(Coord c, int b) {
+	    super(c);
+	    this.b = b;
+	}
+	public MouseButtonEvent(MouseButtonEvent from, Coord c) {
+	    super(from, c);
+	    this.b = from.b;
+	}
+
+	public abstract MouseButtonEvent derive(Coord c);
+    }
+
+    public static class MouseDownEvent extends MouseButtonEvent {
+	public MouseDownEvent(Coord c, int b) {
+	    super(c, b);
+	}
+	public MouseDownEvent(MouseDownEvent from, Coord c) {
+	    super(from, c);
+	}
+
+	public MouseDownEvent derive(Coord c) {return(new MouseDownEvent(this, c));}
+
+	protected boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "mousedown", new Class<?>[] {Coord.class, Integer.TYPE}, c, b))
+		return(true);
+	    if(w.mousedown(this))
+		return(true);
+	    return(super.shandle(w));
+	}
+    }
+
+    public static class MouseUpEvent extends MouseButtonEvent {
+	public MouseUpEvent(Coord c, int b) {
+	    super(c, b);
+	}
+	public MouseUpEvent(MouseUpEvent from, Coord c) {
+	    super(from, c);
+	}
+
+	public MouseUpEvent derive(Coord c) {return(new MouseUpEvent(this, c));}
+
+	protected boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "mouseup", new Class<?>[] {Coord.class, Integer.TYPE}, c, b))
+		return(true);
+	    if(w.mouseup(this))
+		return(true);
+	    return(super.shandle(w));
+	}
+    }
+
+    public static class MouseMoveEvent extends MouseEvent {
+	public MouseMoveEvent(Coord c) {super(c);}
+	public MouseMoveEvent(MouseMoveEvent from, Coord c) {super(from, c);;}
+
+	public MouseMoveEvent derive(Coord c) {return(new MouseMoveEvent(this, c));}
+
+	protected boolean propagation(Widget from) {
+	    for(Widget wdg = from.lchild; wdg != null; wdg = wdg.prev) {
+		if(!wdg.visible())
+		    continue;
+		Coord cc = from.xlate(wdg.c, true);
+		derive(c.sub(cc)).dispatch(wdg);
+	    }
+	    return(true);
+	}
+
+	public boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "mousemove", new Class<?>[] {Coord.class}, c))
+		return(true);
+	    w.mousemove(this);
+	    return(false);
+	}
+    }
+
+    public static class MouseWheelEvent extends MouseEvent {
+	public final int a;
+
+	public MouseWheelEvent(Coord c, int a) {
+	    super(c);
+	    this.a = a;
+	}
+	public MouseWheelEvent(MouseWheelEvent from, Coord c) {
+	    super(from, c);
+	    this.a = from.a;
+	}
+
+	public MouseWheelEvent derive(Coord c) {return(new MouseWheelEvent(this, c));}
+
+	public boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "mousewheel", new Class<?>[] {Coord.class, Integer.TYPE}, c, a))
+		return(true);
+	    if(w.mousewheel(this))
+		return(true);
+	    return(super.shandle(w));
+	}
+    }
+
+    public static class MouseHoverEvent extends MouseEvent {
+	public boolean hovering;
+
+	public MouseHoverEvent(Coord c) {
+	    super(c);
+	    hovering = true;
+	}
+	public MouseHoverEvent(MouseHoverEvent from, Coord c) {
+	    super(from, c);
+	}
+
+	public MouseHoverEvent derive(Coord c) {return(new MouseHoverEvent(this, c));}
+
+	public MouseHoverEvent hovering(boolean h) {hovering = h; return(this);}
+
+	protected boolean propagation(Widget from) {
+	    boolean ret = false;
+	    boolean hovering = this.hovering;
+	    for(Widget wdg = from.lchild; wdg != null; wdg = wdg.prev) {
+		Coord cc = from.xlate(wdg.c, true);
+		boolean inside = c.isect(cc, wdg.sz);
+		boolean ch = hovering && inside && wdg.visible();
+		if(derive(c.sub(cc)).hovering(ch).dispatch(wdg) && ch) {
+		    hovering = false;
+		    ret = true;
+		}
+	    }
+	    return(ret);
+	}
+
+	protected boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "mousehover", new Class<?>[] {Coord.class, Boolean.TYPE}, c, hovering))
+		return(true);
+	    if(w.mousehover(this, hovering))
+		return(true);
+	    return(super.shandle(w));
+	}
+    }
+
+    public static final KeyMatch key_act = KeyMatch.forcode(KeyEvent.VK_ENTER, 0);
+    public static final KeyMatch key_esc = KeyMatch.forcode(KeyEvent.VK_ESCAPE, 0);
+    public static final KeyMatch key_tab = KeyMatch.forcode(KeyEvent.VK_TAB, 0);
+    public static abstract class KbdEvent extends Event {
+	public final KeyEvent awt;
+	public final int code, mods;
+	public final char c;
+
+	public KbdEvent(KeyEvent awt) {
+	    this.awt = awt;
+	    this.code = awt.getKeyCode();
+	    mods = UI.modflags(awt);
+	    char c = awt.getKeyChar();
+	    if(((mods & KeyMatch.C) != 0) && (c < 32)) {
+		/* Undo Java's TTY Control-code mangling */
+		if(code == KeyEvent.VK_BACK_SPACE) {
+		} else if(code == KeyEvent.VK_ENTER) {
+		} else if(code == KeyEvent.VK_TAB) {
+		} else if(code == KeyEvent.VK_ESCAPE) {
+		} else {
+		    if((mods & KeyMatch.S) != 0)
+			c = (char)(c + 'A' - 1);
+		    else
+			c = (char)(c + 'a' - 1);
+		}
+	    }
+	    if(c == awt.CHAR_UNDEFINED)
+		c = 0;
+	    this.c = c;
+	}
+    }
+
+    public static abstract class FocusedKeyEvent extends KbdEvent {
+	public FocusedKeyEvent(KeyEvent awt) {
+	    super(awt);
+	}
+
+	protected boolean propagation(Widget from) {
+	    if(from.focusctl) {
+		if(from.focused == null)
+		    return(false);
+		return(dispatch(from.focused));
+	    } else {
+		for(Widget wdg = from.child; wdg != null; wdg = wdg.next) {
+		    if(wdg.visible()) {
+			if(dispatch(wdg))
+			    return(true);
+		    }
+		}
+		return(false);
+	    }
+	}
+    }
+
+    public static class KeyDownEvent extends FocusedKeyEvent {
+	public KeyDownEvent(KeyEvent awt) {super(awt);}
+
+	protected boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "keydown", new Class<?>[] {KeyEvent.class}, awt))
+		return(true);
+	    if(w.keydown(this))
+		return(true);
+	    return(super.shandle(w));
+	}
+    }
+
+    public static class KeyUpEvent extends FocusedKeyEvent {
+	public KeyUpEvent(KeyEvent awt) {super(awt);}
+
+	public boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "keyup", new Class<?>[] {KeyEvent.class}, awt))
+		return(true);
+	    if(w.keyup(this))
+		return(true);
+	    return(super.shandle(w));
+	}
+    }
+
+    public static class GlobKeyEvent extends KbdEvent {
+	public GlobKeyEvent(KeyEvent awt) {super(awt);}
+
+	protected boolean propagation(Widget from) {
+	    for(Widget wdg = from.lchild; wdg != null; wdg = wdg.prev) {
+		if(dispatch(wdg))
+		    return(true);
+	    }
+	    return(false);
+	}
+
+	protected boolean shandle(Widget w) {
+	    if(hackhandle(this, w, "keydown", new Class<?>[] {Character.TYPE, KeyEvent.class}, awt.getKeyChar(), awt))
+		return(true);
+	    if(w.globtype(this))
+		return(true);
+	    return(super.shandle(w));
+	}
+    }
+
+    public static abstract class QueryEvent<R> extends PointerEvent {
+	public final QueryEvent<R> root;
+	public R ret;
+
+	public QueryEvent(Coord c) {
+	    super(c);
+	    root = this;
+	}
+	public QueryEvent(QueryEvent<R> from, Coord c) {
+	    super(from, c);
+	    root = from.root;
+	}
+
+	/* Return value doesn't indicate anything, it's just to be
+	 * able to do return(ev.nset(res)). */
+	public boolean set(R ret) {
+	    root.ret = ret;
+	    return(true);
+	}
+    }
+
+    public static class TooltipQuery extends PointerEvent {
+	public final TooltipQuery root;
+	public final Widget last;
+	public Object ret;
+	public Widget from;
+
+	public TooltipQuery(Coord c, Widget last) {
+	    super(c);
+	    this.root = this;
+	    this.last = last;
+	}
+	public TooltipQuery(TooltipQuery from, Coord c) {
+	    super(from, c);
+	    this.root = from.root;
+	    this.last = from.last;
+	}
+	public TooltipQuery derive(Coord c) {return(new TooltipQuery(this, c));}
+
+	/* Return value doesn't indicate anything, it's just to be
+	 * able to do return(ev.nset(res)). */
+	public boolean set(Object ret, Widget from) {
+	    root.ret = ret;
+	    root.from = from;
+	    return(true);
+	}
+
+	protected boolean shandle(Widget w) {
+	    if(w.tooltip(this))
+		return(true);
+	    return(super.shandle(w));
+	}
+    }
+
+    public static class CursorQuery extends QueryEvent<Resource> {
+	public CursorQuery(Coord c) {super(c);}
+	public CursorQuery(CursorQuery from, Coord c) {super(from, c);}
+	public CursorQuery derive(Coord c) {return(new CursorQuery(this, c));}
+
+	public static interface Handler {
+	    public boolean getcurs(CursorQuery ev);
+	}
+
+	protected boolean shandle(Widget w) {
+	    if((w instanceof Handler) && ((Handler)w).getcurs(this))
+		return(true);
+	    if(propagate(w))
+		return(true);
+	    if(w.cursor != null) {
+		try {
+		    set(w.cursor.get());
+		    return(true);
+		} catch(Loading l) {}
+	    }
+	    return(super.shandle(w));
+	}
+    }
+
+    /* XXX: Remove me! */
+    private static final ThreadLocal<Event> hackhandling = new ThreadLocal<>();
+    private static final Set<Pair<Class, String>> hackwarned = new HashSet<>();
+    private static boolean hackhandle(Event ev, Widget w, String nm, Class<?>[] argt, Object... args) {
+	Event prev = hackhandling.get();
+	hackhandling.set(ev);
+	try {
+	    Class<?> cls = w.getClass();
+	    Method m = cls.getMethod(nm, argt),
+		  wm = Widget.class.getMethod(nm, argt);
+	    if(Utils.eq(m, wm))
+		return(false);
+	    if(!cls.getName().startsWith("haven.res.") && hackwarned.add(new Pair<>(cls, nm)))
+		Warning.warn("hack-hacndling event %s for %s", nm, cls);
+	    Boolean ret = (Boolean)wm.invoke(w, args);
+	    return((ret == null) ? false : ret);
+	} catch(InvocationTargetException e) {
+	    throw((RuntimeException)e.getCause());
+	} catch(NoSuchMethodException | IllegalAccessException e) {
+	    return(false);
+	} finally {
+	    hackhandling.set(prev);
+	}
+    }
+
+    public boolean mousedown(MouseDownEvent ev) {return(false);}
+    public boolean mouseup(MouseUpEvent ev) {return(false);}
+    public boolean mousewheel(MouseWheelEvent ev) {return(false);}
+    public void mousemove(MouseMoveEvent ev) {}
+    public boolean mousehover(MouseHoverEvent ev, boolean hovering) {return(false);}
+
+    @Deprecated
     public boolean mousedown(Coord c, int button) {
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(!wdg.visible())
-		continue;
-	    Coord cc = xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz)) {
-		if(wdg.mousedown(c.add(cc.inv()), button)) {
-		    return(true);
-		}
-	    }
-	}
-	return(false);
+	return(hackhandling.get().propagate(this));
     }
 	
+    @Deprecated
     public boolean mouseup(Coord c, int button) {
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(!wdg.visible())
-		continue;
-	    Coord cc = xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz)) {
-		if(wdg.mouseup(c.add(cc.inv()), button)) {
-		    return(true);
-		}
-	    }
-	}
-	return(false);
+	return(hackhandling.get().propagate(this));
     }
 	
+    @Deprecated
     public boolean mousewheel(Coord c, int amount) {
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(!wdg.visible())
-		continue;
-	    Coord cc = xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz)) {
-		if(wdg.mousewheel(c.add(cc.inv()), amount)) {
-		    return(true);
-		}
-	    }
-	}
-	return(false);
+	return(hackhandling.get().propagate(this));
     }
 	
+    @Deprecated
     public void mousemove(Coord c) {
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(!wdg.visible())
-		continue;
-	    Coord cc = xlate(wdg.c, true);
-	    wdg.mousemove(c.add(cc.inv()));
-	}
+	hackhandling.get().propagate(this);
     }
 
+    @Deprecated
     public boolean mousehover(Coord c, boolean hovering) {
-	boolean ret = false;
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    boolean ch = hovering;
-	    if(!wdg.visible())
-		ch = false;
-	    Coord cc = xlate(wdg.c, true);
-	    boolean inside = c.isect(cc, wdg.sz);
-	    if(wdg.mousehover(c.add(cc.inv()), ch && inside)) {
-		hovering = false;
-		ret = true;
-	    }
-	}
-	return(ret);
+	return(hackhandling.get().propagate(this));
     }
 
     private static final Map<Integer, Integer> gkeys = Utils.<Integer, Integer>map().
@@ -873,40 +1359,12 @@ public class Widget {
 	return(KeyMatch.forchar((char)key, modmask, modmatch));
     }
 
-    public boolean gkeytype(KeyEvent ev) {
-	wdgmsg("activate", UI.modflags(ev));
+    public boolean gkeytype(GlobKeyEvent ev) {
+	wdgmsg("activate", UI.modflags(ev.awt));
 	return(true);
     }
 
-    public boolean globtype(char key, KeyEvent ev) {
-	KeyMatch gkey = this.gkey;
-	if(kb_gkey != null)
-	    gkey = kb_gkey.key();
-	if((gkey != null) && gkey.match(ev))
-	    return(gkeytype(ev));
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(wdg.globtype(key, ev))
-		return(true);
-	}
-	return(false);
-    }
-
-    public Widget setgkey(KeyMatch gkey) {
-	this.gkey = gkey;
-	return(this);
-    }
-	
-    public Widget setgkey(KeyBinding gkey) {
-	kb_gkey = gkey;
-	if((tooltip == null) && (kb_gkey != null))
-	    tooltip = new KeyboundTip();
-	return(this);
-    }
-	
-    public static final KeyMatch key_act = KeyMatch.forcode(KeyEvent.VK_ENTER, 0);
-    public static final KeyMatch key_esc = KeyMatch.forcode(KeyEvent.VK_ESCAPE, 0);
-    public static final KeyMatch key_tab = KeyMatch.forcode(KeyEvent.VK_TAB, 0);
-    public boolean keydown(KeyEvent ev) {
+    public boolean keydown(KeyDownEvent ev) {
 	if(canactivate) {
 	    if(key_act.match(ev)) {
 		wdgmsg("activate");
@@ -919,66 +1377,77 @@ public class Widget {
 		return(true);
 	    }
 	}
-	if(focusctl) {
-	    if(focused != null) {
-		if(focused.keydown(ev))
-		    return(true);
-		if(focustab) {
-		    if(key_tab.match(ev)) {
-			Widget f = focused;
-			while(true) {
-			    if((ev.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) == 0) {
-				Widget n = f.rnext();
-				f = ((n == null) || !n.hasparent(this))?child:n;
-			    } else {
-				Widget p = f.rprev();
-				f = ((p == null) || (p == this) || !p.hasparent(this))?lchild:p;
-			    }
-			    if((f.canfocus && f.tvisible()) || (f == focused))
-				break;
-			}
-			setfocus(f);
-			return(true);
+	if(ev.propagate(this))
+	    return(true);
+	if(focusctl && focustab) {
+	    Widget f = focused;
+	    if(key_tab.match(ev.awt) && (f != null)) {
+		while(true) {
+		    if((ev.mods & KeyMatch.S) == 0) {
+			Widget n = f.rnext();
+			f = ((n == null) || !n.hasparent(this)) ? this.child : n;
 		    } else {
-			return(false);
+			Widget p = f.rprev();
+			f = ((p == null) || (p == this) || !p.hasparent(this)) ? this.lchild : p;
 		    }
-		} else {
-		    return(false);
+		    if((f.canfocus && f.tvisible()) || (f == focused))
+			break;
 		}
-	    } else {
-		return(false);
-	    }
-	} else {
-	    for(Widget wdg = child; wdg != null; wdg = wdg.next) {
-		if(wdg.visible()) {
-		    if(wdg.keydown(ev))
-			return(true);
-		}
+		setfocus(f);
+		return(true);
 	    }
 	}
 	return(false);
+    }
+
+    public boolean keyup(KeyUpEvent ev) {
+	return(false);
+    }
+
+    public boolean globtype(GlobKeyEvent ev) {
+	KeyMatch gkey = this.gkey;
+	if(kb_gkey != null)
+	    gkey = kb_gkey.key();
+	if((gkey != null) && gkey.match(ev.awt)) {
+	    if(gkeytype(ev))
+		return(true);
+	}
+	return(false);
+    }
+
+    @Deprecated
+    public boolean gkeytype(KeyEvent ev) {
+	wdgmsg("activate", UI.modflags(ev));
+	return(true);
+    }
+
+    @Deprecated
+    public boolean globtype(char key, KeyEvent ev) {
+	return(hackhandling.get().propagate(this));
+    }
+
+    public Widget setgkey(KeyMatch gkey) {
+	this.gkey = gkey;
+	return(this);
+    }
+
+    public Widget setgkey(KeyBinding gkey) {
+	kb_gkey = gkey;
+	if((tooltip == null) && (kb_gkey != null))
+	    tooltip = new KeyboundTip();
+	return(this);
+    }
+
+    @Deprecated
+    public boolean keydown(KeyEvent ev) {
+	return(hackhandling.get().propagate(this));
     }
 	
+    @Deprecated
     public boolean keyup(KeyEvent ev) {
-	if(focusctl) {
-	    if(focused != null) {
-		if(focused.keyup(ev))
-		    return(true);
-		return(false);
-	    } else {
-		return(false);
-	    }
-	} else {
-	    for(Widget wdg = child; wdg != null; wdg = wdg.next) {
-		if(wdg.visible()) {
-		    if(wdg.keyup(ev))	
-			return(true);
-		}
-	    }
-	}
-	return(false);
+	return(hackhandling.get().propagate(this));
     }
-    
+
     public Area area() {
 	return(Area.sized(c, sz));
     }
@@ -1357,25 +1826,6 @@ public class Widget {
 	    });
     }
 
-    public Resource getcurs(Coord c) {
-	Resource ret;
-		
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(!wdg.visible())
-		continue;
-	    Coord cc = xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz)) {
-		if((ret = wdg.getcurs(c.add(cc.inv()))) != null)
-		    return(ret);
-	    }
-	}
-	try {
-	    return((cursor == null)?null:cursor.get());
-	} catch(Loading l) {
-	    return(null);
-	}
-    }
-
     public static class PaginaTip implements Indir<Tex> {
 	public final String title;
 	public final Indir<Resource> res;
@@ -1471,26 +1921,25 @@ public class Widget {
     }
 
     public Object tooltip(Coord c, Widget prev) {
-	if(prev != this)
-	    prevtt = null;
-	if(tooltip != null) {
-	    prevtt = null;
-	    return(tooltip);
-	}
-	for(Widget wdg = lchild; wdg != null; wdg = wdg.prev) {
-	    if(!wdg.visible())
-		continue;
-	    Coord cc = xlate(wdg.c, true);
-	    if(c.isect(cc, wdg.sz)) {
-		Object ret = wdg.tooltip(c.add(cc.inv()), prevtt);
-		if(ret != null) {
-		    prevtt = wdg;
-		    return(ret);
-		}
+	return(tooltip);
+    }
+
+    public boolean tooltip(TooltipQuery ev) {
+	if(ev.propagate(this))
+	    return(true);
+	if(checkhit(ev.c)) {
+	    Object tip;
+	    try {
+		tip = tooltip(ev.c, ev.last);
+	    } catch(Loading l) {
+		tip = "...";
+	    }
+	    if(tip != null) {
+		ev.set(tip, this);
+		return(true);
 	    }
 	}
-	prevtt = null;
-	return(null);
+	return(false);
     }
 
     public Widget settip(String text, boolean rich) {

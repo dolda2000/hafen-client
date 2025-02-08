@@ -27,27 +27,95 @@
 package haven;
 
 public interface DropTarget {
-    public boolean dropthing(Coord cc, Object thing);
+    public default boolean dropthing(Coord cc, Object thing) {return(false);}
+    public default boolean drophover(Coord cc, boolean hovering, Object thing) {return(false);}
 
-    public default boolean drophover(Coord cc, boolean hovering, Object thing) {
+    public default boolean dropthing(Drop ev) {
+	return(dropthing(ev.c, ev.thing));
+    }
+    public default boolean drophover(Hover ev) {
+	if(drophover(ev.c, ev.hovering, ev.thing))
+	    return(ev.accept(this));
 	return(false);
     }
 
-    public static boolean drophover(Widget wdg, Coord c, boolean hovering, Object thing) {
-	boolean ret = false;
-	if((wdg instanceof DropTarget) && ((DropTarget)wdg).drophover(c, hovering, thing))
-	    return(true);
-	for(Widget ch = wdg.lchild; ch != null; ch = ch.prev) {
-	    boolean hc = hovering;
-	    if(!ch.visible())
-		hc = false;
-	    Coord cc = wdg.xlate(ch.c, true);
-	    boolean inside = c.isect(cc, ch.sz);
-	    if(drophover(ch, c.sub(cc), hc && inside, thing)) {
-		hovering = false;
-		ret = true;
-	    }
+    public static abstract class DropEvent extends Widget.MouseEvent {
+	public final Object thing;
+
+	public DropEvent(Coord c, Object thing) {
+	    super(c);
+	    this.thing = thing;
 	}
-	return(ret);
+	public DropEvent(DropEvent from, Coord c) {
+	    super(from, c);
+	    this.thing = from.thing;
+	}
+    }
+
+    public static class Drop extends DropEvent {
+	public Drop(Coord c, Object thing) {super(c, thing);}
+	public Drop(Drop from, Coord c) {super(from, c);}
+	public Drop derive(Coord c) {return(new Drop(this, c));}
+
+	protected boolean shandle(Widget w) {
+	    if((w instanceof DropTarget) && ((DropTarget)w).dropthing(this))
+		return(true);
+	    return(super.shandle(w));
+	}
+    }
+
+    public static class Hover extends DropEvent {
+	public final Hover root;
+	public boolean hovering;
+	public DropTarget tgt;
+
+	public Hover(Coord c, Object thing) {
+	    super(c, thing);
+	    hovering = true;
+	    root = this;
+	}
+	public Hover(Hover from, Coord c) {
+	    super(from, c);
+	    root = from.root;
+	}
+	public Hover derive(Coord c) {return(new Hover(this, c));}
+
+	public Hover hovering(boolean h) {hovering = h; return(this);}
+
+	public boolean accept(DropTarget tgt) {
+	    root.tgt = tgt;
+	    return(true);
+	}
+
+	protected boolean propagation(Widget from) {
+	    boolean ret = false;
+	    boolean hovering = this.hovering;
+	    for(Widget wdg = from.lchild; wdg != null; wdg = wdg.prev) {
+		Coord cc = from.xlate(wdg.c, true);
+		boolean inside = c.isect(cc, wdg.sz);
+		boolean ch = hovering && inside && wdg.visible();
+		if(derive(c.sub(cc)).hovering(ch).dispatch(wdg) && ch) {
+		    hovering = false;
+		    ret = true;
+		}
+	    }
+	    return(ret);
+	}
+
+	protected boolean shandle(Widget w) {
+	    if((w instanceof DropTarget) && ((DropTarget)w).drophover(this))
+		return(true);
+	    return(super.shandle(w));
+	}
+    }
+
+    public static boolean dropthing(Widget wdg, Coord c, Object thing) {
+	return(wdg.ui.dispatch(wdg, new Drop(c, thing)));
+    }
+
+    public static boolean drophover(Widget wdg, Coord c, Object thing) {
+	Hover h = new Hover(c, thing);
+	wdg.ui.dispatch(wdg, h);
+	return(h.tgt != null);
     }
 }

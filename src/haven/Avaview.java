@@ -273,11 +273,10 @@ public class Avaview extends PView {
 	}
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if(canactivate) {
-	    wdgmsg("click", button);
-	    return(true);
-	}
-	return(super.mousedown(c, button));
+    public boolean mousedown(MouseDownEvent ev) {
+	if(!canactivate)
+	    return(super.mousedown(ev));
+	wdgmsg("click", ev.b);
+	return(true);
     }
 }

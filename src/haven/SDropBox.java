@@ -84,12 +84,12 @@ public abstract class SDropBox<I, W extends Widget> extends SListWidget<I, W> {
 	    ldrawslot(g, item, idx, area);
 	}
 
-	public boolean mousedown(Coord c, int btn) {
-	    if(!c.isect(Coord.z, sz)) {
+	public boolean mousedown(MouseDownEvent ev) {
+	    if(!ev.c.isect(Coord.z, sz)) {
 		reqdestroy();
 		return(true);
 	    }
-	    return(super.mousedown(c, btn));
+	    return(super.mousedown(ev));
 	}
 
 	protected boolean unselect(int btn) {
@@ -160,14 +160,14 @@ public abstract class SDropBox<I, W extends Widget> extends SListWidget<I, W> {
 	super.draw(g);
     }
 
-    public boolean mousedown(Coord c, int btn) {
-	if(super.mousedown(c, btn))
+    public boolean mousedown(MouseDownEvent ev) {
+	if(ev.propagate(this))
 	    return(true);
-	if(btn == 1) {
+	if(ev.b == 1) {
 	    drop.click();
 	    return(true);
 	}
-	return(false);
+	return(super.mousedown(ev));
     }
 
     public static <I> SDropBox<I, Widget> of(int w, int listh, int itemh, List<? extends I>  items, BiFunction<? super I, ? super Coord, ? extends Widget> render, Consumer<? super I> change) {

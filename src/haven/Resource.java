@@ -925,6 +925,18 @@ public class Resource implements Serializable {
 	return(new Coord(buf.int16(), buf.int16()));
     }
 	
+    public static class PoolMapper implements Function<Object, Object> {
+	public final Pool pool;
+
+	public PoolMapper(Pool pool) {this.pool = pool;}
+
+	public Object apply(Object obj) {
+	    if(obj instanceof Spec)
+		return(new Spec(pool, ((Spec)obj).name, ((Spec)obj).ver));
+	    return(obj);
+	}
+    }
+
     public abstract class Layer implements Serializable {
 	public abstract void init();
 	
@@ -937,6 +949,10 @@ public class Resource implements Serializable {
 		return(String.format("#<%s (%s) in %s>", getClass().getSimpleName(), ((IDLayer)this).layerid(), Resource.this.name));
 	    else
 		return(String.format("#<%s in %s>", getClass().getSimpleName(), Resource.this.name));
+	}
+
+	protected Function<Object, Object> resmapper() {
+	    return(new PoolMapper(Resource.this.pool));
 	}
     }
 
@@ -1032,7 +1048,7 @@ public class Resource implements Serializable {
 	public final int id;
 	public final Map<String, byte[]> kvdata;
 	public float scale = 1;
-	public Coord sz, o, so, tsz, ssz;
+	public Coord sz, o, so, tsz, ssz, stsz;
 
 	public Image(Message buf) {
 	    z = buf.int16();
@@ -1073,14 +1089,15 @@ public class Resource implements Serializable {
 	    }
 	    sz = Utils.imgsz(img);
 	    if(tsz == null)
-		tsz = sz;
-	    ssz = new Coord(Math.round(UI.scale(sz.x / scale)), Math.round(UI.scale(sz.y / scale)));
+		tsz = sz.add(o);
+	    ssz = Coord.of(Math.round(UI.scale(sz.x / scale)), Math.round(UI.scale(sz.y / scale)));
+	    stsz = Coord.of(Math.round(UI.scale(tsz.x / scale)), Math.round(UI.scale(tsz.y / scale)));
 	    if(tsz != null) {
-		/* This seems kind of ugly, but I'm not sure how to
-		 * otherwise handle upwards rounding of both offset
+		/* This seems all kinds of ugly, but I'm not sure how
+		 * to otherwise handle upwards rounding of both offset
 		 * and size getting the image out of the intended
 		 * area. */
-		so = new Coord(Math.min(so.x, tsz.x - ssz.x), Math.min(so.y, sz.y - ssz.y));
+		so = new Coord(Math.min(so.x, stsz.x - ssz.x), Math.min(so.y, stsz.y - ssz.y));
 	    }
 	    scaled = PUtils.uiscale(img, ssz);
 	    if(false && !hasscale)
@@ -1169,7 +1186,7 @@ public class Resource implements Serializable {
 	    int ver = buf.uint8();
 	    if(ver != 1)
 		throw(new LoadException("Unknown property layer version: " + ver, getres()));
-	    Object[] raw = buf.list();
+	    Object[] raw = buf.list(resmapper());
 	    for(int a = 0; a < raw.length - 1; a += 2)
 		props.put((String)raw[a], raw[a + 1]);
 	}
@@ -1834,6 +1851,12 @@ public class Resource implements Serializable {
 	    }
 	}
 	return(null);
+    }
+
+    public <L> L flayer(Class<L> cl, Predicate<? super L> sel) {
+	L l = layer(cl, sel);
+	if(l == null) throw(new NoSuchLayerException("no " + cl + " in " + name + " selected by " + sel));
+	return(l);
     }
 
     public <I, L extends IDLayer<I>> L layer(Class<L> cl, I id) {

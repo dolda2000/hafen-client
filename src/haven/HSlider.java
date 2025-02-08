@@ -62,34 +62,38 @@ public class HSlider extends Widget {
 	g.image(sflarp, new Coord(fx, 0));
     }
     
-    public boolean mousedown(Coord c, int button) {
-	if(button != 1)
-	    return(false);
+    private void update(Coord c) {
+	double a = (double)(c.x - (sflarp.sz().x / 2)) / (double)(sz.x - sflarp.sz().x);
+	if(a < 0)
+	    a = 0;
+	if(a > 1)
+	    a = 1;
+	int nval = (int)Math.round(a * (max - min)) + min;
+	if(val != nval) {
+	    val = nval;
+	    changed();
+	}
+    }
+
+    public boolean mousedown(MouseDownEvent ev) {
+	if(ev.b != 1)
+	    return(super.mousedown(ev));
 	drag = ui.grabmouse(this);
-	mousemove(c);
+	update(ev.c);
 	return(true);
     }
     
-    public void mousemove(Coord c) {
-	if(drag != null) {
-	    double a = (double)(c.x - (sflarp.sz().x / 2)) / (double)(sz.x - sflarp.sz().x);
-	    if(a < 0)
-		a = 0;
-	    if(a > 1)
-		a = 1;
-	    int nval = (int)Math.round(a * (max - min)) + min;
-	    if(val != nval) {
-		val = nval;
-		changed();
-	    }
-	}
+    public void mousemove(MouseMoveEvent ev) {
+	super.mousemove(ev);
+	if(drag != null)
+	    update(ev.c);
     }
     
-    public boolean mouseup(Coord c, int button) {
-	if(button != 1)
-	    return(false);
+    public boolean mouseup(MouseUpEvent ev) {
+	if(ev.b != 1)
+	    return(super.mouseup(ev));
 	if(drag == null)
-	    return(false);
+	    return(super.mouseup(ev));
 	drag.remove();
 	drag = null;
 	fchanged();

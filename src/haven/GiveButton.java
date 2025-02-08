@@ -69,8 +69,8 @@ public class GiveButton extends Widget {
 	    g.image(sr, Coord.z, sz);
     }
     
-    public boolean mousedown(Coord c, int button) {
-	wdgmsg("click", button);
+    public boolean mousedown(MouseDownEvent ev) {
+	wdgmsg("click", ev.b);
 	return(true);
     }
     

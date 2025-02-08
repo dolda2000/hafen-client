@@ -77,9 +77,9 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	    choice(item);
 	}
 
-	public void mousemove(Coord c) {
-	    super.mousemove(c);
-	    this.mc = c;
+	public void mousemove(MouseMoveEvent ev) {
+	    super.mousemove(ev);
+	    this.mc = ev.c;
 	}
 
 	protected void drawbg(GOut g, I item, int idx, Area area) {
@@ -128,21 +128,25 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	super.draw(g);
     }
 
-    public boolean mousedown(Coord c, int button) {
-	if(!c.isect(Coord.z, sz)) {
+    public boolean mousedown(MouseDownEvent ev) {
+	if(!ev.c.isect(Coord.z, sz)) {
 	    choice(null);
+	    return(true);
 	} else {
-	    super.mousedown(c, button);
+	    return(super.mousedown(ev));
 	}
-	return(true);
     }
 
-    public boolean mousehover(Coord c, boolean hovering) {
-	super.mousehover(c, hovering);
-	return(hovering);
+    public boolean handle(Event ev) {
+	if((ev instanceof PointerEvent) && checkhit(((PointerEvent)ev).c)) {
+	    super.handle(ev);
+	    ev.propagate(this);
+	    return(true);
+	}
+	return(super.handle(ev));
     }
 
-    public boolean keydown(java.awt.event.KeyEvent ev) {
+    public boolean keydown(KeyDownEvent ev) {
 	if(key_esc.match(ev))
 	    choice(null);
 	return(true);
@@ -161,11 +165,6 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 	    kg.remove();
 	}
 	super.destroy();
-    }
-
-    public Object tooltip(Coord c, Widget prev) {
-	Object ret = super.tooltip(c, prev);
-	return((ret != null) ? ret : "");
     }
 
     public SListMenu<I, W> addat(Widget wdg, Coord c) {

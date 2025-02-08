@@ -762,8 +762,8 @@ public class GobIcon extends GAttrib {
 		super.tick(dt);
 	    }
 
-	    public boolean keydown(java.awt.event.KeyEvent ev) {
-		if(ev.getKeyCode() == java.awt.event.KeyEvent.VK_SPACE) {
+	    public boolean keydown(KeyDownEvent ev) {
+		if(ev.code == ev.awt.VK_SPACE) {
 		    if(sel != null) {
 			sel.conf.show = !sel.conf.show;
 			conf.dsave();

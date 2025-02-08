@@ -129,10 +129,10 @@ public class Fightview extends Widget {
 	protected void drawslot(GOut g, Relation item, int idx, Area area) {
 	}
 
-	public boolean mousewheel(Coord c, int amount) {
+	public boolean mousewheel(MouseWheelEvent ev) {
 	    if(!sb.vis())
 		return(false);
-	    return(super.mousewheel(c, amount));
+	    return(super.mousewheel(ev));
 	}
 
 	protected boolean unselect(int button) {

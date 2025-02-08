@@ -2,7 +2,6 @@ package haven;
 
 import java.util.*;
 import java.awt.image.BufferedImage;
-import java.awt.event.KeyEvent;
 import haven.MenuGrid.Pagina;
 import haven.MenuGrid.PagButton;
 
@@ -44,9 +43,9 @@ public class MenuSearch extends Window {
 		    }
 
 		    private double lastcl = 0;
-		    public boolean mousedown(Coord c, int button) {
+		    @Override public boolean mousedown(MouseDownEvent ev) {
 			boolean psel = sel == item;
-			super.mousedown(c, button);
+			super.mousedown(ev);
 			double now = Utils.rtime();
 			if(psel) {
 			    if(now - lastcl < 0.5)
@@ -154,8 +153,8 @@ public class MenuSearch extends Window {
 	super.tick(dt);
     }
 
-    public boolean keydown(KeyEvent ev) {
-	if(ev.getKeyCode() == KeyEvent.VK_DOWN) {
+    public boolean keydown(KeyDownEvent ev) {
+	if(ev.code == ev.awt.VK_DOWN) {
 	    int idx = filtered.indexOf(rls.sel);
 	    if((idx >= 0) && (idx < filtered.size() - 1)) {
 		idx++;
@@ -163,7 +162,7 @@ public class MenuSearch extends Window {
 		rls.display(idx);
 	    }
 	    return(true);
-	} else if(ev.getKeyCode() == KeyEvent.VK_UP) {
+	} else if(ev.code == ev.awt.VK_UP) {
 	    int idx = filtered.indexOf(rls.sel);
 	    if(idx > 0) {
 		idx--;

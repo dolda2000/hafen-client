@@ -83,11 +83,13 @@ public class Config {
 
     public String getprop(String name, String def) {
 	String ret;
-	if((ret = jarprops.getProperty(name)) != null)
+	if((ret = Utils.getprop(name, null)) != null)
 	    return(ret);
 	if((ret = localprops.getProperty(name)) != null)
 	    return(ret);
-	return(Utils.getprop(name, def));
+	if((ret = jarprops.getProperty(name)) != null)
+	    return(ret);
+	return(def);
     }
 
     public static final Path parsepath(String p) {

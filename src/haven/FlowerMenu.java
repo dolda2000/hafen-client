@@ -79,7 +79,7 @@ public class FlowerMenu extends Widget {
 	    g.image(text.tex(), sz.div(2).sub(text.sz().div(2)));
 	}
 
-	public boolean mousedown(Coord c, int button) {
+	public boolean mousedown(MouseDownEvent ev) {
 	    choose(this);
 	    return(true);
 	}
@@ -218,10 +218,10 @@ public class FlowerMenu extends Widget {
 	new Opening().ntick(0);
     }
 
-    public boolean mousedown(Coord c, int button) {
+    public boolean mousedown(MouseDownEvent ev) {
 	if(!anims.isEmpty())
 	    return(true);
-	if(!super.mousedown(c, button))
+	if(!ev.propagate(this))
 	    choose(null);
 	return(true);
     }
@@ -242,10 +242,9 @@ public class FlowerMenu extends Widget {
 	super.draw(g, false);
     }
 
-    public boolean keydown(java.awt.event.KeyEvent ev) {
-	char key = ev.getKeyChar();
-	if((key >= '0') && (key <= '9')) {
-	    int opt = (key == '0')?10:(key - '1');
+    public boolean keydown(KeyDownEvent ev) {
+	if((ev.c >= '0') && (ev.c <= '9')) {
+	    int opt = (ev.c == '0') ? 9 : (ev.c - '1');
 	    if(opt < opts.length) {
 		choose(opts[opt]);
 		kg.remove();
@@ -256,7 +255,7 @@ public class FlowerMenu extends Widget {
 	    kg.remove();
 	    return(true);
 	}
-	return(false);
+	return(super.keydown(ev));
     }
 
     public void choose(Petal option) {
