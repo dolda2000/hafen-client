@@ -36,6 +36,7 @@ import haven.render.Pipe;
 
 public class StreamOut {
     public static final Config.Variable<Path> path = Config.Variable.propp("haven.streamout", "");
+    public static final Config.Variable<Double> rate = Config.Variable.propf("haven.streamrate", null);
     public final WritableByteChannel out;
     public final Coord sz;
     private final Queue<ByteBuffer> free = new LinkedList<>();
@@ -52,44 +53,90 @@ public class StreamOut {
 	this(sz, Files.newByteChannel(out, StandardOpenOption.WRITE));
     }
 
-    private void output() {
+    private void writeframe(ByteBuffer data) {
 	try {
-	    double last = Utils.rtime();
-	    main: while(running) {
-		ByteBuffer data;
-		synchronized(this) {
-		    while(obuf == null) {
-			try {
-			    double now = Utils.rtime();
-			    if(now - last > 5) {
-				ot = null;
-				return;
-			    }
-			    this.wait((int)(1000 * (last + 5 - now)));
-			} catch(InterruptedException e) {
-			    continue main;
+	    for(int y = sz.y - 1; y >= 0; y--) {
+		data.limit((y + 1) * sz.x * 3).position(y * sz.x * 3);
+		while(data.remaining() > 0)
+		    out.write(data);
+	    }
+	} catch(IOException e) {
+	    running = false;
+	    throw(new RuntimeException(e));
+	}
+    }
+
+    private void uoutput() {
+	double last = Utils.rtime();
+	main: while(running) {
+	    ByteBuffer data;
+	    synchronized(this) {
+		while(obuf == null) {
+		    try {
+			double now = Utils.rtime();
+			if(now - last > 5) {
+			    ot = null;
+			    return;
 			}
+			this.wait((int)(1000 * (last + 5 - now)));
+		    } catch(InterruptedException e) {
+			continue main;
+		    }
+		}
+		data = obuf;
+		obuf = null;
+	    }
+	    writeframe(data);
+	    synchronized(this) {
+		data.clear();
+		free.add(data);
+	    }
+	    last = Utils.rtime();
+	}
+    }
+
+    private void routput(double rate) {
+	double dur = 1.0 / rate;
+	double last = Utils.rtime();
+	ByteBuffer data = null;
+	main: while(running) {
+	    synchronized(this) {
+		if(obuf != null) {
+		    if(data != null) {
+			data.clear();
+			free.add(data);
 		    }
 		    data = obuf;
 		    obuf = null;
 		}
-		try {
-		    for(int y = sz.y - 1; y >= 0; y--) {
-			data.position(y * sz.x * 3).limit((y + 1) * sz.x * 3);
-			while(data.remaining() > 0)
-			    out.write(data);
-		    }
-		} catch(IOException e) {
-		    new Warning(e, "stream-out error").issue();
-		    running = false;
+	    }
+	    while(true) {
+		double now = Utils.rtime();
+		if(now > last + 5) {
+		    Warning.warn("streamout frame timing reset");
+		    last = now;
+		    break;
+		} else if(now > last + dur) {
+		    last += dur;
 		    break;
 		}
-		synchronized(this) {
-		    data.clear();
-		    free.add(data);
+		try {
+		    long nanos = (long)((last + dur - now) * 1e9);
+		    Thread.sleep(nanos / 1000000, (int)(nanos % 1000000));
+		} catch(InterruptedException e) {
+		    continue main;
 		}
-		last = Utils.rtime();
 	    }
+	    writeframe(data);
+	}
+    }
+
+    private void output() {
+	try {
+	    if(rate.get() != null)
+		routput(rate.get());
+	    else
+		uoutput();
 	    try {
 		out.close();
 	    } catch(IOException e) {
@@ -102,6 +149,7 @@ public class StreamOut {
 		    ot.start();
 		}
 	    }
+	    Utils.defer(() -> System.exit(127));
 	}
     }
 
