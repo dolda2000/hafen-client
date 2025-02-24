@@ -64,6 +64,7 @@ public abstract class Message {
     public static final int T_MAP = 32;
     public static final int T_LONG = 33;
     public static final int T_RESSPEC = 34;
+    public static final int T_RESID = 35;
 
     private final static byte[] empty = new byte[0];
     public int rh = 0, rt = 0, wh = 0, wt = 0;
@@ -326,6 +327,9 @@ public abstract class Message {
 	    return(int64());
 	case T_RESSPEC:
 	    return(new Resource.Spec(null, string(), uint16()));
+	case T_RESID:
+	    int resid = uint16();
+	    return((resid == 65535) ? null : ResID.of(resid));
 	default:
 	    throw(new FormatError("unknown type tag: " + type).msg(this));
 	}
@@ -565,6 +569,9 @@ public abstract class Message {
 	    adduint8(T_RESSPEC);
 	    addstring(((Resource.Named)o).name);
 	    adduint16(((Resource.Named)o).ver);
+	} else if(o instanceof ResID) {
+	    adduint8(T_RESID);
+	    adduint16(((ResID)o).id);
 	} else if(o instanceof Object[]) {
 	    adduint8(T_TTOL);
 	    addlist((Object[])o);

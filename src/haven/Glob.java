@@ -204,7 +204,7 @@ public class Glob {
 	boolean inc = msg.uint8() != 0;
 	while(!msg.eom()) {
 	    String t = msg.string().intern();
-	    Object[] a = msg.list();
+	    Object[] a = msg.list(sess.resmapper);
 	    int n = 0;
 	    if(t == "tm") {
 		updgtime(Utils.dv(a[n++]), inc);

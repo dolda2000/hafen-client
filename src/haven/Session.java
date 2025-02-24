@@ -192,6 +192,8 @@ public class Session implements Resource.Resolver {
 	return(Resource.remote().dynres(uid));
     }
 
+    public final Function<Object, Object> resmapper = new ResID.ResolveMapper(this);
+
     private void handlerel(PMessage msg) {
 	if((msg.type == RMessage.RMSG_NEWWDG) || (msg.type == RMessage.RMSG_WDGMSG) ||
 	   (msg.type == RMessage.RMSG_DSTWDG) || (msg.type == RMessage.RMSG_ADDWDG) ||
