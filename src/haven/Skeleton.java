@@ -995,6 +995,7 @@ public class Skeleton {
 	public final transient FxTrack[] effects;
 	public final double nspeed;
 	public final WrapMode defmode;
+	private Skeleton refskel;
 	
 	private Track.Frame[] parseframes(int fmt, Message buf) {
 	    Track.Frame[] frames = new Track.Frame[buf.uint16()];
@@ -1146,12 +1147,34 @@ public class Skeleton {
 	    return(remap);
 	}
 
+	public float skelscale(Skeleton from, Skeleton to) {
+	    float acc = 0;
+	    int n = 0;
+	    for(Track t : tracks) {
+		Bone fb = from.bones.get(t.bone), tb = to.bones.get(t.bone);
+		if((fb == null) || (tb == null))
+		    continue;
+		float fs = fb.ipos.abs(), ts = tb.ipos.abs();
+		if((fs == 0) || (ts == 0))
+		    continue;
+		acc += ts / fs;
+		n++;
+	    }
+	    if(n == 0)
+		return(1.0f);
+	    return(acc / n);
+	}
+
 	public class ResMod extends TrackMod {
 	    public ResMod(ModOwner owner, Skeleton skel, WrapMode mode) {
 		skel.super(owner, iaIaCthulhuFhtagn(skel), ResPose.this.effects, ResPose.this.len, mode);
 		if(ResPose.this.nspeed > 0) {
 		    this.speedmod = true;
 		    this.nspeed = ResPose.this.nspeed;
+		}
+		if((refskel != null) && (refskel != skel)) {
+		    scale = skelscale(refskel, skel);
+		    Debug.dump(this, refskel, skel, scale);
 		}
 	    }
 
@@ -1172,7 +1195,18 @@ public class Skeleton {
 	    return(id);
 	}
 
-	public void init() {}
+	public void init() {
+	    Skeleton.Res ref = getres().layer(Skeleton.Res.class);
+	    if(ref != null) {
+		for(Track t : tracks) {
+		    if(!ref.s.bones.containsKey(t.bone)) {
+			Warning.warn("skeleton in %s not suitable as reference for animation", getres());
+			return;
+		    }
+		}
+		refskel = ref.s;
+	    }
+	}
     }
 
     @Resource.LayerName("boneoff")
