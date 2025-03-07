@@ -1172,10 +1172,8 @@ public class Skeleton {
 		    this.speedmod = true;
 		    this.nspeed = ResPose.this.nspeed;
 		}
-		if((refskel != null) && (refskel != skel)) {
+		if((refskel != null) && (refskel != skel))
 		    scale = skelscale(refskel, skel);
-		    Debug.dump(this, refskel, skel, scale);
-		}
 	    }
 
 	    public ResMod(ModOwner owner, Skeleton skel) {
