@@ -647,6 +647,7 @@ public class Skeleton {
 	private final boolean stat;
 	private boolean done;
 	public float time = 0.0f;
+	public float scale = 1.0f;
 	protected boolean speedmod = false;
 	protected double nspeed = 0.0;
 	private boolean back = false;
@@ -679,7 +680,9 @@ public class Skeleton {
 		    continue;
 		if(t.frames.length == 1) {
 		    qset(lrot[i], t.frames[0].rot);
-		    vset(lpos[i], t.frames[0].trans);
+		    lpos[i][0] = t.frames[0].trans[0] * scale;
+		    lpos[i][1] = t.frames[0].trans[1] * scale;
+		    lpos[i][2] = t.frames[0].trans[2] * scale;
 		} else {
 		    Track.Frame cf, nf;
 		    float ct, nt;
@@ -708,9 +711,9 @@ public class Skeleton {
 		    else
 			d = (time - ct) / (nt - ct);
 		    qqslerp(lrot[i], cf.rot, nf.rot, d);
-		    lpos[i][0] = cf.trans[0] + ((nf.trans[0] - cf.trans[0]) * d);
-		    lpos[i][1] = cf.trans[1] + ((nf.trans[1] - cf.trans[1]) * d);
-		    lpos[i][2] = cf.trans[2] + ((nf.trans[2] - cf.trans[2]) * d);
+		    lpos[i][0] = (cf.trans[0] + ((nf.trans[0] - cf.trans[0]) * d)) * scale;
+		    lpos[i][1] = (cf.trans[1] + ((nf.trans[1] - cf.trans[1]) * d)) * scale;
+		    lpos[i][2] = (cf.trans[2] + ((nf.trans[2] - cf.trans[2]) * d)) * scale;
 		}
 	    }
 	}
