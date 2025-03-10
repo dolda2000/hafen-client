@@ -91,6 +91,7 @@
 	<pathelement path="lib/jglob.jar" />
       </classpath>
       <compilerarg value="-Xlint:unchecked" />
+      <compilerarg value="-Xlint:deprecation" />
       <compilerarg value="-Xlint:-options" />
       <!-- <compilerarg value="-Xbarda" /> -->
     </javac>
