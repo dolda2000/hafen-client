@@ -123,7 +123,7 @@ public class Avaview extends PView {
 	.add(Glob.class, v -> v.ui.sess.glob)
 	.add(Session.class, v -> v.ui.sess)
 	.add(Resource.Resolver.class, v -> (v.resmap == null ? v.ui.sess : v.resmap));
-    private class AvaOwner implements Sprite.Owner, Skeleton.ModOwner, RandomSource {
+    private class AvaOwner implements Skeleton.ModOwner, RandomSource {
 	public Random mkrandoom() {return(new Random());}
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, Avaview.this));}
 	@Deprecated public Resource getres() {return(null);}
@@ -135,8 +135,7 @@ public class Avaview extends PView {
 
     private void initcomp(Composite gc) {
 	if((comp == null) || (comp.skel != gc.comp.skel)) {
-	    comp = new Composited(gc.comp.skel);
-	    comp.eqowner = avaowner;
+	    comp = new Composited(gc.comp.skel, avaowner);
 	    if(compslot != null) {
 		compslot.remove();
 		compslot = null;
@@ -200,8 +199,7 @@ public class Avaview extends PView {
 	    Desc d = avadesc;
 	    if((d.base != lbase) || (comp == null)) {
 		Resource base = d.base.get();
-		comp = new Composited(base.flayer(Skeleton.Res.class).s);
-		comp.eqowner = avaowner;
+		comp = new Composited(base.flayer(Skeleton.Res.class).s, avaowner);
 		lbase = d.base;
 		basic(Camera.class, makecam(base, comp, camnm));
 		updposes();

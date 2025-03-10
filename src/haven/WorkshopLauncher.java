@@ -41,6 +41,10 @@ import com.codedisaster.steamworks.SteamResult;
 import static haven.Utils.*;
 
 public class WorkshopLauncher {
+    static {
+	MainFrame.initlocale();
+    }
+
     public static class Client {
 	public final UGItem item;
 	public final Path path;

@@ -447,17 +447,22 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
     public static class RenderLinks implements Mod, Sprite.Owner {
 	public final ModSprite main;
 	public final RenderLink.Res[] rlinks;
+	public final RenderTree.Node[] parts;
 
 	public RenderLinks(ModSprite spr, RenderLink.Res[] rlinks) {
 	    this.main = spr;
 	    this.rlinks = rlinks;
+	    parts = new RenderTree.Node[rlinks.length];
 	}
 
 	public void operate(Cons cons) {
 	    int flags = cons.spr().flags;
-	    for(RenderLink.Res lr : rlinks) {
+	    for(int i = 0; i < rlinks.length; i++) {
+		RenderLink.Res lr = rlinks[i];
 		if((lr.id < 0) || (((1 << lr.id) & flags) != 0)) {
-		    Part part = new Part(lr.l.make(this));
+		    if(parts[i] == null)
+			parts[i] = lr.l.make(this);
+		    Part part = new Part(parts[i]);
 		    part.unwrap();
 		    cons.add(part);
 		    if(part.obj instanceof Sprite) {
@@ -467,6 +472,8 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 				public void gtick(Render out) {spr.gtick(out);}
 			    });
 		    }
+		} else {
+		    parts[i] = null;
 		}
 	    }
 	}
@@ -688,7 +695,8 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    return(ret);
 	}
 	public double getv() {
-	    return((spr.owner instanceof Skeleton.ModOwner) ? ((Skeleton.ModOwner)spr.owner).getv() : 0);
+	    Skeleton.ModOwner parent = spr.owner.fcontext(Skeleton.ModOwner.class, false);
+	    return((parent == null) ? 0 : parent.getv());
 	}
 
 	public void age() {

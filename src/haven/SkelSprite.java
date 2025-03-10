@@ -110,7 +110,8 @@ public class SkelSprite extends Sprite implements Sprite.CUpd, EquipTarget, Spri
 	return(ret);
     }
     public double getv() {
-	return((owner instanceof Skeleton.ModOwner) ? ((Skeleton.ModOwner)owner).getv() : 0);
+	Skeleton.ModOwner parent = owner.fcontext(Skeleton.ModOwner.class, false);
+	return((parent == null) ? 0 : parent.getv());
     }
 
     /* XXX: It's ugly to snoop inside a wrapping, but I can't think of

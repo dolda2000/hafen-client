@@ -67,7 +67,7 @@ public abstract class GAttrib {
 			}
 		    });
 	    } catch(NoSuchMethodException e) {}
-	    return(null);
+	    throw(new RuntimeException(String.format("Could not find any suitable objdelta parser in %s", cl)));
 	}
     }
 

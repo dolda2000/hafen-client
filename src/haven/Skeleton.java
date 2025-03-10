@@ -647,6 +647,7 @@ public class Skeleton {
 	private final boolean stat;
 	private boolean done;
 	public float time = 0.0f;
+	public float scale = 1.0f;
 	protected boolean speedmod = false;
 	protected double nspeed = 0.0;
 	private boolean back = false;
@@ -679,7 +680,9 @@ public class Skeleton {
 		    continue;
 		if(t.frames.length == 1) {
 		    qset(lrot[i], t.frames[0].rot);
-		    vset(lpos[i], t.frames[0].trans);
+		    lpos[i][0] = t.frames[0].trans[0] * scale;
+		    lpos[i][1] = t.frames[0].trans[1] * scale;
+		    lpos[i][2] = t.frames[0].trans[2] * scale;
 		} else {
 		    Track.Frame cf, nf;
 		    float ct, nt;
@@ -708,9 +711,9 @@ public class Skeleton {
 		    else
 			d = (time - ct) / (nt - ct);
 		    qqslerp(lrot[i], cf.rot, nf.rot, d);
-		    lpos[i][0] = cf.trans[0] + ((nf.trans[0] - cf.trans[0]) * d);
-		    lpos[i][1] = cf.trans[1] + ((nf.trans[1] - cf.trans[1]) * d);
-		    lpos[i][2] = cf.trans[2] + ((nf.trans[2] - cf.trans[2]) * d);
+		    lpos[i][0] = (cf.trans[0] + ((nf.trans[0] - cf.trans[0]) * d)) * scale;
+		    lpos[i][1] = (cf.trans[1] + ((nf.trans[1] - cf.trans[1]) * d)) * scale;
+		    lpos[i][2] = (cf.trans[2] + ((nf.trans[2] - cf.trans[2]) * d)) * scale;
 		}
 	    }
 	}
@@ -992,6 +995,7 @@ public class Skeleton {
 	public final transient FxTrack[] effects;
 	public final double nspeed;
 	public final WrapMode defmode;
+	private Skeleton refskel;
 	
 	private Track.Frame[] parseframes(int fmt, Message buf) {
 	    Track.Frame[] frames = new Track.Frame[buf.uint16()];
@@ -1143,6 +1147,24 @@ public class Skeleton {
 	    return(remap);
 	}
 
+	public float skelscale(Skeleton from, Skeleton to) {
+	    float acc = 0;
+	    int n = 0;
+	    for(Track t : tracks) {
+		Bone fb = from.bones.get(t.bone), tb = to.bones.get(t.bone);
+		if((fb == null) || (tb == null))
+		    continue;
+		float fs = fb.ipos.abs(), ts = tb.ipos.abs();
+		if((fs == 0) || (ts == 0))
+		    continue;
+		acc += ts / fs;
+		n++;
+	    }
+	    if(n == 0)
+		return(1.0f);
+	    return(acc / n);
+	}
+
 	public class ResMod extends TrackMod {
 	    public ResMod(ModOwner owner, Skeleton skel, WrapMode mode) {
 		skel.super(owner, iaIaCthulhuFhtagn(skel), ResPose.this.effects, ResPose.this.len, mode);
@@ -1150,6 +1172,8 @@ public class Skeleton {
 		    this.speedmod = true;
 		    this.nspeed = ResPose.this.nspeed;
 		}
+		if((refskel != null) && (refskel != skel))
+		    scale = skelscale(refskel, skel);
 	    }
 
 	    public ResMod(ModOwner owner, Skeleton skel) {
@@ -1169,7 +1193,18 @@ public class Skeleton {
 	    return(id);
 	}
 
-	public void init() {}
+	public void init() {
+	    Skeleton.Res ref = getres().layer(Skeleton.Res.class);
+	    if(ref != null) {
+		for(Track t : tracks) {
+		    if(!ref.s.bones.containsKey(t.bone)) {
+			Warning.warn("skeleton in %s not suitable as reference for animation", getres());
+			return;
+		    }
+		}
+		refskel = ref.s;
+	    }
+	}
     }
 
     @Resource.LayerName("boneoff")
