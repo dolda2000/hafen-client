@@ -29,6 +29,7 @@ package haven;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
+import java.util.function.*;
 import java.text.*;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -96,6 +97,60 @@ public class RichText extends Text {
 	}
     }
     
+    public static interface ImageSource {
+	public Image get(String[] args, int[] ap);
+
+	public static ImageSource chain(ImageSource... srcs) {
+	    return((args, ap) -> {
+		for(ImageSource src : srcs) {
+		    Image ret = src.get(args, ap);
+		    if(ret != null)
+			return(ret);
+		}
+		return(null);
+	    });
+	}
+
+	public static ImageSource id(String id, Supplier<? extends Image> img) {
+	    return((args, ap) -> {
+		if(args[ap[0]].equals(id)) {
+		    ap[0]++;
+		    return(img.get());
+		}
+		return(null);
+	    });
+	}
+
+	public static ImageSource res(Resource res) {
+	    return((args, ap) -> {
+		try {
+		    int id = Integer.parseInt(args[ap[0]++]);
+		    return(new Image(res.flayer(Resource.imgc, id)));
+		} catch(NumberFormatException e) {
+		    return(null);
+		}
+	    });
+	}
+
+	public static ImageSource res(Resource.Pool pool) {
+	    return((args, ap) -> {
+		Resource res = pool.loadwait(args[ap[0]++]);
+		int id = -1;
+		if(args.length > ap[0]) {
+		    try {
+			id = Integer.parseInt(args[ap[0]]);
+			ap[0]++;
+		    } catch(NumberFormatException e) {}
+		}
+		for(Resource.Image img : res.layers(Resource.imgc)) {
+		    if(img.id == id)
+			return(new Image(img));
+		}
+		throw(new RuntimeException("Found no image with id " + id + " in " + res.toString()));
+	    });
+	}
+    }
+
     public static class Image extends Part {
 	public BufferedImage img;
 	public int h = -1;
@@ -107,7 +162,12 @@ public class RichText extends Text {
 	public Image(BufferedImage img) {
 	    this.img = img;
 	}
-	
+
+	public Image(Resource.Image img) {
+	    this.img = img.img;
+	    this.imgscale = img.scale;
+	}
+
 	public Image(Resource res, int id) {
 	    for(Resource.Image img : res.layers(Resource.imgc)) {
 		if(img.id == id) {
@@ -364,23 +424,23 @@ public class RichText extends Text {
 
     public static class Parser {
 	private final Map<? extends Attribute, ?> defattrs;
-	private final Resource.Pool respool;
+	private final ImageSource isrc;
 	
-	public Parser(Resource.Pool respool, Map<? extends Attribute, ?> defattrs) {
-	    this.respool = respool;
+	public Parser(ImageSource isrc, Map<? extends Attribute, ?> defattrs) {
+	    this.isrc = isrc;
 	    this.defattrs = fixattrs(defattrs);
 	}
 	
 	public Parser(Map<? extends Attribute, ?> defattrs) {
-	    this(Resource.local(), defattrs);
+	    this(ImageSource.res(Resource.local()), defattrs);
 	}
 	
-	public Parser(Resource.Pool respool, Object... attrs) {
-	    this(respool, fillattrs2(std.defattrs, attrs));
+	public Parser(ImageSource isrc, Object... attrs) {
+	    this(isrc, fillattrs2(std.defattrs, attrs));
 	}
 	
 	public Parser(Object... attrs) {
-	    this(Resource.local(), attrs);
+	    this(ImageSource.res(Resource.local()), attrs);
 	}
 	
 	public static class PState {
@@ -424,22 +484,14 @@ public class RichText extends Text {
 
 	protected Part tag(PState s, String tn, String[] args, Map<? extends Attribute, ?> attrs) throws IOException {
 	    if(tn == "img") {
-		int a = 0;
-		Resource res = respool.loadwait(args[a++]);
-		int id = -1;
-		if(args.length > a) {
-		    try {
-			id = Integer.parseInt(args[a]);
-			a++;
-		    } catch(NumberFormatException e) {}
-		}
-		Image img = new Image(res, id);
+		int[] a = {0};
+		Image img = isrc.get(args, a);
 		img.attrs = attrs;
-		for(; a < args.length; a++) {
-		    int p = args[a].indexOf('=');
+		for(; a[0] < args.length; a[0]++) {
+		    int p = args[a[0]].indexOf('=');
 		    if(p < 0)
 			continue;
-		    String k = args[a].substring(0, p), v = args[a].substring(p + 1);
+		    String k = args[a[0]].substring(0, p), v = args[a[0]].substring(p + 1);
 		    switch(k) {
 		    case "h": {
 			if(v.endsWith("ln")) {
@@ -619,16 +671,16 @@ public class RichText extends Text {
 	    rs = new RState(g.getFontRenderContext());
 	}
 
-	public Foundry(Resource.Pool respool, Map<? extends Attribute, ?> defattrs) {
-	    this(new Parser(respool, defattrs));
+	public Foundry(ImageSource isrc, Map<? extends Attribute, ?> defattrs) {
+	    this(new Parser(isrc, defattrs));
 	}
 	
 	public Foundry(Map<? extends Attribute, ?> defattrs) {
 	    this(new Parser(defattrs));
 	}
 	
-	public Foundry(Resource.Pool respool, Object... attrs) {
-	    this(new Parser(respool, attrs));
+	public Foundry(ImageSource isrc, Object... attrs) {
+	    this(new Parser(isrc, attrs));
 	}
 	
 	public Foundry(Object... attrs) {
