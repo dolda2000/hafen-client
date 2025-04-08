@@ -115,7 +115,15 @@ public class RichText extends Text {
 	    return((args, ap) -> {
 		if(args[ap[0]].equals(id)) {
 		    ap[0]++;
-		    return(img.get());
+		    /* XXX? The Image cast indeed shouldn't be
+		     * necessary, but there seems to be a javac bug
+		     * that causes it not to emit the implicit cast
+		     * from the generic call in the bytecode, causing
+		     * verification errors. I have *no* idea what's so
+		     * special about this specific line that causes it
+		     * to trigger the bug, but it seems to happen
+		     * anyway. */
+		    return((Image)img.get());
 		}
 		return(null);
 	    });
