@@ -294,7 +294,7 @@ public class AuthClient implements Closeable {
 	    BigInteger x = b2i(phash);
 	    byte[] ab = new byte[32];
 	    new SecureRandom().nextBytes(ab);
-	    BigInteger a = b2i(ab);
+	    BigInteger a = b2i(ab).mod(N);
 	    BigInteger A = g.modPow(a, N);
 	    BigInteger u = b2i(Digest.hash(digest, i2b(A), i2b(B)));
 	    BigInteger S = B.subtract(k.multiply(g.modPow(x, N))).mod(N).modPow(a.add(u.multiply(x)), N);

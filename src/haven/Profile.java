@@ -83,29 +83,6 @@ public abstract class Profile {
 	    return(hist[hist.length - 1]);
 	return(hist[i - 1]);
     }
-    
-    public Tex draw(int h, double scale) {
-	WritableRaster buf = PUtils.imgraster(new Coord(hist.length, h));
-	for(int i = 0; i < hist.length; i++) {
-	    Frame f = hist[i];
-	    if(f == null)
-		continue;
-	    int y = h - 1;
-	    double a = 0;
-	    for(int o = 0; o < f.prt.length; o++) {
-		a += f.prt[o];
-		Color col = cols[o + 1];
-		int r = col.getRed(), g = col.getGreen(), b = col.getBlue();
-		for(int th = h - 1 - (int)(a / scale); (y >= 0) && (y >= th); y--) {
-		    buf.setSample(i, y, 0, r);
-		    buf.setSample(i, y, 1, g);
-		    buf.setSample(i, y, 2, b);
-		    buf.setSample(i, y, 3, 255);
-		}
-	    }
-	}
-	return(new TexI(PUtils.rasterimg(buf), false));
-    }
 
     public void dump(java.io.PrintStream out) {
 	String[] parts = new String[0];

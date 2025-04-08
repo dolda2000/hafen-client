@@ -26,13 +26,15 @@
 
 package haven;
 
+import haven.render.*;
 import java.util.*;
+import java.nio.*;
+import java.awt.Color;
 
 public class Profdisp extends Widget {
     private static final int h = UI.scale(80);
     public final Profile prof;
     public double mt = 0.05;
-    private Tex tex = null;
     private double dscale = 0;
     private Tex sscl = null;
 
@@ -42,8 +44,67 @@ public class Profdisp extends Widget {
 	setcanfocus(true);
     }
 
+    public class Buffer {
+	public final Tex tex;
+	private final Texture2D btex;
+
+	public Buffer() {
+	    btex = new Texture2D(prof.hist.length, sz.y, DataBuffer.Usage.STREAM, new VectorFormat(4, NumberFormat.UNORM8), null);
+	    tex = new TexRaw(new Texture2D.Sampler2D(btex));
+	}
+
+	private void draw(ByteBuffer buf, double scale) {
+	    buf.order(ByteOrder.LITTLE_ENDIAN);
+	    int w = prof.hist.length, h = sz.y;
+	    IntBuffer data = buf.asIntBuffer();
+	    for(int i = 0; i < prof.hist.length; i++) {
+		Profile.Frame f = prof.hist[i];
+		if(f == null)
+		    continue;
+		int y = h - 1;
+		int O = (y * w) + i;
+		double a = 0;
+		for(int o = 0; o < f.prt.length; o++) {
+		    a += f.prt[o];
+		    Color col = Profile.cols[o + 1];
+		    int r = col.getRed(), g = col.getGreen(), b = col.getBlue();
+		    int rgb = (r << 0) | (g << 8) | (b << 16) | (255 << 24);
+		    for(int th = h - 1 - (int)(a / scale); (y >= 0) && (y >= th); y--, O -= w)
+			data.put(O, rgb);
+		}
+	    }
+	}
+
+	public void update(Render r, double scale) {
+	    r.update(btex.image(0), (img, env) -> {
+		    FillBuffer buf = env.fillbuf(img);
+		    draw(buf.push(), scale);
+		    return(buf);
+		});
+	}
+    }
+
     private static final String[] units = {"s", "ms", "\u00b5s", "ns"};
+    private Buffer display;
     public void draw(GOut g) {
+	if((sscl == null) || (dscale < mt * 0.70) || (dscale > mt)) {
+	    int p = (int)Math.floor(Math.log10(mt));
+	    double b = Math.pow(10.0, p) * 0.5;
+	    dscale = Math.floor(mt / b) * b;
+	    int u = Utils.clip(-Utils.floordiv(p, 3), 0, units.length - 1);
+	    if(sscl != null)
+		sscl.dispose();
+	    sscl = Text.render(String.format("%.1f %s", dscale * Math.pow(10.0, u * 3), units[u])).tex();
+	}
+	g.image(display.tex, Coord.z);
+	int sy = (int)Math.round((1 - (dscale / mt)) * h);
+	g.chcolor(192, 192, 192, 128);
+	g.line(new Coord(0, sy), new Coord(prof.hist.length, sy), 1);
+	g.chcolor();
+	g.image(sscl, new Coord(prof.hist.length + UI.scale(2), sy - (sscl.sz().y / 2)));
+    }
+
+    public void tick(double dt) {
 	double[] ttl = new double[prof.hist.length];
 	for(int i = 0; i < prof.hist.length; i++) {
 	    if(prof.hist[i] != null)
@@ -62,24 +123,12 @@ public class Profdisp extends Widget {
 	else
 	    mt = 0.05;
 	mt *= 1.1;
-	if(tex != null)
-	    tex.dispose();
-	if((sscl == null) || (dscale < mt * 0.70) || (dscale > mt)) {
-	    int p = (int)Math.floor(Math.log10(mt));
-	    double b = Math.pow(10.0, p) * 0.5;
-	    dscale = Math.floor(mt / b) * b;
-	    int u = Utils.clip(-Utils.floordiv(p, 3), 0, units.length - 1);
-	    if(sscl != null)
-		sscl.dispose();
-	    sscl = Text.render(String.format("%.1f %s", dscale * Math.pow(10.0, u * 3), units[u])).tex();
-	}
-	tex = prof.draw(h, mt / h);
-	g.image(tex, Coord.z);
-	int sy = (int)Math.round((1 - (dscale / mt)) * h);
-	g.chcolor(192, 192, 192, 128);
-	g.line(new Coord(0, sy), new Coord(prof.hist.length, sy), 1);
-	g.chcolor();
-	g.image(sscl, new Coord(prof.hist.length + UI.scale(2), sy - (sscl.sz().y / 2)));
+    }
+
+    public void gtick(Render g) {
+	if(display == null)
+	    display = new Buffer();
+	display.update(g, mt / h);
     }
 
     public boolean keydown(KeyDownEvent ev) {
