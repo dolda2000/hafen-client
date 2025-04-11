@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 
-<project name="hafen" default="deftgt">
+<project name="hafen" default="deftgt" xmlns:if="ant:if">
   <property file="build.properties" />
   <property name="ext-lib-base" value="http://www.havenandhearth.com/java" />
 
@@ -78,7 +78,7 @@
 
 
   <target name="hafen-client" depends="build-env, extlib/jogl, extlib/lwjgl-gl, extlib/steamworks">
-    <condition property="explicit-annotations" value="-proc:full" else="">
+    <condition property="explicit-annotations">
       <javaversion atleast="21" />
     </condition>
     <javac srcdir="src" destdir="build/classes" debug="on"
@@ -93,7 +93,7 @@
 	<pathelement path="lib/ext/steamworks/steamworks4j.jar" />
 	<pathelement path="lib/jglob.jar" />
       </classpath>
-      <compilerarg line="${explicit-annotations}" />
+      <compilerarg if:set="explicit-annotations" value="-proc:full" />
       <compilerarg value="-Xlint:unchecked" />
       <compilerarg value="-Xlint:deprecation" />
       <compilerarg value="-Xlint:-options" />
@@ -176,19 +176,19 @@
   <target name="deftgt" depends="jars, bin" />
 
   <target name="run" depends="bin">
-    <condition property="jogl-exports"
-	       value="--add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
-	       else="">
+    <condition property="jogl-exports">
       <javaversion atleast="16" />
     </condition>
-    <condition property="jogl-access" value="--enable-native-access=ALL-UNNAMED" else="">
+    <condition property="jogl-access">
       <javaversion atleast="24" />
     </condition>
     <java jar="bin/hafen.jar" fork="true">
       <sysproperty key="sun.java2d.uiScale.enabled" value="false" />
       <sysproperty key="java.net.preferIPv6Addresses" value="system" />
-      <jvmarg line="${jogl-exports}" />
-      <jvmarg line="${jogl-access}" />
+      <jvmarg if:set="jogl-exports" value="--add-exports=java.base/java.lang=ALL-UNNAMED" />
+      <jvmarg if:set="jogl-exports" value="--add-exports=java.desktop/sun.awt=ALL-UNNAMED" />
+      <jvmarg if:set="jogl-exports" value="--add-exports=java.desktop/sun.java2d=ALL-UNNAMED" />
+      <jvmarg if:set="jogl-access" value="--enable-native-access=ALL-UNNAMED" />
       <!-- <sysproperty key="haven.renderer" value="lwjgl" /> -->
     </java>
   </target>
