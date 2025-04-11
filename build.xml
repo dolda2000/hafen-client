@@ -172,7 +172,21 @@
   <target name="deftgt" depends="jars, bin" />
 
   <target name="run" depends="bin">
-    <java jar="bin/hafen.jar" fork="true" />
+    <condition property="jogl-exports"
+	       value="--add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
+	       else="">
+      <javaversion atleast="16" />
+    </condition>
+    <condition property="jogl-access" value="--enable-native-access=ALL-UNNAMED" else="">
+      <javaversion atleast="24" />
+    </condition>
+    <java jar="bin/hafen.jar" fork="true">
+      <sysproperty key="sun.java2d.uiScale.enabled" value="false" />
+      <sysproperty key="java.net.preferIPv6Addresses" value="system" />
+      <jvmarg line="${jogl-exports}" />
+      <jvmarg line="${jogl-access}" />
+      <!-- <sysproperty key="haven.renderer" value="lwjgl" /> -->
+    </java>
   </target>
 
   <target name="clean">
