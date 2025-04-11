@@ -78,6 +78,9 @@
 
 
   <target name="hafen-client" depends="build-env, extlib/jogl, extlib/lwjgl-gl, extlib/steamworks">
+    <condition property="explicit-annotations" value="-proc:full" else="">
+      <javaversion atleast="21" />
+    </condition>
     <javac srcdir="src" destdir="build/classes" debug="on"
 	   source="1.8" target="1.8" includeantruntime="no"
 	   bootclasspath="${boot-classpath}">
@@ -90,6 +93,7 @@
 	<pathelement path="lib/ext/steamworks/steamworks4j.jar" />
 	<pathelement path="lib/jglob.jar" />
       </classpath>
+      <compilerarg line="${explicit-annotations}" />
       <compilerarg value="-Xlint:unchecked" />
       <compilerarg value="-Xlint:deprecation" />
       <compilerarg value="-Xlint:-options" />
