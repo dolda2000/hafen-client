@@ -33,6 +33,7 @@ import javax.sound.sampled.*;
 import dolda.xiphutil.*;
 
 public class Audio {
+    public static final Config.Variable<String> outname = Config.Variable.prop("haven.audio-output", "");
     public static final AudioFormat fmt = new AudioFormat(44100, 16, 2, true, false);
     public static boolean enabled = true;
     public static double volume = Double.parseDouble(Utils.getpref("sfxvol", "1.0"));
@@ -584,6 +585,40 @@ public class Audio {
 	    return(wr);
 	}
 
+	static SourceDataLine getline() throws LineUnavailableException {
+	    javax.sound.sampled.Mixer mixer;
+	    String spec = outname.get();
+	    if(spec.equals("")) {
+		mixer = AudioSystem.getMixer(null);
+	    } else {
+		javax.sound.sampled.Mixer.Info f = null, f2 = null;
+		int fs = 0;
+		for(javax.sound.sampled.Mixer.Info info : AudioSystem.getMixerInfo()) {
+		    String nm = info.getName();
+		    int s = 0;
+		    if(nm.equals(spec))
+			s = 3;
+		    else if(nm.equalsIgnoreCase(spec))
+			s = 2;
+		    else if(nm.toLowerCase().indexOf(spec.toLowerCase()) >= 0)
+			s = 1;
+		    if(s > fs) {
+			f = info;
+			f2 = null;
+			fs = s;
+		    } else if((s > 0) && (s == fs)) {
+			f2 = info;
+		    }
+		}
+		if(f == null)
+		    throw(new LineUnavailableException(String.format("no mixer found by name: %s", spec)));
+		else if(f2 != null)
+		    throw(new LineUnavailableException(String.format("multiple mixers found by name `%s': %s and %s", spec, f.getName(), f2.getName())));
+		mixer = AudioSystem.getMixer(f);
+	    }
+	    return((SourceDataLine)mixer.getLine(new DataLine.Info(SourceDataLine.class, fmt)));
+	}
+
 	public void run() {
 	    SourceDataLine line = null;
 	    try {
@@ -593,11 +628,11 @@ public class Audio {
 			this.notifyAll();
 		    }
 		    try {
-			line = (SourceDataLine)AudioSystem.getLine(new DataLine.Info(SourceDataLine.class, fmt));
+			line = getline();
 			line.open(fmt, bufsize);
 			line.start();
 		    } catch(Exception e) {
-			e.printStackTrace();
+			new Warning(e, "could not open audio output").issue();
 			return;
 		    }
 		    byte[] buf = new byte[bufsize / 2];
@@ -731,19 +766,25 @@ public class Audio {
     }
 
     public static void main(String[] args) throws Exception {
-	Collection<Monitor> clips = new LinkedList<Monitor>();
-	for(int i = 0; i < args.length; i++) {
-	    if(args[i].equals("-b")) {
-		bufsize = Integer.parseInt(args[++i]);
-	    } else {
-		Monitor c = new Monitor(PCMClip.fromwav(Files.newInputStream(Utils.path(args[i]))));
-		clips.add(c);
+	if(args[0].equals("play")) {
+	    Collection<Monitor> clips = new LinkedList<Monitor>();
+	    for(int i = 1; i < args.length; i++) {
+		if(args[i].equals("-b")) {
+		    bufsize = Integer.parseInt(args[++i]);
+		} else {
+		    Monitor c = new Monitor(PCMClip.fromwav(Files.newInputStream(Utils.path(args[i]))));
+		    clips.add(c);
+		}
+	    }
+	    for(Monitor c : clips)
+		play(c);
+	    for(Monitor c : clips)
+		c.finwait();
+	} else if(args[0].equals("outputs")) {
+	    for(javax.sound.sampled.Mixer.Info m : AudioSystem.getMixerInfo()) {
+		System.out.printf("%s\t%s (%s %s)\n", m.getName(), m.getDescription(), m.getVendor(), m.getVersion());
 	    }
 	}
-	for(Monitor c : clips)
-	    play(c);
-	for(Monitor c : clips)
-	    c.finwait();
     }
 
     static {
