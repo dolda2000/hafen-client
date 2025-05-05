@@ -72,6 +72,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	public void operate(Cons cons);
 	public default int order() {return(0);}
 	public default void age() {}
+	public default boolean decdata(Message sdt) {return(false);}
 
 	public static Mod of(Consumer<Cons> mod, int order) {
 	    return(new Mod() {
@@ -235,6 +236,17 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
     }
 
     protected void decdata(Message sdt) {
+	flags = 0;
+	if(imods != null) {
+	    for(Mod mod : imods) {
+		if(mod.decdata(sdt))
+		    return;
+	    }
+	}
+	for(Mod mod : resdata.mods) {
+	    if(mod.decdata(sdt))
+		return;
+	}
 	flags = decflags(sdt);
     }
 
