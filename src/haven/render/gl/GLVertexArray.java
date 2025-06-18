@@ -135,7 +135,9 @@ public class GLVertexArray extends GLObject implements BGL.ID {
 			    vo = 12;
 			    vfmt = new VectorFormat(3, NumberFormat.FLOAT32);
 			} else if((attr.tgt.type == Type.INT) || (attr.tgt.type == Type.IVEC2) ||
-				  (attr.tgt.type == Type.IVEC3) || (attr.tgt.type == Type.IVEC4)) {
+				  (attr.tgt.type == Type.IVEC3) || (attr.tgt.type == Type.IVEC4) ||
+				  (attr.tgt.type == Type.UINT) || (attr.tgt.type == Type.UVEC2) ||
+				  (attr.tgt.type == Type.UVEC3) || (attr.tgt.type == Type.UVEC4)) {
 			    iattr = true;
 			}
 			if(na == 1) {
