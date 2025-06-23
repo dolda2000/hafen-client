@@ -27,6 +27,7 @@
 package haven;
 
 public class HomoCoord4f {
+    public static int NX = 1, PX = 2, NY = 4, PY = 8, NZ = 16, PZ = 32, AX = NX | PX, AY = NY | PY, AZ = NZ | PZ;
     public float x, y, z, w;
 
     public HomoCoord4f(float x, float y, float z, float w) {
@@ -74,7 +75,7 @@ public class HomoCoord4f {
 	return(fromindc(proj.invert(), nc));
     }
 
-    public static HomoCoord4f lineclip(HomoCoord4f a, HomoCoord4f b) {
+    public static HomoCoord4f lineclip(HomoCoord4f a, HomoCoord4f b, int planes) {
 	float x0 = a.x, y0 = a.y, z0 = a.z, w0 = a.w;
 	float dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z, dw = b.w - a.w;
 	float nxt = (-w0 - x0) / (dx + dw);
@@ -84,21 +85,29 @@ public class HomoCoord4f {
 	float nzt = (-w0 - z0) / (dz + dw);
 	float pzt = ( w0 - z0) / (dz - dw);
 	float t = Float.POSITIVE_INFINITY;
-	if(nxt >= 0) t = Math.min(t, nxt);
-	if(pxt >= 0) t = Math.min(t, pxt);
-	if(nyt >= 0) t = Math.min(t, nyt);
-	if(pyt >= 0) t = Math.min(t, pyt);
-	if(nzt >= 0) t = Math.min(t, nzt);
-	if(pzt >= 0) t = Math.min(t, pzt);
+	if(((planes & NX) != 0) && (nxt >= 0)) t = Math.min(t, nxt);
+	if(((planes & PX) != 0) && pxt >= 0) t = Math.min(t, pxt);
+	if(((planes & NY) != 0) && nyt >= 0) t = Math.min(t, nyt);
+	if(((planes & PY) != 0) && pyt >= 0) t = Math.min(t, pyt);
+	if(((planes & NZ) != 0) && nzt >= 0) t = Math.min(t, nzt);
+	if(((planes & PZ) != 0) && pzt >= 0) t = Math.min(t, pzt);
 	return(new HomoCoord4f(x0 + (t * dx), y0 + (t * dy),
 			       z0 + (t * dz), w0 + (t * dw)));
     }
 
-    public boolean clipped() {
+    public static HomoCoord4f lineclip(HomoCoord4f a, HomoCoord4f b) {
+	return(lineclip(a, b, AX | AY | AZ));
+    }
+
+    public boolean clipped(int planes) {
 	return((w <= 0) ||
-	       (x < -w) || (x > w) ||
-	       (y < -w) || (y > w) ||
-	       (z < -w) || (z > w));
+	       (((planes & NX) != 0) && (x < -w)) || (((planes & PX) != 0) && (x > w)) ||
+	       (((planes & NY) != 0) && (y < -w)) || (((planes & PY) != 0) && (y > w)) ||
+	       (((planes & NZ) != 0) && (z < -w)) || (((planes & PZ) != 0) && (z > w)));
+    }
+
+    public boolean clipped() {
+	return(clipped(AX | AY | AZ));
     }
 
     public Coord3f pdiv() {

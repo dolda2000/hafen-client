@@ -1556,10 +1556,10 @@ public class MapView extends PView implements DTarget, Console.Directory {
 
     public HomoCoord4f clipxf(Coord3f mc, boolean doclip) {
 	HomoCoord4f ret = Homo3D.obj2clip(new Coord3f(mc.x, -mc.y, mc.z), basic.state());
-	if(doclip && ret.clipped()) {
+	if(doclip && ret.clipped(HomoCoord4f.AX | HomoCoord4f.AY | HomoCoord4f.PZ)) {
 	    Projection s_prj = basic.state().get(Homo3D.prj);
 	    Matrix4f prj = (s_prj == null) ? Matrix4f.id : s_prj.fin(Matrix4f.id);
-	    ret = HomoCoord4f.lineclip(HomoCoord4f.fromclip(prj, Coord3f.o), ret);
+	    ret = HomoCoord4f.lineclip(HomoCoord4f.fromclip(prj, Coord3f.o), ret, HomoCoord4f.AX | HomoCoord4f.AY | HomoCoord4f.PZ);
 	}
 	return(ret);
     }
