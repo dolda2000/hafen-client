@@ -29,6 +29,7 @@ package haven;
 import java.awt.RenderingHints;
 import java.io.*;
 import java.nio.*;
+import java.nio.channels.*;
 import java.nio.file.*;
 import java.net.*;
 import java.lang.ref.*;
@@ -115,6 +116,31 @@ public class Utils {
 	} catch(java.net.URISyntaxException e) {
 	    throw(new IllegalArgumentException(String.valueOf(cl) + " has a malformed location", e));
 	}
+    }
+
+    public static SocketChannel connect(String host, int port) throws IOException {
+	IOException lerr = null;
+	for(InetAddress haddr : InetAddress.getAllByName(host)) {
+	    SocketChannel sk = null;
+	    boolean fin = false;
+	    try {
+		sk = SocketChannel.open();
+		sk.socket().setSoTimeout(5000);
+		sk.connect(new InetSocketAddress(haddr, port));
+		fin = true;
+		return(sk);
+	    } catch(IOException e) {
+		if(lerr != null)
+		    e.addSuppressed(lerr);
+		lerr = e;
+	    } finally {
+		if(!fin && (sk != null))
+		    sk.close();
+	    }
+	}
+	if(lerr != null)
+	    throw(lerr);
+	throw(new UnknownHostException(host));
     }
 
     public static int drawtext(Graphics g, String text, Coord c) {
