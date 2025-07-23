@@ -286,22 +286,4 @@ public class SslChannel implements ByteChannel {
 	}
 	// throw(new AssertionError("unreachable"));
     }
-
-    public static void main(String[] args) throws Exception {
-	try(SocketChannel sk = SocketChannel.open()) {
-	    sk.connect(new java.net.InetSocketAddress("www.google.com", 443));
-	    SslChannel ssk = new SslChannel(sk, defctx(), "www.google.com", 443);
-	    // ssk.handshake();
-	    InputStream in = Channels.newInputStream(ssk);
-	    OutputStream out = Channels.newOutputStream(ssk);
-	    out.write("GET / HTTP/1.0\nHost: www.google.com\nConnection: close\n\n".getBytes(Utils.utf8));
-	    byte[] buf = new byte[16];
-	    while(true) {
-		int rv = in.read(buf);
-		if(rv < 0)
-		    break;
-		System.out.write(buf, 0, rv);
-	    }
-	}
-    }
 }
