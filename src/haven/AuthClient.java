@@ -28,6 +28,7 @@ package haven;
 
 import java.io.*;
 import java.net.*;
+import java.nio.channels.*;
 import java.util.*;
 import javax.net.ssl.*;
 import java.security.cert.*;
@@ -37,7 +38,8 @@ import java.math.BigInteger;
 public class AuthClient implements Closeable {
     public static final Config.Variable<Boolean> strictcert = Config.Variable.propb("haven.auth-cert-strict", true);
     private static final SslHelper ssl;
-    private final Socket sk;
+    private final SocketChannel sk;
+    private final SslChannel ssk;
     private final InputStream skin;
     private final OutputStream skout;
     
@@ -52,13 +54,14 @@ public class AuthClient implements Closeable {
 
     public AuthClient(String host, int port) throws IOException {
 	boolean fin = false;
-	SSLSocket sk = ssl.connect(host, port);
+	sk = Utils.connect(host, port);
 	try {
+	    ssk = new SslChannel(sk, ssl.engine(host, port));
+	    ssk.handshake();
 	    if(strictcert.get())
-		checkname(host, sk.getSession());
-	    this.sk = sk;
-	    skin = sk.getInputStream();
-	    skout = sk.getOutputStream();
+		ssk.checkname(host);
+	    skin = Channels.newInputStream(ssk);
+	    skout = Channels.newOutputStream(ssk);
 	    fin = true;
 	} finally {
 	    if(!fin)
@@ -105,7 +108,11 @@ public class AuthClient implements Closeable {
     }
 
     public SocketAddress address() {
-	return(sk.getRemoteSocketAddress());
+	try {
+	    return(sk.getRemoteAddress());
+	} catch(IOException e) {
+	    throw(new RuntimeException(e));
+	}
     }
 
     public byte[] getcookie() throws IOException {
@@ -166,7 +173,7 @@ public class AuthClient implements Closeable {
     }
     
     public void close() throws IOException {
-	sk.close();
+	ssk.close();
     }
 
     private void sendmsg(MessageBuf msg) throws IOException {

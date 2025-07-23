@@ -135,6 +135,12 @@ public class SslHelper {
 	}
     }
 
+    public SSLEngine engine(String host, int port) {
+	if(host == null)
+	    return(ctx().createSSLEngine());
+	return(ctx().createSSLEngine(host, port));
+    }
+
     public HttpsURLConnection connect(URL url) throws IOException {
 	if(!url.getProtocol().equals("https"))
 	    throw(new MalformedURLException("Can only be used to connect to HTTPS servers"));
