@@ -160,6 +160,16 @@ public class Debug {
 	return(thing);
     }
 
+    public static <T> T dump1(T thing, Function<? super T, ?> fmt) {
+	if(fmt != null)
+	    dump(fmt.apply(thing));
+	return(thing);
+    }
+
+    public static <T> T dump1(T thing) {
+	return(dump1(thing));
+    }
+
     public static void dumpstack(Object... msg) {
 	new Throwable((msg.length == 0) ? Thread.currentThread().getName() : Arrays.asList(msg).toString()).printStackTrace();
     }
