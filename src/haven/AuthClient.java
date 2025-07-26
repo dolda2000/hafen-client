@@ -28,8 +28,10 @@ package haven;
 
 import java.io.*;
 import java.net.*;
+import java.nio.*;
 import java.nio.channels.*;
 import java.util.*;
+import java.util.function.*;
 import javax.net.ssl.*;
 import java.security.cert.*;
 import java.security.SecureRandom;
@@ -38,8 +40,8 @@ import java.math.BigInteger;
 public class AuthClient implements Closeable {
     public static final Config.Variable<Boolean> strictcert = Config.Variable.propb("haven.auth-cert-strict", true);
     private static final SslHelper ssl;
-    private final SocketChannel sk;
-    private final SslChannel ssk;
+    private SocketChannel sk;
+    private SslChannel ssk;
     private final InputStream skin;
     private final OutputStream skout;
     
@@ -52,21 +54,77 @@ public class AuthClient implements Closeable {
 	}
     }
 
-    public AuthClient(String host, int port) throws IOException {
+    /* XXX: This layer exists only because some (primarily Russian?)
+     * ISPs seem to do some sort of "transparent" SSL injection. Since
+     * they're hardly targetting Haven specifically, try to get around
+     * it by just mildly obfuscating the SSL signatures. */
+    public static class Obfuscation implements ByteChannel {
+	public final ByteChannel bk;
+	public byte key = (byte)0xa5;
+	private boolean senthead = false;
+
+	public Obfuscation(ByteChannel bk) {
+	    this.bk = bk;
+	}
+
+	private void obf(ByteBuffer data, int a, int b) {
+	    for(int i = a; i < b; i++)
+		data.put(i, (byte)(data.get(i) ^ key));
+	}
+
+	public int read(ByteBuffer dst) throws IOException {
+	    int rv = bk.read(dst);
+	    obf(dst, dst.position() - rv, dst.position());
+	    return(rv);
+	}
+
+	public int write(ByteBuffer src) throws IOException {
+	    if(!senthead) {
+		ByteBuffer head = ByteBuffer.wrap(new byte[] {
+			'H', 'O', 'B', 'F', key,
+		    });
+		while(head.hasRemaining())
+		    bk.write(head);
+		senthead = true;
+	    }
+	    obf(src, src.position(), src.limit());
+	    int rv = bk.write(src);
+	    obf(src, src.position(), src.limit());
+	    return(rv);
+	}
+
+	public void close() throws IOException {bk.close();}
+	public boolean isOpen() {return(bk.isOpen());}
+    }
+
+    private void connect(String host, int port, boolean obf) throws IOException {
 	boolean fin = false;
 	sk = Utils.connect(host, port);
 	try {
-	    ssk = new SslChannel(sk, ssl.engine(host, port));
+	    ssk = new SslChannel(obf ? new Obfuscation(sk) : sk, ssl.engine(host, port));
 	    ssk.handshake();
 	    if(strictcert.get())
 		ssk.checkname(host);
-	    skin = Channels.newInputStream(ssk);
-	    skout = Channels.newOutputStream(ssk);
 	    fin = true;
 	} finally {
 	    if(!fin)
 		sk.close();
 	}
+    }
+
+    public AuthClient(String host, int port) throws IOException {
+	try {
+	    connect(host, port, false);
+	} catch(IOException e) {
+	    try {
+		connect(host, port, true);
+	    } catch(Throwable t) {
+		t.addSuppressed(e);
+		throw(t);
+	    }
+	}
+	skin = Channels.newInputStream(ssk);
+	skout = Channels.newOutputStream(ssk);
     }
 
     private void checkname(String host, SSLSession sess) throws IOException {
