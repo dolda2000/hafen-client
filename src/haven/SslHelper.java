@@ -138,7 +138,11 @@ public class SslHelper {
     public SSLEngine engine(String host, int port) {
 	if(host == null)
 	    return(ctx().createSSLEngine());
-	return(ctx().createSSLEngine(host, port));
+	SSLEngine ret = ctx().createSSLEngine(host, port);
+	SSLParameters par = ret.getSSLParameters();
+	par.setServerNames(Collections.singletonList(new SNIHostName(host)));
+	ret.setSSLParameters(par);
+	return(ret);
     }
 
     public HttpsURLConnection connect(URL url) throws IOException {
