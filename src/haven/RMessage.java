@@ -35,9 +35,9 @@ public class RMessage extends PMessage {
     /* public static final int RMSG_PAGINAE = 5; -- Deprecated */
     public static final int RMSG_RESID = 6;
     /* public static final int RMSG_PARTY = 7; -- Deprecated */
-    public static final int RMSG_SFX = 8;
+    /* public static final int RMSG_SFX = 8; -- Deprecated */
     /* public static final int RMSG_CATTR = 9; -- Deprecated */
-    public static final int RMSG_MUSIC = 10;
+    /* public static final int RMSG_MUSIC = 10; -- Deprecated */
     /* public static final int RMSG_TILES = 11; -- Deprecated */
     /* public static final int RMSG_BUFF = 12; -- Deprecated */
     public static final int RMSG_SESSKEY = 13;

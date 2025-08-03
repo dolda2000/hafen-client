@@ -209,28 +209,6 @@ public class Session implements Resource.Resolver {
 	    String resname = msg.string();
 	    int resver = msg.uint16();
 	    cachedres(resid).set(resname, resver);
-	} else if(msg.type == RMessage.RMSG_SFX) {
-	    Indir<Resource> resid = getres(msg.uint16());
-	    double vol = ((double)msg.uint16()) / 256.0;
-	    double spd = ((double)msg.uint16()) / 256.0;
-	    glob.loader.defer(() -> {
-		    Audio.CS clip = Audio.fromres(resid.get());
-		    if(spd != 1.0)
-			clip = new Audio.Resampler(clip).sp(spd);
-		    if(vol != 1.0)
-			clip = new Audio.VolAdjust(clip, vol);
-		    Audio.play(clip);
-		}, null);
-	} else if(msg.type == RMessage.RMSG_MUSIC) {
-	    String resnm = msg.string();
-	    int resver = msg.uint16();
-	    boolean loop = !msg.eom() && (msg.uint8() != 0);
-	    if(Music.enabled) {
-		if(resnm.equals(""))
-		    Music.play(null, false);
-		else
-		    Music.play(Resource.remote().load(resnm, resver), loop);
-	    }
 	} else if(msg.type == RMessage.RMSG_SESSKEY) {
 	    sesskey = msg.bytes();
 	} else {
