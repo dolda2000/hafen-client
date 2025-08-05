@@ -477,6 +477,8 @@ public class Utils {
     }
 
     public static boolean bv(Object arg) {
+	if(arg instanceof Boolean)
+	    return((Boolean)arg);
 	return(iv(arg) != 0);
     }
 
