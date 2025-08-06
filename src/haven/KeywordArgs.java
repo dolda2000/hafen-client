@@ -112,8 +112,10 @@ public class KeywordArgs {
 
     static {
 	formats.put('@', (b, spec, a) -> {
-		if((b.argv[a] instanceof Indir) || (b.argv[a] instanceof Resource))
+		if(b.argv[a] instanceof Indir)
 		    return(Pair.of(b.argv[a], a + 1));
+		if(b.argv[a] instanceof Resource)
+		    return(Pair.of(((Resource)b.argv[a]).indir(), a + 1));
 		if((a < b.argv.length - 1) && (b.argv[a] instanceof String) && (b.argv[a + 1] instanceof Number))
 		    return(Pair.of(new Resource.Spec(b.respool, (String)b.argv[a], Utils.iv(b.argv[a + 1])), a + 2));
 		throw(new FormatException("resource-spec", b, a));
