@@ -29,11 +29,12 @@ package haven;
 import java.util.*;
 
 public class KeywordArgs {
+    public static final Map<Character, Parser> formats = new HashMap<>();
     public final Map<String, Object> parsed = new HashMap<>();
     public final Object[] argv;
     public final Resource.Pool respool;
 
-    public KeywordArgs(Object[] argv, Resource.Pool respool, String... pos) {
+    public KeywordArgs(Object[] argv, Map<Character, Parser> extrafmt, Resource.Pool respool, String... pos) {
 	this.argv = argv;
 	this.respool = respool;
 	int a = 0, p = 0;
@@ -44,11 +45,16 @@ public class KeywordArgs {
 		}
 	    } else if(p < pos.length) {
 		String spec = pos[p++];
-		if(spec.startsWith("@")) {
-		    Resource.Spec res = new Resource.Spec(respool, (String)argv[a++], Utils.iv(argv[a++]));
-		    parsed.put(spec.substring(1), res);
-		} else {
-		    parsed.put(spec, argv[a++]);
+		boolean opt = false;
+		if(spec.startsWith("?")) {
+		    opt = true;
+		    spec = spec.substring(1);
+		}
+		try {
+		    a = parse(spec, extrafmt, a);
+		} catch(FormatException e) {
+		    if(!opt)
+			throw(e);
 		}
 	    } else {
 		/* Legacy form */
@@ -64,8 +70,69 @@ public class KeywordArgs {
 	}
     }
 
+    public KeywordArgs(Object[] argv, Resource.Pool respool, String... pos) {
+	this(argv, Collections.emptyMap(), respool, pos);
+    }
+
+    public KeywordArgs(Object[] argv, Map<Character, Parser> extrafmt, String... pos) {
+	this(argv, extrafmt, null, pos);
+    }
+
     public KeywordArgs(Object[] argv, String... pos) {
-	this(argv, null, pos);
+	this(argv, Collections.emptyMap(), pos);
+    }
+
+    public static class FormatException extends RuntimeException {
+	public final Object[] argv;
+	public final int p;
+
+	public FormatException(String name, KeywordArgs buf, int p) {
+	    super("syntax error for " + name);
+	    this.argv = buf.argv;
+	    this.p = p;
+	}
+    }
+
+    public static interface Parser {
+	public Pair<Object, Integer> parse(KeywordArgs args, String spec, int a);
+    }
+
+    protected int parse(String spec, Map<Character, Parser> extra, int a) {
+	Parser p = extra.get(spec.charAt(0));
+	if(p == null)
+	    p = formats.get(spec.charAt(0));
+	if(p == null) {
+	    parsed.put(spec, argv[a]);
+	    return(a + 1);
+	}
+	Pair<Object, Integer> res = p.parse(this, spec, a);
+	parsed.put(spec.substring(1), res.a);
+	return(res.b);
+    }
+
+    static {
+	formats.put('@', (b, spec, a) -> {
+		if((b.argv[a] instanceof Indir) || (b.argv[a] instanceof Resource))
+		    return(Pair.of(b.argv[a], a + 1));
+		if((a < b.argv.length - 1) && (b.argv[a] instanceof String) && (b.argv[a + 1] instanceof Number))
+		    return(Pair.of(new Resource.Spec(b.respool, (String)b.argv[a], Utils.iv(b.argv[a + 1])), a + 2));
+		throw(new FormatException("resource-spec", b, a));
+	    });
+	formats.put('#', (b, spec, a) -> {
+		if(b.argv[a] instanceof Number)
+		    return(Pair.of(b.argv[a], a + 1));
+		throw(new FormatException("number", b, a));
+	    });
+	formats.put('\'', (b, spec, a) -> {
+		if(b.argv[a] instanceof String)
+		    return(Pair.of(b.argv[a], a + 1));
+		throw(new FormatException("string", b, a));
+	    });
+	formats.put('[', (b, spec, a) -> {
+		if(b.argv[a] instanceof byte[])
+		    return(Pair.of(b.argv[a], a + 1));
+		throw(new FormatException("byte-array", b, a));
+	    });
     }
 
     public boolean has(String nm) {
