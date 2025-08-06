@@ -456,12 +456,42 @@ public class Utils {
 	}
     }
 
+    public static class ArgumentFormatException extends RuntimeException {
+	public final String expected;
+	public final Object got;
+
+	public ArgumentFormatException(String expected, Object got) {
+	    this.expected = expected;
+	    this.got = got;
+	}
+
+	public String getMessage() {
+	    String got;
+	    try {
+		got = String.valueOf(this.got);
+	    } catch(Throwable t) {
+		got = "!formatting error (" + t + ")";
+	    }
+	    return(String.format("expected %s, got %s", expected, got));
+	}
+
+	public static <T> T check(Object x, Class<T> expected, String fname) {
+	    if(!expected.isInstance(x))
+		throw(new ArgumentFormatException(fname, x));
+	    return(expected.cast(x));
+	}
+
+	public static <T> T check(Object x, Class<T> expected) {
+	    return(check(x, expected, expected.getSimpleName()));
+	}
+    }
+
     public static String sv(Object arg) {
-	return((String)arg);
+	return(ArgumentFormatException.check(arg, String.class));
     }
 
     public static int iv(Object arg) {
-	return(((Number)arg).intValue());
+	return(ArgumentFormatException.check(arg, Number.class, "int").intValue());
     }
 
     public static long uiv(Object arg) {
@@ -469,22 +499,23 @@ public class Utils {
     }
 
     public static float fv(Object arg) {
-	return(((Number)arg).floatValue());
+	return(ArgumentFormatException.check(arg, Number.class, "float").floatValue());
     }
 
     public static double dv(Object arg) {
-	return(((Number)arg).doubleValue());
+	return(ArgumentFormatException.check(arg, Number.class, "double").doubleValue());
     }
 
     public static boolean bv(Object arg) {
 	if(arg instanceof Boolean)
 	    return((Boolean)arg);
-	return(iv(arg) != 0);
+	return(ArgumentFormatException.check(arg, Number.class, "bool").intValue() != 0);
     }
 
     public static Indir<Resource> irv(Object arg) {
-	Indir<?> s = (Indir)arg;
-	return(() -> (Resource)s.get());
+	Indir s = ArgumentFormatException.check(arg, Indir.class);
+	Resource ret = ArgumentFormatException.check(s.get(), Resource.class);
+	return(() -> ret);
     }
 
     /* Nested format: [[KEY, VALUE], [KEY, VALUE], ...] */

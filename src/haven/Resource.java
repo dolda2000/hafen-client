@@ -180,7 +180,7 @@ public class Resource implements Serializable {
 		@SuppressWarnings("unchecked") Indir<Resource> ret = (Indir<Resource>)desc;
 		return(ret);
 	    }
-	    throw(new ClassCastException("unknown type for resource id: " + desc));
+	    throw(new Utils.ArgumentFormatException("res-desc: ", desc));
 	}
 
 	public class ResourceMap implements Resource.Resolver {
