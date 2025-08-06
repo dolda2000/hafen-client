@@ -35,6 +35,10 @@ public class Pair<A, B> {
 	this.b = b;
     }
 
+    public static <A, B> Pair<A, B> of(A a, B b) {
+	return(new Pair<A, B>(a, b));
+    }
+
     public int hashCode() {
 	return((((a == null)?0:a.hashCode()) * 31) + ((b == null)?0:b.hashCode()));
     }
