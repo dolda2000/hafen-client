@@ -36,7 +36,7 @@ import haven.Skeleton.PoseMod;
 public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
     public static final Collection<RMod> rmods = new ArrayList<>();
     private static final ThreadLocal<Cons> curcons = new ThreadLocal<Cons>();
-    private static RenderTree.Node[] noparts = {};
+    private static final RenderTree.Node[] noparts = {};
     private static final Ticker[] notickers = {};
     private static final EquipTarget[] noeqtgts = {};
     private static final Mod[] nomods = {};
