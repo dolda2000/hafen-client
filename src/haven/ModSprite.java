@@ -593,7 +593,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	public final Pose pose;
 	public final Skeleton.ResPose[] descs;
 	public PoseMod[] mods = {};
-	private Map<Skeleton.ResPose, PoseMod> ids = Collections.emptyMap();
+	private Map<Skeleton.ResPose, PoseMod> ids = initids;
 	private boolean stat = false;
 	private Pose oldpose;
 	private float ipold;
