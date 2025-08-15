@@ -76,7 +76,7 @@ public abstract class TexR extends Resource.Layer implements Resource.IDLayer<In
 		    part = new MessageBuf(buf.bytes(buf.int32()));
 		    fu = false;
 		} else {
-		    throw(new Resource.LoadException("Unknown part flags " + fl + "  in " + res.name, getres()));
+		    throw(new Resource.UnknownFormatException(getres(), "part flags", fl));
 		}
 		switch(t) {
 		case 0:
@@ -115,7 +115,7 @@ public abstract class TexR extends Resource.Layer implements Resource.IDLayer<In
 		    break;
 		default:
 		    if(fu)
-			throw(new Resource.LoadException("Unknown texture data part " + t + " in " + res.name, getres()));
+			throw(new Resource.UnknownFormatException(getres(), "texture data part", t));
 		}
 	    }
 	    if(magfilter == null)

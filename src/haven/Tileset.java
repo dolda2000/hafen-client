@@ -267,7 +267,7 @@ public class Tileset extends Resource.Layer {
 		    this.res = new Resource.Spec(res.pool, buf.string(), buf.uint16());
 		    this.args = buf.list(resmapper());
 		} else {
-		    throw(new Resource.LoadException("unknown flavobj version: " + ver, res));
+		    throw(new Resource.UnknownFormatException(res, "flavobj version", ver));
 		}
 	    }
 
@@ -356,7 +356,7 @@ public class Tileset extends Resource.Layer {
 		Arrays.sort(tags);
 		break;
 	    default:
-		throw(new Resource.LoadException("Invalid tileset part " + p + "  in " + res.name, res));
+		throw(new Resource.UnknownFormatException(res, "tileset part", p));
 	    }
 	}
     }

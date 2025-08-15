@@ -271,7 +271,7 @@ public class BAttrWnd extends Widget {
 		    nm = buf.string();
 		    sort = buf.int16();
 		} else {
-		    throw(new Resource.LoadException("unknown foodev version: " + ver, res));
+		    throw(new Resource.UnknownFormatException(res, "foodev version", ver));
 		}
 	    }
 

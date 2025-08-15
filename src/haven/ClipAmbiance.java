@@ -270,7 +270,7 @@ public class ClipAmbiance implements RenderTree.Node {
 	    res.super();
 	    int ver = buf.uint8();
 	    if((ver < 1) || (ver > 2))
-		throw(new Resource.LoadException("Unknown clip-ambiance version: " + ver, getres()));
+		throw(new Resource.UnknownFormatException(getres(), "clip-ambiance version", ver));
 	    if(ver >= 2) {
 		String pnm = buf.string();
 		if(pnm.length() == 0)

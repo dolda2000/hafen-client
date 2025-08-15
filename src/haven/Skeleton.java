@@ -615,7 +615,7 @@ public class Skeleton {
 		    pm.put(b, bp);
 		}
 	    } else {
-		throw(new AssertionError());
+		throw(new Resource.UnknownFormatException(getres(), "skeleton version", ver));
 	    }
 	}
 
@@ -1086,7 +1086,7 @@ public class Skeleton {
 		    if(exhaust)
 			Warning.warn("unknown animation control event: %d", t);
 		    else
-			throw(new Resource.LoadException("Illegal control event: " + t, getres()));
+			throw(new Resource.UnknownFormatException(getres(), "control event", t));
 		}
 		if(exhaust)
 		    sub.skip();
@@ -1109,7 +1109,7 @@ public class Skeleton {
 	    else if(mode == 3)
 		defmode = WrapMode.PONGLOOP;
 	    else
-		throw(new Resource.LoadException("Illegal animation mode: " + mode, getres()));
+		throw(new Resource.UnknownFormatException(getres(), "animation mode", mode));
 	    if(fmt == 0)
 		this.len = (float)buf.cpfloat();
 	    else
@@ -1285,8 +1285,12 @@ public class Skeleton {
 	    res.super();
 	    this.nm = buf.string();
 	    List<Function<EquipTarget, Supplier<? extends Pipe.Op>>> cbuf = new LinkedList<>();
-	    while(!buf.eom())
-		cbuf.add(opcodes[buf.uint8()].apply(buf, this));
+	    while(!buf.eom()) {
+		int opcode = buf.uint8();
+		if(opcodes[opcode] == null)
+		    throw(new Resource.UnknownFormatException(res, "boneoff opcode", opcode));
+		cbuf.add(opcodes[opcode].apply(buf, this));
+	    }
 	    this.prog = cbuf.toArray(new Function[0]);
 	}
 

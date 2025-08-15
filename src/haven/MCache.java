@@ -205,7 +205,7 @@ public class MCache implements MapSource {
 		this.omatid = omatid;
 		this.tags = tags;
 	    } else {
-		throw(new Resource.LoadException("unknown overlay version: " + ver, res));
+		throw(new Resource.UnknownFormatException(res, "overlay version", ver));
 	    }
 	}
 

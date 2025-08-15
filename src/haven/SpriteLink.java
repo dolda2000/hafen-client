@@ -92,7 +92,7 @@ public class SpriteLink extends Resource.Layer {
 	res.super();
 	int ver = buf.uint8();
 	if(ver != 1)
-	    throw(new Resource.LoadException("Unknown spritelink version: " + ver, getres()));
+	    throw(new Resource.UnknownFormatException(getres(), "spritelink version", ver));
 	Map<Integer, Factory> refs = new IntMap<Factory>(16);
 	while(true) {
 	    int id = buf.int16();
@@ -108,7 +108,7 @@ public class SpriteLink extends Resource.Layer {
 		f = new ByRes(res, buf, refs);
 		break;
 	    default:
-		throw(new Resource.LoadException("Unknown spritelink type: `" + t + "'", getres()));
+		throw(new Resource.UnknownFormatException(getres(), "spritelink type", t));
 	    }
 	    refs.put(id, f);
 	}

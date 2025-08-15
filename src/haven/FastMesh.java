@@ -316,7 +316,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 		    vbufid = 0;
 		boolean stripped = (fl & 32) != 0;
 		if((fl & ~63) != 0)
-		    throw(new Resource.LoadException("Unsupported flags in fastmesh: " + fl, getres()));
+		    throw(new Resource.UnknownFormatException(getres(), "fastmesh flags", fl));
 		short[] ind = new short[num * 3];
 		if(stripped) {
 		    unstrip(buf, ind);
@@ -352,10 +352,10 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 			tmp = new short[buf.uint16() * 3];
 			unstrip(buf, tmp);
 		    } else {
-			throw(new Resource.LoadException("Unsupported mesh specification format: " + fmt, getres()));
+			throw(new Resource.UnknownFormatException(getres(), "mesh specification format", fmt));
 		    }
 		} else {
-		    throw(new Resource.LoadException("Unsupported mesh format version: " + ver, getres()));
+		    throw(new Resource.UnknownFormatException(getres(), "mesh format version", ver));
 		}
 	    }
 	}
