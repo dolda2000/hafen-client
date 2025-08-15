@@ -229,10 +229,12 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
     public static class MeshRes extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public transient FastMesh m;
 	public transient Material.Res mat;
-	public final Map<String, String> rdat;
+	public final Map<String, Object> info;
+	public final int id;
 	private transient short[] tmp;
-	public final int id, ref;
-	private int vbufid, matid;
+	private int vbufid;
+	@Deprecated public final Map<String, String> rdat;
+	@Deprecated public final int ref;
 
 	private static int decdelta(Message buf, boolean[] pickp) {
 	    int b = buf.uint8();
@@ -281,49 +283,88 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	public MeshRes(Resource res, Message buf) {
 	    res.super();
 	    int fl = buf.uint8();
-	    int num = buf.uint16();
-	    matid = buf.int16();
-	    if((fl & 2) != 0) {
-		id = buf.int16();
+	    if((fl & 0x80) == 0) {
+		int num = buf.uint16();
+		int matid = buf.int16();
+		id = ((fl & 2) != 0) ? buf.int16() : -1;
+		ref = ((fl & 4) != 0) ? buf.int16() : -1;
+		Map<String, String> rdat = new HashMap<>();
+		Map<String, Object> info = new HashMap<>();
+		if(matid >= 0)
+		    info.put("mat", matid);
+		if(ref >= 0)
+		    info.put("ref", ref);
+		if((fl & 8) != 0) {
+		    while(true) {
+			String k = buf.string();
+			if(k.equals(""))
+			    break;
+			String v = buf.string();
+			rdat.put(k, v);
+			try {
+			    info.put(k, Integer.parseInt(v));
+			} catch(NumberFormatException e) {
+			    info.put(k, v);
+			}
+		    }
+		}
+		this.rdat = Collections.unmodifiableMap(rdat);
+		this.info = Collections.unmodifiableMap(info);
+		if((fl & 16) != 0)
+		    vbufid = buf.int16();
+		else
+		    vbufid = 0;
+		boolean stripped = (fl & 32) != 0;
+		if((fl & ~63) != 0)
+		    throw(new Resource.LoadException("Unsupported flags in fastmesh: " + fl, getres()));
+		short[] ind = new short[num * 3];
+		if(stripped) {
+		    unstrip(buf, ind);
+		} else {
+		    for(int i = 0; i < num * 3; i++)
+			ind[i] = (short)buf.uint16();
+		}
+		this.tmp = ind;
 	    } else {
-		id = -1;
-	    }
-	    if((fl & 4) != 0) {
-		ref = buf.int16();
-	    } else {
-		ref = -1;
-	    }
-	    Map<String, String> rdat = new HashMap<String, String>();
-	    if((fl & 8) != 0) {
-		while(true) {
-		    String k = buf.string();
-		    if(k.equals(""))
-			break;
-		    rdat.put(k, buf.string());
+		int ver = fl & 0x7f;
+		if(ver == 1) {
+		    id = buf.int16();
+		    vbufid = buf.int16();
+		    Map<String, Object> info = new HashMap<>();
+		    Map<String, String> rdat = new HashMap<>();
+		    while(true) {
+			String k = buf.string();
+			if(k.equals(""))
+			    break;
+			Object v = buf.tto();
+			info.put(k, v);
+			rdat.put(k, String.valueOf(v));
+		    }
+		    this.info = Collections.unmodifiableMap(info);
+		    this.rdat = Collections.unmodifiableMap(rdat);
+		    this.ref = Utils.iv(info.getOrDefault("ref", -1));
+		    String fmt = buf.string();
+		    if(fmt.equals("")) {
+			tmp = new short[buf.uint16() * 3];
+			for(int i = 0; i < tmp.length; i++)
+			    tmp[i] = (short)buf.uint16();
+		    } else if(fmt.equals("strips")) {
+			tmp = new short[buf.uint16() * 3];
+			unstrip(buf, tmp);
+		    } else {
+			throw(new Resource.LoadException("Unsupported mesh specification format: " + fmt, getres()));
+		    }
+		} else {
+		    throw(new Resource.LoadException("Unsupported mesh format version: " + ver, getres()));
 		}
 	    }
-	    this.rdat = Collections.unmodifiableMap(rdat);
-	    if((fl & 16) != 0)
-		vbufid = buf.int16();
-	    else
-		vbufid = 0;
-	    boolean stripped = (fl & 32) != 0;
-	    if((fl & ~63) != 0)
-		throw(new Resource.LoadException("Unsupported flags in fastmesh: " + fl, getres()));
-	    short[] ind = new short[num * 3];
-	    if(stripped) {
-		unstrip(buf, ind);
-	    } else {
-		for(int i = 0; i < num * 3; i++)
-		    ind[i] = (short)buf.uint16();
-	    }
-	    this.tmp = ind;
 	}
 	
 	public void init() {
 	    VertexBuf v = getres().layer(VertexBuf.VertexRes.class, vbufid).b;
 	    this.m = new ResourceMesh(v, this.tmp, this);
 	    this.tmp = null;
+	    int matid = Utils.iv(info.getOrDefault("mat", -1));
 	    if(matid >= 0) {
 		for(Material.Res mr : getres().layers(Material.Res.class)) {
 		    if(mr.id == matid)

@@ -431,8 +431,8 @@ public class Composited implements RenderTree.Node, EquipTarget {
 		if(mr == null)
 		    throw(new Sprite.ResourceException("Model resource contains no mesh", md.mod.get()));
 		mod = new Model(mr.m, md.id);
-		if(mr.rdat.containsKey("cz"))
-		    mod.z = Integer.parseInt(mr.rdat.get("cz"));
+		if(mr.info.containsKey("cz"))
+		    mod.z = Utils.iv(mr.info.get("cz"));
 		for(ResData lres : md.tex)
 		    mod.addlay(Material.fromres(matowner, lres.res.get(), new MessageBuf(lres.sdt)));
 		md.real = mod;
