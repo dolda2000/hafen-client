@@ -162,12 +162,8 @@ public class GobIcon extends GAttrib {
 	    return(img.z);
 	}
 
-	private int markdata() {
-	    return(Utils.iv(res.flayer(Resource.imgc).info.getOrDefault("mm/mark", 0)));
-	}
-
 	public Markable markable() {
-	    switch(markdata()) {
+	    switch(Utils.iv(res.flayer(Resource.imgc).info.getOrDefault("mm/mark", 0))) {
 	    case 1:
 		return(Markable.NONDEFAULT);
 	    case 2:
