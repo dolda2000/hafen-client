@@ -1061,48 +1061,100 @@ public class Resource implements Serializable {
 	public final int z, subz;
 	public final boolean nooff;
 	public final int id;
+	public final Map<String, Object> info;
 	public final Map<String, byte[]> kvdata;
 	public float scale = 1;
 	public Coord sz, o, so, tsz, ssz, stsz;
 
 	public Image(Message buf) {
-	    z = buf.int16();
-	    subz = buf.int16();
-	    int fl = buf.uint8();
-	    /* Obsolete flag 1: Layered */
-	    nooff = (fl & 2) != 0;
-	    id = buf.int16();
-	    o = cdec(buf);
-	    so = UI.scale(o);
 	    boolean hasscale = false;
-	    Map<String, byte[]> kvdata = new HashMap<>();
-	    if((fl & 4) != 0) {
-		while(true) {
-		    String key = buf.string();
-		    if(key.equals(""))
-			break;
-		    int len = buf.uint8();
-		    if((len & 0x80) != 0)
-			len = buf.int32();
-		    byte[] data = buf.bytes(len);
-		    Message val = new MessageBuf(data);
-		    if(key.equals("tsz")) {
-			tsz = val.coord();
-		    } else if(key.equals("scale")) {
-			scale = val.float32();
-			hasscale = true;
-		    } else {
-			kvdata.put(key, data);
+	    int ver = buf.uint8();
+	    if(ver < 128) {
+		z = (buf.int8() * 256) + ver;
+		subz = buf.int16();
+		int fl = buf.uint8();
+		/* Obsolete flag 1: Layered */
+		nooff = (fl & 2) != 0;
+		id = buf.int16();
+		o = cdec(buf);
+		Map<String, byte[]> kvdata = new HashMap<>();
+		Map<String, Object> info = new HashMap<>();
+		if((fl & 4) != 0) {
+		    while(true) {
+			String key = buf.string();
+			if(key.equals(""))
+			    break;
+			int len = buf.uint8();
+			if((len & 0x80) != 0)
+			    len = buf.int32();
+			byte[] data = buf.bytes(len);
+			Message val = new MessageBuf(data);
+			if(key.equals("tsz")) {
+			    tsz = val.coord();
+			} else if(key.equals("scale")) {
+			    scale = val.float32();
+			    hasscale = true;
+			} else {
+			    kvdata.put(key, data);
+			    if(data.length == 1) {
+				info.put(key, Utils.intvard(data, 0));
+			    } else if(data.length == 4) {
+				info.put(key, val.float32());
+			    } else if(data.length == 8) {
+				info.put(key, val.coord());
+			    } else {
+				info.put(key, data);
+			    }
+			}
 		    }
 		}
-	    }
-	    this.kvdata = kvdata.isEmpty() ? Collections.emptyMap() : kvdata;
-	    try {
-		img = readimage(new MessageInputStream(buf));
-	    } catch(IOException e) {
-		throw(new LoadException(e, Resource.this));
+		this.kvdata = kvdata.isEmpty() ? Collections.emptyMap() : kvdata;
+		this.info = info.isEmpty() ? Collections.emptyMap() : info;
+		try {
+		    img = readimage(new MessageInputStream(buf));
+		} catch(IOException e) {
+		    throw(new LoadException(e, Resource.this));
+		}
+	    } else {
+		ver = ver - 128;
+		if(ver == 1) {
+		    id = buf.int16();
+		    Map<String, byte[]> kvdata = new HashMap<>();
+		    Map<String, Object> info = new HashMap<>();
+		    while(true) {
+			String key = buf.string();
+			if(key.equals(""))
+			    break;
+			Object val = buf.tto(resmapper());
+			info.put(key, val);
+			if((val instanceof Float) || (val instanceof Double)) {
+			    kvdata.put(key, ((MessageBuf)new MessageBuf().addfloat32(Utils.fv(val))).fin());
+			} else if(val instanceof Number) {
+			    kvdata.put(key, ((MessageBuf)new MessageBuf().addint32(Utils.iv(val))).fin());
+			}
+		    }
+		    z = Utils.iv(Utils.pop(info, "z", 0));
+		    subz = Utils.iv(Utils.pop(info, "subz", 0));
+		    nooff = Utils.bv(Utils.pop(info, "nooff", false));
+		    o = (Coord)Utils.pop(info, "off", Coord.z);
+		    tsz = (Coord)info.remove("tsz");
+		    if(info.containsKey("scale")) {
+			scale = Utils.fv(info.remove("scale"));
+			hasscale = true;
+		    }
+		    this.info = info.isEmpty() ? Collections.emptyMap() : info;
+		    this.kvdata = kvdata.isEmpty() ? Collections.emptyMap() : kvdata;
+		    try {
+			img = readimage(new MessageInputStream(buf));
+		    } catch(IOException e) {
+			throw(new LoadException(e, Resource.this));
+		    }
+		} else {
+		    throw(new UnknownFormatException(Resource.this, "image version", ver));
+		}
 	    }
 	    sz = Utils.imgsz(img);
+	    so = UI.scale(o);
 	    if(tsz == null)
 		tsz = sz.add(o);
 	    ssz = Coord.of(Math.round(UI.scale(sz.x / scale)), Math.round(UI.scale(sz.y / scale)));
