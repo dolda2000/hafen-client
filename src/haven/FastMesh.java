@@ -336,7 +336,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 			String k = buf.string();
 			if(k.equals(""))
 			    break;
-			Object v = buf.tto();
+			Object v = buf.tto(resmapper());
 			info.put(k, v);
 			rdat.put(k, String.valueOf(v));
 		    }
