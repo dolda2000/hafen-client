@@ -71,14 +71,14 @@ public class DynresWindow extends Window {
 	    if(in != null) {
 		if(!Utils.eq(conn.getContentType(), "application/x-haven-ttol"))
 		    throw(new IOException("Unexpected reply from server: " + status + " " + conn.getResponseMessage()));
-		Object[] data = new StreamMessage(in).list();
+		Object[] data = new StreamMessage(in).list(new Resource.PoolMapper(Resource.remote()));
 		return(Utils.mapdecn(data, String.class, Object.class));
 	    }
 	}
 	try(InputStream in = conn.getInputStream()) {
 	    if(!Utils.eq(conn.getContentType(), "application/x-haven-ttol"))
 		throw(new IOException("Unexpected reply from server" + status + " " + conn.getResponseMessage()));
-	    Object[] data = new StreamMessage(in).list();
+	    Object[] data = new StreamMessage(in).list(new Resource.PoolMapper(Resource.remote()));
 	    return(Utils.mapdecn(data, String.class, Object.class));
 	}
     }
@@ -594,7 +594,7 @@ public class DynresWindow extends Window {
 			return(null);
 		    List<Spec> ret = new ArrayList<>();
 		    try(InputStream in = Http.fetch(service.get().resolve("previews").toURL())) {
-			for(Object desc : new StreamMessage(in).list())
+			for(Object desc : new StreamMessage(in).list(new Resource.PoolMapper(Resource.remote())))
 			    ret.add(new Spec(Utils.mapdecn(desc, String.class, Object.class)));
 		    } catch(IOException exc) {
 			throw(new RuntimeException(exc));
