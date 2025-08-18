@@ -33,6 +33,7 @@ import haven.render.*;
 import haven.Skeleton.Pose;
 import haven.Skeleton.PoseMod;
 
+@Resource.PublishedCode.Builtin(type = Sprite.Factory.class, name = "mod")
 public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
     public static final Collection<RMod> rmods = new ArrayList<>();
     private static final ThreadLocal<Cons> curcons = new ThreadLocal<Cons>();

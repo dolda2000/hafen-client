@@ -213,6 +213,7 @@ public abstract class ItemInfo {
 	    public String name();
 	}
 
+	@Resource.PublishedCode.Builtin(type = InfoFactory.class, name = "defn")
 	public static class Default implements InfoFactory {
 	    public static String get(Owner owner) {
 		if(owner instanceof SpriteOwner) {

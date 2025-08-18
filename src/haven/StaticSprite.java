@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import haven.render.*;
 
+@Resource.PublishedCode.Builtin(type = Sprite.Factory.class, name = "static")
 public class StaticSprite extends Sprite {
     public final RenderTree.Node[] parts;
     
