@@ -1650,7 +1650,7 @@ public class Resource implements Serializable {
 			    break;
 			pe.put(en, cn);
 			if(t == 3)
-			    pa.put(en, buf.list());
+			    pa.put(en, buf.list(resmapper()));
 		    }
 		} else if(t == 2) {
 		    while(true) {

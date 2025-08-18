@@ -179,7 +179,7 @@ public class MCache implements MapSource {
 	    if(ver == 1) {
 		int matid = 0, omatid = -1;
 		Collection<String> tags = Collections.emptyList();
-		Object[] data = buf.list();
+		Object[] data = buf.list(resmapper());
 		for(Object argp : data) {
 		    Object[] arg = (Object[])argp;
 		    switch((String)arg[0]) {
