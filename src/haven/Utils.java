@@ -1677,6 +1677,12 @@ public class Utils {
 	return(ret);
     }
 
+    public static <K, V> V pop(Map<K, V> map, K key, V def) {
+	if(!map.containsKey(key))
+	    return(def);
+	return(map.remove(key));
+    }
+
     public static <T> List<T> reversed(List<T> ls) {
 	return(new AbstractList<T>() {
 		public int size() {
