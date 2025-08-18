@@ -908,6 +908,21 @@ public class Resource implements Serializable {
 	}
     }
 
+    public static class UnknownFormatException extends LoadException {
+	public final String thing;
+	public final Object found;
+
+	public UnknownFormatException(Resource res, String thing, Object found) {
+	    super((String)null, res);
+	    this.thing = thing;
+	    this.found = found;
+	}
+
+	public String getMessage() {
+	    return("Unknown " + thing + " in " + res.name + ": " + String.valueOf(found));
+	}
+    }
+
     public static class LoadWarning extends Warning {
 	public final Resource res;
 
@@ -1185,7 +1200,7 @@ public class Resource implements Serializable {
 	public Props(Message buf) {
 	    int ver = buf.uint8();
 	    if(ver != 1)
-		throw(new LoadException("Unknown property layer version: " + ver, getres()));
+		throw(new UnknownFormatException(getres(), "property layer version", ver));
 	    Object[] raw = buf.list(resmapper());
 	    for(int a = 0; a < raw.length - 1; a += 2)
 		props.put((String)raw[a], raw[a + 1]);
@@ -1587,7 +1602,7 @@ public class Resource implements Serializable {
 			classpath.add(pool.load(ln, ver));
 		    }
 		} else {
-		    throw(new LoadException("Unknown codeentry data type: " + t, Resource.this));
+		    throw(new UnknownFormatException(Resource.this, "codeentry data type", t));
 		}
 	    }
 	}
@@ -1730,7 +1745,7 @@ public class Resource implements Serializable {
 		    bvol = buf.uint16() * 0.001;
 		this.coded = buf.bytes();
 	    } else {
-		throw(new LoadException("Unknown audio layer version: " + ver, getres()));
+		throw(new UnknownFormatException(getres(), "audio layer version", ver));
 	    }
 	}
 
@@ -1780,10 +1795,10 @@ public class Resource implements Serializable {
 			throw(new RuntimeException(e));
 		    }
 		} else {
-		    throw(new LoadException("Unknown font type: " + type, Resource.this));
+		    throw(new UnknownFormatException(Resource.this, "font type", type));
 		}
 	    } else {
-		throw(new LoadException("Unknown font layer version: " + ver, Resource.this));
+		throw(new UnknownFormatException(Resource.this, "font layer version", ver));
 	    }
 	}
 

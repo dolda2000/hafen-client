@@ -405,7 +405,7 @@ public class MeshAnim extends State {
 		    if(t == 0)
 			break;
 		    else if(t > 4)
-			throw(new Resource.LoadException("Unknown meshanim frame format: " + t, res));
+			throw(new Resource.UnknownFormatException(res, "meshanim frame format", t));
 		    float tm = buf.float32();
 		    int n = buf.uint16();
 		    int[] idx = new int[n];
@@ -466,7 +466,7 @@ public class MeshAnim extends State {
 		}
 		a = new MeshAnim(frames.toArray(new Frame[0]), len);
 	    } else {
-		throw(new Resource.LoadException("Invalid meshanim format version: " + ver, res));
+		throw(new Resource.UnknownFormatException(res, "meshanim format version", ver));
 	    }
 	}
 

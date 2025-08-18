@@ -469,9 +469,9 @@ public class VertexBuf {
 	    int fl = buf.uint8();
 	    int ver = (fl & 0xf);
 	    if(ver >= 2)
-		throw(new Resource.LoadException(String.format("Unknown vbuf version: %d", ver), res));
+		throw(new Resource.UnknownFormatException(res, "vbuf version", ver));
 	    if((fl & ~0xf) != 0)
-		throw(new Resource.LoadException(String.format("Unknown vbuf flags: %02x", fl), res));
+		throw(new Resource.UnknownFormatException(res, "vbuf flags", fl));
 	    if(ver >= 1)
 		this.id = buf.int16();
 	    else
@@ -481,7 +481,7 @@ public class VertexBuf {
 		String nm = buf.string();
 		DataCons cons = rnames.get(nm);
 		if(cons == null)
-		    throw(new Resource.LoadException("Unknown vertex-array name: " + nm, res));
+		    throw(new Resource.UnknownFormatException(res, "vertex-array name", nm));
 		if(ver >= 1) {
 		    Message sub = new LimitMessage(buf, buf.int32());
 		    cons.cons(bufs, res, sub, num);

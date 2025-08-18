@@ -234,7 +234,7 @@ public interface RenderLink {
 		id = buf.int16();
 		t = buf.uint8();
 	    } else {
-		throw(new Resource.LoadException("Invalid renderlink version: " + lver, res));
+		throw(new Resource.UnknownFormatException(res, "renderlink version", lver));
 	    }
 	    if(t == 0) {
 		l = MeshMat.parse(res, buf);
@@ -247,7 +247,7 @@ public interface RenderLink {
 	    } else if(t == 4) {
 		l = ResSprite.parse(res, buf);
 	    } else {
-		throw(new Resource.LoadException("Invalid renderlink type: " + t, res));
+		throw(new Resource.UnknownFormatException(res, "renderlink type", t));
 	    }
 	}
 	
