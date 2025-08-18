@@ -1479,6 +1479,14 @@ public class Resource implements Serializable {
 	    };
 	}
 	public static final Map<PublishedCode, Instancer> instancers = new WeakHashMap<>();
+
+	@dolda.jglob.Discoverable
+	@Target(ElementType.TYPE)
+	@Retention(RetentionPolicy.RUNTIME)
+	public static @interface Builtin {
+	    public Class<?> type();
+	    public String name();
+	}
     }
 
     @LayerName("code")
@@ -1611,6 +1619,16 @@ public class Resource implements Serializable {
 	}
     }
 
+    private static final Map<Pair<Class<?>, String>, Class<?>> builtinents = new HashMap<>();
+    static {
+	for(Class<?> cl : dolda.jglob.Loader.get(PublishedCode.Builtin.class).classes()) {
+	    PublishedCode.Builtin spec = cl.getAnnotation(PublishedCode.Builtin.class);
+	    if(spec.type().getAnnotation(PublishedCode.class) == null)
+		throw(new AssertionError(spec.type() + " is not a res-published class (on " + cl + ")"));
+	    builtinents.put(Pair.of(spec.type(), spec.name()), cl);
+	}
+    }
+
     @LayerName("codeentry")
     public class CodeEntry extends Layer {
 	private final Map<String, Code> clmap = new HashMap<>();
@@ -1685,10 +1703,12 @@ public class Resource implements Serializable {
 			    throw(new RuntimeException("Tried to fetch non-present res-loaded class " + cl.getName() + " from " + Resource.this.name));
 			return(null);
 		    }
-		    try {
-			ret = loader().loadClass(clnm);
-		    } catch(ClassNotFoundException e) {
-			throw(new LoadException(e, Resource.this));
+		    if((ret = builtinents.get(Pair.of(cl, clnm))) == null) {
+			try {
+			    ret = loader().loadClass(clnm);
+			} catch(ClassNotFoundException e) {
+			    throw(new LoadException(e, Resource.this));
+			}
 		    }
 		    lpe.put(entry.name(), ret);
 		}
