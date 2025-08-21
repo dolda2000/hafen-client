@@ -1660,6 +1660,23 @@ public class Resource implements Serializable {
 			int ver = buf.uint16();
 			classpath.add(pool.load(ln, ver));
 		    }
+		} else if(t == 4) {
+		    Object[] data = buf.list(resmapper());
+		    Debug.dump(data);
+		    for(int i = 0; i < data.length; i++) {
+			Object[] datum = (Object[])data[i];
+			switch(Utils.sv(datum[0])) {
+			case "ent":
+			    pe.put(Utils.sv(datum[1]), Utils.sv(datum[2]));
+			    if(datum.length > 3)
+				pa.put(Utils.sv(datum[1]), (Object[])datum[3]);
+			    break;
+			case "use":
+			    for(int o = 1; o < datum.length; o++)
+				classpath.add(Utils.irv(datum[o]));
+			    break;
+			}
+		    }
 		} else {
 		    throw(new UnknownFormatException(Resource.this, "codeentry data type", t));
 		}
