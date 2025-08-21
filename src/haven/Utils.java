@@ -514,8 +514,7 @@ public class Utils {
 
     public static Indir<Resource> irv(Object arg) {
 	Indir s = ArgumentFormatException.check(arg, Indir.class);
-	Resource ret = ArgumentFormatException.check(s.get(), Resource.class);
-	return(() -> ret);
+	return(() -> (Resource)s.get());
     }
 
     /* Nested format: [[KEY, VALUE], [KEY, VALUE], ...] */
