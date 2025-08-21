@@ -517,6 +517,14 @@ public class Utils {
 	return(() -> (Resource)s.get());
     }
 
+    public static Resource resv(Object arg) {
+	if(arg instanceof Resource)
+	    return((Resource)arg);
+	Indir s = ArgumentFormatException.check(arg, Indir.class);
+	Resource ret = ArgumentFormatException.check(s.get(), Resource.class);
+	return(ret);
+    }
+
     /* Nested format: [[KEY, VALUE], [KEY, VALUE], ...] */
     public static <K, V> Map<K, V> mapdecn(Object ob, Class<K> kt, Class<V> vt) {
 	Map<K, V> ret = new HashMap<>();
