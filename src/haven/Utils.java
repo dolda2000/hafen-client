@@ -1900,6 +1900,17 @@ public class Utils {
 	}
     }
 
+    public static <K, V> MapBuilder<K, V> map() {
+	return(new MapBuilder<K, V>(new HashMap<K, V>()));
+    }
+
+    public static <K, V> Map<K, V> index(Collection<V> values, Function<V, K> key) {
+	Map<K, V> ret = new HashMap<>();
+	for(V val : values)
+	    ret.put(key.apply(val), val);
+	return(ret);
+    }
+
     public static class Range extends AbstractList<Integer> {
 	public final int min, max, step;
 
@@ -1955,10 +1966,6 @@ public class Utils {
 		    return(res);
 		}
 	    });
-    }
-
-    public static <K, V> MapBuilder<K, V> map() {
-	return(new MapBuilder<K, V>(new HashMap<K, V>()));
     }
 
     public static <F, T> Iterator<T> map(Iterator<F> from, Function<? super F, ? extends T> fn) {
