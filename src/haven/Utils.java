@@ -1904,7 +1904,7 @@ public class Utils {
 	return(new MapBuilder<K, V>(new HashMap<K, V>()));
     }
 
-    public static <K, V> Map<K, V> index(Collection<V> values, Function<V, K> key) {
+    public static <K, V> Map<K, V> index(Collection<? extends V> values, Function<? super V, ? extends K> key) {
 	Map<K, V> ret = new HashMap<>();
 	for(V val : values)
 	    ret.put(key.apply(val), val);
