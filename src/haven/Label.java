@@ -29,68 +29,71 @@ package haven;
 import java.awt.Color;
 
 public class Label extends Widget {
-    Text.Foundry f;
-    Text text;
-    String texts;
-    Color col = Color.WHITE;
-	
+    public final Text.Foundry f;
+    public Text text;
+    public String texts;
+    public Color col = Color.WHITE;
+
     @RName("lbl")
     public static class $_ implements Factory {
 	public Widget create(UI ui, Object[] args) {
 	    if(args.length > 1)
-		return(new Label((String)args[0], UI.scale(Utils.iv(args[1]))));
+		return(new Label(Utils.sv(args[0]), UI.scale(Utils.iv(args[1]))));
 	    else
-		return(new Label((String)args[0]));
+		return(new Label(Utils.sv(args[0])));
 	}
     }
-	
-    public void draw(GOut g) {
-	g.image(text.tex(), Coord.z);
-    }
-	
+
     public Label(String text, int w, Text.Foundry f) {
 	super(Coord.z);
 	this.f = f;
 	this.text = f.renderwrap(texts = text, this.col, w);
-	sz = this.text.sz();
+	resize(this.text.sz());
     }
 
     public Label(String text, Text.Foundry f) {
 	super(Coord.z);
 	this.f = f;
 	this.text = f.render(texts = text, this.col);
-	sz = this.text.sz();
+	resize(this.text.sz());
     }
 
     public Label(String text, int w) {
 	this(text, w, Text.std);
     }
-	
+
     public Label(String text) {
 	this(text, Text.std);
     }
-	
+
+    public void draw(GOut g) {
+	g.image(text.tex(), Coord.z);
+    }
+
     public void settext(String text) {
+	if(text.equals(this.text.text))
+	    return;
 	this.text.dispose();
 	this.text = f.render(texts = text, col);
-	sz = this.text.sz();
+	resize(this.text.sz());
     }
-	
+
     public void setcolor(Color color) {
-	col = color;
+	if(color.equals(col))
+	    return;
 	this.text.dispose();
-	this.text = f.render(texts, col);
-	sz = this.text.sz();
+	this.text = f.render(texts, col = color);
+	resize(this.text.sz());
     }
 
     public void dispose() {
 	super.dispose();
 	this.text.dispose();
     }
-	
+
     public void uimsg(String msg, Object... args) {
 	if(msg == "set") {
-	    settext((String)args[0]);
+	    settext(Utils.sv(args[0]));
 	} else if(msg == "col") {
 	    setcolor((Color)args[0]);
 	} else {
