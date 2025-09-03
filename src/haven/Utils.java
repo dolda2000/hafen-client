@@ -490,6 +490,14 @@ public class Utils {
 	return(ArgumentFormatException.check(arg, String.class));
     }
 
+    public static List<?> olv(Object arg) {
+	if(arg instanceof Object[])
+	    return(Arrays.asList((Object[])arg));
+	if(arg instanceof List)
+	    return((List<?>)arg);
+	throw(new ArgumentFormatException("object-list", arg));
+    }
+
     public static int iv(Object arg) {
 	return(ArgumentFormatException.check(arg, Number.class, "int").intValue());
     }
