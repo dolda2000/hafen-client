@@ -490,6 +490,14 @@ public class Utils {
 	return(ArgumentFormatException.check(arg, String.class));
     }
 
+    public static List<?> olv(Object arg) {
+	if(arg instanceof Object[])
+	    return(Arrays.asList((Object[])arg));
+	if(arg instanceof List)
+	    return((List<?>)arg);
+	throw(new ArgumentFormatException("object-list", arg));
+    }
+
     public static int iv(Object arg) {
 	return(ArgumentFormatException.check(arg, Number.class, "int").intValue());
     }
@@ -1907,6 +1915,17 @@ public class Utils {
 	}
     }
 
+    public static <K, V> MapBuilder<K, V> map() {
+	return(new MapBuilder<K, V>(new HashMap<K, V>()));
+    }
+
+    public static <K, V> Map<K, V> index(Collection<? extends V> values, Function<? super V, ? extends K> key) {
+	Map<K, V> ret = new HashMap<>();
+	for(V val : values)
+	    ret.put(key.apply(val), val);
+	return(ret);
+    }
+
     public static class Range extends AbstractList<Integer> {
 	public final int min, max, step;
 
@@ -1962,10 +1981,6 @@ public class Utils {
 		    return(res);
 		}
 	    });
-    }
-
-    public static <K, V> MapBuilder<K, V> map() {
-	return(new MapBuilder<K, V>(new HashMap<K, V>()));
     }
 
     public static <F, T> Iterator<T> map(Iterator<F> from, Function<? super F, ? extends T> fn) {
