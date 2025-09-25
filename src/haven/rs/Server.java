@@ -174,6 +174,6 @@ public class Server extends Thread {
     }
 
     public static void main(String[] args) throws Exception {
-	new Server(Integer.parseInt(args[0]), Utils.base64dec(System.getenv("AUTHKEY")));
+	new Server(Integer.parseInt(args[0]), Utils.b64.dec(System.getenv("AUTHKEY")));
     }
 }

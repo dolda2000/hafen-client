@@ -93,7 +93,7 @@ public class Debug {
 		} else if(stuff[i] instanceof byte[]) {
 		    byte[] ba = (byte[])stuff[i];
 		    if(ba.length <= 32) {
-			System.err.print(Utils.byte2hex(ba));
+			System.err.print(Utils.hex.enc(ba));
 		    } else {
 			System.err.println();
 			Utils.hexdump(ba, System.err, 0);

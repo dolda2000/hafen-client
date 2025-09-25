@@ -50,7 +50,7 @@ public interface Digest {
     public byte[] digest();
     public Digest copy();
     public default String hexdigest() {
-	return(Utils.byte2hex(digest()));
+	return(Utils.hex.enc(digest()));
     }
 
     public static byte[] hash(Algorithm alg, byte[]... parts) {

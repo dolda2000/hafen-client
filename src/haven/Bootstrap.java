@@ -99,7 +99,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	String sv = Utils.getpref(name + "@" + hostname, null);
 	if(sv == null)
 	    return(def);
-	byte[] ret = Utils.hex2byte(sv);
+	byte[] ret = Utils.hex.dec(sv);
 	if((ret.length == 0) && !zerovalid)
 	    return(def);
 	return(ret);
@@ -110,7 +110,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	    return(user);
 	/* Mangle name because Java pref names have a somewhat
 	 * ridiculously short limit. */
-	return(Utils.byte2hex(Digest.hash(Digest.MD5, user.getBytes(Utils.utf8))));
+	return(Utils.hex.enc(Digest.hash(Digest.MD5, user.getBytes(Utils.utf8))));
     }
 
     public static byte[] gettoken(String user, String hostname) {
@@ -129,7 +129,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 
     public static void settoken(String user, String hostname, byte[] token) {
 	String prefnm = user;
-	Utils.setpref("savedtoken-" + mangleuser(user) + "@" + hostname, (token == null) ? "" : Utils.byte2hex(token));
+	Utils.setpref("savedtoken-" + mangleuser(user) + "@" + hostname, (token == null) ? "" : Utils.hex.enc(token));
 	rottokens(user, hostname, token != null, true);
     }
 
@@ -187,7 +187,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			    authed = new AuthClient.TokenCred(inituser, inittoken).tryauth(auth);
 			} catch(AuthClient.Credentials.AuthException e) {
 			}
-			setpref("lasttoken-" + mangleuser(inituser), Utils.byte2hex(inittoken));
+			setpref("lasttoken-" + mangleuser(inituser), Utils.hex.enc(inittoken));
 			if(authed != null) {
 			    acctname = authed;
 			    cookie = auth.getcookie();

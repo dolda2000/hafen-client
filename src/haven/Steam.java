@@ -581,7 +581,7 @@ public class Steam {
 	Steam s = get();
 	System.out.printf("%x `%s'\n", s.userid(), s.displayname());
 	try(WebTicket tkt = s.webticket()) {
-	    System.out.println(Utils.byte2hex(tkt.data));
+	    System.out.println(Utils.hex.enc(tkt.data));
 	}
     }
 }

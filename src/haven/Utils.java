@@ -757,14 +757,19 @@ public class Utils {
 	return(Coord3f.of(buf[0], buf[1], buf[2]));
     }
 
-    static char num2hex(int num) {
+    public static interface BinAscii {
+	public String enc(byte[] data);
+	public byte[] dec(String data);
+    }
+
+    public static char num2hex(int num) {
 	if(num < 10)
 	    return((char)('0' + num));
 	else
 	    return((char)('A' + num - 10));
     }
 
-    static int hex2num(char hex) {
+    public static int hex2num(char hex) {
 	if((hex >= '0') && (hex <= '9'))
 	    return(hex - '0');
 	else if((hex >= 'a') && (hex <= 'f'))
@@ -775,78 +780,100 @@ public class Utils {
 	    throw(new IllegalArgumentException());
     }
 
-    public static String byte2hex(byte[] in) {
-	StringBuilder buf = new StringBuilder();
-	for(byte b : in) {
-	    buf.append(num2hex((b & 0xf0) >> 4));
-	    buf.append(num2hex(b & 0x0f));
-	}
-	return(buf.toString());
-    }
-
-    public static byte[] hex2byte(String hex) {
-	if(hex.length() % 2 != 0)
-	    throw(new IllegalArgumentException("Invalid hex-encoded string"));
-	byte[] ret = new byte[hex.length() / 2];
-	for(int i = 0, o = 0; i < hex.length(); i += 2, o++)
-	    ret[o] = (byte)((hex2num(hex.charAt(i)) << 4) | hex2num(hex.charAt(i + 1)));
-	return(ret);
-    }
-
-    private final static String base64set = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    private final static int[] base64rev;
-    static {
-	int[] rev = new int[128];
-	for(int i = 0; i < 128; rev[i++] = -1);
-	for(int i = 0; i < base64set.length(); i++)
-	    rev[base64set.charAt(i)] = i;
-	base64rev = rev;
-    }
-    public static String base64enc(byte[] in) {
-	StringBuilder buf = new StringBuilder();
-	int p = 0;
-	while(in.length - p >= 3) {
-	    buf.append(base64set.charAt( (in[p + 0] & 0xfc) >> 2));
-	    buf.append(base64set.charAt(((in[p + 0] & 0x03) << 4) | ((in[p + 1] & 0xf0) >> 4)));
-	    buf.append(base64set.charAt(((in[p + 1] & 0x0f) << 2) | ((in[p + 2] & 0xc0) >> 6)));
-	    buf.append(base64set.charAt(  in[p + 2] & 0x3f));
-	    p += 3;
-	}
-	if(in.length == p + 1) {
-	    buf.append(base64set.charAt( (in[p + 0] & 0xfc) >> 2));
-	    buf.append(base64set.charAt( (in[p + 0] & 0x03) << 4));
-	    buf.append("==");
-	} else if(in.length == p + 2) {
-	    buf.append(base64set.charAt( (in[p + 0] & 0xfc) >> 2));
-	    buf.append(base64set.charAt(((in[p + 0] & 0x03) << 4) | ((in[p + 1] & 0xf0) >> 4)));
-	    buf.append(base64set.charAt( (in[p + 1] & 0x0f) << 2));
-	    buf.append("=");
-	}
-	return(buf.toString());
-    }
-    public static byte[] base64dec(String in) {
-	ByteArrayOutputStream buf = new ByteArrayOutputStream();
-	int cur = 0, b = 8;
-	for(int i = 0; i < in.length(); i++) {
-	    char c = in.charAt(i);
-	    if(c >= 128)
-		throw(new IllegalArgumentException());
-	    if(c == '=')
-		break;
-	    int d = base64rev[c];
-	    if(d == -1)
-		throw(new IllegalArgumentException());
-	    b -= 6;
-	    if(b <= 0) {
-		cur |= d >> -b;
-		buf.write(cur);
-		b += 8;
-		cur = 0;
+    public static final BinAscii hex = new BinAscii() {
+	    public String enc(byte[] in) {
+		StringBuilder buf = new StringBuilder();
+		for(byte b : in) {
+		    buf.append(num2hex((b & 0xf0) >> 4));
+		    buf.append(num2hex(b & 0x0f));
+		}
+		return(buf.toString());
 	    }
-	    cur |= d << b;
+
+	    public byte[] dec(String hex) {
+		if(hex.length() % 2 != 0)
+		    throw(new IllegalArgumentException("Invalid hex-encoded string"));
+		byte[] ret = new byte[hex.length() / 2];
+		for(int i = 0, o = 0; i < hex.length(); i += 2, o++)
+		    ret[o] = (byte)((hex2num(hex.charAt(i)) << 4) | hex2num(hex.charAt(i + 1)));
+		return(ret);
+	    }
+	};
+
+    public static class Base64 implements BinAscii {
+	public final String set;
+	public final char pad;
+	private final byte[] rev;
+
+	public Base64(String set, char pad) {
+	    this.set = set;
+	    rev = new byte[128];
+	    Arrays.fill(rev, (byte)-1);
+	    for(int i = 0; i < set.length(); i++)
+		rev[set.charAt(i)] = (byte)i;
+	    this.pad = pad;
 	}
-	return(buf.toByteArray());
+
+	public String enc(byte[] in) {
+	    StringBuilder buf = new StringBuilder();
+	    int p = 0;
+	    while(in.length - p >= 3) {
+		buf.append(set.charAt( (in[p + 0] & 0xfc) >> 2));
+		buf.append(set.charAt(((in[p + 0] & 0x03) << 4) | ((in[p + 1] & 0xf0) >> 4)));
+		buf.append(set.charAt(((in[p + 1] & 0x0f) << 2) | ((in[p + 2] & 0xc0) >> 6)));
+		buf.append(set.charAt(  in[p + 2] & 0x3f));
+		p += 3;
+	    }
+	    if(in.length == p + 1) {
+		buf.append(set.charAt( (in[p + 0] & 0xfc) >> 2));
+		buf.append(set.charAt( (in[p + 0] & 0x03) << 4));
+		if(pad != '\0') {
+		    buf.append(pad); buf.append(pad);
+		}
+	    } else if(in.length == p + 2) {
+		buf.append(set.charAt( (in[p + 0] & 0xfc) >> 2));
+		buf.append(set.charAt(((in[p + 0] & 0x03) << 4) | ((in[p + 1] & 0xf0) >> 4)));
+		buf.append(set.charAt( (in[p + 1] & 0x0f) << 2));
+		if(pad != '\0') {
+		    buf.append(pad);
+		}
+	    }
+	    return(buf.toString());
+	}
+
+	public byte[] dec(String in) {
+	    ByteArrayOutputStream buf = new ByteArrayOutputStream();
+	    int cur = 0, b = 8;
+	    for(int i = 0; i < in.length(); i++) {
+		char c = in.charAt(i);
+		if(c >= 128)
+		    throw(new IllegalArgumentException());
+		if(c == pad)
+		    break;
+		int d = rev[c];
+		if(d == -1)
+		    throw(new IllegalArgumentException());
+		b -= 6;
+		if(b <= 0) {
+		    cur |= d >> -b;
+		    buf.write(cur);
+		    b += 8;
+		    cur = 0;
+		}
+		cur |= d << b;
+	    }
+	    return(buf.toByteArray());
+	}
     }
+
+    public static final Base64 b64 = new Base64("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", '=');
+    public static final Base64 b64np = new Base64(b64.set, '\0');
+    public static final Base64 ub64 = new Base64("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_", '\0');
+
+    @Deprecated public static String byte2hex(byte[] in) {return(hex.enc(in));}
+    @Deprecated public static byte[] hex2byte(String in) {return(hex.dec(in));}
+    @Deprecated public static String base64enc(byte[] in) {return(b64.enc(in));}
+    @Deprecated public static byte[] base64dec(String in) {return(b64.dec(in));}
 
     public static String[] splitwords(String text) {
 	ArrayList<String> words = new ArrayList<String>();

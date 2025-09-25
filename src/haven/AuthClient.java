@@ -490,7 +490,7 @@ public class AuthClient implements Closeable {
 				return;
 			    }
 			    System.out.println(acct);
-			    System.out.println(Utils.byte2hex(test.getcookie()));
+			    System.out.println(Utils.hex.enc(test.getcookie()));
 			} finally {
 			    test.close();
 			}
