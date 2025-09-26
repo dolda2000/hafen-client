@@ -61,7 +61,7 @@ public class Session implements Resource.Resolver {
     String username;
     final Map<Integer, CachedRes> rescache = new TreeMap<Integer, CachedRes>();
     public final Glob glob;
-    public byte[] sesskey;
+    public SignKey sesskey;
     private boolean closed = false;
 
     @SuppressWarnings("serial")
@@ -210,7 +210,7 @@ public class Session implements Resource.Resolver {
 	    int resver = msg.uint16();
 	    cachedres(resid).set(resname, resver);
 	} else if(msg.type == RMessage.RMSG_SESSKEY) {
-	    sesskey = msg.bytes();
+	    sesskey = new SignKey.HMAC(Digest.SHA256, msg.bytes());
 	} else {
 	    throw(new MessageException("Unknown rmsg type: " + msg.type, msg));
 	}

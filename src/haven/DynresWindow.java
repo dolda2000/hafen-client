@@ -87,8 +87,7 @@ public class DynresWindow extends Window {
 	return("Haven " +
 	       Utils.b64.enc(Utils.concat(sess.username.getBytes(Utils.utf8),
 					  new byte[] {0},
-					  Digest.hash(Digest.HMAC.of(Digest.SHA256, sess.sesskey),
-						      "dynres".getBytes(Utils.ascii)))));
+					  sess.sesskey.sign("dynres".getBytes(Utils.ascii)))));
     }
 
     public BufferedImage process(BufferedImage in) {
