@@ -394,14 +394,20 @@ public interface SignKey {
     }
 
     public static class HMAC implements SignKey {
-	private final Digest.Algorithm hmac;
+	private final Digest.Algorithm dig;
+	public final byte[] key;
 
-	public HMAC(Digest.Algorithm hmac) {
-	    this.hmac = hmac;
+	public HMAC(Digest.Algorithm dig, byte[] key) {
+	    this.dig = dig;
+	    this.key = key;
+	}
+
+	public Digest hmac() {
+	    return(new Digest.HMAC(dig, key));
 	}
 
 	public Signer sign() {
-	    Digest dig = hmac.get();
+	    Digest dig = hmac();
 	    return(new Signer() {
 		    public Signer update(byte[] buf, int off, int len) {
 			dig.update(buf, off, len);
@@ -415,7 +421,7 @@ public interface SignKey {
 	}
 
 	public Verifier verify() {
-	    Digest dig = hmac.get();
+	    Digest dig = hmac();
 	    return(new Verifier() {
 		    public Verifier update(byte[] buf, int off, int len) {
 			dig.update(buf, off, len);
@@ -433,7 +439,7 @@ public interface SignKey {
 		    public SignKey generate() {
 			byte[] key = new byte[dig.diglen()];
 			new SecureRandom().nextBytes(key);
-			return(new HMAC(Digest.HMAC.of(dig, key)));
+			return(new HMAC(dig, key));
 		    }
 		});
 	}
@@ -526,6 +532,20 @@ public interface SignKey {
 	    }
 	}
 
+	private static void format(Map<Object, Object> buf, HMAC sig, boolean pub) {
+	    if(sig.dig == Digest.SHA256) {
+		buf.put("alg", "HS256");
+	    } else if(sig.dig == Digest.SHA384) {
+		buf.put("alg", "HS384");
+	    } else if(sig.dig == Digest.SHA512) {
+		buf.put("alg", "HS512");
+	    } else {
+		throw(new EncodingException(String.valueOf(sig.dig)));
+	    }
+	    buf.put("kty", "oct");
+	    buf.put("k", Utils.ub64.enc(sig.key));
+	}
+
 	public static Map<Object, Object> format(SignKey sig, boolean pub) {
 	    Map<Object, Object> ret = new HashMap<>();
 	    if(sig instanceof ECDSA) {
@@ -534,6 +554,8 @@ public interface SignKey {
 		format(ret, (RSA_PKCS1)sig, pub);
 	    } else if(sig instanceof RSA_PSS) {
 		format(ret, (RSA_PSS)sig, pub);
+	    } else if(sig instanceof HMAC) {
+		format(ret, (HMAC)sig, pub);
 	    } else {
 		throw(new EncodingException("signature type unsupported for JWK: " + sig));
 	    }
@@ -615,20 +637,29 @@ public interface SignKey {
 	    return(new RSA_PSS(hash, key.a, key.b));
 	}
 
+	private static HMAC hmacparse(Map<?, ?> data, Digest.Algorithm dig) {
+	    if(!Utils.eq(data.get("kty"), "oct"))
+		throw(new JWKFormatException(data, "unexpected key type for HMAC: " + data.get("kty")));
+	    return(new HMAC(dig, Utils.ub64.dec(Utils.sv(data.get("k")))));
+	}
+
 	public static SignKey parse(Map<?, ?> data) {
 	    String alg = Utils.sv(data.get("alg"));
 	    if(alg == null)
 		throw(new JWKFormatException(data, "not a jwk sigalg"));
 	    switch(alg) {
-	    case "ES256": return parse(data, ECDSA.Hash.SHA256);
-	    case "ES384": return parse(data, ECDSA.Hash.SHA384);
-	    case "ES512": return parse(data, ECDSA.Hash.SHA512);
-	    case "RS256": return parse(data, RSA_PKCS1.Hash.SHA256);
-	    case "RS384": return parse(data, RSA_PKCS1.Hash.SHA384);
-	    case "RS512": return parse(data, RSA_PKCS1.Hash.SHA512);
-	    case "PS256": return parse(data, RSA_PSS.Hash.SHA256);
-	    case "PS384": return parse(data, RSA_PSS.Hash.SHA384);
-	    case "PS512": return parse(data, RSA_PSS.Hash.SHA512);
+	    case "ES256": return(parse(data, ECDSA.Hash.SHA256));
+	    case "ES384": return(parse(data, ECDSA.Hash.SHA384));
+	    case "ES512": return(parse(data, ECDSA.Hash.SHA512));
+	    case "RS256": return(parse(data, RSA_PKCS1.Hash.SHA256));
+	    case "RS384": return(parse(data, RSA_PKCS1.Hash.SHA384));
+	    case "RS512": return(parse(data, RSA_PKCS1.Hash.SHA512));
+	    case "PS256": return(parse(data, RSA_PSS.Hash.SHA256));
+	    case "PS384": return(parse(data, RSA_PSS.Hash.SHA384));
+	    case "PS512": return(parse(data, RSA_PSS.Hash.SHA512));
+	    case "HS256": return(hmacparse(data, Digest.SHA256));
+	    case "HS384": return(hmacparse(data, Digest.SHA384));
+	    case "HS512": return(hmacparse(data, Digest.SHA512));
 	    default: throw(new JWKFormatException(data, "unknown jwk sigalg name: " + alg));
 	    }
 	}
