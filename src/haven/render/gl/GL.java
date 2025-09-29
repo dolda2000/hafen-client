@@ -39,6 +39,7 @@ public interface GL {
     public static final int GL_COMPILE_STATUS = com.jogamp.opengl.GL3.GL_COMPILE_STATUS;
     public static final int GL_CONSTANT_ALPHA = com.jogamp.opengl.GL3.GL_CONSTANT_ALPHA;
     public static final int GL_CONSTANT_COLOR = com.jogamp.opengl.GL3.GL_CONSTANT_COLOR;
+    public static final int GL_CONTEXT_FLAGS = com.jogamp.opengl.GL3.GL_CONTEXT_FLAGS;
     public static final int GL_CONTEXT_PROFILE_MASK = com.jogamp.opengl.GL3.GL_CONTEXT_PROFILE_MASK;
     public static final int GL_CONTEXT_CORE_PROFILE_BIT = com.jogamp.opengl.GL3.GL_CONTEXT_CORE_PROFILE_BIT;
     public static final int GL_CONTEXT_COMPATIBILITY_PROFILE_BIT = com.jogamp.opengl.GL3.GL_CONTEXT_COMPATIBILITY_PROFILE_BIT;
