@@ -1662,7 +1662,6 @@ public class Resource implements Serializable {
 		    }
 		} else if(t == 4) {
 		    Object[] data = buf.list(resmapper());
-		    Debug.dump(data);
 		    for(int i = 0; i < data.length; i++) {
 			Object[] datum = (Object[])data[i];
 			switch(Utils.sv(datum[0])) {
