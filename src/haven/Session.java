@@ -45,6 +45,7 @@ public class Session implements Resource.Resolver {
     public static final int MSG_OBJDATA = 6;
     public static final int MSG_OBJACK = 7;
     public static final int MSG_CLOSE = 8;
+    public static final int MSG_CRYPT = 9;
     public static final int SESSERR_AUTH = 1;
     public static final int SESSERR_BUSY = 2;
     public static final int SESSERR_CONN = 3;
