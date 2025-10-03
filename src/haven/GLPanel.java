@@ -108,14 +108,14 @@ public interface GLPanel extends UIPanel, UI.Context {
 
 	public static class ProfileCycle implements BGL.Request {
 	    final CPUProfile prof;
-	    final String label;
 	    ProfileCycle prev;
 	    CPUProfile.Frame frame;
+	    Profile.Part curp;
 
-	    ProfileCycle(CPUProfile prof, ProfileCycle prev, String label) {
+	    ProfileCycle(CPUProfile prof, ProfileCycle prev, GLRender out) {
 		this.prof = prof;
 		this.prev = prev;
-		this.label = label;
+		out.submit(this);
 	    }
 
 	    public void run(GL gl) {
@@ -124,8 +124,6 @@ public interface GLPanel extends UIPanel, UI.Context {
 			/* The reason frame would be null is if the
 			 * environment has become invalid and the previous
 			 * cycle never ran. */
-			if(label != null)
-			    prev.frame.tick(label);
 			prev.frame.fin();
 		    }
 		    prev = null;
@@ -134,18 +132,18 @@ public interface GLPanel extends UIPanel, UI.Context {
 	    }
 	}
 
-	public static class ProfileTick implements BGL.Request {
+	public static class ProfilePart implements BGL.Request {
 	    final ProfileCycle prof;
 	    final String label;
 
-	    ProfileTick(ProfileCycle prof, String label) {
+	    ProfilePart(ProfileCycle prof, String label) {
 		this.prof = prof;
 		this.label = label;
 	    }
 
 	    public void run(GL gl) {
 		if((prof != null) && (prof.frame != null))
-		    prof.frame.tick(label);
+		    prof.frame.part(label);
 	    }
 	}
 
@@ -334,73 +332,71 @@ public interface GLPanel extends UIPanel, UI.Context {
 		    SyncMode syncmode = prefs.syncmode.val;
 		    CPUProfile.Frame curf = profile.get() ? uprof.new Frame() : null;
 		    GPUProfile.Frame curgf = profilegpu.get() ? gprof.new Frame(buf) : null;
+		    rprofc = profile.get() ? new ProfileCycle(rprof, rprofc, buf) : null;
 		    BufferBGL.Profile frameprof = false ? new BufferBGL.Profile() : null;
 		    if(frameprof != null) buf.submit(frameprof.start);
-		    buf.submit(new ProfileTick(rprofc, "wait"));
+		    buf.submit(new ProfilePart(rprofc, "tick"));
+		    curgf.part(buf, "tick");
 		    Fence curframe = new Fence();
 		    if(syncmode == SyncMode.FRAME)
 			buf.submit(curframe);
 
 		    boolean tickwait = (syncmode == SyncMode.FRAME) || (syncmode == SyncMode.TICK);
 		    if(!tickwait) {
+			if(curf != null) curf.part("dwait");
 			if(prevframe != null) {
 			    double now = Utils.rtime();
 			    prevframe.waitfor();
 			    prevframe = null;
 			    fwaited += Utils.rtime() - now;
 			}
-			if(curf != null) curf.tick("dwait");
 		    }
 
 		    int cfno = frameno++;
 		    synchronized(ui) {
+			if(curf != null) curf.part("dsp");
 			ed.dispatch(ui);
 			ui.mousehover(ui.mc);
-			if(curf != null) curf.tick("dsp");
 
+			if(curf != null) curf.part("stick");
 			if(ui.sess != null) {
 			    ui.sess.glob.ctick();
 			    ui.sess.glob.gtick(buf);
 			}
-			if(curf != null) curf.tick("stick");
+			if(curf != null) curf.part("tick");
 			ui.tick();
 			ui.gtick(buf);
 			Area shape = p.shape();
 			if((ui.root.sz.x != (shape.br.x - shape.ul.x)) || (ui.root.sz.y != (shape.br.y - shape.ul.y)))
 			    ui.root.resize(new Coord(shape.br.x - shape.ul.x, shape.br.y - shape.ul.y));
-			if(curf != null) curf.tick("tick");
-			buf.submit(new ProfileTick(rprofc, "tick"));
-			if(curgf != null) curgf.tick(buf, "tick");
+			buf.submit(new ProfilePart(rprofc, "draw"));
+			if(curgf != null) curgf.part(buf, "draw");
 		    }
 
 		    if(tickwait) {
+			if(curf != null) curf.part("dwait");
 			if(prevframe != null) {
 			    double now = Utils.rtime();
 			    prevframe.waitfor();
 			    prevframe = null;
 			    fwaited += Utils.rtime() - now;
 			}
-			if(curf != null) curf.tick("dwait");
 		    }
 
+		    if(curf != null) curf.part("draw");
 		    display(ui, buf);
-		    if(curf != null) curf.tick("draw");
-		    if(curgf != null) curgf.tick(buf, "draw");
-		    buf.submit(new ProfileTick(rprofc, "gl"));
+		    if(curf != null) curf.part("aux");
+		    if(curgf != null) curgf.part(buf, "swap");
+		    buf.submit(new ProfilePart(rprofc, "swap"));
 		    buf.submit(new BufferSwap(cfno));
-		    if(curgf != null) curgf.tick(buf, "swap");
-		    buf.submit(new ProfileTick(rprofc, "swap"));
 		    if(curgf != null) curgf.fin(buf);
 		    if(syncmode == SyncMode.FINISH) {
+			buf.submit(new ProfilePart(rprofc, "finish"));
 			buf.submit(new GLFinish());
-			buf.submit(new ProfileTick(rprofc, "finish"));
 		    }
 		    if(syncmode != SyncMode.FRAME)
 			buf.submit(curframe);
-		    if(profile.get())
-			buf.submit(rprofc = new ProfileCycle(rprof, rprofc, "aux"));
-		    else
-			rprofc = null;
+		    buf.submit(new ProfilePart(rprofc, "wait"));
 		    buf.submit(new FrameCycle());
 		    if(frameprof != null) {
 			buf.submit(frameprof.stop);
@@ -408,8 +404,8 @@ public interface GLPanel extends UIPanel, UI.Context {
 		    }
 		    env.submit(buf);
 		    buf = null;
-		    if(curf != null) curf.tick("aux");
 
+		    if(curf != null) curf.part("wait");
 		    double now = Utils.rtime();
 		    double fd = framedur();
 		    if(then + fd > now) {
@@ -437,7 +433,6 @@ public interface GLPanel extends UIPanel, UI.Context {
 			}
 		    }
 		    framep = (framep + 1) % frames.length;
-		    if(curf != null) curf.tick("wait");
 
 		    if(curf != null) curf.fin();
 		    prevframe = curframe;

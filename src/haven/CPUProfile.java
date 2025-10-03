@@ -29,44 +29,54 @@ package haven;
 import java.util.*;
 
 public class CPUProfile extends Profile {
+    private final long epoch;
+
     public CPUProfile(int hl) {
 	super(hl);
+	epoch = System.nanoTime();
     }
 
-    public class Frame extends Profile.Frame {
-	private List<Long> pw = new LinkedList<Long>();
-	private List<String> nw = new LinkedList<String>();
-	private long then, last, sub;
+    private double txl(long tm) {
+	return((tm - epoch) * 1e-9);
+    }
 
-	public Frame() {
-	    last = then = System.nanoTime();
+    private class Part extends Profile.Part {
+	private long f, t;
+	private Part curp = null;
+
+	public Part(String nm) {
+	    super(nm);
+	    f = System.nanoTime();
 	}
 
-	public void tick(String nm) {
-	    long now = System.nanoTime();
-	    pw.add(now - last - sub);
-	    nw.add(nm);
-	    sub = 0;
-	    last = now;
+	public double f() {return(txl(f));}
+	public double t() {return(txl(t));}
+
+	public Part part(String nm) {
+	    Part p = new Part(nm);
+	    if((curp != null) && (curp.t == 0))
+		curp.t = p.f;
+	    add(p);
+	    return(curp = p);
 	}
 
-	public void add(String nm, long tm) {
-	    pw.add(tm);
-	    nw.add(nm);
-	    sub += tm;
+	private void fin(long tm) {
+	    t = tm;
+	    if((curp != null) && (curp.t == 0))
+		curp.fin(tm);
 	}
 
 	public void fin() {
-	    double total = (System.nanoTime() - then) / 1000000000.0;
-	    String[] nm = new String[nw.size()];
-	    double[] prt = new double[pw.size()];
-	    for(int i = 0; i < pw.size(); i++) {
-		nm[i] = nw.get(i);
-		prt[i] = pw.get(i) / 1000000000.0;
-	    }
-	    fin(total, nm, prt);
-	    pw = null;
-	    nw = null;
+	    fin(System.nanoTime());
+	}
+    }
+
+    public class Frame extends Part {
+	public Frame() {super(null);}
+
+	public void fin() {
+	    super.fin();
+	    CPUProfile.this.add(this);
 	}
     }
 }

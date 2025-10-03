@@ -27,64 +27,104 @@
 package haven;
 
 import java.util.*;
+import java.util.function.*;
 import haven.render.*;
 
 public class GPUProfile extends Profile {
-    private Collection<Frame> waiting = new LinkedList<Frame>();
+    private Collection<Frame> waiting = new LinkedList<>();
 
     public GPUProfile(int hl) {
 	super(hl);
     }
 
-    public class Frame extends Profile.Frame {
-	private List<String> nw = new ArrayList<>(16);
-	private List<Long> queries = new ArrayList<>(16);
+    public abstract class Part extends Profile.Part {
+	private long f, t;
+	private Part curp;
+	private boolean fin;
+	boolean done;
 
-	public Frame(Render out) {
-	    query(out);
+	public Part(String nm) {
+	    super(nm);
 	}
 
-	private void query(Render out) {
-	    queries.add(0l);
-	    int idx = queries.size() - 1;
-	    out.timestamp(val -> queries.set(idx, val));
+	public double f() {return(f * 1e-9);}
+	public double t() {return(t * 1e-9);}
+
+	protected abstract Frame frame();
+
+	void query(Render out, Consumer<Long> prev) {
+	    out.timestamp(val -> {
+		    this.f = val;
+		    if(prev != null)
+			prev.accept(val);
+		});
 	}
 
-	public void tick(Render out, String nm) {
-	    query(out);
-	    nw.add(nm);
+	public Part part(Render out, String nm) {
+	    Part p = new FramePart(nm, frame());
+	    p.query(out, (curp != null) ? curp.tfin() : null);
+	    frame().waiting.add(p);
+	    add(p);
+	    return(curp = p);
+	}
+
+	private Consumer<Long> tfin() {
+	    if(fin)
+		return(val -> {});
+	    Consumer<Long> prev = (curp != null) ? curp.tfin() : val -> {};
+	    return(val -> {
+		    t = val;
+		    done = true;
+		    prev.accept(val);
+		});
 	}
 
 	public void fin(Render out) {
-	    query(out);
-	    waiting.add(this);
+	    if(fin)
+		return;
+	    out.timestamp(tfin());
+	    fin = true;
+	}
+    }
+
+    private class FramePart extends Part {
+	private final Frame frame;
+	private FramePart(String nm, Frame frame) {super(nm); this.frame = frame;}
+	protected Frame frame() {return(frame);}
+    }
+
+    public class Frame extends Part {
+	private List<Part> waiting = new LinkedList<>();
+
+	public Frame(Render out) {
+	    super(null);
+	    query(out, null);
+	}
+
+	protected Frame frame() {return(this);}
+
+	public void fin(Render out) {
+	    super.fin(out);
+	    GPUProfile.this.waiting.add(this);
 	    check();
 	}
 
-	public void fin2() {
-	    long[] tms = new long[queries.size()];
-	    for(int i = 0; i < tms.length; i++)
-		tms[i] = queries.get(i);
-	    int np = tms.length - 2;
-	    double total = (tms[tms.length - 1] - tms[0]) / 1000000000.0;
-	    String[] nm = new String[np];
-	    double[] prt = new double[np];
-	    for(int i = 0; i < prt.length; i++) {
-		nm[i] = nw.get(i);
-		prt[i] = (tms[i + 1] - tms[i]) / 1000000000.0;
-	    }
-	    fin(total, nm, prt);
-	    nw = null;
-	    queries = null;
+	private void fin2() {
+	    waiting = null;
+	    GPUProfile.this.add(this);
 	}
     }
 
     public void check() {
 	for(Iterator<Frame> i = waiting.iterator(); i.hasNext();) {
 	    Frame f = i.next();
-	    for(long qo : f.queries) {
-		if(qo == 0)
+	    if(!f.done)
+		return;
+	    for(Iterator<Part> o = f.waiting.iterator(); o.hasNext();) {
+		Part p = o.next();
+		if(!p.done)
 		    return;
+		o.remove();
 	    }
 	    f.fin2();
 	    i.remove();

@@ -30,13 +30,27 @@ import haven.render.*;
 import java.util.*;
 import java.nio.*;
 import java.awt.Color;
+import haven.Profile.*;
 
 public class Profdisp extends Widget {
+    public static final Color[] cols;
     private static final int h = UI.scale(80);
     public final Profile prof;
     public double mt = 0.05;
     private double dscale = 0;
     private Tex sscl = null;
+
+    static {
+	cols = new Color[16];
+	for(int i = 0; i < 16; i++) {
+	    int lo = ((i & 8) == 0)?0x00:0x55;
+	    int hi = ((i & 8) == 0)?0xaa:0xff;
+	    int r = ((i & 4) != 0)?hi:lo;
+	    int g = ((i & 2) != 0)?hi:lo;
+	    int b = ((i & 1) != 0)?hi:lo;
+	    cols[i] = new Color(r, g, b);
+	}
+    }
 
     public Profdisp(Profile prof) {
 	super(new Coord(prof.hist.length + UI.scale(50), h));
@@ -58,15 +72,19 @@ public class Profdisp extends Widget {
 	    int w = prof.hist.length, h = sz.y;
 	    IntBuffer data = buf.asIntBuffer();
 	    for(int i = 0; i < prof.hist.length; i++) {
-		Profile.Frame f = prof.hist[i];
+		Profile.Part f = prof.hist[i];
 		if(f == null)
 		    continue;
 		int y = h - 1;
 		int O = (y * w) + i;
 		double a = 0;
-		for(int o = 0; o < f.prt.length; o++) {
-		    a += f.prt[o];
-		    Color col = Profile.cols[o + 1];
+		List<Part> p = f.sub();
+		for(int o = 0; o <= p.size(); o++) {
+		    if(o < p.size())
+			a += p.get(o).d();
+		    else
+			a = f.d();
+		    Color col = cols[(o + 1) % cols.length];
 		    int r = col.getRed(), g = col.getGreen(), b = col.getBlue();
 		    int rgb = (r << 0) | (g << 8) | (b << 16) | (255 << 24);
 		    for(int th = h - 1 - (int)(a / scale); (y >= 0) && (y >= th); y--, O -= w)
@@ -108,7 +126,7 @@ public class Profdisp extends Widget {
 	double[] ttl = new double[prof.hist.length];
 	for(int i = 0; i < prof.hist.length; i++) {
 	    if(prof.hist[i] != null)
-		ttl[i] = prof.hist[i].total;
+		ttl[i] = prof.hist[i].d();
 	}
 	Arrays.sort(ttl);
 	int ti = ttl.length;
@@ -145,11 +163,11 @@ public class Profdisp extends Widget {
 	    int x = c.x;
 	    int y = c.y;
 	    double t = (h - y) * (mt / h);
-	    Profile.Frame f = prof.hist[x];
+	    Profile.Part f = prof.hist[x];
 	    if(f != null) {
-		for(int i = 0; i < f.prt.length; i++) {
-		    if((t -= f.prt[i]) < 0)
-			return(String.format("%.2f ms, %s: %.2f ms", f.total * 1000, f.nm[i], f.prt[i] * 1000));
+		for(Part p : f.sub()) {
+		    if((t -= p.d()) < 0)
+			return(String.format("%.2f ms, %s: %.2f ms", f.d() * 1000, p.nm, p.d() * 1000));
 		}
 	    }
 	}
