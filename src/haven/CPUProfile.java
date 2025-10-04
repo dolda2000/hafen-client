@@ -30,6 +30,7 @@ import java.util.*;
 
 public class CPUProfile extends Profile {
     private final long epoch;
+    private long fno = 1;
 
     public CPUProfile(int hl) {
 	super(hl);
@@ -72,7 +73,7 @@ public class CPUProfile extends Profile {
     }
 
     public class Frame extends Part {
-	public Frame() {super(null);}
+	public Frame() {super(String.format("frame %,d", fno++));}
 
 	public void fin() {
 	    super.fin();

@@ -31,7 +31,8 @@ import java.util.function.*;
 import haven.render.*;
 
 public class GPUProfile extends Profile {
-    private Collection<Frame> waiting = new LinkedList<>();
+    private final Collection<Frame> waiting = new LinkedList<>();
+    private long fno = 1;
 
     public GPUProfile(int hl) {
 	super(hl);
@@ -97,7 +98,7 @@ public class GPUProfile extends Profile {
 	private List<Part> waiting = new LinkedList<>();
 
 	public Frame(Render out) {
-	    super(null);
+	    super(String.format("frame %,d", fno++));
 	    query(out, null);
 	}
 

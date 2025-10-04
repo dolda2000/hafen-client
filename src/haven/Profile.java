@@ -26,13 +26,11 @@
 
 package haven;
 
-import java.awt.Graphics2D;
-import java.awt.Color;
-import java.awt.image.BufferedImage;
-import java.awt.image.WritableRaster;
 import java.util.*;
+import java.io.*;
+import java.awt.Color;
 
-public abstract class Profile {
+public class Profile {
     public final Part[] hist;
     protected int i = 0;
 
@@ -59,6 +57,27 @@ public abstract class Profile {
 
 	public List<Part> sub() {
 	    return((ch != null) ? ch : Collections.emptyList());
+	}
+
+	private static final String[] units = {"s", "ms", "\u00b5s", "ns"};
+	private void dump(PrintStream out, int indent) {
+	    for(int i = 0; i < indent; i++)
+		out.print("    ");
+	    if(nm != null)
+		out.print(nm + ": ");
+	    double d = d();
+	    for(int i = 0; i < units.length; i++, d *= 1e3) {
+		if((d > 1) || (i == units.length - 1)) {
+		    out.print(String.format("%.2f %s\n", d, units[i]));
+		    break;
+		}
+	    }
+	    for(Part p : sub())
+		p.dump(out, indent + 1);
+	}
+
+	public void dump(PrintStream out) {
+	    dump(out, 0);
 	}
 
 	public String toString() {
@@ -89,7 +108,14 @@ public abstract class Profile {
 	return(hist[i - 1]);
     }
 
-    public void dump(java.io.PrintStream out) {
+    public Profile copy() {
+	Profile ret = new Profile(hist.length);
+	System.arraycopy(this.hist, 0, ret.hist, 0, hist.length);
+	ret.i = this.i;
+	return(ret);
+    }
+
+    public void dump(PrintStream out) {
 	String[] parts = new String[0];
 	double[] avg = new double[0];
 	double[] min = new double[0];
