@@ -29,17 +29,39 @@ package haven;
 import java.util.*;
 
 public class Profwnd extends Window {
-    public Profwnd(Profile prof, String title) {
+    private final Profile prof;
+    private final boolean live;
+
+    public Profwnd(Profile prof, String title, boolean live) {
 	super(Coord.z, title);
-	add(new Profdisp(prof), Coord.z);
+	this.prof = prof;
+	this.live = live;
+	Widget prev = add(new Profdisp(prof), Coord.z);
 	pack();
     }
 
-    public void wdgmsg(Widget sender, String msg, Object... args) {
-	if(msg.equals("close")) {
-	    ui.destroy(this);
-	} else {
-	    super.wdgmsg(sender, msg, args);
+    public Profwnd(Profile prof, String title) {
+	this(prof, title, true);
+    }
+
+    public void reqclose() {
+	ui.destroy(this);
+    }
+
+    private void capture() {
+	Window cap = new Profwnd(prof.copy(), this.cap + " (capture)", false);
+	if(c.y + (sz.y / 2) < parent.sz.y)
+	    parent.adda(cap, this.pos("bl").adds(0, 10), 0, 0);
+	else
+	    parent.adda(cap, this.pos("ul").subs(0, 10), 0, 1);
+    }
+
+    public boolean keydown(KeyDownEvent ev) {
+	if(ev.c == 's') {
+	    if(live)
+		capture();
+	    return(true);
 	}
+	return(super.keydown(ev));
     }
 }

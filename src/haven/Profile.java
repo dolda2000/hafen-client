@@ -26,81 +26,113 @@
 
 package haven;
 
-import java.awt.Graphics2D;
-import java.awt.Color;
-import java.awt.image.BufferedImage;
-import java.awt.image.WritableRaster;
 import java.util.*;
+import java.io.*;
+import java.awt.Color;
 
-public abstract class Profile {
-    public static final Color[] cols;
-    public final Frame[] hist;
+public class Profile {
+    public final Part[] hist;
     protected int i = 0;
-    
-    static {
-	cols = new Color[16];
-	for(int i = 0; i < 16; i++) {
-	    int lo = ((i & 8) == 0)?0x00:0x55;
-	    int hi = ((i & 8) == 0)?0xaa:0xff;
-	    int r = ((i & 4) != 0)?hi:lo;
-	    int g = ((i & 2) != 0)?hi:lo;
-	    int b = ((i & 1) != 0)?hi:lo;
-	    cols[i] = new Color(r, g, b);
-	}
-    }
-    
-    public abstract class Frame {
-	public String nm[];
-	public double total, prt[];
 
-	protected void fin(double total, String[] nm, double[] prt) {
+    public static abstract class Part {
+	public final String nm;
+	private List<Part> ch = null;
+
+	public Part(String nm) {
 	    this.nm = nm;
-	    this.total = total;
-	    this.prt = prt;
-	    hist[i] = this;
-	    if(++i >= hist.length)
-		i = 0;
+	}
+
+	public abstract double f();
+	public abstract double t();
+
+	public double d() {
+	    return(t() - f());
+	}
+
+	public void add(Part sub) {
+	    if(ch == null)
+		ch = new ArrayList<>();
+	    ch.add(sub);
+	}
+
+	public List<Part> sub() {
+	    return((ch != null) ? ch : Collections.emptyList());
+	}
+
+	private static final String[] units = {"s", "ms", "\u00b5s", "ns"};
+	private void dump(PrintStream out, int indent) {
+	    for(int i = 0; i < indent; i++)
+		out.print("    ");
+	    if(nm != null)
+		out.print(nm + ": ");
+	    double d = d();
+	    for(int i = 0; i < units.length; i++, d *= 1e3) {
+		if((d > 1) || (i == units.length - 1)) {
+		    out.print(String.format("%.2f %s\n", d, units[i]));
+		    break;
+		}
+	    }
+	    for(Part p : sub())
+		p.dump(out, indent + 1);
+	}
+
+	public void dump(PrintStream out) {
+	    dump(out, 0);
 	}
 
 	public String toString() {
 	    StringBuilder buf = new StringBuilder();
-	    for(int i = 0; i < prt.length; i++) {
-		if(i > 0)
+	    for(Part p : sub()) {
+		if(buf.length() > 0)
 		    buf.append(", ");
-		buf.append(nm[i] + ": " + prt[i]);
+		buf.append(p.nm + ": " + p.d());
 	    }
-	    buf.append(", total: " + total);
+	    buf.append(", total: " + d());
 	    return(buf.toString());
 	}
     }
-    
-    public Profile(int hl) {
-	hist = new Frame[hl];
+
+    public void add(Part frame) {
+	hist[i] = frame;
+	if(++i >= hist.length)
+	    i = 0;
     }
-    
-    public Frame last() {
+
+    public Profile(int hl) {
+	hist = new Part[hl];
+    }
+
+    public Part last() {
 	if(i == 0)
 	    return(hist[hist.length - 1]);
 	return(hist[i - 1]);
     }
 
-    public void dump(java.io.PrintStream out) {
+    public Profile copy() {
+	Profile ret = new Profile(hist.length);
+	System.arraycopy(this.hist, 0, ret.hist, 0, hist.length);
+	ret.i = this.i;
+	return(ret);
+    }
+
+    public void dump(PrintStream out) {
 	String[] parts = new String[0];
 	double[] avg = new double[0];
 	double[] min = new double[0];
 	double[] max = new double[0];
 	int n = 0;
-	for(Frame f : hist) {
+	for(Part f : hist) {
 	    if(f == null)
 		continue;
-	    for(int i = 0; i <= f.prt.length; i++) {
+	    List<Part> prt = f.sub();
+	    for(int i = 0; i <= prt.size(); i++) {
 		String nm; double tm;
-		if(i < f.prt.length) {
-		    nm = f.nm[i];
-		    tm = f.prt[i];
+		if(i < f.sub().size()) {
+		    nm = prt.get(i).nm;
+		    tm = prt.get(i).d();
 		} else {
 		    nm = "total";
-		    tm = f.total;
+		    tm = f.d();
 		}
 		int o;
 		for(o = 0; o < parts.length; o++) {
@@ -125,17 +157,18 @@ public abstract class Profile {
 	for(int i = 0; i < avg.length; i++)
 	    avg[i] /= n;
 	double[] vsum = new double[avg.length];
-	for(Frame f : hist) {
+	for(Part f : hist) {
 	    if(f == null)
 		continue;
-	    for(int i = 0; i <= f.prt.length; i++) {
+	    List<Part> prt = f.sub();
+	    for(int i = 0; i <= prt.size(); i++) {
 		String nm; double tm;
-		if(i < f.prt.length) {
-		    nm = f.nm[i];
-		    tm = f.prt[i];
+		if(i < prt.size()) {
+		    nm = prt.get(i).nm;
+		    tm = prt.get(i).d();
 		} else {
 		    nm = "total";
-		    tm = f.total;
+		    tm = f.d();
 		}
 		int o;
 		for(o = 0; o < parts.length; o++) {
