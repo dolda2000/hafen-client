@@ -696,7 +696,7 @@ public class Connection {
 			PMessage msg = recv();
 			if(msg != null) {
 			    if((msg.type == Session.MSG_CRYPT) && (crypt != null))
-				crypt.decrypt(msg);
+				msg = crypt.decrypt(msg);
 			    if(msg.type == Session.MSG_CLOSE)
 				sawclose = true;
 			}
