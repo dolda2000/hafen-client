@@ -91,6 +91,11 @@ public class Connection {
 	return(this);
     }
 
+    public static class DecryptException extends Exception {
+	public DecryptException(String msg, Throwable cause) {super(msg, cause);}
+	public DecryptException(String msg) {super(msg);}
+    }
+
     private class Crypto {
 	private final Cipher cipher;
 	private final Key tkey, rkey;
@@ -131,7 +136,7 @@ public class Connection {
 	    return(ret);
 	}
 
-	public synchronized byte[] decrypt(byte[] msg) throws IOException {
+	public synchronized byte[] decrypt(byte[] msg) throws DecryptException {
 	    long mseq = rseqs.last();
 	    long loseq = (msg[0] & 0xff) | ((msg[1] & 0xff) << 8) | ((msg[2] & 0xff) << 16);
 	    long seq = (mseq & ~0xffffffL) | loseq;
@@ -140,7 +145,7 @@ public class Connection {
 	    else if((Utils.sb(loseq - mseq, 24) < 0) && (seq > mseq))
 		seq -= 0x1000000L;
 	    if(seq <= rseqs.first())
-		throw(new IOException("duplicated packet"));
+		throw(new DecryptException("duplicated packet"));
 	    byte[] iv = new byte[8];
 	    Utils.int64e(seq, iv, 0);
 	    try {
@@ -154,10 +159,10 @@ public class Connection {
 	    } catch(IllegalBlockSizeException e) {
 		throw(new AssertionError(e));
 	    } catch(BadPaddingException e) {
-		throw(new IOException("decryption failed", e));
+		throw(new DecryptException("decryption failed", e));
 	    }
 	    if(!rseqs.add(seq))
-		throw(new IOException("duplicated packet"));
+		throw(new DecryptException("duplicated packet"));
 	    while(rseqs.size() > 128)
 		rseqs.pollFirst();
 	    return(ret);
@@ -172,7 +177,7 @@ public class Connection {
 	    return(ret);
 	}
 
-	public PMessage decrypt(MessageBuf msg) throws IOException {
+	public PMessage decrypt(MessageBuf msg) throws DecryptException {
 	    byte[] dec = decrypt(msg.bytes());
 	    return(new PMessage(dec[0], dec, 1, dec.length - 1));
 	}
@@ -361,6 +366,8 @@ public class Connection {
 			}
 		    } catch(ClosedByInterruptException | CancelledKeyException e) {
 			return(null);
+		    } catch(DecryptException e) {
+			new Warning(e).ctrace(false).issue();
 		    } catch(IOException e) {
 			result = Session.SESSERR_CONN;
 			cause = e;
@@ -645,6 +652,8 @@ public class Connection {
 		    return(new Close(false));
 		} catch(PortUnreachableException e) {
 		    return(null);
+		} catch(DecryptException e) {
+		    new Warning(e).ctrace(false).issue();
 		} catch(IOException e) {
 		    new Warning(e, "connection error").issue();
 		    return(null);
@@ -701,6 +710,8 @@ public class Connection {
 		     * non-blocking, and interrupting a selecting
 		     * thread shouldn't cause any channel closure. */
 		    return(null);
+		} catch(DecryptException e) {
+		    new Warning(e).ctrace(false).issue();
 		} catch(IOException e) {
 		    return(null);
 		}
