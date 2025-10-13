@@ -40,7 +40,6 @@ public class Connection {
     private static final double ACK_HOLD = 0.030;
     private static final double OBJACK_HOLD = 0.08, OBJACK_HOLD_MAX = 0.5;
     public final SocketAddress server;
-    public final String username;
     private final Collection<Callback> cbs = new ArrayList<>();
     private final DatagramChannel sk;
     private final Selector sel;
@@ -50,9 +49,8 @@ public class Connection {
     private boolean alive = true;
     private Crypto crypt;
 
-    public Connection(SocketAddress server, String username) {
+    public Connection(SocketAddress server) {
 	this.server = server;
-	this.username = username;
 	try {
 	    this.sk = DatagramChannel.open();
 	    try {
@@ -292,7 +290,7 @@ public class Connection {
 	private String message;
 	private Crypto crypt;
 
-	private Connect(byte[] cookie, Object... args) {
+	private Connect(String username, byte[] cookie, Object... args) {
 	    msg = new PMessage(Session.MSG_SESS);
 	    String protocol = "Hafen";
 	    if(!Config.confid.equals(""))
@@ -750,8 +748,8 @@ public class Connection {
 	public SessionExprError() {super(Session.SESSERR_EXPR, "Authentication token expired");}
     }
 
-    public void connect(byte[] cookie, Object... args) throws InterruptedException {
-	Connect init = new Connect(cookie, args);
+    public void connect(String username, byte[] cookie, Object... args) throws InterruptedException {
+	Connect init = new Connect(username, cookie, args);
 	start(init);
 	try {
 	    synchronized(init) {

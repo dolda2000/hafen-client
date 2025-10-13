@@ -63,7 +63,7 @@ public class TestClient implements Runnable, UI.Context {
     }
     
     public void connect() throws InterruptedException {
-	sess = new Session(addr, user, cookie);
+	sess = new Session(addr, new Session.User(user), cookie);
     }
     
     public void addbot(Robot bot) {
