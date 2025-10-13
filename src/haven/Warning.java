@@ -37,7 +37,7 @@ public class Warning extends Throwable {
     public static final int CRITICAL = 10;
     public final double ctime = Utils.rtime();
     public int level = DEBUG;
-    public boolean trace = false;
+    public boolean trace = false, ctrace = true;
 
     public Warning(Throwable cause, String message) {
 	super(message, cause);
@@ -57,6 +57,7 @@ public class Warning extends Throwable {
 
     public Warning level(int level) {this.level = level; return(this);}
     public Warning trace(boolean trace) {this.trace = trace; return(this);}
+    public Warning ctrace(boolean ctrace) {this.ctrace = ctrace; return(this);}
 
     public void report(PrintStream out, String head) {
 	out.printf("%s%s\n", head, (getClass() == Warning.class) ? getMessage() : toString());
@@ -64,7 +65,7 @@ public class Warning extends Throwable {
 	    for(StackTraceElement frame : getStackTrace())
 		out.println("\tat " + frame);
 	}
-	if(getCause() != null)
+	if((getCause() != null) && ctrace)
 	    getCause().printStackTrace(out);
 	out.flush();
     }
