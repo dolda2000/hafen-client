@@ -40,7 +40,7 @@ public class SessWidget extends AWidget {
 	    byte[] cookie = Utils.hex.dec((String)args[2]);
 	    Object[] sargs = Utils.splice(args, 3);
 	    Session.User acct = ui.sess.user.copy().alias(null);
-	    return(new SessWidget(host, port, acct, cookie, sargs));
+	    return(new SessWidget(host, port, acct, ui.sess.conn.encrypted(), cookie, sargs));
 	}
     }
 
@@ -54,7 +54,7 @@ public class SessWidget extends AWidget {
 	}
     }
 
-    public SessWidget(final String addr, final int port, Session.User acct, final byte[] cookie, final Object... args) {
+    public SessWidget(final String addr, final int port, Session.User acct, boolean encrypt, final byte[] cookie, final Object... args) {
 	conn = Defer.later(new Defer.Callable<Result>() {
 		public Result call() throws InterruptedException {
 		    InetAddress host;
@@ -64,7 +64,7 @@ public class SessWidget extends AWidget {
 			return(new Result(null, new Connection.SessionConnError()));
 		    }
 		    try {
-			return(new Result(new Session(new InetSocketAddress(host, port), acct, cookie, args), null));
+			return(new Result(new Session(new InetSocketAddress(host, port), acct, encrypt, cookie, args), null));
 		    } catch(Connection.SessionError err) {
 			return(new Result(null, err));
 		    }

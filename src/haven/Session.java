@@ -263,12 +263,12 @@ public class Session implements Resource.Resolver {
 	    }
 	};
 
-    public Session(SocketAddress server, User user, byte[] cookie, Object... args) throws InterruptedException {
+    public Session(SocketAddress server, User user, boolean encrypt, byte[] cookie, Object... args) throws InterruptedException {
 	this.conn = new Connection(server);
 	this.user = user;
 	this.glob = new Glob(this);
 	conn.add(conncb);
-	conn.connect((user.alias != null) ? user.alias : user.name, cookie, args);
+	conn.connect((user.alias != null) ? user.alias : user.name, encrypt, cookie, args);
     }
 
     public void close() {

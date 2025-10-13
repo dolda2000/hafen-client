@@ -36,7 +36,7 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 public class Connection {
-    private static final boolean ENCRYPT = true;
+    public static final Config.Variable<Boolean> encrypt = Config.Variable.propb("haven.hcrypt", true);
     private static final double ACK_HOLD = 0.030;
     private static final double OBJACK_HOLD = 0.08, OBJACK_HOLD_MAX = 0.5;
     public final SocketAddress server;
@@ -290,12 +290,12 @@ public class Connection {
 	private String message;
 	private Crypto crypt;
 
-	private Connect(String username, byte[] cookie, Object... args) {
+	private Connect(String username, boolean encrypt, byte[] cookie, Object... args) {
 	    msg = new PMessage(Session.MSG_SESS);
 	    String protocol = "Hafen";
 	    if(!Config.confid.equals(""))
 		protocol += "/" + Config.confid;
-	    if(!ENCRYPT) {
+	    if(!encrypt) {
 		msg.adduint16(2);
 		msg.addstring(protocol);
 		msg.adduint16(Session.PVER);
@@ -720,6 +720,10 @@ public class Connection {
 	wake();
     }
 
+    public boolean encrypted() {
+	return(crypt != null);
+    }
+
     public static class SessionError extends RuntimeException {
 	public final int code;
 
@@ -748,8 +752,8 @@ public class Connection {
 	public SessionExprError() {super(Session.SESSERR_EXPR, "Authentication token expired");}
     }
 
-    public void connect(String username, byte[] cookie, Object... args) throws InterruptedException {
-	Connect init = new Connect(username, cookie, args);
+    public void connect(String username, boolean encrypt, byte[] cookie, Object... args) throws InterruptedException {
+	Connect init = new Connect(username, encrypt, cookie, args);
 	start(init);
 	try {
 	    synchronized(init) {
