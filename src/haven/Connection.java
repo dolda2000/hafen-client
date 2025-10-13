@@ -344,7 +344,7 @@ public class Connection {
 			if(select(Math.max(0.0, last + 2 - now))) {
 			    PMessage msg = recv();
 			    boolean cr = false;
-			    if((msg.type == Session.MSG_CRYPT) && crypt != null) {
+			    if((msg != null) && (msg.type == Session.MSG_CRYPT) && (crypt != null)) {
 				msg = crypt.decrypt(msg);
 				cr = true;
 			    }
