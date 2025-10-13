@@ -85,7 +85,7 @@ public class DynresWindow extends Window {
 
     public static String auth(Session sess) {
 	return("Haven " +
-	       Utils.b64.enc(Utils.concat(sess.username.getBytes(Utils.utf8),
+	       Utils.b64.enc(Utils.concat(sess.user.reauth().getBytes(Utils.utf8),
 					  new byte[] {0},
 					  sess.sesskey.sign("dynres".getBytes(Utils.ascii)))));
     }

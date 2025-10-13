@@ -58,11 +58,36 @@ public class Session implements Resource.Resolver {
     public int connfailed = 0;
     public String connerror = null;
     LinkedList<PMessage> uimsgs = new LinkedList<PMessage>();
-    String username;
+    public final User user;
     final Map<Integer, CachedRes> rescache = new TreeMap<Integer, CachedRes>();
     public final Glob glob;
     public SignKey sesskey;
     private boolean closed = false;
+
+    public static class User {
+	public final String name;
+	public String alias = null, readname = null, prsname = null;
+
+	public User(String name) {
+	    this.name = name;
+	}
+
+	public User alias(String val) {alias = val; return(this);}
+	public User readname(String val) {readname = val; return(this);}
+	public User prsname(String val) {prsname = val; return(this);}
+
+	public String readname() {return((readname != null) ? readname : name);}
+	public String prsname() {return((prsname != null) ? prsname : name);}
+	public String reauth() {return(name);}
+
+	public User copy() {
+	    User ret = new User(this.name);
+	    ret.alias = this.alias;
+	    ret.readname = this.readname;
+	    ret.prsname = this.prsname;
+	    return(ret);
+	}
+    }
 
     @SuppressWarnings("serial")
     public static class MessageException extends RuntimeException {
@@ -237,12 +262,12 @@ public class Session implements Resource.Resolver {
 	    }
 	};
 
-    public Session(SocketAddress server, String username, byte[] cookie, Object... args) throws InterruptedException {
-	this.conn = new Connection(server, username);
-	this.username = username;
+    public Session(SocketAddress server, User user, byte[] cookie, Object... args) throws InterruptedException {
+	this.conn = new Connection(server);
+	this.user = user;
 	this.glob = new Glob(this);
 	conn.add(conncb);
-	conn.connect(cookie, args);
+	conn.connect((user.alias != null) ? user.alias : user.name, cookie, args);
     }
 
     public void close() {
