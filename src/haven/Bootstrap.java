@@ -191,6 +191,8 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			if(authed != null) {
 			    acct = new Session.User(authed);
 			    cookie = auth.getcookie();
+			    if(Connection.encrypt.get())
+				acct.alias(auth.getalias());
 			    settoken(authed, hostname, auth.gettoken());
 			    break authed;
 			}
@@ -200,6 +202,8 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			    String authed = new AuthClient.TokenCred(inituser, token).tryauth(auth);
 			    acct = new Session.User(authed);
 			    cookie = auth.getcookie();
+			    if(Connection.encrypt.get())
+				acct.alias(auth.getalias());
 			    break authed;
 			} catch(AuthClient.Credentials.AuthException e) {
 			    settoken(inituser, hostname, null);
@@ -236,6 +240,8 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			continue retry;
 		    }
 		    cookie = auth.getcookie();
+		    if(Connection.encrypt.get())
+			acct.alias(auth.getalias());
 		    if(savepw) {
 			byte[] ntoken = (creds instanceof AuthClient.TokenCred) ? ((AuthClient.TokenCred)creds).token : auth.gettoken();
 			settoken(acct.name, hostname, ntoken);
