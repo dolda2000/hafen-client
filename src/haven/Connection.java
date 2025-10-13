@@ -36,7 +36,7 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 public class Connection {
-    public static final Config.Variable<Boolean> encrypt = Config.Variable.propb("haven.hcrypt", true);
+    public static final Config.Variable<Boolean> encrypt = Config.Variable.propb("haven.hcrypt", false);
     private static final double ACK_HOLD = 0.030;
     private static final double OBJACK_HOLD = 0.08, OBJACK_HOLD_MAX = 0.5;
     public final SocketAddress server;
