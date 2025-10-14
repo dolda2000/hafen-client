@@ -30,7 +30,7 @@ import java.awt.*;
 import haven.render.*;
 
 public class Speaking extends GAttrib implements RenderTree.Node, PView.Render2D {
-    public static final IBox sb = new IBox("gfx/hud/emote", "tl", "tr", "bl", "br", "el", "er", "et", "eb");
+    public static final IBox.Images sb = new IBox.Scaled("gfx/hud/emote", "tl", "tr", "bl", "br", "el", "er", "et", "eb");
     public static final Tex svans = Resource.loadtex("gfx/hud/emote/svans");
     public static final int sx = UI.scale(5);
     public float zo;

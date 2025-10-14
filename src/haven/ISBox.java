@@ -30,7 +30,7 @@ import java.awt.Color;
 
 public class ISBox extends Widget implements DTarget {
     public static final Color bgcol = new Color(43, 51, 44, 127);
-    public static final IBox box = new IBox("gfx/hud/bosq", "tl", "tr", "bl", "br", "el", "er", "et", "eb") {
+    public static final IBox box = new IBox.Scaled("gfx/hud/bosq", "tl", "tr", "bl", "br", "el", "er", "et", "eb") {
 	    public void draw(GOut g, Coord tl, Coord sz) {
 		super.draw(g, tl, sz);
 		g.chcolor(bgcol);
