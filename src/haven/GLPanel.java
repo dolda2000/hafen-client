@@ -336,7 +336,7 @@ public interface GLPanel extends UIPanel, UI.Context {
 		    BufferBGL.Profile frameprof = false ? new BufferBGL.Profile() : null;
 		    if(frameprof != null) buf.submit(frameprof.start);
 		    buf.submit(new ProfilePart(rprofc, "tick"));
-		    curgf.part(buf, "tick");
+		    if(curgf != null) curgf.part(buf, "tick");
 		    Fence curframe = new Fence();
 		    if(syncmode == SyncMode.FRAME)
 			buf.submit(curframe);
