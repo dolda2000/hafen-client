@@ -1203,6 +1203,19 @@ public class Utils {
 	return(Character.toTitleCase(str.charAt(0)) + str.substring(1));
     }
 
+    public static final Color[] vgapal;
+    static {
+	vgapal = new Color[16];
+	for(int i = 0; i < 16; i++) {
+	    int lo = ((i & 8) == 0) ? 0x00 : 0x55;
+	    int hi = ((i & 8) == 0) ? 0xaa : 0xff;
+	    int r =  ((i & 4) != 0) ? hi : lo;
+	    int g =  ((i & 2) != 0) ? hi : lo;
+	    int b =  ((i & 1) != 0) ? hi : lo;
+	    vgapal[i] = new Color(r, g, b);
+	}
+    }
+
     public static Color contrast(Color col) {
 	int max = Math.max(col.getRed(), Math.max(col.getGreen(), col.getBlue()));
 	if(max > 128) {
