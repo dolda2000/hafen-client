@@ -2147,10 +2147,18 @@ public class Utils {
 	return(0);
     }
 
-    public static final Object formatter(String fmt, Object... args) {
+    public static Object formatter(String fmt, Object... args) {
 	return(new Object() {
 		public String toString() {
 		    return(String.format(fmt, args));
+		}
+	    });
+    }
+
+    public static Object formatter(Supplier<String> str) {
+	return(new Object() {
+		public String toString() {
+		    return(str.get());
 		}
 	    });
     }
