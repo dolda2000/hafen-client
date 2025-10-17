@@ -80,4 +80,67 @@ public class CPUProfile extends Profile {
 	    CPUProfile.this.add(this);
 	}
     }
+
+    public static final ThreadLocal<Current> current = new ThreadLocal<>();
+    public static class Current implements AutoCloseable {
+	public final Part part;
+	private final Current parent;
+
+	public Current(Part part, Current parent) {
+	    this.part = part;
+	    this.parent = parent;
+	}
+
+	public void fin() {
+	    part.fin();
+	    current.set(parent);
+	}
+
+	public void close() {
+	    fin();
+	}
+    }
+
+    public static Current set(Part part) {
+	Current ret = new Current(part, null);
+	current.set(ret);
+	return(ret);
+    }
+
+    public static Current begin(Object nm) {
+	Current cur = current.get();
+	if(cur == null)
+	    return(null);
+	Current ret = new Current(cur.part.part(nm), cur);
+	current.set(ret);
+	return(ret);
+    }
+
+    public static Current phase(Object nm) {
+	Current cur = current.get();
+	if(cur == null)
+	    return(null);
+	Current ret = new Current(cur.parent.part.part(nm), cur.parent);
+	current.set(ret);
+	return(ret);
+    }
+
+    public static Current phase(Current on, Object nm) {
+	Current cur = current.get();
+	if(cur == null)
+	    return(null);
+	Current ret = new Current(on.part.part(nm), on);
+	current.set(ret);
+	return(ret);
+    }
+
+    public static void end(Current cur) {
+	if(cur == null)
+	    return;
+	cur.fin();
+    }
+
+    public static void end() {
+	end(current.get());
+    }
 }

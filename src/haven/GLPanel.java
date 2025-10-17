@@ -330,7 +330,7 @@ public interface GLPanel extends UIPanel, UI.Context {
 		    Debug.cycle(ui.modflags());
 		    GSettings prefs = ui.gprefs;
 		    SyncMode syncmode = prefs.syncmode.val;
-		    CPUProfile.Frame curf = profile.get() ? uprof.new Frame() : null;
+		    CPUProfile.Current curf = profile.get() ?  CPUProfile.set(uprof.new Frame()) : null;
 		    GPUProfile.Frame curgf = profilegpu.get() ? gprof.new Frame(buf) : null;
 		    rprofc = profile.get() ? new ProfileCycle(rprof, rprofc, buf) : null;
 		    BufferBGL.Profile frameprof = false ? new BufferBGL.Profile() : null;
@@ -343,7 +343,7 @@ public interface GLPanel extends UIPanel, UI.Context {
 
 		    boolean tickwait = (syncmode == SyncMode.FRAME) || (syncmode == SyncMode.TICK);
 		    if(!tickwait) {
-			if(curf != null) curf.part("dwait");
+			CPUProfile.phase(curf, "dwait");
 			if(prevframe != null) {
 			    double now = Utils.rtime();
 			    prevframe.waitfor();
@@ -354,16 +354,16 @@ public interface GLPanel extends UIPanel, UI.Context {
 
 		    int cfno = frameno++;
 		    synchronized(ui) {
-			if(curf != null) curf.part("dsp");
+			CPUProfile.phase(curf, "dsp");
 			ed.dispatch(ui);
 			ui.mousehover(ui.mc);
 
-			if(curf != null) curf.part("stick");
+			CPUProfile.phase(curf, "stick");
 			if(ui.sess != null) {
 			    ui.sess.glob.ctick();
 			    ui.sess.glob.gtick(buf);
 			}
-			if(curf != null) curf.part("tick");
+			CPUProfile.phase(curf, "tick");
 			ui.tick();
 			ui.gtick(buf);
 			Area shape = p.shape();
@@ -374,7 +374,7 @@ public interface GLPanel extends UIPanel, UI.Context {
 		    }
 
 		    if(tickwait) {
-			if(curf != null) curf.part("dwait");
+			CPUProfile.phase(curf, "dwait");
 			if(prevframe != null) {
 			    double now = Utils.rtime();
 			    prevframe.waitfor();
@@ -383,9 +383,9 @@ public interface GLPanel extends UIPanel, UI.Context {
 			}
 		    }
 
-		    if(curf != null) curf.part("draw");
+		    CPUProfile.phase(curf, "draw");
 		    display(ui, buf);
-		    if(curf != null) curf.part("aux");
+		    CPUProfile.phase(curf, "aux");
 		    if(curgf != null) curgf.part(buf, "swap");
 		    buf.submit(new ProfilePart(rprofc, "swap"));
 		    buf.submit(new BufferSwap(cfno));
@@ -405,7 +405,7 @@ public interface GLPanel extends UIPanel, UI.Context {
 		    env.submit(buf);
 		    buf = null;
 
-		    if(curf != null) curf.part("wait");
+		    CPUProfile.phase(curf, "wait");
 		    double now = Utils.rtime();
 		    double fd = framedur();
 		    if(then + fd > now) {
@@ -434,7 +434,7 @@ public interface GLPanel extends UIPanel, UI.Context {
 		    }
 		    framep = (framep + 1) % frames.length;
 
-		    if(curf != null) curf.fin();
+		    CPUProfile.end(curf);
 		    prevframe = curframe;
 		}
 	    } finally {
