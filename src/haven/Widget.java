@@ -765,13 +765,15 @@ public class Widget {
 	    next = wdg.next;
 	    if(!wdg.visible)
 		continue;
-	    Coord cc = xlate(wdg.c, true);
-	    GOut g2;
-	    if(strict)
-		g2 = g.reclip(cc, wdg.sz);
-	    else
-		g2 = g.reclipl(cc, wdg.sz);
-	    wdg.draw(g2);
+	    try(CPUProfile.Current prof = CPUProfile.begin(wdg)) {
+		Coord cc = xlate(wdg.c, true);
+		GOut g2;
+		if(strict)
+		    g2 = g.reclip(cc, wdg.sz);
+		else
+		    g2 = g.reclipl(cc, wdg.sz);
+		wdg.draw(g2);
+	    }
 	}
     }
     
@@ -819,15 +821,17 @@ public class Widget {
 	}
 
 	public boolean dispatch(Widget w) {
-	    Widget phandling = handling;
-	    handling = w;
-	    try {
-		propagate = true;
-		if(w.handle(this))
-		    return(true);
-		return(propagate(w));
-	    } finally {
-		handling = phandling;
+	    try(CPUProfile.Current prof = CPUProfile.begin(w)) {
+		Widget phandling = handling;
+		handling = w;
+		try {
+		    propagate = true;
+		    if(w.handle(this))
+			return(true);
+		    return(propagate(w));
+		} finally {
+		    handling = phandling;
+		}
 	    }
 	}
     }

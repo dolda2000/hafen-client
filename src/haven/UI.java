@@ -590,14 +590,16 @@ public class UI {
     }
 
     public boolean dispatch(Widget to, Event ev) {
-	ev.target = to;
-	ev.grabbed = true;
-	for(Grab<?> g : grabs) {
-	    if(g.check(ev))
-		return(true);
+	try(CPUProfile.Current prof = CPUProfile.begin(ev)) {
+	    ev.target = to;
+	    ev.grabbed = true;
+	    for(Grab<?> g : grabs) {
+		if(g.check(ev))
+		    return(true);
+	    }
+	    ev.grabbed = false;
+	    return(ev.dispatch(to));
 	}
-	ev.grabbed = false;
-	return(ev.dispatch(to));
     }
 
     public <E extends Event> E dispatchq(Widget to, E ev) {
