@@ -45,7 +45,7 @@ public class CPUProfile extends Profile {
 	private long f, t;
 	private Part curp = null;
 
-	public Part(String nm) {
+	public Part(Object nm) {
 	    super(nm);
 	    f = System.nanoTime();
 	}
@@ -53,7 +53,7 @@ public class CPUProfile extends Profile {
 	public double f() {return(txl(f));}
 	public double t() {return(txl(t));}
 
-	public Part part(String nm) {
+	public Part part(Object nm) {
 	    Part p = new Part(nm);
 	    if((curp != null) && (curp.t == 0))
 		curp.t = p.f;
