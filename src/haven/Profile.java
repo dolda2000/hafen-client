@@ -72,7 +72,9 @@ public class Profile {
 		    break;
 		}
 	    }
-	    for(Part p : sub())
+	    List<Part> bytime = new ArrayList<>(sub());
+	    Collections.sort(bytime, Comparator.comparing(Part::d).reversed());
+	    for(Part p : bytime)
 		p.dump(out, indent + 1);
 	}
 
