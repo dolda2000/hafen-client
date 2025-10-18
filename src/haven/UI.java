@@ -523,6 +523,8 @@ public class UI {
     }
 
     public <E extends Event>  Grab<E> grab(Widget owner, Class<E> etype, EventHandler<? super E> handler) {
+	if(owner == null)
+	    throw(new NullPointerException());
 	Grab<E> g = new Grab<>(owner, etype, handler);
 	grabs.add(0, g);
 	return(g);
@@ -547,7 +549,6 @@ public class UI {
     }
 
     public Grab grabmouse(Widget wdg) {
-	if(wdg == null) throw(new NullPointerException());
 	Grab g = grab(wdg, PointerEvent.class, new PointerGrab<>(wdg, ev -> (
 	    (ev instanceof MouseDownEvent) || (ev instanceof MouseUpEvent) ||
 	    (ev instanceof MouseWheelEvent) || (ev instanceof CursorQuery))
@@ -556,7 +557,6 @@ public class UI {
     }
 
     public Grab grabkeys(Widget wdg) {
-	if(wdg == null) throw(new NullPointerException());
 	Grab g = grab(wdg, KbdEvent.class, ev -> {
 		if((ev instanceof KeyDownEvent) || (ev instanceof KeyUpEvent))
 		    return(ev.dispatch(wdg));
