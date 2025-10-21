@@ -33,26 +33,14 @@ import java.awt.Color;
 import haven.Profile.*;
 
 public class Profdisp extends Widget {
-    public static final Resource.Image markimg = Resource.loadrimg("gfx/hud/chkmarks");
-    public static final Color[] cols;
+    public static final Resource.Image markimg = Resource.loadrimg("gfx/hud/arwmark");
+    public static final Color[] cols = Utils.vgapal;
     private static final int h = UI.scale(80);
     public final Profile prof;
     public double mt = 0.05;
     private double dscale = 0;
     private Tex sscl = null;
     private int[] mark = new int[0];
-
-    static {
-	cols = new Color[16];
-	for(int i = 0; i < 16; i++) {
-	    int lo = ((i & 8) == 0)?0x00:0x55;
-	    int hi = ((i & 8) == 0)?0xaa:0xff;
-	    int r = ((i & 4) != 0)?hi:lo;
-	    int g = ((i & 2) != 0)?hi:lo;
-	    int b = ((i & 1) != 0)?hi:lo;
-	    cols[i] = new Color(r, g, b);
-	}
-    }
 
     public Profdisp(Profile prof) {
 	super(new Coord(prof.hist.length + UI.scale(50), h + markimg.ssz.y + UI.scale(10)));

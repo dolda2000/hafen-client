@@ -44,7 +44,7 @@ public class GPUProfile extends Profile {
 	private boolean fin;
 	boolean done;
 
-	public Part(String nm) {
+	public Part(Object nm) {
 	    super(nm);
 	}
 
@@ -61,7 +61,7 @@ public class GPUProfile extends Profile {
 		});
 	}
 
-	public Part part(Render out, String nm) {
+	public Part part(Render out, Object nm) {
 	    Part p = new FramePart(nm, frame());
 	    p.query(out, (curp != null) ? curp.tfin() : null);
 	    frame().waiting.add(p);
@@ -90,7 +90,7 @@ public class GPUProfile extends Profile {
 
     private class FramePart extends Part {
 	private final Frame frame;
-	private FramePart(String nm, Frame frame) {super(nm); this.frame = frame;}
+	private FramePart(Object nm, Frame frame) {super(nm); this.frame = frame;}
 	protected Frame frame() {return(frame);}
     }
 

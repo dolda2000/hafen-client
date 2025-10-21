@@ -523,6 +523,8 @@ public class UI {
     }
 
     public <E extends Event>  Grab<E> grab(Widget owner, Class<E> etype, EventHandler<? super E> handler) {
+	if(owner == null)
+	    throw(new NullPointerException());
 	Grab<E> g = new Grab<>(owner, etype, handler);
 	grabs.add(0, g);
 	return(g);
@@ -547,7 +549,6 @@ public class UI {
     }
 
     public Grab grabmouse(Widget wdg) {
-	if(wdg == null) throw(new NullPointerException());
 	Grab g = grab(wdg, PointerEvent.class, new PointerGrab<>(wdg, ev -> (
 	    (ev instanceof MouseDownEvent) || (ev instanceof MouseUpEvent) ||
 	    (ev instanceof MouseWheelEvent) || (ev instanceof CursorQuery))
@@ -556,7 +557,6 @@ public class UI {
     }
 
     public Grab grabkeys(Widget wdg) {
-	if(wdg == null) throw(new NullPointerException());
 	Grab g = grab(wdg, KbdEvent.class, ev -> {
 		if((ev instanceof KeyDownEvent) || (ev instanceof KeyUpEvent))
 		    return(ev.dispatch(wdg));
@@ -590,14 +590,16 @@ public class UI {
     }
 
     public boolean dispatch(Widget to, Event ev) {
-	ev.target = to;
-	ev.grabbed = true;
-	for(Grab<?> g : grabs) {
-	    if(g.check(ev))
-		return(true);
+	try(CPUProfile.Current prof = CPUProfile.begin(ev)) {
+	    ev.target = to;
+	    ev.grabbed = true;
+	    for(Grab<?> g : grabs) {
+		if(g.check(ev))
+		    return(true);
+	    }
+	    ev.grabbed = false;
+	    return(ev.dispatch(to));
 	}
-	ev.grabbed = false;
-	return(ev.dispatch(to));
     }
 
     public <E extends Event> E dispatchq(Widget to, E ev) {

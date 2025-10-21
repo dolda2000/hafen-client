@@ -35,10 +35,10 @@ public class Profile {
     protected int i = 0;
 
     public static abstract class Part {
-	public final String nm;
+	public final Object nm;
 	private List<Part> ch = null;
 
-	public Part(String nm) {
+	public Part(Object nm) {
 	    this.nm = nm;
 	}
 
@@ -72,7 +72,9 @@ public class Profile {
 		    break;
 		}
 	    }
-	    for(Part p : sub())
+	    List<Part> bytime = new ArrayList<>(sub());
+	    Collections.sort(bytime, Comparator.comparing(Part::d).reversed());
+	    for(Part p : bytime)
 		p.dump(out, indent + 1);
 	}
 
@@ -128,7 +130,7 @@ public class Profile {
 	    for(int i = 0; i <= prt.size(); i++) {
 		String nm; double tm;
 		if(i < f.sub().size()) {
-		    nm = prt.get(i).nm;
+		    nm = prt.get(i).nm.toString();
 		    tm = prt.get(i).d();
 		} else {
 		    nm = "total";
@@ -164,7 +166,7 @@ public class Profile {
 	    for(int i = 0; i <= prt.size(); i++) {
 		String nm; double tm;
 		if(i < prt.size()) {
-		    nm = prt.get(i).nm;
+		    nm = prt.get(i).nm.toString();
 		    tm = prt.get(i).d();
 		} else {
 		    nm = "total";
