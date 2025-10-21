@@ -564,17 +564,12 @@ public class UI {
 	    /* XXX? These are just the traditionally mouse-grabbed events. Is grabmouse() itself obsolete? */
 	    (ev instanceof MouseDownEvent) || (ev instanceof MouseUpEvent) ||
 	    (ev instanceof MouseWheelEvent) || (ev instanceof CursorQuery));
-	Grab g = grab(wdg, PointerEvent.class, new PointerGrab<>(wdg, new EventHandler.Filter<>(new WidgetGrab(wdg), sel)));
-	return(g);
+	return(grab(wdg, PointerEvent.class, new PointerGrab<>(wdg, new EventHandler.Filter<>(new WidgetGrab(wdg), sel))));
     }
 
     public Grab grabkeys(Widget wdg) {
-	Grab g = grab(wdg, KbdEvent.class, ev -> {
-		if((ev instanceof KeyDownEvent) || (ev instanceof KeyUpEvent))
-		    return(ev.dispatch(wdg));
-		return(false);
-	});
-	return(g);
+	Predicate<Event> sel = ev -> ((ev instanceof KeyDownEvent) || (ev instanceof KeyUpEvent));
+	return(grab(wdg, KbdEvent.class, new EventHandler.Filter<>(new WidgetGrab(wdg), sel)));
     }
 
     private void removeid(Widget wdg) {
