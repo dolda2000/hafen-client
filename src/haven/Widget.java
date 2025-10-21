@@ -820,6 +820,11 @@ public class Widget {
 	    return(phandled);
 	}
 
+	public boolean fpropagate(Widget from) {
+	    propagate = true;
+	    return(propagate(from));
+	}
+
 	public boolean dispatch(Widget w) {
 	    try(CPUProfile.Current prof = CPUProfile.begin(w)) {
 		Widget phandling = handling;
