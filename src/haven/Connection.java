@@ -96,6 +96,15 @@ public class Connection {
 	public DecryptException(String msg) {super(msg);}
     }
 
+    private static boolean supported() {
+	try {
+	    Cipher.getInstance("AES/GCM/NoPadding");
+	    return(true);
+	} catch(Exception e) {
+	    return(false);
+	}
+    }
+
     private class Crypto {
 	private final Cipher cipher;
 	private final Key tkey, rkey;
