@@ -530,29 +530,41 @@ public class UI {
 	return(g);
     }
 
+    public static class WidgetGrab implements EventHandler<Event> {
+	public final Widget wdg;
+
+	public WidgetGrab(Widget wdg) {
+	    this.wdg = wdg;
+	}
+
+	public boolean handle(Event ev) {
+	    return(ev.dispatch(wdg));
+	}
+    }
+
     public static class PointerGrab<E extends PointerEvent> implements EventHandler<E> {
 	public final Widget wdg;
-	public final Predicate<? super E> sel;
+	public final EventHandler<? super E> bk;
 
-	public PointerGrab(Widget wdg, Predicate<? super E> sel) {
+	public PointerGrab(Widget wdg, EventHandler<? super E> bk) {
 	    this.wdg = wdg;
-	    this.sel = sel;
+	    this.bk = bk;
 	}
 
 	public boolean handle(E ev) {
-	    if(sel.test(ev)) {
-		Coord xl = ev.c.add(ev.target.rootpos()).sub(wdg.rootpos());
-		return(ev.derive(xl).dispatch(wdg));
-	    }
-	    return(false);
+	    Coord xl = ev.c.add(ev.target.rootpos()).sub(wdg.rootpos());
+	    @SuppressWarnings("unchecked")
+	    E dev = (E)ev.derive(xl);
+	    return(bk.handle(dev));
 	}
     }
 
     public Grab grabmouse(Widget wdg) {
-	Grab g = grab(wdg, PointerEvent.class, new PointerGrab<>(wdg, ev -> (
+	Predicate<Event> sel = ev -> (
+	    /* XXX? These are just the traditionally mouse-grabbed events. Is grabmouse() itself obsolete? */
 	    (ev instanceof MouseDownEvent) || (ev instanceof MouseUpEvent) ||
-	    (ev instanceof MouseWheelEvent) || (ev instanceof CursorQuery))
-	));
+	    (ev instanceof MouseWheelEvent) || (ev instanceof CursorQuery));
+	Grab g = grab(wdg, PointerEvent.class, new PointerGrab<>(wdg, new EventHandler.Filter<>(new WidgetGrab(wdg), sel)));
 	return(g);
     }
 

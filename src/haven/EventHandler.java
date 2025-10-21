@@ -26,6 +26,8 @@
 
 package haven;
 
+import java.util.function.*;
+
 public interface EventHandler<E> {
     public boolean handle(E ev);
 
@@ -40,6 +42,22 @@ public interface EventHandler<E> {
 
 	public boolean check(Object ev) {
 	    return(t.isInstance(ev) ? h.handle(t.cast(ev)) : false);
+	}
+    }
+
+    public static class Filter<E> implements EventHandler<E> {
+	public final EventHandler<? super E> bk;
+	public final Predicate<? super E> sel;
+
+	public Filter(EventHandler<? super E> bk, Predicate<? super E> sel) {
+	    this.bk = bk;
+	    this.sel = sel;
+	}
+
+	public boolean handle(E ev) {
+	    if(sel.test(ev))
+		return(bk.handle(ev));
+	    return(false);
 	}
     }
 }
