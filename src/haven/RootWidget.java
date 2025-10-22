@@ -29,7 +29,7 @@ package haven;
 import java.util.*;
 import java.awt.Color;
 
-public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Console.Directory {
+public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Widget.CursorQuery.Handler, Console.Directory {
     public static final Text.Foundry msgfoundry = new Text.Foundry(Text.dfont, 14);
     public boolean modtip = false;
     Profile guprof, grprof, ggprof;
@@ -40,6 +40,15 @@ public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Consol
 	super(ui, new Coord(0, 0), sz);
 	setfocusctl(true);
 	hasfocus = true;
+    }
+
+    public boolean getcurs(CursorQuery ev) {
+	if(cursor != null) {
+	    try {
+		ev.set(cursor.get());
+	    } catch(Loading l) {}
+	}
+	return(false);
     }
 
     public boolean globtype(GlobKeyEvent ev) {
