@@ -695,8 +695,10 @@ public class Widget {
 	} else if(msg == "curs") {
 	    if(args.length == 0)
 		cursor = null;
-	    else
+	    else if(args[0] instanceof String)
 		cursor = Resource.remote().load((String)args[0], Utils.iv(args[1]));
+	    else
+		cursor = ui.sess.getresv(args[0]);
 	} else if(msg == "tip") {
 	    int a = 0;
 	    Object tt = args[a++];
