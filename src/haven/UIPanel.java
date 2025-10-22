@@ -221,6 +221,27 @@ public interface UIPanel extends Runnable {
 	}
     }
 
+    public static Cursor getsyscurs(UI.Cursor id) {
+	switch(id) {
+	case DEFAULT:   return(null);
+	case POINTER:   return(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+	case HAND:      return(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+	case MOVE:      return(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+	case WAIT:      return(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+	case CARET:     return(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
+	case CROSSHAIR: return(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+	case SIZE_N:    return(Cursor.getPredefinedCursor(Cursor.N_RESIZE_CURSOR));
+	case SIZE_NE:   return(Cursor.getPredefinedCursor(Cursor.NE_RESIZE_CURSOR));
+	case SIZE_E:    return(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR));
+	case SIZE_SE:   return(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR));
+	case SIZE_S:    return(Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR));
+	case SIZE_SW:   return(Cursor.getPredefinedCursor(Cursor.SW_RESIZE_CURSOR));
+	case SIZE_W:    return(Cursor.getPredefinedCursor(Cursor.W_RESIZE_CURSOR));
+	case SIZE_NW:   return(Cursor.getPredefinedCursor(Cursor.NW_RESIZE_CURSOR));
+	default: return(null);
+	}
+    }
+
     public static Cursor makeawtcurs(BufferedImage img, Coord hs) {
 	java.awt.Dimension cd = Toolkit.getDefaultToolkit().getBestCursorSize(img.getWidth(), img.getHeight());
 	BufferedImage buf = TexI.mkbuf(new Coord((int)cd.getWidth(), (int)cd.getHeight()));

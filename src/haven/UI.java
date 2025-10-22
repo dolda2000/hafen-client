@@ -870,7 +870,14 @@ public class UI {
 	dispatch(root, new Widget.MouseWheelEvent(c, amount));
     }
 
-    public Resource getcurs(Coord c) {
+    public static enum Cursor {
+	DEFAULT, POINTER, HAND, MOVE,
+	WAIT, CARET, CROSSHAIR,
+	SIZE_N, SIZE_NE, SIZE_E, SIZE_SE,
+	SIZE_S, SIZE_SW, SIZE_W, SIZE_NW,
+    }
+
+    public Object getcurs(Coord c) {
 	return(dispatchq(root, new CursorQuery(c)).ret);
     }
 

@@ -1219,6 +1219,7 @@ public class Widget {
 	public QueryEvent(Coord c) {
 	    super(c);
 	    root = this;
+	    ret = defvalue();
 	}
 	public QueryEvent(QueryEvent<R> from, Coord c) {
 	    super(from, c);
@@ -1231,6 +1232,8 @@ public class Widget {
 	    root.ret = ret;
 	    return(true);
 	}
+
+	protected R defvalue() {return(null);}
     }
 
     public static class TooltipQuery extends PointerEvent {
@@ -1266,7 +1269,9 @@ public class Widget {
 	}
     }
 
-    public static class CursorQuery extends QueryEvent<Resource> {
+    public static class CursorQuery extends QueryEvent<Object> {
+	public static final Resource defcurs = Resource.local().loadwait("gfx/hud/curs/arw");
+
 	public CursorQuery(Coord c) {super(c);}
 	public CursorQuery(CursorQuery from, Coord c) {super(from, c);}
 	public CursorQuery derive(Coord c) {return(new CursorQuery(this, c));}
@@ -1288,6 +1293,8 @@ public class Widget {
 	    }
 	    return(super.shandle(w));
 	}
+
+	protected Object defvalue() {return(defcurs);}
     }
 
     /* XXX: Remove me! */

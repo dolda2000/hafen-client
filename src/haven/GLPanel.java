@@ -29,6 +29,7 @@ package haven;
 import java.util.*;
 import haven.render.*;
 import haven.render.gl.*;
+import java.awt.Cursor;
 import java.awt.Toolkit;
 import haven.JOGLPanel.SyncMode;
 
@@ -216,39 +217,37 @@ public interface GLPanel extends UIPanel, UI.Context {
 	}
 
 	private String cursmode = defaultcurs();
-	private Resource lastcursor = null;
+	private Object lastcursor = null;
 	private Coord curshotspot = Coord.z;
 	private void drawcursor(UI ui, GOut g) {
-	    Resource curs;
+	    Object curs;
 	    synchronized(ui) {
 		curs = ui.getcurs(ui.mc);
 	    }
-	    if(cursmode == "awt") {
-		if(curs != lastcursor) {
-		    try {
-			if(curs == null) {
-			    curshotspot = Coord.z;
-			    p.setCursor(null);
-			} else {
-			    curshotspot = curs.flayer(Resource.negc).cc;
-			    p.setCursor(UIPanel.makeawtcurs(curs.flayer(Resource.imgc).img, curshotspot));
+	    if(curs instanceof Resource) {
+		Resource res = (Resource)curs;
+		if(cursmode == "awt") {
+		    if(curs != lastcursor) {
+			try {
+			    curshotspot = res.flayer(Resource.negc).cc;
+			    p.setCursor(UIPanel.makeawtcurs(res.flayer(Resource.imgc).img, curshotspot));
+			} catch(Exception e) {
+			    cursmode = "tex";
 			}
-		    } catch(Exception e) {
-			cursmode = "tex";
 		    }
-		}
-	    } else if(cursmode == "tex") {
-		if(curs == null) {
-		    curshotspot = Coord.z;
-		    if(lastcursor != null)
-			p.setCursor(null);
-		} else {
-		    if(lastcursor == null)
+		} else if(cursmode == "tex") {
+		    if(!(lastcursor instanceof Resource))
 			p.setCursor(emptycurs);
-		    curshotspot = UI.scale(curs.flayer(Resource.negc).cc);
+		    curshotspot = UI.scale(res.flayer(Resource.negc).cc);
 		    Coord dc = ui.mc.sub(curshotspot);
-		    g.image(curs.flayer(Resource.imgc), dc);
+		    g.image(res.flayer(Resource.imgc), dc);
 		}
+	    } else if(curs instanceof UI.Cursor) {
+		if(curs != lastcursor)
+		    p.setCursor(UIPanel.getsyscurs((UI.Cursor)curs));
+	    } else {
+		if(curs != lastcursor)
+		    Warning.warn("unexpected cursor specification: %s", curs);
 	    }
 	    lastcursor = curs;
 	}
