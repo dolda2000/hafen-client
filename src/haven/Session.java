@@ -45,6 +45,7 @@ public class Session implements Resource.Resolver {
     public static final int MSG_OBJDATA = 6;
     public static final int MSG_OBJACK = 7;
     public static final int MSG_CLOSE = 8;
+    public static final int MSG_CRYPT = 9;
     public static final int SESSERR_AUTH = 1;
     public static final int SESSERR_BUSY = 2;
     public static final int SESSERR_CONN = 3;
@@ -262,12 +263,12 @@ public class Session implements Resource.Resolver {
 	    }
 	};
 
-    public Session(SocketAddress server, User user, byte[] cookie, Object... args) throws InterruptedException {
+    public Session(SocketAddress server, User user, boolean encrypt, byte[] cookie, Object... args) throws InterruptedException {
 	this.conn = new Connection(server);
 	this.user = user;
 	this.glob = new Glob(this);
 	conn.add(conncb);
-	conn.connect((user.alias != null) ? user.alias : user.name, cookie, args);
+	conn.connect((user.alias != null) ? user.alias : user.name, encrypt, cookie, args);
     }
 
     public void close() {

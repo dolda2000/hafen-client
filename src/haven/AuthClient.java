@@ -183,6 +183,16 @@ public class AuthClient implements Closeable {
 	}
     }
 
+    public String getalias() throws IOException {
+	Message rpl = cmd("logalias");
+	String stat = rpl.string();
+	if(stat.equals("ok")) {
+	    return(rpl.string());
+	} else {
+	    throw(new RuntimeException("Unexpected reply `" + stat + "' from auth server"));
+	}
+    }
+
     public static class TokenInfo {
 	public byte[] id = new byte[] {};
 	public String desc = "";
