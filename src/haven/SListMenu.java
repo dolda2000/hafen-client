@@ -129,21 +129,12 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
     }
 
     public boolean mousedown(MouseDownEvent ev) {
-	if(!ev.c.isect(Coord.z, sz)) {
+	if(!checkhit(ev.c)) {
 	    choice(null);
 	    return(true);
 	} else {
 	    return(super.mousedown(ev));
 	}
-    }
-
-    public boolean handle(Event ev) {
-	if((ev instanceof PointerEvent) && checkhit(((PointerEvent)ev).c)) {
-	    super.handle(ev);
-	    ev.propagate(this);
-	    return(true);
-	}
-	return(super.handle(ev));
     }
 
     public boolean keydown(KeyDownEvent ev) {
@@ -154,7 +145,10 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 
     protected void added() {
 	if(grab) {
-	    mg = ui.grabmouse(this);
+	    mg = ui.grab(this, MouseEvent.class, new UI.PointerGrab<>(this, ev -> {
+		ev.dispatch(this);
+		return(true);
+	    }));
 	    kg = ui.grabkeys(this);
 	}
     }
