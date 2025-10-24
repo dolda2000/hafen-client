@@ -766,11 +766,11 @@ public class Utils {
 	public byte[] dec(String data);
     }
 
-    public static char num2hex(int num) {
+    public static char num2hex(int num, boolean upper) {
 	if(num < 10)
 	    return((char)('0' + num));
 	else
-	    return((char)('A' + num - 10));
+	    return((char)((upper ? 'A' : 'a') + num - 10));
     }
 
     public static int hex2num(char hex) {
@@ -788,8 +788,8 @@ public class Utils {
 	    public String enc(byte[] in) {
 		StringBuilder buf = new StringBuilder();
 		for(byte b : in) {
-		    buf.append(num2hex((b & 0xf0) >> 4));
-		    buf.append(num2hex(b & 0x0f));
+		    buf.append(num2hex((b & 0xf0) >> 4, true));
+		    buf.append(num2hex(b & 0x0f, true));
 		}
 		return(buf.toString());
 	    }
@@ -1892,7 +1892,7 @@ public class Utils {
 	       ((c >= '0') && (c <= '9')) || (c == '.')) {
 		buf.append((char)c);
 	    } else {
-		buf.append("%" + Utils.num2hex((c & 0xf0) >> 4) + Utils.num2hex(c & 0x0f));
+		buf.append("%" + Utils.num2hex((c & 0xf0) >> 4, true) + Utils.num2hex(c & 0x0f, true));
 	    }
 	}
 	return(buf.toString());

@@ -169,10 +169,10 @@ public class BaseFileCache implements ResCache {
 		    buf.append(c);
 		} else {
 		    buf.append('@');
-		    buf.append(Utils.num2hex((c & 0xf000) >> 12));
-		    buf.append(Utils.num2hex((c & 0x0f00) >>  8));
-		    buf.append(Utils.num2hex((c & 0x00f0) >>  4));
-		    buf.append(Utils.num2hex((c & 0x000f) >>  0));
+		    buf.append(Utils.num2hex((c & 0xf000) >> 12, true));
+		    buf.append(Utils.num2hex((c & 0x0f00) >>  8, true));
+		    buf.append(Utils.num2hex((c & 0x00f0) >>  4, true));
+		    buf.append(Utils.num2hex((c & 0x000f) >>  0, true));
 		}
 	    }
 	    el = buf.toString();
