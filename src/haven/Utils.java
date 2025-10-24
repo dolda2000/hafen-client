@@ -804,6 +804,43 @@ public class Utils {
 	    }
 	};
 
+    public static final BinAscii bprint = new BinAscii() {
+	    public String enc(byte[] in) {
+		StringBuilder buf = new StringBuilder();
+		for(byte b : in) {
+		    if((char)b == '\\') {
+			buf.append("\\\\'");
+		    } else if((b >= 33) && (b < 127)) {
+			buf.append((char)b);
+		    } else {
+			buf.append('\\');
+			buf.append(num2hex((b & 0xf0) >> 4, false));
+			buf.append(num2hex(b & 0x0f, false));
+		    }
+		}
+		return(buf.toString());
+	    }
+
+	    public byte[] dec(String in) {
+		byte[] buf = new byte[in.length()];
+		int n = 0;
+		for(int i = 0; i < in.length();) {
+		    char c = in.charAt(i++);
+		    if(c == '\\') {
+			if(in.charAt(i) == '\\') {
+			    buf[n++] = '\\';
+			    i++;
+			} else {
+			    buf[n++] = (byte)((hex2num(in.charAt(i++)) << 4) | hex2num(in.charAt(i++)));
+			}
+		    } else {
+			buf[n++] = (byte)c;
+		    }
+		}
+		return(Utils.splice(buf, 0, n));
+	    }
+	};
+
     public static class Base64 implements BinAscii {
 	public final String set;
 	public final char pad;
