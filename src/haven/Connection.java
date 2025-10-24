@@ -440,8 +440,10 @@ public class Connection {
 		    }
 		}
 	    } else {
-		for(Callback cb : cbs)
-		    cb.handle(msg);
+		for(Iterator<Callback> i = cbs.iterator(); i.hasNext();) {
+		    Callback cb = i.next();
+		    cb.handle(i.hasNext() ? msg.clone() : msg);
+		}
 	    }
 	}
 
@@ -479,9 +481,11 @@ public class Connection {
 	    }
 	}
 
-	private void gotmapdata(Message msg) {
-	    for(Callback cb : cbs)
-		cb.mapdata(msg);
+	private void gotmapdata(MessageBuf msg) {
+	    for(Iterator<Callback> i = cbs.iterator(); i.hasNext();) {
+		Callback cb = i.next();
+		cb.mapdata(i.hasNext() ? msg.clone() : msg);
+	    }
 	}
 
 	private void gotobjdata(Message msg) {
@@ -519,8 +523,10 @@ public class Connection {
 			delta.attrs.add(attr);
 		    }
 		}
-		for(Callback cb : cbs)
-		    cb.handle(delta);
+		for(Iterator<Callback> i = cbs.iterator(); i.hasNext();) {
+		    Callback cb = i.next();
+		    cb.handle(i.hasNext() ? delta.clone() : delta);
+		}
 		ObjAck ack = objacks.get(id);
 		if(ack == null) {
 		    objacks.put(id, ack = new ObjAck(id, fr, now));
