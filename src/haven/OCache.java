@@ -469,7 +469,22 @@ public class OCache implements Iterable<Gob> {
 	    this.id = id;
 	    this.frame = frame;
 	}
+
+	public ObjDelta(ObjDelta from) {
+	    this.fl = from.fl;
+	    this.id = from.id;
+	    this.frame = from.frame;
+	    this.initframe = from.initframe;
+	    this.rem = from.rem;
+	    for(AttrDelta attr : from.attrs)
+		attrs.add(attr.clone());
+	}
+
 	public ObjDelta() {}
+
+	public ObjDelta clone() {
+	    return(new ObjDelta(this));
+	}
     }
 
     public static class AttrDelta extends PMessage {
