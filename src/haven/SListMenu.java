@@ -145,7 +145,7 @@ public abstract class SListMenu<I, W extends Widget> extends Widget {
 
     protected void added() {
 	if(grab) {
-	    mg = ui.grab(this, MouseEvent.class, new UI.PointerGrab<>(this, ev -> {
+	    mg = ui.grab(this, MouseActionEvent.class, new UI.PointerGrab<>(this, ev -> {
 		ev.dispatch(this);
 		return(true);
 	    }));

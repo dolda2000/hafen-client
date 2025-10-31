@@ -977,7 +977,12 @@ public class Widget {
 	public MouseEvent(MouseEvent from, Coord c) {super(from, c);}
     }
 
-    public static abstract class MouseButtonEvent extends MouseEvent {
+    public static abstract class MouseActionEvent extends MouseEvent {
+	public MouseActionEvent(Coord c) {super(c);}
+	public MouseActionEvent(MouseEvent from, Coord c) {super(from, c);}
+    }
+
+    public static abstract class MouseButtonEvent extends MouseActionEvent {
 	public final int b;
 
 	public MouseButtonEvent(Coord c, int b) {
@@ -1054,7 +1059,7 @@ public class Widget {
 	}
     }
 
-    public static class MouseWheelEvent extends MouseEvent {
+    public static class MouseWheelEvent extends MouseActionEvent {
 	public final int a;
 
 	public MouseWheelEvent(Coord c, int a) {
