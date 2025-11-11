@@ -67,7 +67,7 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	}
 
 	public Overlay(Gob gob, int id, Indir<Resource> res, Message sdt) {
-	    this(gob, id, owner -> Sprite.create(owner, res.get(), sdt));
+	    this(gob, id, Sprite.Mill.of(res, sdt));
 	}
 
 	public Overlay(Gob gob, Sprite spr) {

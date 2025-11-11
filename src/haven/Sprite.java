@@ -88,6 +88,37 @@ public abstract class Sprite implements RenderTree.Node {
 
     public interface Mill<S extends Sprite> {
 	public S create(Owner owner);
+
+	public static class FromRes implements Mill<Sprite> {
+	    public final Indir<Resource> res;
+	    public final byte[] sdt;
+
+	    public FromRes(Indir<Resource> res, byte[] sdt) {
+		this.res = res;
+		this.sdt = sdt;
+	    }
+
+	    public Sprite create(Owner owner) {
+		return(Sprite.create(owner, res.get(), new MessageBuf(sdt)));
+	    }
+
+	    public String toString() {
+		return(String.format("#<res-mill %s %s>", res, Utils.hex.enc(sdt)));
+	    }
+	}
+
+	public static Mill<Sprite> of(Indir<Resource> res, byte[] sdt) {
+	    return(new FromRes(res, sdt));
+	}
+	public static Mill<Sprite> of(Indir<Resource> res, Message sdt) {
+	    return(new FromRes(res, sdt.bytes()));
+	}
+	public static Mill<Sprite> of(Resource res, Message sdt) {
+	    return(new FromRes(res.indir(), sdt.bytes()));
+	}
+	public static Mill<Sprite> of(ResData dat) {
+	    return(new FromRes(dat.res, dat.sdt.bytes()));
+	}
     }
 
     public static class ResourceException extends RuntimeException {
