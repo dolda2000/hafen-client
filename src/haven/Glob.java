@@ -58,24 +58,29 @@ public class Glob {
     }
 
     public static interface Weather {
-	public Pipe.Op state();
-	public void update(Object... args);
-	public boolean tick(double dt);
+	public default Pipe.Op state() {return(null);}
+	public default void update(Object... args) {}
+	public default boolean remove() {return(true);}
+	public default boolean tick(double dt) {return(false);}
 
 	public static class FactMaker extends Resource.PublishedCode.Instancer.Chain<Factory> {
 	    public FactMaker() {super(Factory.class);}
 	    {
 		add(new Direct<>(Factory.class));
 		add(new StaticCall<>(Factory.class, "mkweather", Weather.class, new Class<?>[] {Object[].class},
-				     (make) -> (args) -> make.apply(new Object[]{args})));
+				     (make) -> (glob, args) -> make.apply(new Object[]{args})));
+		add(new StaticCall<>(Factory.class, "mkweather", Weather.class, new Class<?>[] {Glob.class, Object[].class},
+				     (make) -> (glob, args) -> make.apply(new Object[]{glob, args})));
 		add(new Construct<>(Factory.class, Weather.class, new Class<?>[] {Object[].class},
-				    (cons) -> (args) -> cons.apply(new Object[]{args})));
+				    (cons) -> (glob, args) -> cons.apply(new Object[]{args})));
+		add(new Construct<>(Factory.class, Weather.class, new Class<?>[] {Glob.class, Object[].class},
+				    (cons) -> (glob, args) -> cons.apply(new Object[]{glob, args})));
 	    }
 	}
 
 	@Resource.PublishedCode(name = "wtr", instancer = FactMaker.class)
 	public static interface Factory {
-	    public Weather weather(Object... args);
+	    public Weather weather(Glob glob, Object... args);
 	}
     }
 
@@ -145,9 +150,15 @@ public class Glob {
 
 	synchronized(this) {
 	    ticklight(dt);
-	    for(Object o : wmap.values()) {
-		if(o instanceof Weather)
-		    ((Weather)o).tick(dt);
+	    for(Iterator<Object> i = wmap.values().iterator(); i.hasNext();) {
+		Object o = i.next();
+		if(o instanceof Weather) {
+		    if(((Weather)o).tick(dt)) {
+			i.remove();
+			if(o instanceof Disposable)
+			    ((Disposable)o).dispose();
+		    }
+		}
 	    }
 	}
 
@@ -262,9 +273,16 @@ public class Glob {
 		}
 	    } else if(t == "wth") {
 		synchronized(this) {
-		    if(!inc)
+		    if(!inc) {
+			for(Iterator<Map.Entry<Indir<Resource>, Object>> i = wmap.entrySet().iterator(); i.hasNext();) {
+			    Map.Entry<Indir<Resource>, Object> e = i.next();
+			    if(e.getValue() instanceof Disposable)
+				((Disposable)e.getValue()).dispose();
+			    i.remove();
+			}
 			wmap.clear();
-		    Collection<Object> old = new LinkedList<Object>(wmap.keySet());
+		    }
+		    Collection<Object> old = new ArrayList<Object>(wmap.keySet());
 		    while(n < a.length) {
 			Indir<Resource> res = sess.getresv(a[n++]);
 			Object[] args = (Object[])a[n++];
@@ -277,8 +295,16 @@ public class Glob {
 			}
 			old.remove(res);
 		    }
-		    for(Object p : old)
+		    for(Object p : old) {
+			Object cur = wmap.get(p);
+			if(cur instanceof Weather) {
+			    if(!((Weather)cur).remove())
+				continue;
+			}
+			if(cur instanceof Disposable)
+			    ((Disposable)cur).dispose();
 			wmap.remove(p);
+		    }
 		}
 	    } else {
 		System.err.println("Unknown globlob type: " + t);
@@ -296,7 +322,7 @@ public class Glob {
 		} else {
 		    try {
 			Weather.Factory f = cur.getKey().get().flayer(Resource.CodeEntry.class).get(Weather.Factory.class);
-			Weather w = f.weather((Object[])val);
+			Weather w = f.weather(this, (Object[])val);
 			cur.setValue(w);
 			ret.add(w);
 		    } catch(Loading l) {
