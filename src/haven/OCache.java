@@ -280,6 +280,10 @@ public class OCache implements Iterable<Gob> {
 	public Sprite create(Sprite.Owner owner) {
 	    return(Sprite.create(owner, res.get(), new MessageBuf(sdt)));
 	}
+
+	public String toString() {
+	    return(String.format("#<ol-mill %s %s>", res, Utils.hex.enc(sdt)));
+	}
     }
 
     @DeltaType(OD_OVERLAY)
