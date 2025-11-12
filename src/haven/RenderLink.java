@@ -222,33 +222,39 @@ public interface RenderLink {
     public class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public transient final RenderLink l;
 	public final int id;
+	public final Map<String, Object> info;
 	
 	public Res(Resource res, Message buf) {
 	    res.super();
+	    Map<String, Object> info = new HashMap<>();
 	    int lver = buf.uint8();
 	    int t;
 	    if(lver < 3) {
 		t = lver;
 		id = -1;
-	    } else if(lver == 3) {
+	    } else if((lver >= 3) && (lver <= 4)) {
 		id = buf.int16();
 		t = buf.uint8();
+		if(lver >= 4) {
+		    while(true) {
+			String key = buf.string();
+			if(key.equals(""))
+			    break;
+			info.put(key, buf.tto(resmapper()));
+		    }
+		}
 	    } else {
 		throw(new Resource.UnknownFormatException(res, "renderlink version", lver));
 	    }
-	    if(t == 0) {
-		l = MeshMat.parse(res, buf);
-	    } else if(t == 1) {
-		l = AmbientLink.parse(res, buf);
-	    } else if(t == 2) {
-		l = Collect.parse(res, buf);
-	    } else if(t == 3) {
-		l = Parameters.parse(res, buf);
-	    } else if(t == 4) {
-		l = ResSprite.parse(res, buf);
-	    } else {
-		throw(new Resource.UnknownFormatException(res, "renderlink type", t));
+	    switch(t) {
+	    case 0: l = MeshMat.parse(res, buf); break;
+	    case 1: l = AmbientLink.parse(res, buf); break;
+	    case 2: l = Collect.parse(res, buf); break;
+	    case 3: l = Parameters.parse(res, buf); break;
+	    case 4: l = ResSprite.parse(res, buf); break;
+	    default: throw(new Resource.UnknownFormatException(res, "renderlink type", t));
 	    }
+	    this.info = info.isEmpty() ? Collections.emptyMap() : info;
 	}
 	
 	public void init() {
