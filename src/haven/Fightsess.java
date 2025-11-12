@@ -122,7 +122,7 @@ public class Fightsess extends Widget {
 	}
 	if((cur == null) || (cur.slot == null)) {
 	    try {
-		cur = new Effect(Sprite.create(null, fx, Message.nil));
+		cur = new Effect(Sprite.create(new Sprite.UIOwner(this), fx, Message.nil));
 		cur.slot = map.basic.add(cur.spr, place);
 	    } catch(Loading l) {
 		return(null);

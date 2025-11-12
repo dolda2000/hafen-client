@@ -61,6 +61,18 @@ public abstract class Sprite implements RenderTree.Node {
 	}
     }
 
+    public static class UIOwner implements Owner {
+	public final Widget wdg;
+
+	public UIOwner(Widget wdg) {
+	    this.wdg = wdg;
+	}
+
+	public Random mkrandoom() {return(new Random());}
+	public <T> T context(Class<T> cl) {return(Widget.wdgctx.context(cl, wdg));}
+	@Deprecated public Resource getres() {return(null);}
+    }
+
     public static interface CDel {
 	public void delete();
     }
