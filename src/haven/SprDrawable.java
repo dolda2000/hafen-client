@@ -67,6 +67,14 @@ public class SprDrawable extends Drawable implements Sprite.Owner {
 	return(null);
     }
 
+    /* XXX: I don't know that this ugliness should be necessary. */
+    public static <S extends Sprite> S apply(Gob gob, Sprite.Mill<S> mk) {
+	SprDrawable d = new SprDrawable(gob, mk);
+	@SuppressWarnings("unchecked") S ret = (S)d.spr;
+	gob.setattr(d);
+	return(ret);
+    }
+
     private static final ClassResolver<SprDrawable> ctxr = new ClassResolver<SprDrawable>()
 	.add(SprDrawable.class, d -> d);
     public <T> T context(Class<T> cl) {return(OwnerContext.orparent(cl, ctxr.context(cl, this, false), gob));}
