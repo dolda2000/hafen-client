@@ -57,7 +57,7 @@ import static haven.Utils.eq;
  * - The dstate is calculated using a DepPipe, which is the Pipe
  *   passed when evaluating the tree-slot's pipe-ops. It records what
  *   state-slots were written to during the evaluation, and which of
- *   the parent state's that were read during the same evaluation.
+ *   the parent's states that were read during the same evaluation.
  *
  * - A tree-slot's pdstate() function returns the actual pipe used for
  *   the states written into DepInfos (ie. the concrete pipe, as
