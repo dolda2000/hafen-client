@@ -85,7 +85,6 @@ public class Window extends Widget {
     private Pipe.Op gbasic;
     private UI.Grab dm = null;
     private Coord doff;
-    public boolean decohide = false;
     public boolean large = false;
 
     @RName("wnd")
@@ -406,23 +405,12 @@ public class Window extends Widget {
 	resize2(sz);
     }
 
-    @Deprecated
-    public void decohide(boolean h) {
-	chdeco(h ? null : makedeco());
-	this.decohide = h;
-    }
-
-    @Deprecated
-    public boolean decohide() {
-	return(decohide);
-    }
-
     public void uimsg(String msg, Object... args) {
 	if(msg == "cap") {
 	    String cap = (String)args[0];
 	    chcap(cap.equals("") ? null : cap);
 	} else if(msg == "dhide") {
-	    decohide(Utils.bv(args[0]));
+	    chdeco(Utils.bv(args[0]) ? null : makedeco());
 	} else {
 	    super.uimsg(msg, args);
 	}

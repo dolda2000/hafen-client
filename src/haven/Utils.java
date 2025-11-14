@@ -911,11 +911,6 @@ public class Utils {
     public static final Base64 b64np = new Base64(b64.set, '\0');
     public static final Base64 ub64 = new Base64("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_", '\0');
 
-    @Deprecated public static String byte2hex(byte[] in) {return(hex.enc(in));}
-    @Deprecated public static byte[] hex2byte(String in) {return(hex.dec(in));}
-    @Deprecated public static String base64enc(byte[] in) {return(b64.enc(in));}
-    @Deprecated public static byte[] base64dec(String in) {return(b64.dec(in));}
-
     public static String[] splitwords(String text) {
 	ArrayList<String> words = new ArrayList<String>();
 	StringBuilder buf = new StringBuilder();
