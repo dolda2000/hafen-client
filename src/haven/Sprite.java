@@ -47,7 +47,6 @@ public abstract class Sprite implements RenderTree.Node {
 
     public interface Owner extends OwnerContext {
 	public Random mkrandoom();
-	@Deprecated public Resource getres();
     }
 
     public class RecOwner implements Owner {
@@ -70,7 +69,6 @@ public abstract class Sprite implements RenderTree.Node {
 
 	public Random mkrandoom() {return(new Random());}
 	public <T> T context(Class<T> cl) {return(Widget.wdgctx.context(cl, wdg));}
-	@Deprecated public Resource getres() {return(null);}
     }
 
     public static interface CDel {

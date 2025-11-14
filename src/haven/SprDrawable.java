@@ -60,9 +60,6 @@ public class SprDrawable extends Drawable implements Sprite.Owner {
 	spr.gtick(g);
     }
 
-    /* This is only deprecated becuase Sprite.Owner.getres is. Its
-     * override from Drawable is not considered deprecated. */
-    @Deprecated
     public Resource getres() {
 	return(null);
     }

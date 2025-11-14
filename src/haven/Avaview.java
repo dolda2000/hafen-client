@@ -126,7 +126,6 @@ public class Avaview extends PView {
     private class AvaOwner implements Skeleton.ModOwner, RandomSource {
 	public Random mkrandoom() {return(new Random());}
 	public <T> T context(Class<T> cl) {return(ctxr.context(cl, Avaview.this));}
-	@Deprecated public Resource getres() {return(null);}
 
 	public Collection<Location.Chain> getloc() {return(Collections.emptyList());}
 	public double getv() {return(0);}

@@ -148,8 +148,6 @@ public class Gob implements RenderTree.Node, Sprite.Owner, Skeleton.ModOwner, Eq
 	    .add(Overlay.class, o -> o);
 	public <T> T context(Class<T> cl) {return(OwnerContext.orparent(cl, ctxr.context(cl, this, false), gob));}
 	public Random mkrandoom() {return(gob.mkrandoom());}
-	@Deprecated
-	public Resource getres() {return(gob.getres());}
     }
 
     public static interface SetupMod {
