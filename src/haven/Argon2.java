@@ -366,4 +366,14 @@ public class Argon2 {
     public byte[] hash(byte[] key, byte[] salt, int len) {
 	return(new Instance(len).hash(key, salt));
     }
+
+    public static void main(String[] args) {
+	Argon2 par = new Argon2(Type.ID, Integer.parseInt(args[0]), Integer.parseInt(args[1]), Integer.parseInt(args[2]));
+	byte[] salt = Utils.hex.dec(args[3]);
+	byte[] pw = args[4].getBytes(Utils.utf8);
+	double st = Utils.rtime();
+	byte[] tag = par.hash(pw, salt, 32);
+	double t = Utils.rtime() - st;
+	System.out.printf("%s %f\n", Utils.hex.enc(tag), t);
+    }
 }
