@@ -1,3 +1,21 @@
+/*
+ * This file is just a conversion of the Argon2 reference
+ * implementation to Java, specifically for the Haven & Hearth game
+ * client environment. Thec copyright of this file should thus be
+ * considered the same as that of said reference implementation, as
+ * follows:
+ *
+ * Copyright 2015
+ * Daniel Dinu, Dmitry Khovratovich, Jean-Philippe Aumasson, and Samuel Neves
+ *
+ * You may use this work under the terms of a Creative Commons CC0 1.0
+ * License/Waiver or the Apache Public License 2.0, at your option. The terms of
+ * these licenses can be found at:
+ *
+ * - CC0 1.0 Universal : https://creativecommons.org/publicdomain/zero/1.0
+ * - Apache 2.0        : https://www.apache.org/licenses/LICENSE-2.0
+ */
+
 package haven;
 
 public class Argon2 {
