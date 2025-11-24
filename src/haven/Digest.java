@@ -39,6 +39,7 @@ public interface Digest {
     public static final Algorithm SHA3_256 = Builtin.alg("SHA3-256", 32, 136);
     public static final Algorithm SHA3_384 = Builtin.alg("SHA3-384", 48, 104);
     public static final Algorithm SHA3_512 = Builtin.alg("SHA3-512", 64, 72);
+    public static final Algorithm BLAKE2B = new Blake2b();
 
     public static interface Algorithm extends Supplier<Digest> {
 	public int diglen();
