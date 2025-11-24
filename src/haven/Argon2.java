@@ -246,8 +246,6 @@ public class Argon2 {
 	    fill_block(Block.zero, address_block, address_block, false);
 	}
 
-	boolean b4;
-
 	private int index_alpha(int pass, int slice, int lane, int index, long pseudo_rand, boolean same_lane) {
 	    int reference_area_size;
 	    if(pass == 0) {
