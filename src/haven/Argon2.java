@@ -23,7 +23,7 @@ public class Argon2 {
     private static final int BLOCK_SIZE = 1024;
     private static final int PREHASH_DIGEST_LENGTH = 64;
     private static final int PREHASH_SEED_LENGTH = 72;
-    private static final int ADDRESSES_IN_BLOCK = 128;
+    private static final int N = BLOCK_SIZE / 8;
     private Type type;
     private int t, m, p;
     private Version version = Version.V13;
@@ -49,70 +49,12 @@ public class Argon2 {
 	this.p = p;
     }
 
-    public static class Block {
-	public static final int N = BLOCK_SIZE / 8;
-	public static final Block zero = new Block();
-	public final long[] base;
-	public final int off;
-
-	public Block() {
-	    this.base = new long[N];
-	    this.off = 0;
-	}
-
-	public Block(long[] base, int off) {
-	    this.base = base;
-	    this.off = off;
-	}
-
-	public long get(int i) {
-	    return(base[off + i]);
-	}
-
-	public void set(int i, long v) {
-	    base[off + i] = v;
-	}
-
-	public void copy(Block src) {
-	    for(int i = 0; i < N; i++)
-		base[off + i] = src.base[src.off + i];
-	}
-
-	public void xor(Block src) {
-	    for(int i = 0; i < N; i++)
-		base[off + i] ^= src.base[src.off + i];
-	}
-
-	public void load(byte[] bytes) {
-	    for(int i = 0, o = 0; i < N; i++, o += 8) {
-		for(int b = 0, B = 0; b < 8; b++, B += 8)
-		    base[off + i] |= (bytes[o + b] & 0xffL) << B;
-	    }
-	}
-
-	public void store(byte[] bytes) {
-	    for(int i = 0, o = 0; i < N; i++, o += 8) {
-		for(int b = 0, B = 0; b < 8; b++, B += 8)
-		    bytes[o + b] = (byte)(base[off + i] >> B);
-	    }
-	}
-
-	public void dump() {
-	    for(int i = 0; i < 8; i++) {
-		for(int o = 0; o < 16; o++) {
-		    System.err.printf("%16s ", Long.toHexString(base[off + (i * 16) + o]));
-		}
-		System.err.println();
-	    }
-	    System.err.println();
-	}
-    }
-
+    private static final long[] zero = new long[N];
     public class Instance {
 	private final int lanes, passes, m_cost;
 	private final int outlen;
 	private final int memory_blocks, segment_length, lane_length;
-	private long[] memory;
+	private final long[][] memory;
 
 	private Instance(int outlen) {
 	    this.outlen = outlen;
@@ -125,11 +67,31 @@ public class Argon2 {
 	    this.segment_length = memory_blocks / (lanes * SYNC_POINTS);
 	    this.memory_blocks = segment_length * (lanes * SYNC_POINTS);
 	    this.lane_length = segment_length * SYNC_POINTS;
-	    memory = new long[memory_blocks * (BLOCK_SIZE / 8)];
+	    memory = new long[memory_blocks][N];
 	}
 
-	private Block block(int i) {
-	    return(new Block(memory, i * Block.N));
+	private void copy_block(long[] dst, long[] src) {
+	    for(int i = 0; i < N; i++)
+		dst[i] = src[i];
+	}
+
+	private void xor_block(long[] dst, long[] src) {
+	    for(int i = 0; i < N; i++)
+		dst[i] ^= src[i];
+	}
+
+	private void load_block(long[] block, byte[] bytes) {
+	    for(int i = 0, o = 0; i < N; i++, o += 8) {
+		for(int b = 0, B = 0; b < 8; b++, B += 8)
+		    block[i] |= (bytes[o + b] & 0xffL) << B;
+	    }
+	}
+
+	private void store_block(long[] block, byte[] bytes) {
+	    for(int i = 0, o = 0; i < N; i++, o += 8) {
+		for(int b = 0, B = 0; b < 8; b++, B += 8)
+		    bytes[o + b] = (byte)(block[i] >> B);
+	    }
 	}
 
 	private void blake2b_long(byte[] out, int outoff, int outlen, byte[] in, int inoff, int inlen) {
@@ -180,10 +142,10 @@ public class Argon2 {
 		Utils.int32e(0, blockhash, PREHASH_DIGEST_LENGTH + 0);
 		Utils.int32e(l, blockhash, PREHASH_DIGEST_LENGTH + 4);
 		blake2b_long(blockhash_bytes, 0, BLOCK_SIZE, blockhash, 0, PREHASH_SEED_LENGTH);
-		block((l * lane_length) + 0).load(blockhash_bytes);
+		load_block(memory[(l * lane_length) + 0], blockhash_bytes);
 		Utils.int32e(1, blockhash, PREHASH_DIGEST_LENGTH + 0);
 		blake2b_long(blockhash_bytes, 0, BLOCK_SIZE, blockhash, 0, PREHASH_SEED_LENGTH);
-		block((l * lane_length) + 1).load(blockhash_bytes);
+		load_block(memory[(l * lane_length) + 1], blockhash_bytes);
 	    }
 	}
 
@@ -193,18 +155,18 @@ public class Argon2 {
 	    return(x + y + (2 * xy));
 	}
 
-	private void G(Block B, int a, int b, int c, int d) {
-	    B.set(a, fBlaMka(B.get(a), B.get(b)));
-	    B.set(d, Long.rotateRight(B.get(d) ^ B.get(a), 32));
-	    B.set(c, fBlaMka(B.get(c), B.get(d)));
-	    B.set(b, Long.rotateRight(B.get(b) ^ B.get(c), 24));
-	    B.set(a, fBlaMka(B.get(a), B.get(b)));
-	    B.set(d, Long.rotateRight(B.get(d) ^ B.get(a), 16));
-	    B.set(c, fBlaMka(B.get(c), B.get(d)));
-	    B.set(b, Long.rotateRight(B.get(b) ^ B.get(c), 63));
+	private void G(long[] B, int a, int b, int c, int d) {
+	    B[a] = fBlaMka(B[a], B[b]);
+	    B[d] = Long.rotateRight(B[d] ^ B[a], 32);
+	    B[c] = fBlaMka(B[c], B[d]);
+	    B[b] = Long.rotateRight(B[b] ^ B[c], 24);
+	    B[a] = fBlaMka(B[a], B[b]);
+	    B[d] = Long.rotateRight(B[d] ^ B[a], 16);
+	    B[c] = fBlaMka(B[c], B[d]);
+	    B[b] = Long.rotateRight(B[b] ^ B[c], 63);
 	}
 
-	private void BLAKE2_ROUND_NOMSG(Block B, int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7, int i8, int i9, int i10, int i11, int i12, int i13, int i14, int i15) {
+	private void BLAKE2_ROUND_NOMSG(long[] B, int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7, int i8, int i9, int i10, int i11, int i12, int i13, int i14, int i15) {
 	    G(B,  i0,  i4,  i8, i12);
 	    G(B,  i1,  i5,  i9, i13);
 	    G(B,  i2,  i6, i10, i14);
@@ -215,13 +177,13 @@ public class Argon2 {
 	    G(B,  i3,  i4,  i9, i14);
 	}
 
-	private void fill_block(Block prev_block, Block ref_block, Block next_block, boolean with_xor) {
-	    Block blockR = new Block(), block_tmp = new Block();
-	    blockR.copy(ref_block);
-	    blockR.xor(prev_block);
-	    block_tmp.copy(blockR);
-	    if(with_xor)
-		block_tmp.xor(next_block);
+	private void fill_block(long[] prev_block, long[] ref_block, long[] next_block, boolean with_xor) {
+	    long[] blockR = new long[N], block_tmp = new long[N];
+	    copy_block(blockR, ref_block);
+	    xor_block(blockR, prev_block);
+	    if(with_xor) {
+		xor_block(block_tmp, next_block);
+	    }
 	    for(int i = 0; i < 8; i++) {
 		BLAKE2_ROUND_NOMSG(blockR,
 				   (16 * i) +  0, (16 * i) +  1, (16 * i) +  2, (16 * i) +  3,
@@ -236,14 +198,14 @@ public class Argon2 {
 				   (2 * i) +  64, (2 * i) +  65, (2 * i) +  80, (2 * i) +  81,
 				   (2 * i) +  96, (2 * i) +  97, (2 * i) + 112, (2 * i) + 113);
 	    }
-	    next_block.copy(block_tmp);
-	    next_block.xor(blockR);
+	    copy_block(next_block, block_tmp);
+	    xor_block(next_block, blockR);
 	}
 
-	private void next_addresses(Block address_block, Block input_block) {
-	    input_block.set(6, input_block.get(6) + 1);
-	    fill_block(Block.zero, input_block, address_block, false);
-	    fill_block(Block.zero, address_block, address_block, false);
+	private void next_addresses(long[] address_block, long[] input_block) {
+	    input_block[6]++;
+	    fill_block(zero, input_block, address_block, false);
+	    fill_block(zero, address_block, address_block, false);
 	}
 
 	private int index_alpha(int pass, int slice, int lane, int index, long pseudo_rand, boolean same_lane) {
@@ -276,15 +238,15 @@ public class Argon2 {
 	private void fill_segment(int pass, int slice, int lane) {
 	    boolean data_independent_addressing = (type == Type.I) ||
 		((type == Type.ID) && (pass == 0) && (slice < (SYNC_POINTS / 2)));
-	    Block input_block = data_independent_addressing ? new Block() : null;
-	    Block address_block = data_independent_addressing ? new Block() : null;
+	    long[] input_block = data_independent_addressing ? new long[N] : null;
+	    long[] address_block = data_independent_addressing ? new long[N] : null;
 	    if(data_independent_addressing) {
-		input_block.set(0, pass);
-		input_block.set(1, lane);
-		input_block.set(2, slice);
-		input_block.set(3, memory_blocks);
-		input_block.set(4, passes);
-		input_block.set(5, type.id);
+		input_block[0] = pass;
+		input_block[1] = lane;
+		input_block[2] = slice;
+		input_block[3] = memory_blocks;
+		input_block[4] = passes;
+		input_block[5] = type.id;
 	    }
 
 	    int starting_index = 0;
@@ -306,11 +268,11 @@ public class Argon2 {
 		    prev_offset = curr_offset - 1;
 		long pseudo_rand;
 		if(data_independent_addressing) {
-		    if((i % ADDRESSES_IN_BLOCK) == 0)
+		    if((i % N) == 0)
 			next_addresses(address_block, input_block);
-		    pseudo_rand = address_block.get(i % ADDRESSES_IN_BLOCK);
+		    pseudo_rand = address_block[i % N];
 		} else {
-		    pseudo_rand = block(prev_offset).get(0);
+		    pseudo_rand = memory[prev_offset][0];
 		}
 
 		int ref_lane = Integer.remainderUnsigned((int)(pseudo_rand >>> 32), lanes);
@@ -318,28 +280,28 @@ public class Argon2 {
 		    ref_lane = lane;
 
 		int ref_index = index_alpha(pass, slice, lane, i, pseudo_rand & 0xffffffffL, ref_lane == lane);
-		Block ref_block = block((lane_length * ref_lane) + ref_index);
-		Block curr_block = block(curr_offset);
+		long[] ref_block = memory[(lane_length * ref_lane) + ref_index];
+		long[] curr_block = memory[curr_offset];
 		if(version == Version.V10) {
-		    fill_block(block(prev_offset), ref_block, curr_block, false);
+		    fill_block(memory[prev_offset], ref_block, curr_block, false);
 		} else {
 		    if(pass == 0)
-			fill_block(block(prev_offset), ref_block, curr_block, false);
+			fill_block(memory[prev_offset], ref_block, curr_block, false);
 		    else
-			fill_block(block(prev_offset), ref_block, curr_block, true);
+			fill_block(memory[prev_offset], ref_block, curr_block, true);
 		}
 	    }
 	}
 
 	private byte[] phinalize() {
-	    Block blockhash = new Block();
-	    blockhash.copy(block(lane_length - 1));
+	    long[] blockhash = new long[N];
+	    copy_block(blockhash, memory[lane_length - 1]);
 	    for(int l = 1; l < lanes; l++) {
 		int last_block_in_lane = (l * lane_length) + (lane_length - 1);
-		blockhash.xor(block(last_block_in_lane));
+		xor_block(blockhash, memory[last_block_in_lane]);
 	    }
 	    byte[] blockhash_bytes = new byte[BLOCK_SIZE];
-	    blockhash.store(blockhash_bytes);
+	    store_block(blockhash, blockhash_bytes);
 	    byte[] ret = new byte[outlen];
 	    blake2b_long(ret, 0, outlen, blockhash_bytes, 0, BLOCK_SIZE);
 	    return(ret);
