@@ -181,6 +181,7 @@ public class Argon2 {
 	    long[] blockR = new long[N], block_tmp = new long[N];
 	    copy_block(blockR, ref_block);
 	    xor_block(blockR, prev_block);
+	    copy_block(block_tmp, blockR);
 	    if(with_xor) {
 		xor_block(block_tmp, next_block);
 	    }
