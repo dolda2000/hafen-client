@@ -408,6 +408,8 @@ public class AuthClient implements Closeable {
 		return(Digest.pbkdf2(Digest.HMAC.of(Digest.SHA256, pw), (byte[])spec[2], 1 << Utils.iv(spec[1]), 32));
 	    } else if(Utils.eq(spec[0], "argon2")) {
 		return(new Argon2(Argon2.Type.ID, Utils.iv(spec[1]), 1 << Utils.iv(spec[2]), Utils.iv(spec[3])).hash(pw, (byte[])spec[4], 32));
+	    } else if(Utils.eq(spec[0], "pfcrypt")) {
+		return(Pufferfish2.hash(pw, (byte[])spec[3], Utils.iv(spec[1]), Utils.iv(spec[2])));
 	    } else {
 		throw(new AuthException("Unknown password prehash: " + spec[0]));
 	    }
