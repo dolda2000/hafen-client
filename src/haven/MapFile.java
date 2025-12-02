@@ -703,9 +703,10 @@ public class MapFile {
 	    int[] prios = new int[nt];
 	    for(int i = 0; i < nt; i++) {
 		int tn = rmap[i];
-		Resource.Spec tile = map.tilesetn(tn);
-		infos[i] = new TileInfo(new Resource.Saved(tile.pool, tile.name, tile.ver), prios[i]);
-		norepl[i] = (Utils.index(Loading.waitfor(() -> map.tileset(tn)).tags, "norepl") >= 0);
+		Tileset tile = Loading.waitfor(() -> map.tileset(tn));
+		Resource res = tile.getres();
+		infos[i] = new TileInfo(new Resource.Saved(res.pool, res.name, res.ver), prios[i]);
+		norepl[i] = (Utils.index(tile.tags, "norepl") >= 0);
 	    }
 	    for(int i = 0, tn = 0; i < tmap.length; i++) {
 		if(tmap[i] != -1)
