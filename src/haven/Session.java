@@ -269,6 +269,8 @@ public class Session implements Resource.Resolver {
 	this.glob = new Glob(this);
 	conn.add(conncb);
 	conn.connect((user.alias != null) ? user.alias : user.name, encrypt, cookie, args);
+	sesskey = SignKey.JWK.ES256.generate();
+	queuemsg((PMessage)new PMessage(RMessage.RMSG_SESSKEY).addtto(SignKey.JWK.format(sesskey, true)));
     }
 
     public void close() {
