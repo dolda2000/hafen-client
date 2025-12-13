@@ -31,32 +31,34 @@ import static haven.Inventory.invsq;
 
 public class Equipory extends Widget implements DTarget {
     private static final Resource.Image bgi = Resource.loadrimg("gfx/hud/equip/bg");
-    private static final int yo = Inventory.sqsz.y, sh = 10;
+    private static final int yo = Inventory.sqsz.y, sh = 11;
     private static final Tex bg = new TexI(PUtils.uiscale(bgi.img, Coord.of((sh * yo * bgi.sz.x) / bgi.sz.y, sh * yo)));
     private static final int rx = invsq.sz().x + bg.sz().x;
     public static final Coord bgc = new Coord(invsq.sz().x, 0);
     public static final Coord ecoords[] = {
-	new Coord( 0, 0 * yo),
-	new Coord( 0, 1 * yo),
-	new Coord( 0, 2 * yo),
-	new Coord(rx, 2 * yo),
-	new Coord( 0, 3 * yo),
-	new Coord(rx, 3 * yo),
-	new Coord( 0, 4 * yo),
-	new Coord(rx, 4 * yo),
-	new Coord( 0, 5 * yo),
-	new Coord(rx, 5 * yo),
-	new Coord( 0, 6 * yo),
-	new Coord(rx, 6 * yo),
-	new Coord( 0, 8 * yo),
-	new Coord(rx, 8 * yo),
-	new Coord( 0, 9 * yo),
-	new Coord(rx, 9 * yo),
+	new Coord( 0,  0 * yo),
+	new Coord( 0,  1 * yo),
+	new Coord( 0,  3 * yo),
+	new Coord(rx,  3 * yo),
+	new Coord( 0,  4 * yo),
+	new Coord(rx,  4 * yo),
+	new Coord( 0,  5 * yo),
+	new Coord(rx,  5 * yo),
+	new Coord( 0,  6 * yo),
+	new Coord(rx,  6 * yo),
+	new Coord( 0,  7 * yo),
+	new Coord(rx,  7 * yo),
+	new Coord( 0,  9 * yo),
+	new Coord(rx,  9 * yo),
+	new Coord( 0, 10 * yo),
+	new Coord(rx, 10 * yo),
 	new Coord(invsq.sz().x, 0 * yo),
-	new Coord(rx, 0 * yo),
-	new Coord(rx, 1 * yo),
-	new Coord( 0, 7 * yo),
-	new Coord(rx, 7 * yo),
+	new Coord(rx,  1 * yo),
+	new Coord(rx,  2 * yo),
+	new Coord( 0,  8 * yo),
+	new Coord(rx,  8 * yo),
+	new Coord(rx,  0 * yo),
+	new Coord( 0,  2 * yo),
     };
     public static final Tex[] ebgs = new Tex[ecoords.length];
     public static final Text[] etts = new Text[ecoords.length];
