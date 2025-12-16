@@ -227,6 +227,12 @@ public class Text implements Disposable {
 	public Text render(String text) {
 	    return(new Text(text, proc(back.render(text))));
 	}
+
+	public static Imager of(Furnace back, Function<? super Text, ? extends BufferedImage> prod) {
+	    return(new Imager(back) {
+		    public BufferedImage proc(Text text) {return(prod.apply(text));}
+		});
+	}
     }
 
     public static abstract class UText<T> implements Indir<Text> {
