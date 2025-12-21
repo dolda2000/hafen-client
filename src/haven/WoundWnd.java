@@ -54,6 +54,8 @@ public class WoundWnd extends Widget {
 	public default String qstr() {
 	    return(null);
 	}
+
+	public default int qprio() {return(0);}
     }
 
     public static class WoundPagina extends ItemInfo.Tip {
@@ -237,6 +239,20 @@ public class WoundWnd extends Widget {
 		update();
 	    }
 
+	    private QuickInfo getqdat(List<ItemInfo> info) {
+		if(info == null)
+		    return(null);
+		QuickInfo ret = null;
+		for(ItemInfo inf : info) {
+		    if(inf instanceof QuickInfo) {
+			QuickInfo qd = (QuickInfo)inf;
+			if((ret == null) || (ret.qprio() < qd.qprio()))
+			    ret = qd;
+		    }
+		}
+		return(ret);
+	    }
+
 	    private void update() {
 		if(qd != null) {qd.reqdestroy(); qd = null;}
 		if(nm != null) {nm.reqdestroy(); nm = null;}
@@ -244,7 +260,7 @@ public class WoundWnd extends Widget {
 		try {
 		    info = w.info();
 		} catch(Loading l) {}
-		QuickInfo qdata = (info == null) ? null : ItemInfo.find(QuickInfo.class, info);
+		QuickInfo qdata = getqdat(info);
 		int nw = sz.x;
 		if(qdata != null) {
 		    qd = adda(qdata.qwdg(sz.y), sz.x - UI.scale(1), sz.y / 2, 1.0, 0.5);
