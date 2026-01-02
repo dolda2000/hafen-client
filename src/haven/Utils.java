@@ -470,7 +470,7 @@ public class Utils {
 	    try {
 		got = String.valueOf(this.got);
 	    } catch(Throwable t) {
-		got = "!formatting error (" + t + ")";
+		got = "!formatting error (" + this.got.getClass() + ", " + t + ")";
 	    }
 	    return(String.format("expected %s, got %s", expected, got));
 	}
@@ -496,6 +496,14 @@ public class Utils {
 	if(arg instanceof List)
 	    return((List<?>)arg);
 	throw(new ArgumentFormatException("object-list", arg));
+    }
+
+    public static Object[] oav(Object arg) {
+	if(arg instanceof Object[])
+	    return((Object[])arg);
+	if(arg instanceof List)
+	    return(((List<?>)arg).toArray(new Object[0]));
+	throw(new ArgumentFormatException("object-array", arg));
     }
 
     public static int iv(Object arg) {
