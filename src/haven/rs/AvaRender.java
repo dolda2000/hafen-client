@@ -36,85 +36,68 @@ import haven.Composited.ED;
 import haven.Composited.MD;
 
 public class AvaRender {
-    public static Composited compose(Resource base, List<MD> mod, List<ED> equ) {
-	Composited comp = new Composited(base.flayer(Skeleton.Res.class).s);
-	comp.chmod(mod);
-	comp.chequ(equ);
+    public static class ServerRes implements Resource.Resolver {
+	public final Resource.Pool pool;
+
+	public ServerRes(Resource.Pool pool) {
+	    this.pool = pool;
+	}
+
+	public Indir<Resource> getres(int id) {throw(new UnsupportedOperationException());}
+
+	public Indir<Resource> getresv(Object desc) {
+	    if(desc instanceof String)
+		return(pool.load((String)desc));
+	    return(Resource.Resolver.super.getresv(desc));
+	}
+    }
+
+    public static class Owner implements OwnerContext, RandomSource {
+	private static final OwnerContext.ClassResolver<Owner> ctxr = new OwnerContext.ClassResolver<Owner>()
+	    .add(Resource.Resolver.class, o -> o.map);
+	public final Resource.Resolver map;
+
+	public Owner(Resource.Resolver map) {
+	    this.map = map;
+	}
+
+	public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
+	public Random mkrandoom() {return(new Random());}
+    }
+
+    public static Composited compose(Composited.Desc desc, Resource.Resolver map) {
+	Composited comp = new Composited(desc.base.get().flayer(Skeleton.Res.class).s, new Owner(map));
+	comp.chmod(desc.mod);
+	comp.chequ(desc.equ);
 	return(comp);
     }
 
-    private static class IntException extends RuntimeException {
-	private IntException(InterruptedException cause) {
-	    super(cause);
-	}
-    }
-
-    public static BufferedImage render(Coord sz, Indir<Resource> base, String camnm, List<MD> mod, List<ED> equ) throws InterruptedException {
-	Composited tcomp;
-	Camera tcam;
-	while(true) {
-	    try {
-		Skeleton.BoneOffset camoff = base.get().flayer(Skeleton.BoneOffset.class, camnm);
-		tcomp = compose(base.get(), mod, equ);
+    public static BufferedImage render(Coord sz, Composited.Desc desc, Resource.Resolver map, String camnm) {
+	Composited comp = Loading.waitfor(() -> compose(desc, map));;
+	Camera cam = Loading.waitfor(() -> {
+		Skeleton.BoneOffset camoff = desc.base.get().flayer(Skeleton.BoneOffset.class, camnm);
 		Pipe buf = new BufPipe();
-		buf.prep(camoff.from(tcomp).get());
-		tcam = Camera.placed(buf.get(Homo3D.loc));
-		break;
-	    } catch(Loading ev) {
-		ev.waitfor();
-	    }
-	}
-	final Composited comp = tcomp; /* ¦] */
-	final Camera cam = tcam;
-	final DrawBuffer buf = new DrawBuffer(Context.getdefault().env(), sz);
+		buf.prep(camoff.from(comp).get());
+		return(Camera.placed(buf.get(Homo3D.loc)));
+	    });
+	DrawBuffer buf = new DrawBuffer(Context.getdefault().env(), sz);
 
 	float field = 0.5f;
 	float aspect = ((float)buf.sz.y) / ((float)buf.sz.x);
 	Projection proj = Projection.frustum(-field, field, -aspect * field, aspect * field, 1, 5000);
-	BufferedImage ret = buf.draw(Pipe.Op.compose(proj, cam), new RenderTree.Node() {
-		@Override public void added(RenderTree.Slot slot) {
-		    slot.add(comp);
-		    slot.add(new DirLight(Color.WHITE, Color.WHITE, Color.WHITE, new Coord3f(1, 1, 1).norm()));
-		}
-	    });
+	RenderTree.Node light = new DirLight(Color.WHITE, Color.WHITE, Color.WHITE, new Coord3f(1, 1, 1).norm());
+	BufferedImage ret = buf.draw(Pipe.Op.compose(proj, cam), RUtils.compose(comp, light));
 	return(ret);
     }
 
     public static final Server.Command call = new Server.Command() {
 	    public Object[] run(Server.Client cl, Object... args) throws InterruptedException {
 		Coord sz = UI.scale((Coord)args[0]);
-		Indir<Resource> base = Resource.local().load((String)args[1]);
-		String camnm = (String)args[2];
-		Object[] amod = (Object[])args[3];
-		Object[] aequ = (Object[])args[4];
-		List<MD> mod = new LinkedList<MD>();
-		for(int i = 0; i < amod.length; i += 2) {
-		    Indir<Resource> mr = Resource.local().load((String)amod[i]);
-		    Object[] atex = (Object[])amod[i + 1];
-		    List<ResData> tex = new LinkedList<ResData>();
-		    for(int o = 0; o < atex.length; o++)
-			tex.add(new ResData(Resource.local().load((String)atex[o]), Message.nil));
-		    mod.add(new MD(mr, tex));
-		}
-		List<ED> equ = new LinkedList<ED>();
-		for(int i = 0; i < aequ.length;) {
-		    if(aequ[i] instanceof Object[]) {
-			Object[] cequ = (Object[])aequ[i];
-			int t = Utils.iv(cequ[0]);
-			String at = (String)cequ[1];
-			Indir<Resource> er = Resource.local().load((String)cequ[2]);
-			byte[] sdt = (byte[])cequ[3];
-			Coord3f off = new Coord3f(Utils.fv(cequ[4]), Utils.fv(cequ[5]), Utils.fv(cequ[6]));
-			equ.add(new ED(t, at, new ResData(er, new MessageBuf(sdt)), off));
-		    } else {
-			int t = Utils.iv(aequ[i++]);
-			String at = (String)aequ[i++];
-			Indir<Resource> er = Resource.local().load((String)aequ[i++]);
-			Coord3f off = new Coord3f(Utils.fv(aequ[i++]), Utils.fv(aequ[i++]), Utils.fv(aequ[i++]));
-			equ.add(new ED(t, at, new ResData(er, Message.nil), off));
-		    }
-		}
-		BufferedImage ava = render(sz.mul(4), base, camnm, mod, equ);
+		Resource.Resolver rr = new ServerRes(Resource.remote());
+		Composited.Desc desc = Composited.Desc.decode(rr, Utils.oav(args[1]));
+		Resource.Resolver map = new Resource.Resolver.ResourceMap(rr, Utils.oav(args[2]));
+		String camnm = Utils.sv(args[3]);
+		BufferedImage ava = render(sz.mul(4), desc, map, camnm);
 		ava = PUtils.convolvedown(ava, sz, new PUtils.Lanczos(2));
 		ByteArrayOutputStream buf = new ByteArrayOutputStream();
 		try {
@@ -128,10 +111,11 @@ public class AvaRender {
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-	Indir<Resource> base = Resource.local().load("gfx/borka/body");
-	List<MD> mod = Arrays.asList(new MD(Resource.local().load("gfx/borka/male"), ResData.wrap(Arrays.asList(Resource.local().load("gfx/borka/male")))));
-	List<ED> equ = new LinkedList<ED>();
-	BufferedImage img = render(new Coord(512, 512), base, "avacam", mod, equ);
+	Composited.Desc desc = new Composited.Desc();
+	desc.base = Resource.remote().load("gfx/borka/body");
+	desc.mod = Arrays.asList(new MD(Resource.remote().load("gfx/borka/male"), ResData.wrap(Arrays.asList(Resource.remote().load("gfx/borka/male")))));
+	desc.equ = new LinkedList<ED>();
+	BufferedImage img = render(new Coord(512, 512), desc, null, "avacam");
 	img = PUtils.convolvedown(img, new Coord(128, 128), new PUtils.Lanczos(2));
 	javax.imageio.ImageIO.write(img, "PNG", new java.io.File("/tmp/bard.png"));
     }

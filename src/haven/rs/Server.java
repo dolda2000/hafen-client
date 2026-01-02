@@ -31,22 +31,12 @@ import java.util.*;
 import java.io.*;
 import java.net.*;
 import java.security.*;
-import haven.Composited.MD;
-import haven.Composited.ED;
 
 public class Server extends Thread {
     public static final Map<String, Command> commands = new HashMap<String, Command>();
     private final ServerSocket sk;
-    private final Random rng;
+    private final Random rng = new SecureRandom();
     private final byte[] key;
-
-    {
-	try {
-	    rng = SecureRandom.getInstance("SHA1PRNG");
-	} catch(NoSuchAlgorithmException e) {
-	    throw(new Error(e));
-	}
-    }
 
     public interface Command {
 	public Object[] run(Client cl, Object... args) throws InterruptedException;
@@ -57,21 +47,22 @@ public class Server extends Thread {
     }
 
     public class Client extends Thread {
-	private final Socket sk;
+	private final InputStream in;
+	private final OutputStream out;
+	private byte[] nonce = null;
 	private boolean auth = false;
-	private final byte[] nonce, ckey;
 
-	{
-	    nonce = new byte[32];
-	    rng.nextBytes(nonce);
-	    ckey = Digest.hash(Digest.SHA256, key, nonce);
-	}
-
-	private Client(Socket sk) {
+	private Client(InputStream in, OutputStream out, boolean auth) {
 	    super("Render server handler");
-	    this.sk = sk;
+	    this.in = in;
+	    this.out = out;
+	    this.auth = auth;
 	    setDaemon(true);
 	    start();
+	}
+
+	private Client(Socket sk) throws IOException {
+	    this(sk.getInputStream(), sk.getOutputStream(), false);
 	}
 
 	byte[] read(InputStream in, int bytes) throws IOException {
@@ -88,14 +79,6 @@ public class Server extends Thread {
 
 	public void run() {
 	    try {
-		InputStream in;
-		OutputStream out;
-		try {
-		    in = sk.getInputStream();
-		    out = sk.getOutputStream();
-		} catch(IOException e) {
-		    throw(new RuntimeException(e));
-		}
 		while(true) {
 		    try {
 			int len = Utils.int32d(read(in, 4), 0);
@@ -113,9 +96,14 @@ public class Server extends Thread {
 				reply = new Object[] {"nocmd"};
 			} else {
 			    if(cmd.equals("nonce")) {
+				nonce = new byte[32];
+				rng.nextBytes(nonce);
 				reply = new Object[] {nonce};
 			    } else if(cmd.equals("auth")) {
-				if(Arrays.equals((byte[])args[0], ckey)) {
+				if((nonce != null) &&
+				   Arrays.equals((byte[])args[0],
+						 Digest.hash(Digest.HMAC.of(Digest.SHA256, key), nonce)))
+				{
 				    reply = new Object[] {"ok"};
 				    auth = true;
 				} else {
@@ -131,6 +119,7 @@ public class Server extends Thread {
 			Utils.uint32e(rb.size(), rbuf, 0);
 			rb.fin(rbuf, 4);
 			out.write(rbuf);
+			out.flush();
 		    } catch(IOException e) {
 			return;
 		    }
@@ -138,7 +127,8 @@ public class Server extends Thread {
 	    } catch(InterruptedException e) {
 	    } finally {
 		try {
-		    sk.close();
+		    in.close();
+		    out.close();
 		} catch(IOException e) {
 		    throw(new RuntimeException(e));
 		}
@@ -153,6 +143,15 @@ public class Server extends Thread {
 	start();
     }
 
+    public Server() {
+	super("Render server");
+	sk = null;
+	key = null;
+    }
+
+    public static void stdio() {
+    }
+
     public void run() {
 	try {
 	    while(true) {
@@ -162,7 +161,10 @@ public class Server extends Thread {
 		} catch(IOException e) {
 		    break;
 		}
-		new Client(nsk);
+		try {
+		    new Client(nsk);
+		} catch(IOException e) {
+		}
 	    }
 	} finally {
 	    try {
@@ -174,6 +176,12 @@ public class Server extends Thread {
     }
 
     public static void main(String[] args) throws Exception {
-	new Server(Integer.parseInt(args[0]), Utils.b64.dec(System.getenv("AUTHKEY")));
+	if(args[0].equals("-")) {
+	    Server s = new Server();
+	    Client c = s.new Client(System.in, System.out, true);
+	    c.join();
+	} else {
+	    new Server(Integer.parseInt(args[0]), Utils.b64.dec(System.getenv("AUTHKEY")));
+	}
     }
 }
