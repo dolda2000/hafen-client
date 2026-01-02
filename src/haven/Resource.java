@@ -180,14 +180,14 @@ public class Resource implements Serializable {
 		@SuppressWarnings("unchecked") Indir<Resource> ret = (Indir<Resource>)desc;
 		return(ret);
 	    }
-	    throw(new Utils.ArgumentFormatException("res-desc: ", desc));
+	    throw(new Utils.ArgumentFormatException("res-desc", desc));
 	}
 
 	public class ResourceMap implements Resource.Resolver {
 	    public final Resource.Resolver bk;
-	    public final Map<Integer, Integer> map;
+	    public final Map<Integer, ? extends Object> map;
 
-	    public ResourceMap(Resource.Resolver bk, Map<Integer, Integer> map) {
+	    public ResourceMap(Resource.Resolver bk, Map<Integer, ? extends Object> map) {
 		this.bk = bk;
 		this.map = map;
 	    }
@@ -210,17 +210,17 @@ public class Resource implements Serializable {
 		return(ret);
 	    }
 
-	    public static Map<Integer, Integer> decode(Object[] args) {
+	    public static Map<Integer, ? extends Object> decode(Object[] args) {
 		if(args.length == 0)
 		    return(Collections.emptyMap());
-		Map<Integer, Integer> ret = new HashMap<>();
+		Map<Integer, Object> ret = new HashMap<>();
 		for(int a = 0; a < args.length; a += 2)
-		    ret.put(Utils.iv(args[a]), Utils.iv(args[a + 1]));
+		    ret.put(Utils.iv(args[a]), args[a + 1]);
 		return(ret);
 	    }
 
 	    public Indir<Resource> getres(int id) {
-		return(bk.getres(map.get(id)));
+		return(bk.getresv(map.get(id)));
 	    }
 
 	    public Indir<Resource> dynres(UID uid) {
