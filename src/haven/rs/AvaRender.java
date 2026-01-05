@@ -45,10 +45,18 @@ public class AvaRender {
 
 	public Indir<Resource> getres(int id) {throw(new UnsupportedOperationException());}
 
-	public Indir<Resource> getresv(Object desc) {
-	    if(desc instanceof String)
-		return(pool.load((String)desc));
-	    return(Resource.Resolver.super.getresv(desc));
+	public static class ServerDescriptor extends Descriptor<ServerRes> {
+	    public ServerDescriptor(ServerRes rr) {super(rr);}
+
+	    public Maybe<Indir<Resource>> opt(Object desc) {
+		if(desc instanceof String)
+		    return(Maybe.of(rr.pool.load((String)desc)));
+		return(super.opt(desc));
+	    }
+	}
+
+	@Override public PType<Indir<Resource>> desc() {
+	    return(new ServerDescriptor(this));
 	}
     }
 
