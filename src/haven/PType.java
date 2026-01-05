@@ -38,7 +38,9 @@ public interface PType<T> {
     public static final PType<Float> FLOAT = new MapValue<>(NUM, Number::floatValue);
     public static final PType<Double> DOUBLE = new MapValue<>(NUM, Number::doubleValue);
     public static final PType<Boolean> BOOL = new Or<>("bool", new Cast<>(Boolean.class), new MapValue<>(INT, v -> v != 0));
-    public static final PType<Indir<Resource>> IRES = new MapValue<>(new Cast<>(Indir.class), s -> () -> (Resource)s.get());
+    public static final PType<Indir<Resource>> IRES = new Or<>("ires",
+							       new MapValue<>(new Cast<>(Indir.class), s -> () -> (Resource)s.get()),
+							       new MapValue<>(new Cast<>(Resource.class), Resource::indir));
     public static final PType<Resource> RES = new Or<>("res", new Cast<>(Resource.class),
 						       new OFunction<>(null, v -> {
 							       if(v instanceof Indir) {
