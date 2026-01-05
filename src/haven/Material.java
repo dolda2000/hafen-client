@@ -189,16 +189,6 @@ public class Material implements Pipe.Op {
 	return(mat.get());
     }
 
-    private static class LegacyOwner implements Owner {
-	final Glob glob;
-	LegacyOwner(Glob glob) {this.glob = glob;}
-
-	private static final ClassResolver<LegacyOwner> ctxr = new ClassResolver<LegacyOwner>()
-	    .add(Glob.class, o -> o.glob)
-	    .add(Session.class, o -> o.glob.sess);
-	public <T> T context(Class<T> cl) {return(ctxr.context(cl, this));}
-    }
-
     public static class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public final int id;
 	private transient List<Pipe.Op> states = new LinkedList<>(), dynstates = new LinkedList<>();
