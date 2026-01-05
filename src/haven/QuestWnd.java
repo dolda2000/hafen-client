@@ -669,7 +669,7 @@ public class QuestWnd extends Widget {
     }
 
     public void addchild(Widget child, Object... args) {
-	String place = STR.opt(args[0]).map(String::intern).orElse(null);
+	String place = STR.opt(args[0]).map(String::intern).or(null);
 	if(place == "quest") {
 	    this.quest = (Quest.Info)child;
 	    questbox.add(child, Coord.z);
