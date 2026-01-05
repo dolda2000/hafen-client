@@ -30,6 +30,7 @@ import java.util.*;
 import haven.render.*;
 import haven.render.sl.*;
 import haven.render.Texture2D.Sampler2D;
+import static haven.PType.*;
 
 public abstract class TexRender implements Tex, Disposable {
     public static final VertexArray.Layout vf_tex2d = new VertexArray.Layout(new VertexArray.Layout.Input(Ortho2D.pos, new VectorFormat(2, NumberFormat.FLOAT32), 0, 0, 16),
@@ -142,20 +143,19 @@ public abstract class TexRender implements Tex, Disposable {
 	public Material.Res.Resolver cons(final Resource res, Object... args) {
 	    Indir<Resource> tres;
 	    int tid, a = 0;
-	    if(args[a] instanceof Indir) {
-		tres = Utils.irv(args[a++]);
-		tid = (args.length > a) ? Utils.iv(args[a++]) : -1;
-	    } else if(args[a] instanceof String) {
-		tres = res.pool.load((String)args[a++], Utils.iv(args[a++]));
-		tid = (args.length > a) ? Utils.iv(args[a++]) : -1;
+	    if(IRES.is(args[a])) {
+		tres = IRES.of(args[a++]);
+		tid = (args.length > a) ? INT.of(args[a++]) : -1;
+	    } else if(STR.is(args[a])) {
+		tres = res.pool.load(STR.of(args[a++]), INT.of(args[a++]));
+		tid = (args.length > a) ? INT.of(args[a++]) : -1;
 	    } else {
 		tres = res.indir();
-		tid = Utils.iv(args[a]);
-		a += 1;
+		tid = INT.of(args[a++]);
 	    }
 	    boolean tclip = defclip;
 	    while(a < args.length) {
-		String f = (String)args[a++];
+		String f = STR.of(args[a++]);
 		if(f.equals("a"))
 		    tclip = false;
 		else if(f.equals("c"))

@@ -31,6 +31,7 @@ import java.util.*;
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import haven.render.*;
+import static haven.PType.*;
 
 public class Material implements Pipe.Op {
     public final Pipe.Op states, dynstates;
@@ -91,7 +92,7 @@ public class Material implements Pipe.Op {
 	public Pipe.Op cons(Resource res, Object... args) {
 	    BlendMode.Function cfn, afn;
 	    BlendMode.Factor csrc, cdst, asrc, adst;
-	    String desc = (String)args[0];
+	    String desc = STR.of(args[0]);
 	    if(desc.length() < 3)
 		throw(new Resource.UnknownFormatException(res, "blend description", desc));
 	    cfn = fn(res, desc.charAt(0));
@@ -111,7 +112,7 @@ public class Material implements Pipe.Op {
     @ResName("order")
     public static class $order implements ResCons {
 	public Pipe.Op cons(Resource res, Object... args) {
-	    String nm = (String)args[0];
+	    String nm = STR.of(args[0]);
 	    if(nm.equals("first")) {
 		return(Rendered.first);
 	    } else if(nm.equals("last")) {
@@ -244,15 +245,15 @@ public class Material implements Pipe.Op {
 	public Res.Resolver cons(final Resource res, Object... args) {
 	    Indir<Resource> lres;
 	    int id;
-	    if(args[0] instanceof Indir) {
-		lres = Utils.irv(args[0]);
-		id = (args.length > 1) ? Utils.iv(args[1]) : -1;
-	    } else if(args[0] instanceof String) {
-		lres = res.pool.load((String)args[0], Utils.iv(args[1]));
-		id = (args.length > 2) ? Utils.iv(args[2]) : -1;
+	    if(IRES.is(args[0])) {
+		lres = IRES.of(args[0]);
+		id = (args.length > 1) ? INT.of(args[1]) : -1;
+	    } else if(STR.is(args[0])) {
+		lres = res.pool.load(STR.of(args[0]), INT.of(args[1]));
+		id = (args.length > 2) ? INT.of(args[2]) : -1;
 	    } else {
 		lres = res.indir();
-		id = Utils.iv(args[0]);
+		id = INT.of(args[0]);
 	    }
 	    return(new Res.Resolver() {
 		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
