@@ -456,36 +456,6 @@ public class Utils {
 	}
     }
 
-    public static class ArgumentFormatException extends RuntimeException {
-	public final String expected;
-	public final Object got;
-
-	public ArgumentFormatException(String expected, Object got) {
-	    this.expected = expected;
-	    this.got = got;
-	}
-
-	public String getMessage() {
-	    String got;
-	    try {
-		got = String.valueOf(this.got);
-	    } catch(Throwable t) {
-		got = "!formatting error (" + this.got.getClass() + ", " + t + ")";
-	    }
-	    return(String.format("expected %s, got %s", expected, got));
-	}
-
-	public static <T> T check(Object x, Class<T> expected, String fname) {
-	    if(!expected.isInstance(x))
-		throw(new ArgumentFormatException(fname, x));
-	    return(expected.cast(x));
-	}
-
-	public static <T> T check(Object x, Class<T> expected) {
-	    return(check(x, expected, expected.getSimpleName()));
-	}
-    }
-
     public static String sv(Object arg) {
 	return(PType.STR.of(arg));
     }
