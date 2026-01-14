@@ -143,6 +143,10 @@ public class Utils {
 	throw(new UnknownHostException(host));
     }
 
+    public static SocketChannel connect(NamedSocketAddress addr) throws IOException {
+	return(connect(addr.host, addr.port));
+    }
+
     public static int drawtext(Graphics g, String text, Coord c) {
 	java.awt.FontMetrics m = g.getFontMetrics();
 	g.drawString(text, c.x, c.y + m.getAscent());
