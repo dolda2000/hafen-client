@@ -32,7 +32,7 @@ import java.util.*;
 
 public class Bootstrap implements UI.Receiver, UI.Runner {
     public static final Config.Variable<String> authuser = Config.Variable.prop("haven.authuser", null);
-    public static final Config.Variable<NamedSocketAddress> authserv = Config.Variable.proph("haven.authserv", AuthClient.DEFPORT, new NamedSocketAddress("localhost", AuthClient.DEFPORT));
+    public static final Config.Variable<NamedSocketAddress> authserv = Config.Variable.proph("haven.server", AuthClient.DEFPORT, new NamedSocketAddress("localhost", AuthClient.DEFPORT));
     public static final Config.Variable<NamedSocketAddress> gameserv = Config.Variable.proph("haven.gameserv", 1870, null);
     public static final Config.Variable<Integer> gameport = Config.Variable.propi("haven.gameport", 1870);
     public static final Config.Variable<byte[]> authck = Config.Variable.propb("haven.authck", null);
