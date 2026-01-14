@@ -140,7 +140,11 @@ public class SslHelper {
 	    return(ctx().createSSLEngine());
 	SSLEngine ret = ctx().createSSLEngine(host, port);
 	SSLParameters par = ret.getSSLParameters();
-	par.setServerNames(Collections.singletonList(new SNIHostName(host)));
+	try {
+	    par.setServerNames(Collections.singletonList(new SNIHostName(host)));
+	} catch(IllegalArgumentException e) {
+	    /* Ignore SNI if hostname is invalid. */
+	}
 	ret.setSSLParameters(par);
 	return(ret);
     }
