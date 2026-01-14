@@ -184,6 +184,9 @@ public class Config {
 	public static Variable<byte[]> propb(String name, byte[] defval) {
 	    return(prop(name, Utils.hex::dec, () -> defval));
 	}
+	public static Variable<NamedSocketAddress> proph(String name, int defport, NamedSocketAddress defval) {
+	    return(prop(name, val -> NamedSocketAddress.parse(val, defport), () -> defval));
+	}
 	public static Variable<URI> propu(String name, URI defval) {
 	    return(prop(name, Config::parseuri, () -> defval));
 	}
