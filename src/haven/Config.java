@@ -299,7 +299,7 @@ public class Config {
 	    }
 	}
 	if(opt.rest.length > 0)
-	    Bootstrap.authserv.set(NamedSocketAddress.parse(opt.arg, AuthClient.DEFPORT));
+	    Bootstrap.authserv.set(NamedSocketAddress.parse(opt.rest[0], AuthClient.DEFPORT));
 	if(opt.rest.length > 1)
 	    Bootstrap.servargs.set(Utils.splice(opt.rest, 1));
     }
