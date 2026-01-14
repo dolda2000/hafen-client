@@ -37,7 +37,7 @@ public class SessWidget extends AWidget {
 	public Widget create(UI ui, Object[] args) {
 	    String host = (String)args[0];
 	    int port = Utils.iv(args[1]);
-	    byte[] cookie = Utils.hex.dec((String)args[2]);
+	    byte[] cookie = (args[2] instanceof byte[]) ? (byte[])args[2] : Utils.hex.dec((String)args[2]);
 	    Object[] sargs = Utils.splice(args, 3);
 	    Session.User acct = ui.sess.user.copy().alias(null);
 	    return(new SessWidget(host, port, acct, ui.sess.conn.encrypted(), cookie, sargs));
