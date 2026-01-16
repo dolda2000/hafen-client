@@ -32,16 +32,15 @@ import java.util.*;
 
 public class Bootstrap implements UI.Receiver, UI.Runner {
     public static final Config.Variable<String> authuser = Config.Variable.prop("haven.authuser", null);
-    public static final Config.Variable<String> authserv = Config.Variable.prop("haven.authserv", null);
-    public static final Config.Variable<String> defserv = Config.Variable.prop("haven.defserv", "localhost");
-    public static final Config.Variable<Integer> mainport = Config.Variable.propi("haven.mainport", 1870);
-    public static final Config.Variable<Integer> authport = Config.Variable.propi("haven.authport", 1871);
+    public static final Config.Variable<NamedSocketAddress> authserv = Config.Variable.proph("haven.server", AuthClient.DEFPORT, new NamedSocketAddress("localhost", AuthClient.DEFPORT));
+    public static final Config.Variable<NamedSocketAddress> gameserv = Config.Variable.proph("haven.gameserv", 1870, null);
+    public static final Config.Variable<Integer> gameport = Config.Variable.propi("haven.gameport", 1870);
     public static final Config.Variable<byte[]> authck = Config.Variable.propb("haven.authck", null);
     public static final Config.Variable<byte[]> authtoken = Config.Variable.propb("haven.inittoken", null);
     public static final Config.Variable<String[]> servargs = Config.Variable.def(() -> null);
     public static boolean useinitauth = true;
-    String hostname;
-    int port;
+    public final NamedSocketAddress server;
+    public final String confname;
     Queue<Message> msgs = new LinkedList<Message>();
     String inituser = null;
     byte[] initcookie = null;
@@ -59,13 +58,13 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	}
     }
 
-    public Bootstrap(String hostname, int port) {
-	this.hostname = hostname;
-	this.port = port;
+    public Bootstrap(NamedSocketAddress server) {
+	this.server = server;
+	this.confname = server.host;
     }
 
     public Bootstrap() {
-	this(defserv.get(), mainport.get());
+	this(authserv.get());
 	if(useinitauth) {
 	    if((authuser.get() != null) && (authck.get() != null)) {
 		setinitcookie(authuser.get(), authck.get());
@@ -88,15 +87,15 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
     }
 
     private String getpref(String name, String def) {
-	return(Utils.getpref(name + "@" + hostname, def));
+	return(Utils.getpref(name + "@" + confname, def));
     }
 
     private void setpref(String name, String val) {
-	Utils.setpref(name + "@" + hostname, val);
+	Utils.setpref(name + "@" + confname, val);
     }
 
-    private static byte[] getprefb(String name, String hostname, byte[] def, boolean zerovalid) {
-	String sv = Utils.getpref(name + "@" + hostname, null);
+    private static byte[] getprefb(String name, String confname, byte[] def, boolean zerovalid) {
+	String sv = Utils.getpref(name + "@" + confname, null);
 	if(sv == null)
 	    return(def);
 	byte[] ret = Utils.hex.dec(sv);
@@ -113,24 +112,24 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	return(Utils.hex.enc(Digest.hash(Digest.MD5, user.getBytes(Utils.utf8))));
     }
 
-    public static byte[] gettoken(String user, String hostname) {
-	return(getprefb("savedtoken-" + mangleuser(user), hostname, null, false));
+    public static byte[] gettoken(String user, String confname) {
+	return(getprefb("savedtoken-" + mangleuser(user), confname, null, false));
     }
 
-    public static void rottokens(String user, String hostname, boolean creat, boolean rm) {
-	List<String> names = new ArrayList<>(Utils.getprefsl("saved-tokens@" + hostname, new String[] {}));
+    public static void rottokens(String user, String confname, boolean creat, boolean rm) {
+	List<String> names = new ArrayList<>(Utils.getprefsl("saved-tokens@" + confname, new String[] {}));
 	creat = creat || (!rm && names.contains(user));
 	if(rm || creat)
 	    names.remove(user);
 	if(creat)
 	    names.add(0, user);
-	Utils.setprefsl("saved-tokens@" + hostname, names);
+	Utils.setprefsl("saved-tokens@" + confname, names);
     }
 
-    public static void settoken(String user, String hostname, byte[] token) {
+    public static void settoken(String user, String confname, byte[] token) {
 	String prefnm = user;
-	Utils.setpref("savedtoken-" + mangleuser(user) + "@" + hostname, (token == null) ? "" : Utils.hex.enc(token));
-	rottokens(user, hostname, token != null, true);
+	Utils.setpref("savedtoken-" + mangleuser(user) + "@" + confname, (token == null) ? "" : Utils.hex.enc(token));
+	rottokens(user, confname, token != null, true);
     }
 
     private Message getmsg() throws InterruptedException {
@@ -142,12 +141,12 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	}
     }
 
-    private static void preferhost(InetAddress[] hosts, SocketAddress prev) {
+    private static void preferhost(List<InetSocketAddress> hosts, SocketAddress prev) {
 	if((prev == null) || !(prev instanceof InetSocketAddress))
 	    return;
 	InetAddress host = ((InetSocketAddress)prev).getAddress();
-	Arrays.sort(hosts, (a, b) -> {
-		boolean pa = Utils.eq(a, host), pb = Utils.eq(b, host);
+	Collections.sort(hosts, (a, b) -> {
+		boolean pa = Utils.eq(a.getAddress(), host), pb = Utils.eq(b.getAddress(), host);
 		if(pa && pb)
 		    return(0);
 		else if(pa)
@@ -161,16 +160,16 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 
     public UI.Runner run(UI ui) throws InterruptedException {
 	ui.setreceiver(this);
-	ui.newwidgetp(1, ($1, $2) -> new LoginScreen(hostname), 0, new Object[] {Coord.z});
+	ui.newwidgetp(1, ($1, $2) -> new LoginScreen(confname), 0, new Object[] {Coord.z});
 	String loginname = getpref("loginname", "");
 	boolean savepw = false;
-	String authserver = (authserv.get() == null) ? hostname : authserv.get();
-	int authport = Bootstrap.authport.get();
+	NamedSocketAddress defserv = new NamedSocketAddress(server.host, gameport.get());
 	Session sess;
 	retry: do {
 	    byte[] cookie, token;
 	    Session.User acct;
 	    SocketAddress authaddr = null;
+	    List<NamedSocketAddress> hosts = Collections.emptyList();
 	    if(initcookie != null) {
 		acct = new Session.User(inituser);
 		cookie = initcookie;
@@ -179,9 +178,9 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		ui.uimsg(1, "prg", "Authenticating...");
 		byte[] inittoken = this.inittoken;
 		this.inittoken = null;
-		authed: try(AuthClient auth = new AuthClient(authserver, authport)) {
+		authed: try(AuthClient auth = new AuthClient(server)) {
 		    authaddr = auth.address();
-		    if(!Arrays.equals(inittoken, getprefb("lasttoken-" + mangleuser(inituser), hostname, null, false))) {
+		    if(!Arrays.equals(inittoken, getprefb("lasttoken-" + mangleuser(inituser), confname, null, false))) {
 			String authed = null;
 			try {
 			    authed = new AuthClient.TokenCred(inituser, inittoken).tryauth(auth);
@@ -193,20 +192,22 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			    cookie = auth.getcookie();
 			    if(Connection.encrypt.get())
 				acct.alias(auth.getalias());
-			    settoken(authed, hostname, auth.gettoken());
+			    hosts = auth.gethosts(defserv);
+			    settoken(authed, confname, auth.gettoken());
 			    break authed;
 			}
 		    }
-		    if((token = gettoken(inituser, hostname)) != null) {
+		    if((token = gettoken(inituser, confname)) != null) {
 			try {
 			    String authed = new AuthClient.TokenCred(inituser, token).tryauth(auth);
 			    acct = new Session.User(authed);
 			    cookie = auth.getcookie();
 			    if(Connection.encrypt.get())
 				acct.alias(auth.getalias());
+			    hosts = auth.gethosts(defserv);
 			    break authed;
 			} catch(AuthClient.Credentials.AuthException e) {
-			    settoken(inituser, hostname, null);
+			    settoken(inituser, confname, null);
 			}
 		    }
 		    ui.uimsg(1, "error", "Launcher login expired");
@@ -230,12 +231,12 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		    }
 		}
 		ui.uimsg(1, "prg", "Authenticating...");
-		try(AuthClient auth = new AuthClient(authserver, authport)) {
+		try(AuthClient auth = new AuthClient(server)) {
 		    authaddr = auth.address();
 		    try {
 			acct = new Session.User(creds.tryauth(auth));
 		    } catch(AuthClient.Credentials.AuthException e) {
-			settoken(creds.name(), hostname, null);
+			settoken(creds.name(), confname, null);
 			ui.uimsg(1, "error", e.getMessage());
 			continue retry;
 		    }
@@ -244,8 +245,9 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			acct.alias(auth.getalias());
 		    if(savepw) {
 			byte[] ntoken = (creds instanceof AuthClient.TokenCred) ? ((AuthClient.TokenCred)creds).token : auth.gettoken();
-			settoken(acct.name, hostname, ntoken);
+			settoken(acct.name, confname, ntoken);
 		    }
+		    hosts = auth.gethosts(defserv);
 		} catch(UnknownHostException e) {
 		    ui.uimsg(1, "error", "Could not locate server");
 		    continue retry;
@@ -256,16 +258,35 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	    }
 	    ui.uimsg(1, "prg", "Connecting...");
 	    try {
-		InetAddress[] addrs = InetAddress.getAllByName(hostname);
-		if(addrs.length == 0)
-		    throw(new UnknownHostException(hostname));
+		List<InetSocketAddress> addrs = new ArrayList<>();
+		NamedSocketAddress ea = gameserv.get();
+		if(ea != null) {
+		    for(InetAddress addr : InetAddress.getAllByName(ea.host))
+			addrs.add(new InetSocketAddress(addr, ea.port));
+		    if(addrs.isEmpty())
+			throw(new UnknownHostException(ea.host));
+		} else {
+		    if(hosts.isEmpty()) {
+			for(InetAddress addr : InetAddress.getAllByName(defserv.host))
+			    addrs.add(new InetSocketAddress(addr, defserv.port));
+			if(addrs.isEmpty())
+			    throw(new UnknownHostException(ea.host));
+		    } else {
+			for(NamedSocketAddress addr : hosts) {
+			    for(InetAddress host : InetAddress.getAllByName(addr.host))
+				addrs.add(new InetSocketAddress(host, addr.port));
+			}
+			if(addrs.isEmpty())
+			    throw(new UnknownHostException(server.host));
+		    }
+		}
 		preferhost(addrs, authaddr);
 		connect: {
-		    for(int i = 0; i < addrs.length; i++) {
+		    for(int i = 0; i < addrs.size(); i++) {
 			if(i > 0)
-			    ui.uimsg(1, "prg", String.format("Connecting (address %d/%d)...", i + 1, addrs.length));
+			    ui.uimsg(1, "prg", String.format("Connecting (address %d/%d)...", i + 1, addrs.size()));
 			try {
-			    sess = new Session(new InetSocketAddress(addrs[i], port), acct, Connection.encrypt.get(), cookie);
+			    sess = new Session(addrs.get(i), acct, Connection.encrypt.get(), cookie);
 			    break connect;
 			} catch(Connection.SessionConnError err) {
 			} catch(Connection.SessionError err) {
@@ -281,7 +302,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		continue retry;
 	    }
 	    setpref("loginname", loginname);
-	    rottokens(loginname, hostname, false, false);
+	    rottokens(loginname, confname, false, false);
 	    break retry;
 	} while(true);
 	ui.destroy(1);

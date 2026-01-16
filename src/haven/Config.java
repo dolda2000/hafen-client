@@ -104,32 +104,6 @@ public class Config {
 	return(Utils.uri(url));
     }
 
-    public static void parsesvcaddr(String spec, Consumer<String> host, Consumer<Integer> port) {
-	if((spec.length() > 0) && (spec.charAt(0) == '[')) {
-	    int p = spec.indexOf(']');
-	    if(p > 0) {
-		String hspec = spec.substring(1, p);
-		if(spec.length() == p + 1) {
-		    host.accept(hspec);
-		    return;
-		} else if((spec.length() > p + 1) && (spec.charAt(p + 1) == ':')) {
-		    host.accept(hspec);
-		    port.accept(Integer.parseInt(spec.substring(p + 2)));
-		    return;
-		}
-	    }
-	}
-	int p = spec.indexOf(':');
-	if(p >= 0) {
-	    host.accept(spec.substring(0, p));
-	    port.accept(Integer.parseInt(spec.substring(p + 1)));
-	    return;
-	} else {
-	    host.accept(spec);
-	    return;
-	}
-    }
-
     public static class Variable<T> {
 	public final Function<Config, T> init;
 	private boolean inited = false;
@@ -183,6 +157,9 @@ public class Config {
 	}
 	public static Variable<byte[]> propb(String name, byte[] defval) {
 	    return(prop(name, Utils.hex::dec, () -> defval));
+	}
+	public static Variable<NamedSocketAddress> proph(String name, int defport, NamedSocketAddress defval) {
+	    return(prop(name, val -> NamedSocketAddress.parse(val, defport), () -> defval));
 	}
 	public static Variable<URI> propu(String name, URI defval) {
 	    return(prop(name, Config::parseuri, () -> defval));
@@ -266,14 +243,14 @@ public class Config {
 	out.println("  -f                 Fullscreen mode");
 	out.println("  -U URL             Use specified external resource URL");
 	out.println("  -r DIR             Use specified resource directory (or HAVEN_RESDIR)");
-	out.println("  -A AUTHSERV[:PORT] Use specified authentication server");
+	out.println("  -S GAMESERV[:PORT] Use specified game server");
 	out.println("  -u USER            Authenticate as USER (together with -C)");
 	out.println("  -C HEXCOOKIE       Authenticate with specified hex-encoded cookie");
 	out.println("  -p PREFSPEC        Use alternate preference prefix");
     }
 
     public static void cmdline(String[] args) {
-	PosixArgs opt = PosixArgs.getopt(args, "hdPGfU:r:A:u:C:p:");
+	PosixArgs opt = PosixArgs.getopt(args, "hdPGfU:r:S:u:C:p:");
 	if(opt == null) {
 	    usage(System.err);
 	    System.exit(1);
@@ -299,8 +276,8 @@ public class Config {
 	    case 'r':
 		Resource.resdir.set(Utils.path(opt.arg));
 		break;
-	    case 'A':
-		parsesvcaddr(opt.arg, Bootstrap.authserv::set, Bootstrap.authport::set);
+	    case 'S':
+		Bootstrap.gameserv.set(NamedSocketAddress.parse(opt.arg, 1870));
 		break;
 	    case 'U':
 		try {
@@ -322,7 +299,7 @@ public class Config {
 	    }
 	}
 	if(opt.rest.length > 0)
-	    parsesvcaddr(opt.rest[0], Bootstrap.defserv::set, Bootstrap.mainport::set);
+	    Bootstrap.authserv.set(NamedSocketAddress.parse(opt.rest[0], AuthClient.DEFPORT));
 	if(opt.rest.length > 1)
 	    Bootstrap.servargs.set(Utils.splice(opt.rest, 1));
     }

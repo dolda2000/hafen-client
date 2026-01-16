@@ -164,4 +164,8 @@ public class KeywordArgs {
     public Optional<Object> oget(String nm) {
 	return(Optional.ofNullable(parsed.get(nm)));
     }
+
+    public String toString() {
+	return(parsed.toString());
+    }
 }

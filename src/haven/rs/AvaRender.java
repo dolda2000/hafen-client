@@ -58,6 +58,10 @@ public class AvaRender {
 	@Override public PType<Indir<Resource>> desc() {
 	    return(new ServerDescriptor(this));
 	}
+
+	public Indir<Resource> dynres(UID uid) {
+	    return(pool.dynres(uid));
+	}
     }
 
     public static class Owner implements OwnerContext, RandomSource {
