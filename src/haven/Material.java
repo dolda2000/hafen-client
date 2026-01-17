@@ -231,19 +231,10 @@ public class Material implements Pipe.Op {
 
     @ResName("mlink")
     public static class $mlink implements ResCons2 {
-	public Res.Resolver cons(final Resource res, Object... args) {
-	    Indir<Resource> lres;
-	    int id;
-	    if(args[0] instanceof Indir) {
-		lres = Utils.irv(args[0]);
-		id = (args.length > 1) ? Utils.iv(args[1]) : -1;
-	    } else if(args[0] instanceof String) {
-		lres = res.pool.load((String)args[0], Utils.iv(args[1]));
-		id = (args.length > 2) ? Utils.iv(args[2]) : -1;
-	    } else {
-		lres = res.indir();
-		id = Utils.iv(args[0]);
-	    }
+	public Res.Resolver cons(Resource res, Object... args) {
+	    KeywordArgs desc = new KeywordArgs(args, res.pool, "?@res", "id");
+	    Indir<Resource> lres = Utils.irv(desc.get("res", res.indir()));
+	    int id = Utils.iv(desc.get("id", -1));
 	    return(new Res.Resolver() {
 		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
 			if(id >= 0) {
