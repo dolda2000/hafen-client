@@ -649,7 +649,7 @@ public class FightWnd extends Widget {
 	if(nm == "avail") {
 	    List<Action> acts = new ArrayList<Action>();
 	    int a = 0;
-	    while(true) {
+	    while(args[a] != null) {
 		int resid = Utils.iv(args[a++]);
 		if(resid < 0)
 		    break;
