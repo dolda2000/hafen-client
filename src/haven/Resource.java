@@ -1812,18 +1812,31 @@ public class Resource implements Serializable {
     public class Audio extends Layer implements haven.Audio.Clip {
 	transient public byte[] coded;
 	public final String id;
+	public final Map<String, Object> info;
 	public double bvol = 1.0;
 
 	public Audio(Message buf) {
 	    int ver = buf.uint8();
-	    if((ver >= 1) && (ver <= 2)) {
+	    Map<String, Object> info = new HashMap<>();
+	    if((ver >= 1) && (ver <= 3)) {
 		this.id = buf.string();
-		if(ver >= 2)
+		if(ver == 2)
 		    bvol = buf.uint16() * 0.001;
+		if(ver >= 3) {
+		    while(true) {
+			String key = buf.string();
+			if(key.equals(""))
+			    break;
+			Object val = buf.tto(resmapper());
+			info.put(key, val);
+		    }
+		    bvol = Utils.dv(Utils.pop(info, "vol", 1.0));
+		}
 		this.coded = buf.bytes();
 	    } else {
 		throw(new UnknownFormatException(getres(), "audio layer version", ver));
 	    }
+	    this.info = info.isEmpty() ? Collections.emptyMap() : info;
 	}
 
 	public void init() {}
