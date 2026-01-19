@@ -84,11 +84,12 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	public default void gtick(Render g) {}
     }
 
-    public static class Part {
+    public static class Part implements Resource.Metadata {
 	public RenderTree.Node obj;
 	public LinkedList<NodeWrap> wraps = new LinkedList<>();
 	public LinkedList<Pipe.Op> state = new LinkedList<>();
 	public LinkedList<Supplier<? extends Pipe.Op>> dynstate = new LinkedList<>();
+	public Collection<Resource.Metadata> info = new ArrayList<>();
 
 	public Part(RenderTree.Node obj, NodeWrap... wraps) {
 	    this.obj = obj;
@@ -128,6 +129,17 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 		ret = RUtils.StateTickNode.of(ret, rst);
 	    }
 	    return(ret);
+	}
+
+	public Map<?, ?> info() {
+	    ArrayList<Map<?, ?>> infos = new ArrayList<>();
+	    for(Collection<?> src : new Collection<?>[]{wraps, state, info, Collections.singletonList(obj)}) {
+		for(Object obj : src) {
+		    if(obj instanceof Resource.Metadata)
+			infos.add(((Resource.Metadata)obj).info());
+		}
+	    }
+	    return(new UnionMap<>(infos));
 	}
     }
 
@@ -473,6 +485,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 		    if(parts[i] == null)
 			parts[i] = lr.l.make(this);
 		    Part part = new Part(parts[i]);
+		    part.info.add(lr);
 		    part.unwrap();
 		    cons.add(part);
 		    if(part.obj instanceof Sprite) {

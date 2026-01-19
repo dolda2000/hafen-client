@@ -208,7 +208,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	return(new Instanced(bat));
     }
 
-    public static class ResourceMesh extends FastMesh {
+    public static class ResourceMesh extends FastMesh implements Resource.Metadata {
 	public final int id;
 	public final Resource res;
 	public final MeshRes info;
@@ -219,6 +219,8 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	    this.res = info.getres();
 	    this.info = info;
 	}
+
+	public Map<String, Object> info() {return(info.info);}
 	
 	public String toString() {
 	    return("FastMesh(" + res.name + ", " + id + ")");
@@ -226,7 +228,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
     }
 
     @Resource.LayerName("mesh")
-    public static class MeshRes extends Resource.Layer implements Resource.IDLayer<Integer> {
+    public static class MeshRes extends Resource.Layer implements Resource.IDLayer<Integer>, Resource.Metadata {
 	public transient FastMesh m;
 	public transient Material.Res mat;
 	public final Map<String, Object> info;
@@ -375,8 +377,7 @@ public class FastMesh implements Rendered.Instancable, RenderTree.Node, Disposab
 	    }
 	}
 	
-	public Integer layerid() {
-	    return(id);
-	}
+	public Integer layerid() {return(id);}
+	public Map<String, Object> info() {return(info);}
     }
 }

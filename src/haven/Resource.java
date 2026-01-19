@@ -1034,6 +1034,10 @@ public class Resource implements Serializable {
 	}
     }
 
+    public interface Metadata {
+	public Map<?, ?> info();
+    }
+
     public interface IDLayer<T> {
 	public T layerid();
     }
@@ -1054,7 +1058,7 @@ public class Resource implements Serializable {
     }
 
     @LayerName("image")
-    public class Image extends Layer implements IDLayer<Integer> {
+    public class Image extends Layer implements IDLayer<Integer>, Metadata {
 	public transient BufferedImage img;
 	private transient BufferedImage scaled;
 	private transient Tex tex, rawtex;
@@ -1194,9 +1198,8 @@ public class Resource implements Serializable {
 	    return(tex);
 	}
 
-	public Integer layerid() {
-	    return(id);
-	}
+	public Integer layerid() {return(id);}
+	public Map<String, Object> info() {return(info);}
 		
 	public void init() {}
     }
@@ -1809,7 +1812,7 @@ public class Resource implements Serializable {
     }
 
     @LayerName("audio2")
-    public class Audio extends Layer implements haven.Audio.Clip {
+    public class Audio extends Layer implements haven.Audio.Clip, Metadata {
 	transient public byte[] coded;
 	public final String id;
 	public final Map<String, Object> info;
@@ -1850,6 +1853,7 @@ public class Resource implements Serializable {
 	}
 
 	public String layerid() {return(id);}
+	public Map<String, Object> info() {return(info);}
 	public double bvol() {return(bvol);}
     }
 

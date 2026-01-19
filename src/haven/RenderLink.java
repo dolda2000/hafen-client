@@ -219,7 +219,7 @@ public interface RenderLink {
     }
 
     @Resource.LayerName("rlink")
-    public class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
+    public class Res extends Resource.Layer implements Resource.IDLayer<Integer>, Resource.Metadata {
 	public transient final RenderLink l;
 	public final int id;
 	public final Map<String, Object> info;
@@ -256,12 +256,10 @@ public interface RenderLink {
 	    }
 	    this.info = info.isEmpty() ? Collections.emptyMap() : info;
 	}
-	
-	public void init() {
-	}
 
-	public Integer layerid() {
-	    return(id);
-	}
+	public Integer layerid() {return(id);}
+	public Map<String, Object> info() {return(info);}
+
+	public void init() {}
     }
 }
