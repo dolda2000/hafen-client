@@ -210,7 +210,7 @@ public interface SignKey {
 		return(Utils.splice(n, 1));
 	    if(n.length == hash.len)
 		return(n);
-	    throw(new Message.FormatError(String.format("unexpected number length %i (expected %i)", n.length, hash.len)));
+	    throw(new Message.FormatError(String.format("unexpected number length %d (expected %d)", n.length, hash.len)));
 	}
 
 	private byte[] decberblock(Message data, int checktag) {
