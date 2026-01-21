@@ -35,9 +35,9 @@ public class Buff extends Widget implements ItemInfo.ResOwner, Bufflist.Managed 
     public static final Text.Foundry nfnd = new Text.Foundry(Text.dfont, 10);
     public static final Tex frame = Resource.loadtex("gfx/hud/buffs/frame");
     public static final Tex cframe = Resource.loadtex("gfx/hud/buffs/cframe");
-    public static final Coord imgoff = UI.scale(new Coord(3, 3));
-    public static final Coord ameteroff = UI.scale(new Coord(3, 37));
-    public static final Coord ametersz = UI.scale(new Coord(32, 3));
+    public static final Coord imgoff = UI.scale(3, 3);
+    public static final Coord ameteroff = UI.rscale(3, 37.75);
+    public static final Coord ametersz = UI.scale(32, 3);
     public static final int textw = UI.scale(200);
     public Indir<Resource> res;
     protected int a = 255;
