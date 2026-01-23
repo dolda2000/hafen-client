@@ -55,26 +55,32 @@ public class Text implements Disposable {
 	    super(text, img);
 	}
 
+	public abstract int baseline();
 	public abstract int advance(int pos);
 	public abstract int charat(int x);
     }
 
     public static class Line extends Slug {
 	private final FontMetrics m;
-	
+
 	private Line(String text, BufferedImage img, FontMetrics m) {
 	    super(text, img);
 	    this.m = m;
 	}
-	
+
+	@Deprecated
 	public Coord base() {
 	    return(new Coord(0, m.getLeading() + m.getAscent()));
 	}
-	
+
+	public int baseline() {
+	    return(m.getLeading() + m.getAscent());
+	}
+
 	public int advance(int pos) {
 	    return(m.stringWidth(text.substring(0, pos)));
 	}
-	
+
 	public int charat(int x) {
 	    int l = 0, r = text.length() + 1;
 	    while(true) {
