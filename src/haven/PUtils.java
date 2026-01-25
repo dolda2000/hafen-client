@@ -82,6 +82,25 @@ public class PUtils {
 	return(tgt);
     }
 
+    public static Area alphabounds(Raster img, int thres) {
+	int w = img.getWidth(), h = img.getHeight();
+	int l = w, u = h, r = 0, b = 0;
+	for(int y = 0; y < h; y++) {
+	    for(int x = 0; x < w; x++) {
+		if(img.getSample(x, y, 3) > thres) {
+		    l = Math.min(l, x); u = Math.min(u, y);
+		    r = Math.max(r, x); b = Math.max(b, y);
+		}
+	    }
+	}
+	if((l > r) || (u > b))
+	    return(null);
+	return(Area.corni(Coord.of(l, u), Coord.of(r, b)));
+    }
+    public static Area alphabounds(BufferedImage img, int thres) {
+	return(alphabounds(img.getRaster(), thres));
+    }
+
     public static WritableRaster imggrow(WritableRaster img, int rad) {
 	int h = img.getHeight(), w = img.getWidth();
 	int[] buf = new int[w * h];
