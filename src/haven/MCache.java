@@ -40,9 +40,8 @@ public class MCache implements MapSource {
     public static final Coord cutsz = Coord.of(25, 25);
     public static final Coord cutn = cmaps.div(cutsz);
     private final Object setmon = new Object();
-    private Resource.Spec[] nsets = new Resource.Spec[16];
     @SuppressWarnings("unchecked")
-    private Reference<Resource>[] sets = new Reference[16];
+    private Indir<Resource>[] sets = new Indir[16];
     @SuppressWarnings("unchecked")
     private Reference<Tileset>[] csets = new Reference[16];
     @SuppressWarnings("unchecked")
@@ -255,10 +254,9 @@ public class MCache implements MapSource {
     }
 
     private void cktileid(int id) {
-	if(id >= nsets.length) {
+	if(id >= sets.length) {
 	    synchronized(setmon) {
-		if(id >= nsets.length) {
-		    nsets = Utils.extend(nsets, Integer.highestOneBit(id) * 2);
+		if(id >= sets.length) {
 		    sets  = Utils.extend(sets,  Integer.highestOneBit(id) * 2);
 		    csets = Utils.extend(csets, Integer.highestOneBit(id) * 2);
 		    tiles = Utils.extend(tiles, Integer.highestOneBit(id) * 2);
@@ -488,7 +486,7 @@ public class MCache implements MapSource {
 	    int[] ids = new int[16];
 	    int nids = 0;
 	    {
-		boolean[] uids = new boolean[nsets.length];
+		boolean[] uids = new boolean[sets.length];
 		int i = area.ul.x + (area.ul.y * cmaps.x);
 		for(int y = 0; y < cutsz.y; y++, i += (cmaps.x - cutsz.x)) {
 		    for(int x = 0; x < cutsz.x; x++, i++) {
@@ -619,11 +617,11 @@ public class MCache implements MapSource {
 		String resnm = buf.string();
 		int resver = buf.uint16();
 		cktileid(tileid);
-		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
+		sets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
 	    }
 	    for(int i = 0; i < tiles.length; i++) {
 		tiles[i] = buf.uint8();
-		if(nsets[tiles[i]] == null)
+		if(sets[tiles[i]] == null)
 		    throw(new Message.FormatError(String.format("Got undefined tile: " + tiles[i])));
 	    }
 	}
@@ -643,12 +641,12 @@ public class MCache implements MapSource {
 		String resnm = buf.string();
 		int resver = buf.uint16();
 		cktileid(tileid);
-		nsets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
+		sets[tileid] = new Resource.Spec(Resource.remote(), resnm, resver);
 	    }
 	    boolean lg = maxid >= 256;
 	    for(int i = 0; i < tiles.length; i++) {
 		tiles[i] = tileids[lg ? buf.uint16() : buf.uint8()];
-		if(nsets[tiles[i]] == null)
+		if(sets[tiles[i]] == null)
 		    throw(new Message.FormatError(String.format("Got undefined tile: " + tiles[i])));
 	    }
 	}
@@ -1043,25 +1041,11 @@ public class MCache implements MapSource {
 	}
     }
 
-    public Resource.Spec tilesetn(int i) {
-	Resource.Spec[] nsets = this.nsets;
-	if(i >= nsets.length)
-	    return(null);
-	return(nsets[i]);
-    }
-
     public Resource tilesetr(int i) {
-	Reference<Resource>[] sets = this.sets;
-	if(i >= sets.length)
+	Indir<Resource>[] sets = this.sets;
+	if(sets[i] == null)
 	    return(null);
-	Resource res = (sets[i] == null) ? null : sets[i].get();
-	if(res == null) {
-	    Resource.Spec[] nsets = this.nsets;
-	    if(nsets[i] == null)
-		return(null);
-	    sets[i] = new SoftReference<>(res = nsets[i].get());
-	}
-	return(res);
+	return(sets[i].get());
     }
 
     public Tileset tileset(int i) {
