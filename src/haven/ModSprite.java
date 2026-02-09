@@ -359,17 +359,15 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
     }
 
     private void attrupdate() {
-	synchronized(gob) {
-	    Mod[] omods = getomods();
-	    if(!Arrays.equals(omods, this.omods)) {
-		Mod[] pmods = this.omods;
-		this.omods = omods;
-		try {
-		    update();
-		} catch(Loading l) {
-		    this.omods = pmods;
-		    throw(l);
-		}
+	Mod[] omods = getomods();
+	if(!Arrays.equals(omods, this.omods)) {
+	    Mod[] pmods = this.omods;
+	    this.omods = omods;
+	    try {
+		update();
+	    } catch(Loading l) {
+		this.omods = pmods;
+		throw(l);
 	    }
 	}
     }
@@ -378,8 +376,11 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	if(gob != null) {
 	    int seq = gob.updateseq;
 	    if(seq != lastupd) {
-		gob.glob.loader.defer(this::attrupdate, null);
-		lastupd = seq;
+		try {
+		    attrupdate();
+		    lastupd = seq;
+		} catch(Loading l) {
+		}
 	    }
 	}
 	boolean ret = false;
@@ -532,6 +533,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	}
 
 	public void operate(Cons cons) {
+	    /* XXX: Trim animations that aren't actually bound to any current parts? */
 	    int flags = cons.spr().flags;
 	    Collection<MeshAnim.Animation> anims = new ArrayList<>(descs.length);
 	    Map<MeshAnim.Res, MeshAnim.Animation> newids = new HashMap<>();
