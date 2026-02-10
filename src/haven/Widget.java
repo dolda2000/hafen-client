@@ -705,7 +705,7 @@ public class Widget {
 	    if(tt instanceof String) {
 		settip((String)tt);
 	    } else if(tt instanceof Integer) {
-		tooltip = new PaginaTip(ui.sess.getresv(tt));
+		tooltip = new PaginaTip(ui.sess.getresv(tt), (a < args.length) ? Utils.bv(args[a++]) : false);
 	    }
 	} else if(msg == "gk") {
 	    if(args[0] instanceof Integer) {
