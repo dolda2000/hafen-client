@@ -1765,32 +1765,43 @@ public class Widget {
     public static class PaginaTip implements Indir<Tex> {
 	public final String title;
 	public final Indir<Resource> res;
+	public final boolean tiptitle;
 	private Tex rend;
 	private boolean hasrend = false;
 
 	public PaginaTip(Indir<Resource> res, String title) {
 	    this.res = res;
 	    this.title = title;
+	    this.tiptitle = false;
+	}
+
+	public PaginaTip(Indir<Resource> res, boolean tiptitle) {
+	    this.res = res;
+	    this.title = null;
+	    this.tiptitle = tiptitle;
 	}
 
 	public PaginaTip(Indir<Resource> res) {
-	    this(res, null);
+	    this(res, false);
 	}
 
 	public Tex get() {
 	    if(!hasrend) {
 		render: {
 		    try {
-			Resource.Pagina pag = res.get().layer(Resource.pagina);
-			if(pag == null)
-			    break render;
-			String text;
+			Resource res = this.res.get();
+			Resource.Pagina pag = res.layer(Resource.pagina);
+			String text, title;
+			if(tiptitle)
+			    title = res.flayer(Resource.tooltip).t;
+			else
+			    title = this.title;
 			if(title == null) {
-			    if(pag.text.length() == 0)
+			    if((pag == null) || (pag.text.length() == 0))
 				break render;
 			    text = pag.text;
 			} else {
-			    if(pag.text.length() == 0)
+			    if((pag == null) || (pag.text.length() == 0))
 				text = title;
 			    else
 				text = title + "\n\n" + pag.text;
