@@ -63,9 +63,10 @@ public class ISBox extends Widget implements DTarget {
     }
 
     public ISBox(Indir<Resource> res, int rem, int av, int bi) {
-        super(defsz);
-        this.res = res;
-        setlabel(rem, av, bi);
+	super(defsz);
+	this.res = res;
+	setlabel(rem, av, bi);
+	tooltip = new PaginaTip(res, true);
     }
 
     public void draw(GOut g) {
@@ -76,12 +77,6 @@ public class ISBox extends Widget implements DTarget {
             g.image(t, dc);
         } catch(Loading e) {}
         g.image(label.tex(), new Coord(UI.scale(40), (sz.y - label.sz().y) / 2));
-    }
-
-    public Object tooltip(Coord c, Widget prev) {
-	if(res.get().layer(Resource.tooltip) != null)
-	    return(res.get().layer(Resource.tooltip).t);
-	return(null);
     }
 
     public boolean mousedown(MouseDownEvent ev) {
