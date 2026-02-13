@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.function.*;
+import java.util.zip.*;
 import java.io.*;
 import java.net.*;
 
@@ -72,9 +73,19 @@ public class Http {
 	RetryingInputStream ret = new RetryingInputStream() {
 		protected InputStream create() throws IOException {
 		    URLConnection c = open(url);
+		    c.addRequestProperty("Accept-Encoding", "deflate, gzip");
 		    if(init != null)
 			init.accept(c);
-		    return(c.getInputStream());
+		    InputStream ret = c.getInputStream();
+		    String enc = c.getContentEncoding();
+		    if(Utils.eq(enc, "deflate")) {
+			ret = new InflaterInputStream(ret);
+		    } else if(Utils.eq(enc, "gzip")) {
+			ret = new GZIPInputStream(ret);
+		    } else if((enc != null) && !Utils.eq(enc, "")) {
+			new Warning("unexpected content-encoding for request to %s: %s", url, enc).issue();
+		    }
+		    return(ret);
 		}
 	    };
 	ret.check();
