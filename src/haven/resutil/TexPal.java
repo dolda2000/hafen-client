@@ -54,29 +54,14 @@ public class TexPal extends State {
 	buf.put(slot, this);
     }
 
-    @Material.ResName("pal")
-    public static class $res implements Material.ResCons2 {
-	public Material.Res.Resolver cons(final Resource res, Object... args) {
-	    Indir<Resource> tres;
-	    int tid, a = 0;
-	    if(args[a] instanceof Indir) {
-		tres = Utils.irv(args[a++]);
-		tid = Utils.iv(args[a++]);
-	    } else if(args[a] instanceof String) {
-		tres = res.pool.load((String)args[a++], Utils.iv(args[a++]));
-		tid = Utils.iv(args[a++]);
-	    } else {
-		tres = res.indir();
-		tid = Utils.iv(args[a++]);
-	    }
-	    return(new Material.Res.Resolver() {
-		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
-			TexR rt = tres.get().layer(TexR.class, tid);
-			if(rt == null)
-			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
-			buf.add(new TexPal(rt.tex()));
-		    }
-		});
+    @Material.SpecName("pal")
+    public static class $res implements Material.Spec {
+	public void cons(Material.Buffer buf, Object... args) {
+	    KeywordArgs desc = new KeywordArgs(args, buf.res.pool, "?@res", "id");
+	    Indir<Resource> tres = Utils.irv(desc.get("res", buf.res.indir()));
+	    int tid = Utils.iv(desc.get("id", -1));
+	    TexR rt = tres.get().flayer(TexR.class, tid);
+	    buf.states.add(new TexPal(rt.tex()));
 	}
     }
 }

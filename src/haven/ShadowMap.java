@@ -52,9 +52,9 @@ public class ShadowMap extends State {
 							 0.0f, 0.0f, 0.5f, 0.5f,
 							 0.0f, 0.0f, 0.0f, 1.0f);
 
-    @Material.ResName("maskshadow")
-    public static class $maskshadow implements Material.ResCons {
-	public Pipe.Op cons(Resource res, Object... args) {return(maskshadow);}
+    @Material.SpecName("maskshadow")
+    public static class $maskshadow implements Material.Spec {
+	public void cons(Material.Buffer buf, Object... args) {buf.states.add(maskshadow);}
     }
 
     public ShadowMap(Coord res, float size, float depth, float dthr) {

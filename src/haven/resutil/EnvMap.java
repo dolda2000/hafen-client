@@ -35,7 +35,6 @@ import static haven.render.sl.Cons.*;
 import static haven.render.sl.Function.PDir.*;
 import static haven.render.sl.Type.*;
 
-@Material.ResName("envref")
 public class EnvMap extends State {
     public static final Slot<EnvMap> slot = new Slot<EnvMap>(Slot.Type.DRAW, EnvMap.class);
     private static final Uniform csky = new Uniform(SAMPLERCUBE, p -> p.get(slot).sky, slot);
@@ -52,8 +51,11 @@ public class EnvMap extends State {
 	};
     }
 
-    public EnvMap(Resource res, Object... args) {
-	this((Color)args[0]);
+    @Material.SpecName("envref")
+    public static class $envref implements Material.Spec {
+	public void cons(Material.Buffer buf, Object... args) {
+	    buf.states.add(new EnvMap((Color)args[0]));
+	}
     }
 
     private static final ShaderMacro shader = prog -> {

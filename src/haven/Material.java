@@ -36,35 +36,35 @@ public class Material implements Pipe.Op {
     public final Pipe.Op states, dynstates;
 
     public static final Pipe.Op nofacecull = (p -> p.put(States.facecull, null));
-    @ResName("nofacecull")
-    public static class $nofacecull implements ResCons {
-	public Pipe.Op cons(Resource res, Object... args) {return(nofacecull);}
+    @SpecName("nofacecull")
+    public static class $nofacecull implements Spec {
+	public void cons(Buffer buf, Object... args) {buf.states.add(nofacecull);}
     }
 
-    @ResName("maskcol")
-    public static class $maskcol implements ResCons {
+    @SpecName("maskcol")
+    public static class $maskcol implements Spec {
 	final Pipe.Op mask = p -> p.put(FragColor.slot, null);
-	public Pipe.Op cons(Resource res, Object... args) {
-	    return(mask);
+	public void cons(Buffer buf, Object... args) {
+	    buf.states.add(mask);
 	}
     }
 
-    @ResName("maskdepth")
-    public static class $maskdepth implements ResCons {
-	public Pipe.Op cons(Resource res, Object... args) {
-	    return(States.maskdepth);
+    @SpecName("maskdepth")
+    public static class $maskdepth implements Spec {
+	public void cons(Buffer buf, Object... args) {
+	    buf.states.add(States.maskdepth);
 	}
     }
 
-    @Material.ResName("vcol")
-    public static class $vcol implements Material.ResCons {
-	public Pipe.Op cons(Resource res, Object... args) {
-	    return(new BaseColor((Color)args[0]));
+    @SpecName("vcol")
+    public static class $vcol implements Spec {
+	public void cons(Buffer buf, Object... args) {
+	    buf.states.add(new BaseColor((Color)args[0]));
 	}
     }
 
-    @ResName("blend")
-    public static class $blend implements ResCons {
+    @SpecName("blend")
+    public static class $blend implements Spec {
 	private static BlendMode.Function fn(Resource res, char desc) {
 	    switch(desc) {
 	    case '+': return BlendMode.Function.ADD;
@@ -88,48 +88,48 @@ public class Material implements Pipe.Op {
 	    }
 	}
 
-	public Pipe.Op cons(Resource res, Object... args) {
+	public void cons(Buffer buf, Object... args) {
 	    BlendMode.Function cfn, afn;
 	    BlendMode.Factor csrc, cdst, asrc, adst;
-	    String desc = (String)args[0];
+	    String desc = Utils.sv(args[0]);
 	    if(desc.length() < 3)
-		throw(new Resource.UnknownFormatException(res, "blend description", desc));
-	    cfn = fn(res, desc.charAt(0));
-	    csrc = fac(res, desc.charAt(1));
-	    cdst = fac(res, desc.charAt(2));
+		throw(new Resource.UnknownFormatException(buf.res, "blend description", desc));
+	    cfn = fn(buf.res, desc.charAt(0));
+	    csrc = fac(buf.res, desc.charAt(1));
+	    cdst = fac(buf.res, desc.charAt(2));
 	    if(desc.length() < 6) {
 		afn = cfn; asrc = csrc; adst = cdst;
 	    } else {
-		afn = fn(res, desc.charAt(3));
-		asrc = fac(res, desc.charAt(4));
-		adst = fac(res, desc.charAt(5));
+		afn = fn(buf.res, desc.charAt(3));
+		asrc = fac(buf.res, desc.charAt(4));
+		adst = fac(buf.res, desc.charAt(5));
 	    }
-	    return(FragColor.blend(new BlendMode(cfn, csrc, cdst, afn, asrc, adst)));
+	    buf.states.add(FragColor.blend(new BlendMode(cfn, csrc, cdst, afn, asrc, adst)));
 	}
     }
 
-    @ResName("order")
-    public static class $order implements ResCons {
-	public Pipe.Op cons(Resource res, Object... args) {
-	    String nm = (String)args[0];
+    @SpecName("order")
+    public static class $order implements Spec {
+	public void cons(Buffer buf, Object... args) {
+	    String nm = Utils.sv(args[0]);
 	    if(nm.equals("first")) {
-		return(Rendered.first);
+		buf.states.add(Rendered.first);
 	    } else if(nm.equals("last")) {
-		return(Rendered.last);
+		buf.states.add(Rendered.last);
 	    } else if(nm.equals("def")) {
-		return(Rendered.deflt);
+		buf.states.add(Rendered.deflt);
 	    } else if(nm.equals("pfx")) {
-		return(Rendered.postpfx);
+		buf.states.add(Rendered.postpfx);
 	    } else if(nm.equals("eye")) {
-		return(Rendered.eyesort);
+		buf.states.add(Rendered.eyesort);
 	    } else if(nm.equals("earlyeye")) {
-		return(Rendered.eeyesort);
+		buf.states.add(Rendered.eeyesort);
 	    } else if(nm.equals("premap")) {
-		return(MapMesh.premap);
+		buf.states.add(MapMesh.premap);
 	    } else if(nm.equals("postmap")) {
-		return(MapMesh.postmap);
+		buf.states.add(MapMesh.postmap);
 	    } else {
-		throw(new Resource.UnknownFormatException(res, "draw order", nm));
+		throw(new Resource.UnknownFormatException(buf.res, "draw order", nm));
 	    }
 	}
     }
@@ -189,37 +189,58 @@ public class Material implements Pipe.Op {
 	return(mat.get());
     }
 
+    public static class Buffer {
+	public final Resource res;
+	public final List<Pipe.Op> states, dynstates;
+	private final List<Object[]> left;
+
+	public Buffer(Resource res, List<Object[]> specs) {
+	    this.res = res;
+	    this.left = new LinkedList<>(specs);
+	    this.states = new ArrayList<>(left.size());
+	    this.dynstates = new ArrayList<>(left.size());
+	}
+    }
+
+    public static interface Spec {
+	public void cons(Buffer buf, Object... args);
+    }
+
     public static class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public final int id;
-	private transient List<Pipe.Op> states = new LinkedList<>(), dynstates = new LinkedList<>();
-	private transient List<Resolver> left = new LinkedList<>();
 	private transient Material m;
+	private transient Buffer cons;
 
-	public interface Resolver {
-	    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf);
-	}
-
-	public Res(Resource res, int id) {
+	public Res(Resource res, int id, List<Object[]> specs) {
 	    res.super();
 	    this.id = id;
+	    this.cons = new Buffer(res, specs);
 	}
 
 	public Material get() {
-	    synchronized(this) {
-		if(m == null) {
-		    for(Iterator<Resolver> i = left.iterator(); i.hasNext();) {
-			Resolver r = i.next();
-			r.resolve(states, dynstates);
-			i.remove();
+	    if(m == null) {
+		synchronized(this) {
+		    if(m == null) {
+			for(Iterator<Object[]> i = cons.left.iterator(); i.hasNext();) {
+			    Object[] spec = i.next();
+			    String nm = Utils.sv(spec[0]);
+			    Spec part = rnames.get(nm);
+			    if(part == null)
+				Warning.warn("unknown material part name in %s: %s", cons.res.name, nm);
+			    else
+				part.cons(cons, Utils.splice(spec, 1));
+			    i.remove();
+			}
+			m = new Material(cons.states.toArray(new Pipe.Op[0]), cons.dynstates.toArray(new Pipe.Op[0])) {
+				public String toString() {
+				    return(super.toString() + "@" + getres().name);
+				}
+			    };
+			cons = null;
 		    }
-		    m = new Material(states.toArray(new Pipe.Op[0]), dynstates.toArray(new Pipe.Op[0])) {
-			    public String toString() {
-				return(super.toString() + "@" + getres().name);
-			    }
-			};
 		}
-		return(m);
 	    }
+	    return(m);
 	}
 
 	public void init() {}
@@ -229,73 +250,45 @@ public class Material implements Pipe.Op {
 	}
     }
 
-    @ResName("mlink")
-    public static class $mlink implements ResCons2 {
-	public Res.Resolver cons(Resource res, Object... args) {
-	    KeywordArgs desc = new KeywordArgs(args, res.pool, "?@res", "id");
-	    Indir<Resource> lres = Utils.irv(desc.get("res", res.indir()));
+    @SpecName("mlink")
+    public static class $mlink implements Spec {
+	public void cons(Buffer buf, Object... args) {
+	    KeywordArgs desc = new KeywordArgs(args, buf.res.pool, "?@res", "id");
+	    Indir<Resource> lres = Utils.irv(desc.get("res", buf.res.indir()));
 	    int id = Utils.iv(desc.get("id", -1));
-	    return(new Res.Resolver() {
-		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
-			if(id >= 0) {
-			    Res mat = lres.get().layer(Res.class, id);
-			    if(mat == null)
-				throw(new Resource.LoadException("No such material in " + lres.get() + ": " + id, res));
-			    Material m = mat.get();
-			    if(m.states != Pipe.Op.nil)
-				buf.add(m.states);
-			    if(m.dynstates != Pipe.Op.nil)
-				dynbuf.add(m.dynstates);
-			} else {
-			    Material mat = fromres((Owner)null, lres.get(), Message.nil);
-			    if(mat == null)
-				throw(new Resource.LoadException("No material in " + lres.get(), res));
-			    if(mat.states != Pipe.Op.nil)
-				buf.add(mat.states);
-			    if(mat.dynstates != Pipe.Op.nil)
-				dynbuf.add(mat.dynstates);
-			}
-		    }
-		});
+	    Material linked;
+	    if(id >= 0) {
+		Res mat = lres.get().layer(Res.class, id);
+		if(mat == null)
+		    throw(new Resource.LoadException("No such material in " + lres.get() + ": " + id, buf.res));
+		linked = mat.get();
+	    } else {
+		linked = fromres((Owner)null, lres.get(), Message.nil);
+		if(linked == null)
+		    throw(new Resource.LoadException("No material in " + lres.get(), buf.res));
+	    }
+	    if(linked.states != Pipe.Op.nil)
+		buf.states.add(linked.states);
+	    if(linked.dynstates != Pipe.Op.nil)
+		buf.dynstates.add(linked.dynstates);
 	}
     }
 
     @dolda.jglob.Discoverable
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.RUNTIME)
-    public @interface ResName {
+    public @interface SpecName {
 	public String value();
     }
 
-    public interface ResCons {
-	public Pipe.Op cons(Resource res, Object... args);
-    }
-
-    public interface ResCons2 {
-	public Res.Resolver cons(Resource res, Object... args);
-    }
-
-    private static final Map<String, ResCons2> rnames = new TreeMap<String, ResCons2>();
-
+    private static final Map<String, Spec> rnames = new HashMap<>();
+ 
     static {
-	for(Class<?> cl : dolda.jglob.Loader.get(ResName.class).classes()) {
-	    String nm = cl.getAnnotation(ResName.class).value();
-	    if(ResCons.class.isAssignableFrom(cl)) {
-		final ResCons scons;
-		scons = Utils.construct(cl.asSubclass(ResCons.class));
-		rnames.put(nm, new ResCons2() {
-			public Res.Resolver cons(Resource res, Object... args) {
-			    final Pipe.Op ret = scons.cons(res, args);
-			    return(new Res.Resolver() {
-				    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
-					if(ret != null)
-					    buf.add(ret);
-				    }
-				});
-			}
-		    });
-	    } else if(ResCons2.class.isAssignableFrom(cl)) {
-		rnames.put(nm, Utils.construct(cl.asSubclass(ResCons2.class)));
+	for(Class<?> cl : dolda.jglob.Loader.get(SpecName.class).classes()) {
+	    String nm = cl.getAnnotation(SpecName.class).value();
+	    if(Spec.class.isAssignableFrom(cl)) {
+		rnames.put(nm, Utils.construct(cl.asSubclass(Spec.class)));
+		/*
 	    } else if(Pipe.Op.class.isAssignableFrom(cl)) {
 		Constructor<? extends Pipe.Op> cons;
 		try {
@@ -312,6 +305,7 @@ public class Material implements Pipe.Op {
 				});
 			}
 		    });
+		*/
 	    } else {
 		throw(new Error("Illegal material constructor class: " + cl));
 	    }
@@ -322,17 +316,13 @@ public class Material implements Pipe.Op {
     public static class NewMat implements Resource.LayerFactory<Res> {
 	public Res cons(Resource res, Message buf) {
 	    int id = buf.uint16();
-	    Res ret = new Res(res, id);
+	    List<Object[]> specs = new ArrayList<>();
 	    while(!buf.eom()) {
 		String nm = buf.string();
 		Object[] args = buf.list(new Resource.PoolMapper(res.pool));
-		ResCons2 cons = rnames.get(nm);
-		if(cons != null)
-		    ret.left.add(cons.cons(res, args));
-		else
-		    new Resource.LoadWarning(res, "unknown material part name in %s: %s", res.name, nm).issue();
+		specs.add(Utils.extend(new Object[] {nm}, args));
 	    }
-	    return(ret);
+	    return(new Res(res, id, specs));
 	}
     }
 }
