@@ -460,89 +460,44 @@ public class Utils {
 	}
     }
 
-    public static class ArgumentFormatException extends RuntimeException {
-	public final String expected;
-	public final Object got;
-
-	public ArgumentFormatException(String expected, Object got) {
-	    this.expected = expected;
-	    this.got = got;
-	}
-
-	public String getMessage() {
-	    String got;
-	    try {
-		got = String.valueOf(this.got);
-	    } catch(Throwable t) {
-		got = "!formatting error (" + this.got.getClass() + ", " + t + ")";
-	    }
-	    return(String.format("expected %s, got %s", expected, got));
-	}
-
-	public static <T> T check(Object x, Class<T> expected, String fname) {
-	    if(!expected.isInstance(x))
-		throw(new ArgumentFormatException(fname, x));
-	    return(expected.cast(x));
-	}
-
-	public static <T> T check(Object x, Class<T> expected) {
-	    return(check(x, expected, expected.getSimpleName()));
-	}
-    }
-
     public static String sv(Object arg) {
-	return(ArgumentFormatException.check(arg, String.class));
+	return(PType.STR.of(arg));
     }
 
     public static List<?> olv(Object arg) {
-	if(arg instanceof Object[])
-	    return(Arrays.asList((Object[])arg));
-	if(arg instanceof List)
-	    return((List<?>)arg);
-	throw(new ArgumentFormatException("object-list", arg));
+	return(PType.LIST.of(arg));
     }
 
     public static Object[] oav(Object arg) {
-	if(arg instanceof Object[])
-	    return((Object[])arg);
-	if(arg instanceof List)
-	    return(((List<?>)arg).toArray(new Object[0]));
-	throw(new ArgumentFormatException("object-array", arg));
+	return(PType.OBJS.of(arg));
     }
 
     public static int iv(Object arg) {
-	return(ArgumentFormatException.check(arg, Number.class, "int").intValue());
+	return(PType.INT.of(arg));
     }
 
     public static long uiv(Object arg) {
-	return(uint32(iv(arg)));
+	return(PType.UINT.of(arg));
     }
 
     public static float fv(Object arg) {
-	return(ArgumentFormatException.check(arg, Number.class, "float").floatValue());
+	return(PType.FLOAT.of(arg));
     }
 
     public static double dv(Object arg) {
-	return(ArgumentFormatException.check(arg, Number.class, "double").doubleValue());
+	return(PType.DOUBLE.of(arg));
     }
 
     public static boolean bv(Object arg) {
-	if(arg instanceof Boolean)
-	    return((Boolean)arg);
-	return(ArgumentFormatException.check(arg, Number.class, "bool").intValue() != 0);
+	return(PType.BOOL.of(arg));
     }
 
     public static Indir<Resource> irv(Object arg) {
-	Indir s = ArgumentFormatException.check(arg, Indir.class);
-	return(() -> (Resource)s.get());
+	return(PType.IRES.of(arg));
     }
 
     public static Resource resv(Object arg) {
-	if(arg instanceof Resource)
-	    return((Resource)arg);
-	Indir s = ArgumentFormatException.check(arg, Indir.class);
-	Resource ret = ArgumentFormatException.check(s.get(), Resource.class);
-	return(ret);
+	return(PType.RES.of(arg));
     }
 
     /* Nested format: [[KEY, VALUE], [KEY, VALUE], ...] */

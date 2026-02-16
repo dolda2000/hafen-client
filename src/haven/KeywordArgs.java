@@ -27,6 +27,7 @@
 package haven;
 
 import java.util.*;
+import static haven.PType.*;
 
 public class KeywordArgs {
     public static final Map<Character, Parser> formats = new HashMap<>();
@@ -39,9 +40,9 @@ public class KeywordArgs {
 	this.respool = respool;
 	int a = 0, p = 0;
 	while(a < argv.length) {
-	    if(argv[a] instanceof Map) {
-		for(Map.Entry ent : ((Map<?, ?>)argv[a++]).entrySet()) {
-		    parsed.put((String)ent.getKey(), ent.getValue());
+	    if(MAP.is(argv[a])) {
+		for(Map.Entry ent : MAP.of(argv[a++]).entrySet()) {
+		    parsed.put(STR.of(ent.getKey()), ent.getValue());
 		}
 	    } else if(p < pos.length) {
 		String spec = pos[p++];
@@ -58,11 +59,11 @@ public class KeywordArgs {
 		}
 	    } else {
 		/* Legacy form */
-		Object[] kwa = (Object[])argv[a++];
-		String key = (String)kwa[0];
+		Object[] kwa = OBJS.of(argv[a++]);
+		String key = STR.of(kwa[0]);
 		Object val;
-		if((kwa.length == 3) && (kwa[1] instanceof String) && (kwa[2] instanceof Number))
-		    val = new Resource.Spec(respool, (String)kwa[1], Utils.iv(kwa[2]));
+		if((kwa.length == 3) && STR.is(kwa[1]) && INT.is(kwa[2]))
+		    val = new Resource.Spec(respool, STR.of(kwa[1]), INT.of(kwa[2]));
 		else
 		    val = kwa[1];
 		parsed.put(key, val);
@@ -112,22 +113,20 @@ public class KeywordArgs {
 
     static {
 	formats.put('@', (b, spec, a) -> {
-		if(b.argv[a] instanceof Indir)
-		    return(Pair.of(b.argv[a], a + 1));
-		if(b.argv[a] instanceof Resource)
-		    return(Pair.of(((Resource)b.argv[a]).indir(), a + 1));
-		if((a < b.argv.length - 1) && (b.argv[a] instanceof String) && (b.argv[a + 1] instanceof Number))
-		    return(Pair.of(new Resource.Spec(b.respool, (String)b.argv[a], Utils.iv(b.argv[a + 1])), a + 2));
+		if(IRES.is(b.argv[a]))
+		    return(Pair.of(IRES.of(b.argv[a]), a + 1));
+		if((a < b.argv.length - 1) && STR.is(b.argv[a]) && INT.is(b.argv[a + 1]))
+		    return(Pair.of(new Resource.Spec(b.respool, STR.of(b.argv[a]), INT.of(b.argv[a + 1])), a + 2));
 		throw(new FormatException("resource-spec", b, a));
 	    });
 	formats.put('#', (b, spec, a) -> {
-		if(b.argv[a] instanceof Number)
-		    return(Pair.of(b.argv[a], a + 1));
+		if(NUM.is(b.argv[a]))
+		    return(Pair.of(NUM.of(b.argv[a]), a + 1));
 		throw(new FormatException("number", b, a));
 	    });
 	formats.put('\'', (b, spec, a) -> {
-		if(b.argv[a] instanceof String)
-		    return(Pair.of(b.argv[a], a + 1));
+		if(STR.is(b.argv[a]))
+		    return(Pair.of(STR.of(b.argv[a]), a + 1));
 		throw(new FormatException("string", b, a));
 	    });
 	formats.put('[', (b, spec, a) -> {
