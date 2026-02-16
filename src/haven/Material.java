@@ -171,6 +171,30 @@ public class Material implements Pipe.Op {
 	return(states.apply(r, true));
     }
 
+    @SpecName("mlink")
+    public static class $mlink implements Spec {
+	public void cons(Buffer buf, Object... args) {
+	    KeywordArgs desc = new KeywordArgs(args, buf.res.pool, "?@res", "id");
+	    Indir<Resource> lres = Utils.irv(desc.get("res", buf.res.indir()));
+	    int id = Utils.iv(desc.get("id", -1));
+	    Material linked;
+	    if(id >= 0) {
+		Res mat = lres.get().layer(Res.class, id);
+		if(mat == null)
+		    throw(new Resource.LoadException("No such material in " + lres.get() + ": " + id, buf.res));
+		linked = mat.get();
+	    } else {
+		linked = fromres((Owner)null, lres.get(), Message.nil);
+		if(linked == null)
+		    throw(new Resource.LoadException("No material in " + lres.get(), buf.res));
+	    }
+	    if(linked.states != Pipe.Op.nil)
+		buf.states.add(linked.states);
+	    if(linked.dynstates != Pipe.Op.nil)
+		buf.dynstates.add(linked.dynstates);
+	}
+    }
+
     public interface Owner extends OwnerContext {
     }
 
@@ -207,14 +231,40 @@ public class Material implements Pipe.Op {
 	public void cons(Buffer buf, Object... args);
     }
 
+    @dolda.jglob.Discoverable
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface SpecName {
+	public String value();
+    }
+
+    private static final Map<String, Spec> rnames = new HashMap<>();
+    static {
+	for(Class<?> cl : dolda.jglob.Loader.get(SpecName.class).classes()) {
+	    String nm = cl.getAnnotation(SpecName.class).value();
+	    if(Spec.class.isAssignableFrom(cl)) {
+		rnames.put(nm, Utils.construct(cl.asSubclass(Spec.class)));
+	    } else {
+		throw(new Error("Illegal material constructor class: " + cl));
+	    }
+	}
+    }
+
+    @Resource.LayerName("mat2")
     public static class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public final int id;
 	private transient Material m;
 	private transient Buffer cons;
 
-	public Res(Resource res, int id, List<Object[]> specs) {
+	public Res(Resource res, Message buf) {
 	    res.super();
-	    this.id = id;
+	    this.id = buf.uint16();
+	    List<Object[]> specs = new ArrayList<>();
+	    while(!buf.eom()) {
+		String nm = buf.string();
+		Object[] args = buf.list(new Resource.PoolMapper(res.pool));
+		specs.add(Utils.extend(new Object[] {nm}, args));
+	    }
 	    this.cons = new Buffer(res, specs);
 	}
 
@@ -248,82 +298,6 @@ public class Material implements Pipe.Op {
 
 	public Integer layerid() {
 	    return(id);
-	}
-    }
-
-    @SpecName("mlink")
-    public static class $mlink implements Spec {
-	public void cons(Buffer buf, Object... args) {
-	    KeywordArgs desc = new KeywordArgs(args, buf.res.pool, "?@res", "id");
-	    Indir<Resource> lres = Utils.irv(desc.get("res", buf.res.indir()));
-	    int id = Utils.iv(desc.get("id", -1));
-	    Material linked;
-	    if(id >= 0) {
-		Res mat = lres.get().layer(Res.class, id);
-		if(mat == null)
-		    throw(new Resource.LoadException("No such material in " + lres.get() + ": " + id, buf.res));
-		linked = mat.get();
-	    } else {
-		linked = fromres((Owner)null, lres.get(), Message.nil);
-		if(linked == null)
-		    throw(new Resource.LoadException("No material in " + lres.get(), buf.res));
-	    }
-	    if(linked.states != Pipe.Op.nil)
-		buf.states.add(linked.states);
-	    if(linked.dynstates != Pipe.Op.nil)
-		buf.dynstates.add(linked.dynstates);
-	}
-    }
-
-    @dolda.jglob.Discoverable
-    @Target(ElementType.TYPE)
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface SpecName {
-	public String value();
-    }
-
-    private static final Map<String, Spec> rnames = new HashMap<>();
- 
-    static {
-	for(Class<?> cl : dolda.jglob.Loader.get(SpecName.class).classes()) {
-	    String nm = cl.getAnnotation(SpecName.class).value();
-	    if(Spec.class.isAssignableFrom(cl)) {
-		rnames.put(nm, Utils.construct(cl.asSubclass(Spec.class)));
-		/*
-	    } else if(Pipe.Op.class.isAssignableFrom(cl)) {
-		Constructor<? extends Pipe.Op> cons;
-		try {
-		    cons = cl.asSubclass(Pipe.Op.class).getConstructor(Resource.class, Object[].class);
-		} catch(NoSuchMethodException e) {
-		    throw(new Error("No proper constructor for res-consable GL state " + cl.getName(), e));
-		}
-		rnames.put(nm, new ResCons2() {
-			public Res.Resolver cons(Resource res, Object... args) {
-			    return(new Res.Resolver() {
-				    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
-					buf.add(Utils.construct(cons, res, args));
-				    }
-				});
-			}
-		    });
-		*/
-	    } else {
-		throw(new Error("Illegal material constructor class: " + cl));
-	    }
-	}
-    }
-
-    @Resource.LayerName("mat2")
-    public static class NewMat implements Resource.LayerFactory<Res> {
-	public Res cons(Resource res, Message buf) {
-	    int id = buf.uint16();
-	    List<Object[]> specs = new ArrayList<>();
-	    while(!buf.eom()) {
-		String nm = buf.string();
-		Object[] args = buf.list(new Resource.PoolMapper(res.pool));
-		specs.add(Utils.extend(new Object[] {nm}, args));
-	    }
-	    return(new Res(res, id, specs));
 	}
     }
 }
