@@ -227,6 +227,7 @@ public class Material implements Pipe.Op {
 	}
     }
 
+    @Resource.PublishedCode(name = "matpart")
     public static interface Spec {
 	public void cons(Buffer buf, Object... args);
     }
@@ -268,6 +269,18 @@ public class Material implements Pipe.Op {
 	    this.cons = new Buffer(res, specs);
 	}
 
+	public Spec findspec(String nm) {
+	    int p = nm.indexOf(':');
+	    if(p < 0) {
+		return(rnames.get(nm));
+	    } else {
+		String rnm = nm.substring(0, p);
+		int ver = Integer.parseInt(nm.substring(p + 1));
+		Indir<Resource> res = getres().pool.load(rnm, ver);
+		return(res.get().getcode(Spec.class, true));
+	    }
+	}
+
 	public Material get() {
 	    if(m == null) {
 		synchronized(this) {
@@ -275,7 +288,7 @@ public class Material implements Pipe.Op {
 			for(Iterator<Object[]> i = cons.left.iterator(); i.hasNext();) {
 			    Object[] spec = i.next();
 			    String nm = Utils.sv(spec[0]);
-			    Spec part = rnames.get(nm);
+			    Spec part = findspec(nm);
 			    if(part == null)
 				Warning.warn("unknown material part name in %s: %s", cons.res.name, nm);
 			    else
