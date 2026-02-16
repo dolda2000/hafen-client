@@ -163,24 +163,36 @@ public class Resource implements Serializable {
 	    return(() -> {throw(new NoSuchResourceException(String.format("dyn/%x", uid.longValue()), 1, null));});
 	}
 
+	public static class Descriptor<R extends Resolver> implements PType<Indir<Resource>> {
+	    public final R rr;
+
+	    public Descriptor(R rr) {this.rr = rr;}
+
+	    public Maybe<Indir<Resource>> opt(Object desc) {
+		if(desc instanceof UID)
+		    return(Maybe.of(rr.dynres((UID)desc)));
+		if(desc instanceof Number) {
+		    int id = ((Number)desc).intValue();
+		    if(id < 0)
+			return(Maybe.of(null));
+		    return(Maybe.of(rr.getres(id)));
+		}
+		if(desc instanceof Resource)
+		    return(Maybe.of(((Resource)desc).indir()));
+		if(desc instanceof Indir) {
+		    @SuppressWarnings("unchecked") Indir<Resource> ret = (Indir<Resource>)desc;
+		    return(Maybe.of(ret));
+		}
+		return(Maybe.not(() -> new ValueFormatException("res-desc", desc)));
+	    }
+	}
+
+	public default PType<Indir<Resource>> desc() {
+	    return(new Descriptor<>(this));
+	}
+
 	public default Indir<Resource> getresv(Object desc) {
-	    if(desc == null)
-		return(null);
-	    if(desc instanceof UID)
-		return(dynres((UID)desc));
-	    if(desc instanceof Number) {
-		int id = ((Number)desc).intValue();
-		if(id < 0)
-		    return(null);
-		return(this.getres(id));
-	    }
-	    if(desc instanceof Resource)
-		return(((Resource)desc).indir());
-	    if(desc instanceof Indir) {
-		@SuppressWarnings("unchecked") Indir<Resource> ret = (Indir<Resource>)desc;
-		return(ret);
-	    }
-	    throw(new Utils.ArgumentFormatException("res-desc", desc));
+	    return(desc().of(desc));
 	}
 
 	public class ResourceMap implements Resource.Resolver {
