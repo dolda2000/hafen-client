@@ -105,37 +105,16 @@ public class BumpMap extends State {
     public static final MeshBuf.LayerID<MeshBuf.Vec3Layer> ltan = new MeshBuf.V3LayerID(tan);
     public static final MeshBuf.LayerID<MeshBuf.Vec3Layer> lbit = new MeshBuf.V3LayerID(bit);
 
-    @Material.ResName("bump")
-    public static class $bump implements Material.ResCons2 {
-	public Material.Res.Resolver cons(final Resource res, Object... args) {
-	    boolean totex = false;
-	    Indir<Resource> tres;
-	    int tid, a = 0;
-	    if(args[a] instanceof Indir) {
-		tres = Utils.irv(args[a++]);
-		tid = (args.length > 0) ? Utils.iv(args[a++]) : -1;
-	    } else if(args[a] instanceof String) {
-		tres = res.pool.load((String)args[a++], Utils.iv(args[a++]));
-		tid = (args.length > 0) ? Utils.iv(args[a++]) : -1;
-	    } else {
-		tres = res.indir();
-		tid = Utils.iv(args[a]);
-		a += 1;
-	    }
-	    if(a < args.length) {
-		String f = (String)args[a++];
-		if(f.indexOf('o') >= 0)
-		    totex = true;
-	    }
-	    boolean otex = totex;
-	    return(new Material.Res.Resolver() {
-		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
-			TexR rt = tres.get().layer(TexR.class, tid);
-			if(rt == null)
-			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
-			buf.add(new BumpMap(rt.tex().img, otex));
-		    }
-		});
+    @Material.SpecName("bump")
+    public static class $bump implements Material.Spec {
+	public void cons(Material.Buffer buf, Object... args) {
+	    KeywordArgs desc = new KeywordArgs(args, buf.res.pool, "?@res", "id", "flags");
+	    Indir<Resource> tres = Utils.irv(desc.get("res", buf.res.indir()));
+	    int tid = Utils.iv(desc.get("id", -1));
+	    String fl = Utils.sv(desc.get("flags", ""));
+	    boolean otex = desc.has("otex") ? Utils.bv(desc.get("otex")) : (fl.indexOf('o') >= 0);
+	    TexR rt = tres.get().flayer(TexR.class, tid);
+	    buf.states.add(new BumpMap(rt.tex().img, otex));
 	}
     }
 

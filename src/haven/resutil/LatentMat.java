@@ -59,10 +59,10 @@ public class LatentMat extends State {
 	}
     }
 
-    @Material.ResName("latent")
-    public static class $latent implements Material.ResCons2 {
-	public Material.Res.Resolver cons(Resource res, Object... args) {
-	    return((buf, dynbuf) -> dynbuf.add(new LatentMat(((String)args[0]).intern())));
+    @Material.SpecName("latent")
+    public static class $latent implements Material.Spec {
+	public void cons(Material.Buffer buf, Object... args) {
+	    buf.dynstates.add(new LatentMat((Utils.sv(args[0])).intern()));
 	}
     }
 }

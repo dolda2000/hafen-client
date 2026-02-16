@@ -35,7 +35,6 @@ import static haven.render.sl.Cons.*;
 import static haven.render.sl.Function.PDir.*;
 import static haven.render.sl.Type.*;
 
-@Material.ResName("texrot")
 public class TexAnim extends State {
     public static final Slot<TexAnim> slot = new Slot<TexAnim>(Slot.Type.DRAW, TexAnim.class);
     public final Coord3f ax;
@@ -44,8 +43,11 @@ public class TexAnim extends State {
 	this.ax = ax;
     }
 
-    public TexAnim(Resource res, Object... args) {
-	this(new Coord3f(Utils.fv(args[0]), Utils.fv(args[1]), 0));
+    @Material.SpecName("texrot")
+    public static class $texrot implements Material.Spec {
+	public void cons(Material.Buffer buf,Object... args) {
+	    buf.states.add(new TexAnim(new Coord3f(Utils.fv(args[0]), Utils.fv(args[1]), 0)));
+	}
     }
 
     private static final Uniform cax = new Uniform(VEC2, p -> p.get(slot).ax, slot);

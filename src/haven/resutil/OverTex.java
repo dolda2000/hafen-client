@@ -95,45 +95,24 @@ public class OverTex extends State {
 	    buf.put(slot, this);
     }
 
-    @Material.ResName("otex")
-    public static class $ctex implements Material.ResCons2 {
-	public Material.Res.Resolver cons(final Resource res, Object... args) {
-	    Indir<Resource> tres;
-	    int tid, a = 0;
-	    if(args[a] instanceof Indir) {
-		tres = Utils.irv(args[a++]);
-		tid = (args.length > 0) ? Utils.iv(args[a++]) : -1;
-	    } else if(args[a] instanceof String) {
-		tres = res.pool.load((String)args[a++], Utils.iv(args[a++]));
-		tid = (args.length > 0) ? Utils.iv(args[a++]) : -1;
-	    } else {
-		tres = res.indir();
-		tid = Utils.iv(args[a]);
-		a += 1;
-	    }
-	    final Function blend;
-	    if(args.length > a) {
-		String nm = (String)args[a++];
-		if(nm.equals("cp")) {
-		    blend = MiscLib.cpblend;
-		} else if(nm.equals("ol")) {
-		    blend = MiscLib.olblend;
-		} else if(nm.equals("a")) {
-		    blend = MiscLib.colblend;
-		} else {
-		    throw(new Resource.LoadException("Unknown overtex blend mode: " + nm, res));
+    @Material.SpecName("otex")
+    public static class $ctex implements Material.Spec {
+	public void cons(Material.Buffer buf, Object... args) {
+	    KeywordArgs desc = new KeywordArgs(args, buf.res.pool, "?@res", "id", "mode");
+	    Indir<Resource> tres = Utils.irv(desc.get("res", buf.res.indir()));
+	    int tid = Utils.iv(desc.get("id", -1));
+	    Function blend = MiscLib.cpblend;
+	    if(desc.has("mode")) {
+		String nm = Utils.sv(desc.get("mode"));
+		switch(nm) {
+		case "cp": blend = MiscLib.cpblend; break;
+		case "ol": blend = MiscLib.olblend; break;
+		case "a":  blend = MiscLib.colblend; break;
+		default: throw(new Resource.LoadException("Unknown overtex blend mode: " + nm, buf.res));
 		}
-	    } else {
-		blend = MiscLib.cpblend;
 	    }
-	    return(new Material.Res.Resolver() {
-		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
-			TexR rt = tres.get().layer(TexR.class, tid);
-			if(rt == null)
-			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
-			buf.add(new OverTex(rt.tex().img, blend));
-		    }
-		});
+	    TexR rt = tres.get().flayer(TexR.class, tid);
+	    buf.states.add(new OverTex(rt.tex().img, blend));
 	}
     }
 

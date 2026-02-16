@@ -129,11 +129,11 @@ public class RenderedNormals extends State {
 	}
     }
 
-    @Material.ResName("masknorm")
-    public static class $maskcol implements Material.ResCons {
+    @Material.SpecName("masknorm")
+    public static class $maskcol implements Material.Spec {
 	final Pipe.Op mask = p -> p.put(slot, null);
-	public Pipe.Op cons(Resource res, Object... args) {
-	    return(mask);
+	public void cons(Material.Buffer buf, Object... args) {
+	    buf.states.add(mask);
 	}
     }
 }

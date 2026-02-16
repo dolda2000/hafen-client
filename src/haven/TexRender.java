@@ -135,33 +135,24 @@ public abstract class TexRender implements Tex, Disposable {
 	}
     }
 
-    @Material.ResName("tex")
-    public static class $tex implements Material.ResCons2 {
+    @Material.SpecName("tex")
+    public static class $tex implements Material.Spec {
 	public static final boolean defclip = true;
 
-	public Material.Res.Resolver cons(Resource res, Object... args) {
-	    KeywordArgs desc = new KeywordArgs(args, res.pool, "?@res", "id", "flags");
-	    Indir<Resource> tres = Utils.irv(desc.get("res", res.indir()));
+	public void cons(Material.Buffer buf, Object... args) {
+	    KeywordArgs desc = new KeywordArgs(args, buf.res.pool, "?@res", "id", "flags");
+	    Indir<Resource> tres = Utils.irv(desc.get("res", buf.res.indir()));
 	    int tid = Utils.iv(desc.get("id", -1));
 	    String fl = Utils.sv(desc.get("flags", ""));
-	    boolean clip = (fl.indexOf('a') >= 0) ? false : (fl.indexOf('c') >= 0) ? true : defclip;
-	    return(new Material.Res.Resolver() {
-		    public void resolve(Collection<Pipe.Op> buf, Collection<Pipe.Op> dynbuf) {
-			TexRender tex;
-			TexR rt;
-			if(tid >= 0)
-			    rt = tres.get().layer(TexR.class, tid);
-			else
-			    rt = tres.get().layer(TexR.class);
-			if(rt != null) {
-			    tex = rt.tex();
-			} else {
-			    throw(new RuntimeException(String.format("Specified texture %d for %s not found in %s", tid, res, tres)));
-			}
-			buf.add(tex.draw);
-			buf.add(clip ? tex.clip : noclip);
-		    }
-		});
+	    boolean clip = desc.has("clip") ? Utils.bv(desc.get("clip")) : (fl.indexOf('a') >= 0) ? false : (fl.indexOf('c') >= 0) ? true : defclip;
+	    TexR rt;
+	    if(tid >= 0)
+		rt = tres.get().flayer(TexR.class, tid);
+	    else
+		rt = tres.get().flayer(TexR.class);
+	    TexRender tex = rt.tex();
+	    buf.states.add(tex.draw);
+	    buf.states.add(clip ? tex.clip : noclip);
 	}
     }
 }

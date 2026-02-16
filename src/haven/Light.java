@@ -175,25 +175,25 @@ public abstract class Light implements RenderTree.Node {
 	public void apply(Pipe p) {p.put(lighting, this);}
     }
 
-    @Material.ResName("col")
-    public static class $col implements Material.ResCons {
-	public Pipe.Op cons(Resource res, Object... args) {
+    @Material.SpecName("col")
+    public static class $col implements Material.Spec {
+	public void cons(Material.Buffer buf, Object... args) {
 	    if(args[0] instanceof FColor) {
-		return(new PhongLight(true, (FColor)args[0], (FColor)args[1], (FColor)args[2], (FColor)args[3], Utils.fv(args[4])));
+		buf.states.add(new PhongLight(true, (FColor)args[0], (FColor)args[1], (FColor)args[2], (FColor)args[3], Utils.fv(args[4])));
 	    } else {
-		return(new PhongLight(true, (Color)args[0], (Color)args[1], (Color)args[2], (Color)args[3], Utils.fv(args[4])));
+		buf.states.add(new PhongLight(true, (Color)args[0], (Color)args[1], (Color)args[2], (Color)args[3], Utils.fv(args[4])));
 	    }
 	}
     }
 
-    @Material.ResName("light")
-    public static class $light implements Material.ResCons {
-	public Pipe.Op cons(Resource res, Object... args) {
-	    switch((String)args[0]) {
+    @Material.SpecName("light")
+    public static class $light implements Material.Spec {
+	public void cons(Material.Buffer buf, Object... args) {
+	    switch(Utils.sv(args[0])) {
 	    case "def": case "n":
-		return(null);
+		return;
 	    default:
-		throw(new RuntimeException(String.format("%s using non-default lighting", res.name)));
+		throw(new RuntimeException(String.format("%s using non-default lighting", buf.res.name)));
 	    }
 	}
     }
@@ -213,15 +213,17 @@ public abstract class Light implements RenderTree.Node {
     }
 
     public static final CelShade celshade = new CelShade(true, false);
-    @Material.ResName("cel")
-    public static class $cel implements Material.ResCons {
-	public Pipe.Op cons(Resource res, Object... args) {
-	    if(args.length < 1)
-		return(celshade);
-	    String s = (String)args[0];
-	    boolean dif = (s.indexOf('d') >= 0);
-	    boolean spc = (s.indexOf('s') >= 0);
-	    return(new CelShade(dif, spc));
+    @Material.SpecName("cel")
+    public static class $cel implements Material.Spec {
+	public void cons(Material.Buffer buf, Object... args) {
+	    if(args.length < 1) {
+		buf.states.add(celshade);
+	    } else {
+		String s = Utils.sv(args[0]);
+		boolean dif = (s.indexOf('d') >= 0);
+		boolean spc = (s.indexOf('s') >= 0);
+		buf.states.add(new CelShade(dif, spc));
+	    }
 	}
     }
     
