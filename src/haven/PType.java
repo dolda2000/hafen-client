@@ -60,6 +60,7 @@ public interface PType<T> {
     public static final PType<java.awt.Color> COLOR = new Cast<>(java.awt.Color.class);
     public static final PType<FColor> FCOLOR = new Or<>("fcolor", new Cast<>(FColor.class),
 							new MapValue<>(COLOR, FColor::new));
+    public static final PType<UID> UID = new Cast<>(UID.class);
 
     public Maybe<? extends T> opt(Object val);
     public default T of(Object val) {
