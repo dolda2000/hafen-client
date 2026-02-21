@@ -127,6 +127,10 @@ public class Session implements Resource.Resolver {
 	}
     }
 
+    public Resource.Pool pool() {
+	return(Resource.remote());
+    }
+
     private static class CachedRes {
 	private final Waitable.Queue wq = new Waitable.Queue();
 	private final int resid;
