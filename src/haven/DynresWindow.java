@@ -536,7 +536,7 @@ public class DynresWindow extends Window {
 	}
 
 	public static Indir<Resource> consres(TexL tex) {
-	    Resource.Virtual cons = new Resource.Virtual("dyn/" + key, 1);
+	    Resource.Virtual cons = new Resource.Virtual(Resource.remote(), "dyn/" + key, 1);
 	    cons.add(new TexR.Image(cons, tex));
 	    return(() -> cons);
 	}
