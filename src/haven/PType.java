@@ -55,6 +55,11 @@ public interface PType<T> {
     public static final PType<List<?>> LIST = new Or<>("object-list", new MapValue<>(new Cast<List>(List.class), l -> (List<?>)l),
 							    new MapValue<>(new Cast<>(Object[].class), a -> Arrays.asList(a)));
     public static final PType<Map<?, ?>> MAP = new MapValue<>(new Cast<>(Map.class), m -> (Map<?, ?>)m);
+    public static final PType<Coord> COORD = new Cast<>(Coord.class);
+    public static final PType<Coord2d> FCOORD = new Cast<>(Coord2d.class);
+    public static final PType<java.awt.Color> COLOR = new Cast<>(java.awt.Color.class);
+    public static final PType<FColor> FCOLOR = new Or<>("fcolor", new Cast<>(FColor.class),
+							new MapValue<>(COLOR, FColor::new));
 
     public Maybe<? extends T> opt(Object val);
     public default T of(Object val) {
