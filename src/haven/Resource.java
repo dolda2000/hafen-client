@@ -256,10 +256,6 @@ public class Resource implements Serializable {
 	    super(pool, name, ver);
 	}
 
-	public Virtual(String name, int ver) {
-	    this(remote(), name, ver);
-	}
-
 	public void add(Layer layer) {
 	    layers.add(layer);
 	}
