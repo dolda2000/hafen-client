@@ -1981,7 +1981,7 @@ public class Resource implements Serializable {
 	for(Layer l : layers) {
 	    if(cl.isInstance(l)) {
 		L ll = cl.cast(l);
-		if(ll.layerid().equals(id))
+		if((id == null) || ll.layerid().equals(id))
 		    return(ll);
 	    }
 	}
