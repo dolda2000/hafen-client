@@ -35,7 +35,7 @@ import java.security.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
-public class Connection {
+public class Connection implements Transport {
     public static final Config.Variable<Boolean> encrypt = Config.Variable.propb("haven.hcrypt", false);
     private static final double ACK_HOLD = 0.030;
     private static final double OBJACK_HOLD = 0.08, OBJACK_HOLD_MAX = 0.5;
@@ -66,62 +66,6 @@ public class Connection {
 	    key = sk.register(sel, SelectionKey.OP_READ);
 	} catch(IOException e) {
 	    throw(new RuntimeException(e));
-	}
-    }
-
-    public static interface Callback {
-	public default void closed() {};
-	public default void handle(PMessage msg) {};
-	public default void handle(OCache.ObjDelta delta) {};
-	public default void mapdata(Message msg) {};
-
-	public static class Dumper implements Callback {
-	    public final Writer out;
-	    private final double epoch;
-
-	    public Dumper(Writer out) {
-		this.out = out;
-		this.epoch = Utils.rtime();
-	    }
-
-	    private void printf(String format, Object... args) {
-		try {
-		    out.write(String.format(format, args));
-		} catch(IOException e) {
-		    throw(new RuntimeException(e));
-		}
-	    }
-
-	    public void closed() {
-		printf("%4.6f close\n", Utils.rtime() - epoch);
-		try {
-		    out.close();
-		} catch(IOException e) {
-		    throw(new RuntimeException(e));
-		}
-	    }
-
-	    public void handle(PMessage msg) {
-		printf("%4.6f rmsg %d %s\n", Utils.rtime() - epoch, msg.type, Utils.bprint.enc(msg.bytes()));
-	    }
-
-	    public void handle(OCache.ObjDelta msg) {
-		printf("%4.6f objd", Utils.rtime() - epoch);
-		String fl = "";
-		if(msg.initframe > 0) fl += "i";
-		if((msg.fl & 2) != 0) fl += "v";
-		if((msg.fl & 4) != 0) fl += "o";
-		if(msg.rem) fl += "d";
-		printf(" %s %d %d", (fl == "") ? "n" : fl, msg.id, msg.frame);
-		if(msg.initframe > 0) printf(" %d", msg.initframe);
-		for(OCache.AttrDelta attr : msg.attrs)
-		    printf(" %d:%s", attr.type, Utils.bprint.enc(attr.bytes()));
-		printf("\n");
-	    }
-
-	    public void mapdata(Message msg) {
-		printf("%4.6f map %s\n", Utils.rtime() - epoch, Utils.b64.enc(msg.bytes()));
-	    }
 	}
     }
 

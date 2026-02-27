@@ -314,7 +314,7 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	    }
 	}
 	try {
-	    return(new Session(new java.net.InetSocketAddress(java.net.InetAddress.getByName(gameserv.host), gameserv.port), acct, Connection.encrypt.get(), cookie, args));
+	    return(Session.connect(new java.net.InetSocketAddress(java.net.InetAddress.getByName(gameserv.host), gameserv.port), acct, Connection.encrypt.get(), cookie, args));
 	} catch(Connection.SessionError e) {
 	    throw(new ConnectionError(e.getMessage()));
 	} catch(InterruptedException exc) {

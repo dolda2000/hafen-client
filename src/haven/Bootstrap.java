@@ -286,7 +286,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			if(i > 0)
 			    ui.uimsg(1, "prg", String.format("Connecting (address %d/%d)...", i + 1, addrs.size()));
 			try {
-			    sess = new Session(addrs.get(i), acct, Connection.encrypt.get(), cookie);
+			    sess = Session.connect(addrs.get(i), acct, Connection.encrypt.get(), cookie);
 			    break connect;
 			} catch(Connection.SessionConnError err) {
 			} catch(Connection.SessionError err) {

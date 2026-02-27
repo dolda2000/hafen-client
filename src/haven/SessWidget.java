@@ -40,7 +40,7 @@ public class SessWidget extends AWidget {
 	    byte[] cookie = (args[2] instanceof byte[]) ? (byte[])args[2] : Utils.hex.dec((String)args[2]);
 	    Object[] sargs = Utils.splice(args, 3);
 	    Session.User acct = ui.sess.user.copy().alias(null);
-	    return(new SessWidget(host, port, acct, ui.sess.conn.encrypted(), cookie, sargs));
+	    return(new SessWidget(host, port, acct, (ui.sess.conn instanceof Connection) && ((Connection)ui.sess.conn).encrypted(), cookie, sargs));
 	}
     }
 
@@ -64,7 +64,7 @@ public class SessWidget extends AWidget {
 			return(new Result(null, new Connection.SessionConnError()));
 		    }
 		    try {
-			return(new Result(new Session(new InetSocketAddress(host, port), acct, encrypt, cookie, args), null));
+			return(new Result(Session.connect(new InetSocketAddress(host, port), acct, encrypt, cookie, args), null));
 		    } catch(Connection.SessionError err) {
 			return(new Result(null, err));
 		    }
