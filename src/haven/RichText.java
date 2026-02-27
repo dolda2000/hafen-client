@@ -103,9 +103,12 @@ public class RichText extends Text {
 	public static ImageSource chain(ImageSource... srcs) {
 	    return((args, ap) -> {
 		for(ImageSource src : srcs) {
-		    Image ret = src.get(args, ap);
-		    if(ret != null)
+		    int[] ap2 = {ap[0]};
+		    Image ret = src.get(args, ap2);
+		    if(ret != null) {
+			ap[0] = ap2[0];
 			return(ret);
+		    }
 		}
 		return(null);
 	    });
@@ -113,8 +116,7 @@ public class RichText extends Text {
 
 	public static ImageSource id(String id, Supplier<? extends Image> img) {
 	    return((args, ap) -> {
-		if(args[ap[0]].equals(id)) {
-		    ap[0]++;
+		if(args[ap[0]++].equals(id)) {
 		    /* XXX? The Image cast indeed shouldn't be
 		     * necessary, but there seems to be a javac bug
 		     * that causes it not to emit the implicit cast
