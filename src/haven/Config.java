@@ -247,10 +247,11 @@ public class Config {
 	out.println("  -u USER            Authenticate as USER (together with -C)");
 	out.println("  -C HEXCOOKIE       Authenticate with specified hex-encoded cookie");
 	out.println("  -p PREFSPEC        Use alternate preference prefix");
+	out.println("  -R REPLAY          Replay protocol recording from file");
     }
 
     public static void cmdline(String[] args) {
-	PosixArgs opt = PosixArgs.getopt(args, "hdPGfU:r:S:u:C:p:");
+	PosixArgs opt = PosixArgs.getopt(args, "hdPGfU:r:S:u:C:p:R:");
 	if(opt == null) {
 	    usage(System.err);
 	    System.exit(1);
@@ -295,6 +296,9 @@ public class Config {
 		break;
 	    case 'p':
 		Utils.prefspec.set(opt.arg);
+		break;
+	    case 'R':
+		Bootstrap.replay.set(Utils.path(opt.arg));
 		break;
 	    }
 	}

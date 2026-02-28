@@ -38,6 +38,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
     public static final Config.Variable<byte[]> authck = Config.Variable.propb("haven.authck", null);
     public static final Config.Variable<byte[]> authtoken = Config.Variable.propb("haven.inittoken", null);
     public static final Config.Variable<String[]> servargs = Config.Variable.def(() -> null);
+    public static final Config.Variable<java.nio.file.Path> replay = Config.Variable.def(() -> null);
     public static boolean useinitauth = true;
     public final NamedSocketAddress server;
     public final String confname;

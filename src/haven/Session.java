@@ -34,6 +34,7 @@ import java.nio.*;
 import java.lang.ref.*;
 
 public class Session implements Resource.Resolver {
+    public static final Config.Variable<java.nio.file.Path> record = Config.Variable.propp("haven.record", "");
     public static final int PVER = 29;
 
     public static final int MSG_SESS = 0;
@@ -272,6 +273,13 @@ public class Session implements Resource.Resolver {
 	this.user = user;
 	this.glob = new Glob(this);
 	conn.add(conncb);
+	if(record.get() != null) {
+	    try {
+		conn.add(new Transport.Callback.Recorder(java.nio.file.Files.newBufferedWriter(record.get())));
+	    } catch(IOException e) {
+		throw(new RuntimeException(e));
+	    }
+	}
 	sesskey = SignKey.JWK.ES256.generate();
 	queuemsg((PMessage)new PMessage(RMessage.RMSG_SESSKEY).addtto(SignKey.JWK.format(sesskey, true)));
     }

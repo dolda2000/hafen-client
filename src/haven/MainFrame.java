@@ -460,7 +460,16 @@ public class MainFrame extends java.awt.Frame implements Console.Directory {
 	}
 	setupres();
 	UI.Runner fun = null;
-	if(Bootstrap.servargs.get() != null) {
+	if(Bootstrap.replay.get() != null) {
+	    try {
+		Transport.Playback player = new Transport.Playback(Files.newBufferedReader(Bootstrap.replay.get(), Utils.utf8));
+		fun = new RemoteUI(new Session(player, new Session.User("Playback")));
+		player.start();
+	    } catch(IOException e) {
+		System.err.println("hafen: " + e.getMessage());
+		System.exit(1);
+	    }
+	} else if(Bootstrap.servargs.get() != null) {
 	    try {
 		fun = new RemoteUI(connect(Bootstrap.servargs.get()));
 	    } catch(ConnectionError e) {
