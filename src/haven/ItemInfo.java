@@ -228,15 +228,18 @@ public abstract class ItemInfo {
     }
 
     public static class Pagina extends Tip {
-	public final String str;
+	public final RichText.Document doc;
 
-	public Pagina(Owner owner, String str) {
+	public Pagina(Owner owner, RichText.Document doc) {
 	    super(owner);
-	    this.str = str;
+	    this.doc = doc;
+	}
+	public Pagina(Owner owner, String str) {
+	    this(owner, new RichText.Document(str));
 	}
 
 	public BufferedImage tipimg(int w) {
-	    return(RichText.render(str, w).img);
+	    return(RichText.render(doc, w).img);
 	}
 
 	public void layout(Layout l) {

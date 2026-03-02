@@ -427,7 +427,7 @@ public class QuestWnd extends Widget {
 	    }
 
 	    protected void layouth(Widget cont) {
-		RichText text = ifnd.render(rendertext(), cont.sz.x - UI.scale(20));
+		RichText text = ifnd.render(rendertext(), cont.sz.x - UI.scale(20), RichText.IMAGESRC, RichText.ImageSource.res(res.get().pool));
 		cont.add(new Img(text.tex()), UI.scale(new Coord(10, 10)));
 	    }
 

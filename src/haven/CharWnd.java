@@ -36,7 +36,7 @@ import haven.resutil.Curiosity;
 import static haven.PUtils.*;
 
 public class CharWnd extends Window {
-    public static final RichText.Foundry ifnd = new RichText.Foundry(RichText.IMAGESRC, RichText.ImageSource.res(Resource.remote()),
+    public static final RichText.Foundry ifnd = new RichText.Foundry(RichText.IMAGESRC, RichText.ImageSource.legacy,
 								     java.awt.font.TextAttribute.FAMILY, "SansSerif",
 								     java.awt.font.TextAttribute.SIZE, UI.scale(9)).aa(true);
     public static final Text.Furnace catf = new BlurFurn(new TexFurn(new Text.Foundry(Text.fraktur, 25).aa(true), Window.ctex), UI.scale(3), UI.scale(2), new Color(96, 48, 0));
@@ -163,6 +163,15 @@ public class CharWnd extends Window {
 	public void tick(double dt) {
 	    update();
 	}
+    }
+
+    public static RichText.ImageSource resimg(Resource res) {
+	return(RichText.ImageSource.chain(RichText.ImageSource.id("self", () -> new RichText.Image(res.flayer(Resource.imgc))),
+					  RichText.ImageSource.res(res.pool)));
+    }
+
+    public static RichText.Document resdoc(Resource res, String text) {
+	return(new RichText.Document(text, RichText.IMAGESRC, resimg(res)));
     }
 
     @Deprecated
