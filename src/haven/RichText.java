@@ -146,7 +146,14 @@ public class RichText extends Text {
 
 	public static ImageSource res(Resource.Pool pool) {
 	    return((args, ap) -> {
-		Resource res = pool.loadwait(args[ap[0]++]);
+		String name = args[ap[0]++];
+		int ver = -1;
+		int p = name.lastIndexOf(':');
+		if(p >= 0) {
+		    ver = Integer.parseInt(name.substring(p + 1));
+		    name = name.substring(0, p);
+		}
+		Resource res = pool.loadwait(name, ver);
 		int id = -1;
 		if(args.length > ap[0]) {
 		    try {
