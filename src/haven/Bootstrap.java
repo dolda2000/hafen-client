@@ -38,6 +38,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
     public static final Config.Variable<byte[]> authck = Config.Variable.propb("haven.authck", null);
     public static final Config.Variable<byte[]> authtoken = Config.Variable.propb("haven.inittoken", null);
     public static final Config.Variable<String[]> servargs = Config.Variable.def(() -> null);
+    public static final Config.Variable<java.nio.file.Path> replay = Config.Variable.def(() -> null);
     public static boolean useinitauth = true;
     public final NamedSocketAddress server;
     public final String confname;
@@ -286,7 +287,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			if(i > 0)
 			    ui.uimsg(1, "prg", String.format("Connecting (address %d/%d)...", i + 1, addrs.size()));
 			try {
-			    sess = new Session(addrs.get(i), acct, Connection.encrypt.get(), cookie);
+			    sess = Session.connect(addrs.get(i), acct, Connection.encrypt.get(), cookie);
 			    break connect;
 			} catch(Connection.SessionConnError err) {
 			} catch(Connection.SessionError err) {

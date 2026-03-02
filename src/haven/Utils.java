@@ -776,7 +776,7 @@ public class Utils {
 		StringBuilder buf = new StringBuilder();
 		for(byte b : in) {
 		    if((char)b == '\\') {
-			buf.append("\\\\'");
+			buf.append("\\\\");
 		    } else if((b >= 33) && (b < 127)) {
 			buf.append((char)b);
 		    } else {

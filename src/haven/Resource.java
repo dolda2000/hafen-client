@@ -256,10 +256,6 @@ public class Resource implements Serializable {
 	    super(pool, name, ver);
 	}
 
-	public Virtual(String name, int ver) {
-	    this(remote(), name, ver);
-	}
-
 	public void add(Layer layer) {
 	    layers.add(layer);
 	}
@@ -1985,7 +1981,7 @@ public class Resource implements Serializable {
 	for(Layer l : layers) {
 	    if(cl.isInstance(l)) {
 		L ll = cl.cast(l);
-		if(ll.layerid().equals(id))
+		if((id == null) || ll.layerid().equals(id))
 		    return(ll);
 	    }
 	}

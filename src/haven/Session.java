@@ -34,6 +34,7 @@ import java.nio.*;
 import java.lang.ref.*;
 
 public class Session implements Resource.Resolver {
+    public static final Config.Variable<java.nio.file.Path> record = Config.Variable.propp("haven.record", "");
     public static final int PVER = 29;
 
     public static final int MSG_SESS = 0;
@@ -55,7 +56,7 @@ public class Session implements Resource.Resolver {
 
     static final int ackthresh = 30;
 
-    public final Connection conn;
+    public final Transport conn;
     public int connfailed = 0;
     public String connerror = null;
     LinkedList<PMessage> uimsgs = new LinkedList<PMessage>();
@@ -125,6 +126,10 @@ public class Session implements Resource.Resolver {
 	    res.boostprio(prio);
 	    return(true);
 	}
+    }
+
+    public Resource.Pool pool() {
+	return(Resource.remote());
     }
 
     private static class CachedRes {
@@ -242,7 +247,7 @@ public class Session implements Resource.Resolver {
 	}
     }
 
-    private final Connection.Callback conncb = new Connection.Callback() {
+    private final Transport.Callback conncb = new Transport.Callback() {
 	    public void closed() {
 		synchronized(uimsgs) {
 		    closed = true;
@@ -263,14 +268,27 @@ public class Session implements Resource.Resolver {
 	    }
 	};
 
-    public Session(SocketAddress server, User user, boolean encrypt, byte[] cookie, Object... args) throws InterruptedException {
-	this.conn = new Connection(server);
+    public Session(Transport conn, User user) {
+	this.conn = conn;
 	this.user = user;
 	this.glob = new Glob(this);
 	conn.add(conncb);
-	conn.connect((user.alias != null) ? user.alias : user.name, encrypt, cookie, args);
+	if(record.get() != null) {
+	    try {
+		conn.add(new Transport.Callback.Recorder(java.nio.file.Files.newBufferedWriter(record.get())));
+	    } catch(IOException e) {
+		throw(new RuntimeException(e));
+	    }
+	}
 	sesskey = SignKey.JWK.ES256.generate();
 	queuemsg((PMessage)new PMessage(RMessage.RMSG_SESSKEY).addtto(SignKey.JWK.format(sesskey, true)));
+    }
+
+    public static Session connect(SocketAddress server, User user, boolean encrypt, byte[] cookie, Object... args) throws InterruptedException {
+	Connection conn = new Connection(server);
+	Session sess = new Session(conn, user);
+	conn.connect((user.alias != null) ? user.alias : user.name, encrypt, cookie, args);
+	return(sess);
     }
 
     public void close() {
@@ -302,9 +320,5 @@ public class Session implements Resource.Resolver {
 
     public void sendmsg(PMessage msg) {
 	conn.send(msg);
-    }
-
-    public void sendmsg(byte[] msg) {
-	conn.send(ByteBuffer.wrap(msg));
     }
 }

@@ -492,9 +492,13 @@ public class OCache implements Iterable<Gob> {
     public static class AttrDelta extends PMessage {
 	public boolean old;
 
-	public AttrDelta(ObjDelta od, int type, Message blob, int len) {
-	    super(type, blob, len);
+	public AttrDelta(ObjDelta od, int type, byte[] blob) {
+	    super(type, blob);
 	    this.old = ((od.fl & 4) != 0);
+	}
+
+	public AttrDelta(ObjDelta od, int type, Message blob, int len) {
+	    this(od, type, blob.bytes(len));
 	}
 
 	public AttrDelta(AttrDelta from) {
