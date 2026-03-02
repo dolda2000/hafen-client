@@ -153,7 +153,7 @@ public class RichText extends Text {
 		    ver = Integer.parseInt(name.substring(p + 1));
 		    name = name.substring(0, p);
 		}
-		Resource res = pool.loadwait(name, ver);
+		Resource res = pool.load(name, ver).get();
 		int id = -1;
 		if(args.length > ap[0]) {
 		    try {
