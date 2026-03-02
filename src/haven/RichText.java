@@ -451,6 +451,11 @@ public class RichText extends Text {
 	public Document(String text) {
 	    this(text, (Map<? extends Attribute, ?>)null);
 	}
+
+	public static Document respag(Indir<Resource> res) {
+	    Resource r = res.get();
+	    return(new Document(r.flayer(Resource.pagina).text, IMAGESRC, ImageSource.res(r.pool)));
+	}
     }
 
     /*
