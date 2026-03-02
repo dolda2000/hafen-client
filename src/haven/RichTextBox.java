@@ -45,6 +45,10 @@ public class RichTextBox extends Widget {
 	this.sb = adda(new Scrollbar(sz.y, 0, 0), sz.x, 0, 1, 0);
     }
 
+    public RichTextBox(Coord sz, Indir<? extends RichText.Document> doc) {
+	this(sz, RichText.stdf, doc);
+    }
+
     public RichTextBox(Coord sz, String text, RichText.Foundry fnd) {
 	this(sz, fnd, () -> new RichText.Document(text));
     }
@@ -62,7 +66,7 @@ public class RichTextBox extends Widget {
 		return;
 	    }
 	    render = null;
-	    sb.max = this.text.sz().y + marg * 2 - sz.y;
+	    sb.max = (this.text == null) ? 0 : this.text.sz().y + marg * 2 - sz.y;
 	    sb.val = 0;
 	}
     }
@@ -84,8 +88,13 @@ public class RichTextBox extends Widget {
     }
 
     public void set(Indir<? extends RichText.Document> doc) {
-	render = doc;
-	ckrender();
+	if(doc != null) {
+	    render = doc;
+	    ckrender();
+	} else {
+	    render = null;
+	    text = null;
+	}
     }
 
     public void set(RichText.Document doc) {
