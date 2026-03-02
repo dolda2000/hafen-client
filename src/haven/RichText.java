@@ -39,6 +39,7 @@ import java.awt.font.*;
 import static java.text.AttributedCharacterIterator.Attribute;
 
 public class RichText extends Text {
+    public static final Attribute IMAGESRC = new Attribute("image-source") {};
     public static final Parser std;
     public static final Foundry stdf;
     public final Part parts;
@@ -47,6 +48,7 @@ public class RichText extends Text {
 	Map<Attribute, Object> a = new HashMap<Attribute, Object>();
 	a.put(TextAttribute.FAMILY, "SansSerif");
 	a.put(TextAttribute.SIZE, UI.scale(10.0f));
+	a.put(IMAGESRC, ImageSource.res(Resource.local()));
 	std = new Parser(a);
 	stdf = new Foundry(std);
     }
@@ -159,6 +161,15 @@ public class RichText extends Text {
 		throw(new RuntimeException("Found no image with id " + id + " in " + res.toString()));
 	    });
 	}
+
+	public static final ImageSource legacy = new ImageSource() {
+		final ImageSource back = res(Resource.remote());
+
+		public Image get(String[] args, int[] ap) {
+		    new Warning("legacy image source used").trace(true).issue();
+		    return(back.get(args, ap));
+		}
+	    };
     }
 
     public static class Image extends Part {
@@ -398,9 +409,9 @@ public class RichText extends Text {
     public static Map<? extends Attribute, ?> fillattrs2(Map<? extends Attribute, ?> def, Object... attrs) {
 	Map<Attribute, Object> a;
 	if(def == null)
-	    a = new HashMap<Attribute, Object>();
+	    a = new HashMap<>();
 	else
-	    a = new HashMap<Attribute, Object>(def);
+	    a = new HashMap<>(def);
 	for(int i = 0; i < attrs.length; i += 2)
 	    a.put((Attribute)attrs[i], attrs[i + 1]);
 	return(a);
@@ -408,6 +419,20 @@ public class RichText extends Text {
     
     public static Map<? extends Attribute, ?> fillattrs(Object... attrs) {
 	return(fillattrs2(null, attrs));
+    }
+
+    @SafeVarargs
+    public static Map<? extends Attribute, ?> mergeattrs(Map<? extends Attribute, ?>... parts) {
+	Map<Attribute, Object> ret = null;
+	for(Map<? extends Attribute, ?> part : parts) {
+	    if(part != null) {
+		if(ret == null)
+		    ret = new HashMap<>(part);
+		else
+		    ret.putAll(part);
+	    }
+	}
+	return(ret);
     }
 
     /*
@@ -434,23 +459,13 @@ public class RichText extends Text {
 
     public static class Parser {
 	private final Map<? extends Attribute, ?> defattrs;
-	private final ImageSource isrc;
 	
-	public Parser(ImageSource isrc, Map<? extends Attribute, ?> defattrs) {
-	    this.isrc = isrc;
+	public Parser(Map<? extends Attribute, ?> defattrs) {
 	    this.defattrs = fixattrs(defattrs);
 	}
 	
-	public Parser(Map<? extends Attribute, ?> defattrs) {
-	    this(ImageSource.res(Resource.local()), defattrs);
-	}
-	
-	public Parser(ImageSource isrc, Object... attrs) {
-	    this(isrc, fillattrs2(std.defattrs, attrs));
-	}
-	
 	public Parser(Object... attrs) {
-	    this(ImageSource.res(Resource.local()), attrs);
+	    this(fillattrs2(std.defattrs, attrs));
 	}
 	
 	public static class PState {
@@ -495,7 +510,7 @@ public class RichText extends Text {
 	protected Part tag(PState s, String tn, String[] args, Map<? extends Attribute, ?> attrs) throws IOException {
 	    if(tn == "img") {
 		int[] a = {0};
-		Image img = isrc.get(args, a);
+		Image img = ((ImageSource)attrs.get(IMAGESRC)).get(args, a);
 		img.attrs = attrs;
 		for(; a[0] < args.length; a[0]++) {
 		    int p = args[a[0]].indexOf('=');
@@ -670,9 +685,9 @@ public class RichText extends Text {
     }
     
     public static class Foundry {
-	private Parser parser;
-	private RState rs;
 	public boolean aa = false;
+	private final Parser parser;
+	private final RState rs;
 	
 	public Foundry(Parser parser) {
 	    this.parser = parser;
@@ -681,16 +696,8 @@ public class RichText extends Text {
 	    rs = new RState(g.getFontRenderContext());
 	}
 
-	public Foundry(ImageSource isrc, Map<? extends Attribute, ?> defattrs) {
-	    this(new Parser(isrc, defattrs));
-	}
-	
 	public Foundry(Map<? extends Attribute, ?> defattrs) {
 	    this(new Parser(defattrs));
-	}
-	
-	public Foundry(ImageSource isrc, Object... attrs) {
-	    this(new Parser(isrc, attrs));
 	}
 	
 	public Foundry(Object... attrs) {
@@ -706,6 +713,15 @@ public class RichText extends Text {
 
 	public Foundry(Font f, Color defcol) {
 	    this(xlate(f, defcol));
+	}
+
+
+	public Foundry derive(Map<? extends Attribute, ?> extra) {
+	    return(new Foundry(mergeattrs(parser.defattrs, extra)));
+	}
+
+	public Foundry derive(Object... extra) {
+	    return(new Foundry(fillattrs2(parser.defattrs, extra)));
 	}
 
 	public Foundry aa(boolean aa) {
@@ -777,12 +793,8 @@ public class RichText extends Text {
 	    return(sz);
 	}
 
-	public RichText render(String text, int width, Object... extra) {
-	    Map<? extends Attribute, ?> extram = null;
-	    if(extra.length > 0) {
-		extram = fillattrs(extra);
-	    }
-	    Part fp = parser.parse(text, extram);
+	public RichText render(String text, int width, Map<? extends Attribute, ?> extra) {
+	    Part fp = parser.parse(text, extra);
 	    fp.prepare(rs);
 	    fp = layout(fp, width);
 	    Coord sz = bounds(fp);
@@ -795,6 +807,13 @@ public class RichText extends Text {
 	    for(Part p = fp; p != null; p = p.next)
 		p.render(g);
 	    return(new RichText(text, img, fp));
+	}
+
+	public RichText render(String text, int width, Object... extra) {
+	    Map<? extends Attribute, ?> extram = null;
+	    if(extra.length > 0)
+		extram = fillattrs(extra);
+	    return(render(text, width, extram));
 	}
 	
 	public RichText render(String text) {
