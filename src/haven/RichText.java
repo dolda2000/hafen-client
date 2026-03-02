@@ -435,6 +435,24 @@ public class RichText extends Text {
 	return(ret);
     }
 
+    public static class Document {
+	public final String text;
+	public final Map<? extends Attribute, ?> attrs;
+
+	public Document(String text, Map<? extends Attribute, ?> attrs) {
+	    this.text = text;
+	    this.attrs = attrs;
+	}
+
+	public Document(String text, Object... attrs) {
+	    this(text, (attrs.length > 0) ? fillattrs(attrs) : null);
+	}
+
+	public Document(String text) {
+	    this(text, (Map<? extends Attribute, ?>)null);
+	}
+    }
+
     /*
      * This fix exists for Java 1.5. Apparently, before Java 1.6,
      * TextAttribute.SIZE had to be specified with a Float, and not a
@@ -793,8 +811,8 @@ public class RichText extends Text {
 	    return(sz);
 	}
 
-	public RichText render(String text, int width, Map<? extends Attribute, ?> extra) {
-	    Part fp = parser.parse(text, extra);
+	public RichText render(Document doc, int width) {
+	    Part fp = parser.parse(doc.text, doc.attrs);
 	    fp.prepare(rs);
 	    fp = layout(fp, width);
 	    Coord sz = bounds(fp);
@@ -806,14 +824,15 @@ public class RichText extends Text {
 		Utils.AA(g);
 	    for(Part p = fp; p != null; p = p.next)
 		p.render(g);
-	    return(new RichText(text, img, fp));
+	    return(new RichText(doc.text, img, fp));
+	}
+
+	public RichText render(String text, int width, Map<? extends Attribute, ?> extra) {
+	    return(render(new Document(text, extra), width));
 	}
 
 	public RichText render(String text, int width, Object... extra) {
-	    Map<? extends Attribute, ?> extram = null;
-	    if(extra.length > 0)
-		extram = fillattrs(extra);
-	    return(render(text, width, extram));
+	    return(render(new Document(text, extra), width));
 	}
 	
 	public RichText render(String text) {
@@ -821,6 +840,10 @@ public class RichText extends Text {
 	}
     }
     
+    public static RichText render(Document doc, int width) {
+	return(stdf.render(doc, width));
+    }
+
     public static RichText render(String text, int width, Object... extra) {
 	return(stdf.render(text, width, extra));
     }
