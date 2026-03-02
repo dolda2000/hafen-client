@@ -223,7 +223,7 @@ public class QuestWnd extends Widget {
 	    public String rendertext() {
 		StringBuilder buf = new StringBuilder();
 		Resource res = this.res.get();
-		buf.append("$img[" + res.name + "]\n\n");
+		buf.append("$img[self]\n\n");
 		buf.append("$b{$font[serif,16]{" + title() + "}}\n\n");
 		Resource.Pagina pag = res.layer(Resource.pagina);
 		if((pag != null) && !pag.text.equals("")) {
@@ -427,7 +427,7 @@ public class QuestWnd extends Widget {
 	    }
 
 	    protected void layouth(Widget cont) {
-		RichText text = ifnd.render(rendertext(), cont.sz.x - UI.scale(20), RichText.IMAGESRC, RichText.ImageSource.res(res.get().pool));
+		RichText text = ifnd.render(resdoc(res.get(), rendertext()), cont.sz.x - UI.scale(20));
 		cont.add(new Img(text.tex()), UI.scale(new Coord(10, 10)));
 	    }
 
