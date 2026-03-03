@@ -233,6 +233,7 @@ public class MCache implements MapSource {
 	public OverlayInfo id();
 	public void fill(Area a, boolean[] buf);
 	public default boolean filter(Area a) {return(false);}
+	public default void tick() {}
     }
 
     public void add(LocalOverlay ol) {
@@ -864,6 +865,8 @@ public class MCache implements MapSource {
 	}
 	for(Grid g : copy)
 	    g.tick(dt);
+	for(LocalOverlay lol : ols)
+	    lol.tick();
     }
 
     public void gtick(Render g) {
