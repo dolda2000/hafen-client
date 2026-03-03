@@ -51,7 +51,7 @@ public class MCache implements MapSource {
     Map<Coord, Grid> grids = new HashMap<Coord, Grid>();
     Session sess;
     Set<LocalOverlay> ols = new HashSet<>();
-    public int olseq = 0, chseq = 0;
+    public volatile int olseq = 0, chseq = 0;
     Map<Integer, Defrag> fragbufs = new TreeMap<Integer, Defrag>();
 
     public static class LoadingMap extends Loading {
