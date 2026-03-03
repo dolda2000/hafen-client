@@ -94,6 +94,11 @@ public class Area implements Iterable<Coord>, java.io.Serializable {
 		    Coord.of(Math.min(br.x, o.br.x), Math.min(br.y, o.br.y))));
     }
 
+    public Area include(Area o) {
+	return(corn(Coord.of(Math.min(ul.x, o.ul.x), Math.min(ul.y, o.ul.y)),
+		    Coord.of(Math.max(br.x, o.br.x), Math.max(br.y, o.br.y))));
+    }
+
     public Coord closest(Coord p) {
 	if(contains(p))
 	    return(p);
