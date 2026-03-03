@@ -865,7 +865,7 @@ public class MCache implements MapSource {
 	}
 	for(Grid g : copy)
 	    g.tick(dt);
-	for(LocalOverlay lol : ols)
+	for(LocalOverlay lol : new ArrayList<>(ols))
 	    lol.tick();
     }
 
