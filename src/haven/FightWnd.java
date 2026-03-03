@@ -123,7 +123,7 @@ public class FightWnd extends Widget {
 	    }
 	    Resource.Pagina pag = res.get().layer(Resource.pagina);
 	    if(pag != null)
-		l.add(new ItemInfo.Pagina(this, pag.text));
+		l.add(new ItemInfo.Pagina(this, resdoc(pag.getres(), pag.text)));
 	    return(l.render());
 	}
     }

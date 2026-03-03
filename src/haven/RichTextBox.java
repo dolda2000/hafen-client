@@ -26,45 +26,96 @@
 
 package haven;
 
+import java.util.*;
 import java.awt.Color;
 
 public class RichTextBox extends Widget {
-    private static final int margin1 = UI.scale(10);
-    private static final int margin2 = 2 * margin1;
+    private static final int marg = UI.scale(10);
+    public final RichText.Foundry fnd;
     public Color bg = Color.BLACK;
-    private final RichText.Foundry fnd;
+    private Indir<? extends RichText.Document> render;
     private RichText text;
     private Scrollbar sb;
-    
-    public RichTextBox(Coord sz, String text, RichText.Foundry fnd) {
+
+    public RichTextBox(Coord sz, RichText.Foundry fnd, Indir<? extends RichText.Document> doc) {
 	super(sz);
 	this.fnd = fnd;
-	this.text = fnd.render(text, sz.x - margin2);
-	this.sb = adda(new Scrollbar(sz.y, 0, this.text.sz().y + margin2 - sz.y), sz.x, 0, 1, 0);
+	this.render = doc;
+	this.text = null;
+	this.sb = adda(new Scrollbar(sz.y, 0, 0), sz.x, 0, 1, 0);
     }
-    
+
+    public RichTextBox(Coord sz, Indir<? extends RichText.Document> doc) {
+	this(sz, RichText.stdf, doc);
+    }
+
+    public RichTextBox(Coord sz, String text, RichText.Foundry fnd) {
+	this(sz, fnd, () -> new RichText.Document(text));
+    }
+
     public RichTextBox(Coord sz, String text, Object... attrs) {
 	this(sz, text, new RichText.Foundry(attrs));
     }
-    
+
+    private void ckrender() {
+	if(render != null) {
+	    try {
+		RichText.Document doc = render.get();
+		this.text = (doc == null) ? null : fnd.render(doc, sz.x - (marg * 2));
+	    } catch(Loading l) {
+		return;
+	    }
+	    render = null;
+	    sb.max = (this.text == null) ? 0 : this.text.sz().y + marg * 2 - sz.y;
+	    sb.val = 0;
+	}
+    }
+
+    public void tick(double dt) {
+	super.tick(dt);
+	ckrender();
+    }
+
     public void draw(GOut g) {
 	if(bg != null) {
 	    g.chcolor(bg);
 	    g.frect(Coord.z, sz);
 	    g.chcolor();
 	}
-	g.image(text.tex(), new Coord(margin1, margin1 - sb.val));
+	if(text != null)
+	    g.image(text.tex(), Coord.of(marg, marg - sb.val));
 	super.draw(g);
     }
-    
-    public void settext(String text) {
-	this.text = fnd.render(text, sz.x - margin2);
-	sb.max = this.text.sz().y + margin2 - sz.y;
-	sb.val = 0;
+
+    public void set(Indir<? extends RichText.Document> doc) {
+	if(doc != null) {
+	    render = doc;
+	    ckrender();
+	} else {
+	    render = null;
+	    text = null;
+	}
     }
-    
+
+    public void set(RichText.Document doc) {
+	set(() -> doc);
+    }
+
+    public void settext(Indir<String> text) {
+	set(() -> new RichText.Document(text.get()));
+    }
+
+    public void settext(String text, Object... attrs) {
+	set(new RichText.Document(text, attrs));
+    }
+
+    /* XXX: Just for binary compatibility */
+    public void settext(String text) {
+	set(new RichText.Document(text));
+    }
+
     public boolean mousewheel(MouseWheelEvent ev) {
-	sb.ch(ev.a * margin2);
+	sb.ch(ev.a * UI.scale(20));
 	return(true);
     }
 

@@ -1298,7 +1298,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
 	    if(help == null)
 		help = adda(new HelpWnd(res), 0.5, 0.25);
 	    else
-		help.res = res;
+		help.set(res);
 	} else if(msg == "map-mark") {
 	    long gobid = Utils.uiv(args[0]);
 	    long oid = ((Number)args[1]).longValue();

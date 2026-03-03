@@ -36,7 +36,9 @@ import haven.resutil.Curiosity;
 import static haven.PUtils.*;
 
 public class CharWnd extends Window {
-    public static final RichText.Foundry ifnd = new RichText.Foundry(RichText.ImageSource.res(Resource.remote()), java.awt.font.TextAttribute.FAMILY, "SansSerif", java.awt.font.TextAttribute.SIZE, UI.scale(9)).aa(true);
+    public static final RichText.Foundry ifnd = new RichText.Foundry(RichText.IMAGESRC, RichText.ImageSource.legacy,
+								     java.awt.font.TextAttribute.FAMILY, "SansSerif",
+								     java.awt.font.TextAttribute.SIZE, UI.scale(9)).aa(true);
     public static final Text.Furnace catf = new BlurFurn(new TexFurn(new Text.Foundry(Text.fraktur, 25).aa(true), Window.ctex), UI.scale(3), UI.scale(2), new Color(96, 48, 0));
     public static final Text.Furnace failf = new BlurFurn(new TexFurn(new Text.Foundry(Text.fraktur, 25).aa(true), Resource.loadimg("gfx/hud/fontred")), UI.scale(3), UI.scale(2), new Color(96, 48, 0));
     public static final Text.Foundry attrf = new Text.Foundry(Text.fraktur.deriveFont((float)Math.floor(UI.scale(18.0)))).aa(true);
@@ -163,26 +165,19 @@ public class CharWnd extends Window {
 	}
     }
 
-    public static class LoadingTextBox extends RichTextBox {
-	private Indir<String> text = null;
+    public static RichText.ImageSource resimg(Resource res) {
+	return(RichText.ImageSource.chain(RichText.ImageSource.id("self", () -> new RichText.Image(res.flayer(Resource.imgc))),
+					  RichText.ImageSource.res(res.pool)));
+    }
 
+    public static RichText.Document resdoc(Resource res, String text) {
+	return(new RichText.Document(text, RichText.IMAGESRC, resimg(res)));
+    }
+
+    @Deprecated
+    public static class LoadingTextBox extends RichTextBox {
 	public LoadingTextBox(Coord sz, String text, RichText.Foundry fnd) {super(sz, text, fnd);}
 	public LoadingTextBox(Coord sz, String text, Object... attrs) {super(sz, text, attrs);}
-
-	public void settext(Indir<String> text) {
-	    this.text = text;
-	}
-
-	public void draw(GOut g) {
-	    if(text != null) {
-		try {
-		    settext(text.get());
-		    text = null;
-		} catch(Loading l) {
-		}
-	    }
-	    super.draw(g);
-	}
     }
 
     public static class ImageInfoBox extends Widget {

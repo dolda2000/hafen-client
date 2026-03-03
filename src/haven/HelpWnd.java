@@ -27,36 +27,17 @@
 package haven;
 
 public class HelpWnd extends Window {
-    public static final RichText.Foundry fnd;
-    public Indir<Resource> res;
-    private Indir<Resource> showing = null;
+    public static final RichText.Foundry fnd = new RichText.Foundry().aa(true);
     private final RichTextBox text;
-    
-    static {
-	/* XXX: This should use the shown resource's respool. */
-	fnd = new RichText.Foundry(RichText.ImageSource.res(Resource.remote()));
-	fnd.aa = true;
-    }
-    
+
     public HelpWnd(Indir<Resource> res) {
 	super(Coord.z, "Help!", true);
-	this.res = res;
-	this.text = add(new RichTextBox(UI.scale(300, 400), "", fnd), Coord.z);
-	add(new Button(UI.scale(100), "Dismiss") {
-		public void click() {
-		    HelpWnd.this.wdgmsg("close");
-		}
-	    }, UI.scale(100, 410));
+	this.text = add(new RichTextBox(UI.scale(300, 400), fnd, () -> RichText.Document.respag(res)), Coord.z);
+	add(new Button(UI.scale(100), "Dismiss").action(() -> HelpWnd.this.wdgmsg("close")), UI.scale(100, 410));
 	pack();
     }
-    
-    public void tick(double dt) {
-	super.tick(dt);
-	if(res != showing) {
-	    try {
-		text.settext(res.get().flayer(Resource.pagina).text);
-		showing = res;
-	    } catch(Loading e) {}
-	}
+
+    public void set(Indir<Resource> res) {
+	text.set(() -> RichText.Document.respag(res));
     }
 }
