@@ -707,7 +707,7 @@ public class MiniMap extends Widget {
 	if((dloc == null) || (dgext == null))
 	    return(null);
 	Coord hsz = sz.div(2);
-	Coord gc = sc.sub(hsz).mul(scalef()).add(dloc.tc).div(cmaps);
+	Coord gc = dloc.tc.add(sc.sub(hsz).mul(scalef())).div(cmaps.mul(1 << dlvl));
 	if(!dgext.contains(gc))
 	    return(null);
 	return(display[dgext.ri(gc)]);
@@ -897,7 +897,7 @@ public class MiniMap extends Widget {
 	    if((grid != null) && (grid.dc != null)) {
 		DataGrid dgrid = grid.gref.get();
 		if(dgrid != null) {
-		    Coord gc = c.sub(grid.dc).mul(scalef());
+		    Coord gc = UI.unscale(c.sub(grid.dc));
 		    TileInfo tile = dgrid.tilesets[dgrid.gettile(gc)];
 		    if(tile != null) {
 			Resource tres = tile.res.get();
