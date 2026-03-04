@@ -488,12 +488,12 @@ public class MiniMap extends Widget {
 	}
     }
 
-    private float scalef() {
-	return(UI.unscale((float)(1 << dlvl)));
+    private int scalef() {
+	return(1 << dlvl);
     }
 
     public Coord st2c(Coord tc) {
-	return(UI.scale(tc.add(sessloc.tc).sub(dloc.tc).div(1 << dlvl)).add(sz.div(2)));
+	return(tc.add(sessloc.tc).sub(dloc.tc).div(scalef()).add(sz.div(2)));
     }
 
     public Coord p2c(Coord2d pc) {
@@ -503,8 +503,8 @@ public class MiniMap extends Widget {
     private void redisplay(Location loc) {
 	Coord hsz = sz.div(2);
 	Coord zmaps = cmaps.mul(1 << zoomlevel);
-	Area next = Area.sized(loc.tc.sub(hsz.mul(UI.unscale((float)(1 << zoomlevel)))).div(zmaps),
-	    UI.unscale(sz).div(cmaps).add(2, 2));
+	Area next = Area.sized(loc.tc.sub(hsz.mul(1 << zoomlevel)).div(zmaps),
+			       sz.div(cmaps).add(2, 2));
 	if((display == null) || (loc.seg != dseg) || (zoomlevel != dlvl) || !next.equals(dgext)) {
 	    DisplayGrid[] nd = new DisplayGrid[next.rsz()];
 	    if((display != null) && (loc.seg == dseg) && (zoomlevel == dlvl)) {
@@ -539,7 +539,7 @@ public class MiniMap extends Widget {
 	    disp.dc = ul;
 	    Tex img = disp.img();
 	    if(img != null)
-		g.image(img, ul, UI.scale(img.sz()));
+		g.image(img, ul);
 	} catch(Loading l) {
 	}
     }
@@ -547,7 +547,7 @@ public class MiniMap extends Widget {
     public void drawmap(GOut g) {
 	Coord hsz = sz.div(2);
 	for(Coord c : dgext) {
-	    Coord ul = UI.scale(c.mul(cmaps)).sub(dloc.tc.div(scalef())).add(hsz);
+	    Coord ul = c.mul(cmaps).sub(dloc.tc.div(scalef())).add(hsz);
 	    DisplayGrid disp = display[dgext.ri(c)];
 	    if(disp == null)
 		continue;
@@ -897,7 +897,7 @@ public class MiniMap extends Widget {
 	    if((grid != null) && (grid.dc != null)) {
 		DataGrid dgrid = grid.gref.get();
 		if(dgrid != null) {
-		    Coord gc = UI.unscale(c.sub(grid.dc));
+		    Coord gc = c.sub(grid.dc);
 		    TileInfo tile = dgrid.tilesets[dgrid.gettile(gc)];
 		    if(tile != null) {
 			Resource tres = tile.res.get();
