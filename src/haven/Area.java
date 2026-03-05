@@ -102,8 +102,8 @@ public class Area implements Iterable<Coord>, java.io.Serializable {
     public Coord closest(Coord p) {
 	if(contains(p))
 	    return(p);
-	return(Coord.of(Utils.clip(p.x, ul.x, br.x),
-			Utils.clip(p.y, ul.y, br.y)));
+	return(Coord.of(Utils.clip(p.x, ul.x, br.x - 1),
+			Utils.clip(p.y, ul.y, br.y - 1)));
     }
 
     public int area() {
