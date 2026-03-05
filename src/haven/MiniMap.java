@@ -492,6 +492,14 @@ public class MiniMap extends Widget {
 	return(Math.scalb(1f, dlvl - dmag));
     }
 
+    private Coord scalec(Coord c) {
+	int f = dlvl - dmag;
+	if(f < 0)
+	    return(c.div(1 << -f));
+	else
+	    return(c.mul(1 << f));
+    }
+
     public Coord st2c(Coord tc) {
 	return(tc.add(sessloc.tc).sub(dloc.tc).div(scalef()).add(sz.div(2)));
     }
@@ -708,7 +716,7 @@ public class MiniMap extends Widget {
 	if((dloc == null) || (dgext == null))
 	    return(null);
 	Coord hsz = sz.div(2);
-	Coord gc = dloc.tc.add(sc.sub(hsz).mul(scalef())).div(cmaps.mul(1 << dlvl));
+	Coord gc = dloc.tc.add(scalec(sc.sub(hsz))).div(cmaps.mul(1 << dlvl));
 	if(!dgext.contains(gc))
 	    return(null);
 	return(display[dgext.ri(gc)]);
