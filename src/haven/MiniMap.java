@@ -53,7 +53,7 @@ public class MiniMap extends Widget {
     public List<DisplayIcon> icons = Collections.emptyList();
     protected Locator setloc;
     protected boolean follow;
-    protected int zoomlevel = 0, maglevel = 0;
+    protected int zoomlevel = 0, maglevel = Utils.clip((int)Math.round(Math.log(UI.scale(1.0)) / Math.log(2)), 0, 3);
     protected DisplayGrid[] display;
     protected Area dgext, dtext;
     protected Segment dseg;
