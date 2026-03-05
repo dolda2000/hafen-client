@@ -915,6 +915,7 @@ public class MiniMap extends Widget {
 		DataGrid dgrid = grid.gref.get();
 		if(dgrid != null) {
 		    Coord gc = c.sub(grid.dc).div(1 << dmag);
+		    gc = Area.sized(cmaps).closest(gc); /* XXX: This should not be necessary. */
 		    TileInfo tile = dgrid.tilesets[dgrid.gettile(gc)];
 		    if(tile != null) {
 			Resource tres = tile.res.get();
