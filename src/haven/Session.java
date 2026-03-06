@@ -35,7 +35,7 @@ import java.lang.ref.*;
 
 public class Session implements Resource.Resolver {
     public static final Config.Variable<java.nio.file.Path> record = Config.Variable.propp("haven.record", "");
-    public static final int PVER = 29;
+    public static final int PVER = 30;
 
     public static final int MSG_SESS = 0;
     public static final int MSG_REL = 1;
