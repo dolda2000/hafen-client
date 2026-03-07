@@ -513,7 +513,7 @@ public class MiniMap extends Widget {
 	Coord zmaps = cmaps.mul(1 << zoomlevel);
 	Area next = Area.sized(loc.tc.sub(hsz.mul(1 << zoomlevel).div(1 << maglevel)).div(zmaps),
 			       sz.div(1 << maglevel).div(cmaps).add(2, 2));
-	if((display == null) || (loc.seg != dseg) || (zoomlevel != dlvl) || !next.equals(dgext)) {
+	if((display == null) || (loc.seg != dseg) || (zoomlevel != dlvl) || (maglevel != dmag) || !next.equals(dgext)) {
 	    DisplayGrid[] nd = new DisplayGrid[next.rsz()];
 	    if((display != null) && (loc.seg == dseg) && (zoomlevel == dlvl)) {
 		for(Coord c : dgext) {
