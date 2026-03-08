@@ -87,6 +87,10 @@ public class MiniMap extends Widget {
 	    Objects.requireNonNull(tc);
 	    this.seg = seg; this.tc = tc;
 	}
+
+	public String toString() {
+	    return(String.format("(%d, %d) @ %s", tc.x, tc.y, Long.toUnsignedString(seg.id, 16)));
+	}
     }
 
     public interface Locator {
