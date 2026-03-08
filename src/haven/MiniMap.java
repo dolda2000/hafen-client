@@ -108,8 +108,11 @@ public class MiniMap extends Widget {
 	    MCache map = sess.glob.map;
 	    if(lastgrid != null) {
 		synchronized(map.grids) {
-		    if(map.grids.get(lastgrid.gc) == lastgrid)
-			return(lastloc);
+		    if(map.grids.get(lastgrid.gc) == lastgrid) {
+			GridInfo info = file.gridinfo.get(lastgrid.id);
+			if((info != null) && (info.seg == lastloc.seg.id))
+			    return(lastloc);
+		    }
 		}
 		lastgrid = null;
 		lastloc = null;
