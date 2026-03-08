@@ -189,14 +189,14 @@ public class MiniMap extends Widget {
 	Location dloc = this.dloc;
 	if((dloc == null) || (dloc.seg != loc.seg))
 	    return(null);
-	return(loc.tc.sub(dloc.tc).div(scalef()).add(sz.div(2)));
+	return(l2dscale(loc.tc.sub(dloc.tc)).add(sz.div(2)));
     }
 
     public Location xlate(Coord sc) {
 	Location dloc = this.dloc;
 	if(dloc == null)
 	    return(null);
-	Coord tc = sc.sub(sz.div(2)).mul(scalef()).add(dloc.tc);
+	Coord tc = d2lscale(sc.sub(sz.div(2))).add(dloc.tc);
 	return(new Location(dloc.seg, tc));
     }
 
@@ -495,20 +495,16 @@ public class MiniMap extends Widget {
 	}
     }
 
-    private float scalef() {
-	return(Math.scalb(1f, dlvl - dmag));
+    private Coord l2dscale(Coord c) {
+	return(c.mul(1 << dmag).div(1 << dlvl));
     }
 
-    private Coord scalec(Coord c) {
-	int f = dlvl - dmag;
-	if(f < 0)
-	    return(c.div(1 << -f));
-	else
-	    return(c.mul(1 << f));
+    private Coord d2lscale(Coord c) {
+	return(c.mul(1 << dlvl).div(1 << dmag));
     }
 
     public Coord st2c(Coord tc) {
-	return(tc.add(sessloc.tc).sub(dloc.tc).div(scalef()).add(sz.div(2)));
+	return(l2dscale(tc.add(sessloc.tc).sub(dloc.tc)).add(sz.div(2)));
     }
 
     public Coord p2c(Coord2d pc) {
@@ -563,7 +559,7 @@ public class MiniMap extends Widget {
     public void drawmap(GOut g) {
 	Coord hsz = sz.div(2);
 	for(Coord c : dgext) {
-	    Coord ul = c.mul(cmaps).mul(1 << dmag).sub(dloc.tc.div(scalef())).add(hsz);
+	    Coord ul = c.mul(cmaps).mul(1 << dmag).sub(l2dscale(dloc.tc)).add(hsz);
 	    DisplayGrid disp = display[dgext.ri(c)];
 	    if(disp == null)
 		continue;
@@ -580,7 +576,7 @@ public class MiniMap extends Widget {
 	    for(DisplayMarker mark : dgrid.markers(true)) {
 		if(filter(mark))
 		    continue;
-		mark.draw(g, mark.m.tc.sub(dloc.tc).div(scalef()).add(hsz));
+		mark.draw(g, l2dscale(mark.m.tc.sub(dloc.tc)).add(hsz));
 	    }
 	}
     }
@@ -723,7 +719,7 @@ public class MiniMap extends Widget {
 	if((dloc == null) || (dgext == null))
 	    return(null);
 	Coord hsz = sz.div(2);
-	Coord gc = dloc.tc.add(scalec(sc.sub(hsz))).div(cmaps.mul(1 << dlvl));
+	Coord gc = dloc.tc.add(d2lscale(sc.sub(hsz))).div(cmaps.mul(1 << dlvl));
 	if(!dgext.contains(gc))
 	    return(null);
 	return(display[dgext.ri(gc)]);
@@ -746,7 +742,7 @@ public class MiniMap extends Widget {
 	    if(dgrid == null)
 		continue;
 	    for(DisplayMarker mark : dgrid.markers(false)) {
-		if((mark.hit != null) && mark.hit.contains(tc.sub(mark.m.tc).div(scalef())) && !filter(mark))
+		if((mark.hit != null) && mark.hit.contains(l2dscale(tc.sub(mark.m.tc))) && !filter(mark))
 		    return(mark);
 	    }
 	}
@@ -867,7 +863,7 @@ public class MiniMap extends Widget {
 	    if(dragging) {
 		setloc = null;
 		follow = false;
-		curloc = new Location(curloc.seg, dmc.add(dsc.sub(ev.c).mul(scalef())));
+		curloc = new Location(curloc.seg, dmc.add(d2lscale(dsc.sub(ev.c))));
 	    } else if(ev.c.dist(dsc) > 5) {
 		dragging = true;
 	    }
