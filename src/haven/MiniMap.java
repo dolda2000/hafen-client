@@ -742,7 +742,7 @@ public class MiniMap extends Widget {
 	    if(dgrid == null)
 		continue;
 	    for(DisplayMarker mark : dgrid.markers(false)) {
-		if((mark.hit != null) && mark.hit.contains(l2dscale(tc.sub(mark.m.tc))) && !filter(mark))
+		if((mark.hit != null) && mark.hit.contains(l2dscale(tc).sub(l2dscale(mark.m.tc))) && !filter(mark))
 		    return(mark);
 	    }
 	}
