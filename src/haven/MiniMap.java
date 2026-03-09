@@ -53,7 +53,7 @@ public class MiniMap extends Widget {
     public List<DisplayIcon> icons = Collections.emptyList();
     protected Locator setloc;
     protected boolean follow;
-    protected int zoomlevel = 0, maglevel = Utils.clip((int)Math.round(Math.log(UI.scale(1.0)) / Math.log(2)), 0, 3);
+    protected int zoomlevel = 0, maglevel = 1 << Utils.clip((int)Math.round(Math.log(UI.scale(1.0)) / Math.log(2)), 0, 3);
     protected DisplayGrid[] display;
     protected Area dgext, dtext;
     protected Segment dseg;
@@ -496,11 +496,11 @@ public class MiniMap extends Widget {
     }
 
     private Coord l2dscale(Coord c) {
-	return(c.mul(1 << dmag).div(1 << dlvl));
+	return(c.mul(dmag).div(1 << dlvl));
     }
 
     private Coord d2lscale(Coord c) {
-	return(c.mul(1 << dlvl).div(1 << dmag));
+	return(c.mul(1 << dlvl).div(dmag));
     }
 
     public Coord st2c(Coord tc) {
@@ -514,8 +514,8 @@ public class MiniMap extends Widget {
     private void redisplay(Location loc) {
 	Coord hsz = sz.div(2);
 	Coord zmaps = cmaps.mul(1 << zoomlevel);
-	Area next = Area.sized(loc.tc.sub(hsz.mul(1 << zoomlevel).div(1 << maglevel)).div(zmaps),
-			       sz.div(1 << maglevel).div(cmaps).add(2, 2));
+	Area next = Area.sized(loc.tc.sub(hsz.mul(1 << zoomlevel).div(maglevel)).div(zmaps),
+			       sz.div(maglevel).div(cmaps).add(2, 2));
 	if((display == null) || (loc.seg != dseg) || (zoomlevel != dlvl) || (maglevel != dmag) || !next.equals(dgext)) {
 	    DisplayGrid[] nd = new DisplayGrid[next.rsz()];
 	    if((display != null) && (loc.seg == dseg) && (zoomlevel == dlvl)) {
@@ -551,7 +551,7 @@ public class MiniMap extends Widget {
 	    disp.dc = ul;
 	    Tex img = disp.img();
 	    if(img != null)
-		g.image(img, ul, img.sz().mul(1 << dmag));
+		g.image(img, ul, img.sz().mul(dmag));
 	} catch(Loading l) {
 	}
     }
@@ -559,7 +559,7 @@ public class MiniMap extends Widget {
     public void drawmap(GOut g) {
 	Coord hsz = sz.div(2);
 	for(Coord c : dgext) {
-	    Coord ul = c.mul(cmaps).mul(1 << dmag).sub(l2dscale(dloc.tc)).add(hsz);
+	    Coord ul = c.mul(cmaps).mul(dmag).sub(l2dscale(dloc.tc)).add(hsz);
 	    DisplayGrid disp = display[dgext.ri(c)];
 	    if(disp == null)
 		continue;
@@ -893,8 +893,8 @@ public class MiniMap extends Widget {
 
     public boolean mousewheel(MouseWheelEvent ev) {
 	if(ev.a > 0) {
-	    if(maglevel > 0) {
-		maglevel--;
+	    if(maglevel > 1) {
+		maglevel >>= 1;
 	    } else {
 		if(allowzoomout())
 		    zoomlevel = Math.min(zoomlevel + 1, dlvl + 1);
@@ -903,7 +903,7 @@ public class MiniMap extends Widget {
 	    if(zoomlevel > 0) {
 		zoomlevel--;
 	    } else {
-		maglevel = Math.min(maglevel + 1, 3);
+		maglevel = Math.min(maglevel << 1, 8);
 	    }
 	}
 	return(true);
@@ -917,7 +917,7 @@ public class MiniMap extends Widget {
 	    if((grid != null) && (grid.dc != null)) {
 		DataGrid dgrid = grid.gref.get();
 		if(dgrid != null) {
-		    Coord gc = c.sub(grid.dc).div(1 << dmag);
+		    Coord gc = c.sub(grid.dc).div(dmag);
 		    gc = Area.sized(cmaps).closest(gc); /* XXX: This should not be necessary. */
 		    TileInfo tile = dgrid.tilesets[dgrid.gettile(gc)];
 		    if(tile != null) {
