@@ -603,7 +603,6 @@ public class MiniMap extends Widget {
 			    DisplayIcon disp = pmap.remove(icon);
 			    if(disp == null)
 				disp = new DisplayIcon(icon, conf);
-			    disp.update(gob.rc, gob.a);
 			    ret.add(disp);
 			}
 		    }
@@ -614,6 +613,8 @@ public class MiniMap extends Widget {
 	    if(disp.force())
 		ret.add(disp);
 	}
+	for(DisplayIcon disp : ret)
+	    disp.update(disp.gob.rc, disp.gob.a);
 	Collections.sort(ret, (a, b) -> a.z - b.z);
 	if(ret.size() == 0)
 	    return(Collections.emptyList());
