@@ -368,8 +368,7 @@ public class MapWnd extends Window implements Console.Directory {
 	view.markobjs();
 	if(visible) {
 	    if(mrefocus != null) {
-		List<Predicate<Marker>> all = Arrays.asList(pmarkers, smarkers);
-		for(Predicate<Marker> filter : all) {
+		for(Predicate<Marker> filter : Arrays.asList(pmarkers, smarkers)) {
 		    if(filter.test(mrefocus)) {
 			if(filter != mflt) {
 			    mflt = filter;
