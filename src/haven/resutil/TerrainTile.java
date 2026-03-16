@@ -281,6 +281,15 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	this.transset = transset;
     }
 
+    public TerrainTile(int id, TerrainTile from) {
+	super(id);
+	this.noise = from.noise;
+	this.base = from.base;
+	this.draw = from.draw;
+	this.var = from.var;
+	this.transset = from.transset;
+    }
+
     public void lay(MapMesh m, Random rnd, Coord lc, Coord gc) {
 	lay(m, lc, gc, this, false);
     }
@@ -407,6 +416,12 @@ public class TerrainTile extends Tiler implements Tiler.MCons, Tiler.CTrans {
 	    super(id, noise, base, var, transset);
 	    this.rth = rth;
 	    this.rcons = new Ridges.TexCons(rmat, texh);
+	}
+
+	public RidgeTile(int id, RidgeTile from) {
+	    super(id, from);
+	    this.rcons = from.rcons;
+	    this.rth = from.rth;
 	}
 
 	public double breakz() {return(rth);}
