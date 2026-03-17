@@ -132,7 +132,6 @@ public class Utils {
 	int ca = 0, nc = 0;
 	double last = 0, first = Double.POSITIVE_INFINITY, now = rtime();
 	SocketChannel ret = null;
-	Debug.dump(now, haddrs);
 	try(Selector sel = Selector.open()) {
 	    outer: while(true) {
 		if((ca == na) && (nc == 0)) {
@@ -171,7 +170,6 @@ public class Utils {
 		sel.selectedKeys().clear();
 		sel.select(Math.max((long)Math.ceil((next - now) * 1000), 1l));
 		now = Utils.rtime();
-		Debug.dump(now, cur, started, errors, ca, nc, act);
 		first = Double.POSITIVE_INFINITY;
 		for(int i = 0; i < nc; i++) {
 		    int a = act[i];
