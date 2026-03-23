@@ -126,9 +126,11 @@ public class Utils {
 	    try {
 		sk = SocketChannel.open();
 		sk.socket().setSoTimeout(5000);
-		sk.connect(new InetSocketAddress(haddr, port));
+		sk.socket().connect(new InetSocketAddress(haddr, port), 5000);
 		fin = true;
 		return(sk);
+	    } catch(ClosedByInterruptException e) {
+		throw(e);
 	    } catch(IOException e) {
 		if(lerr != null)
 		    e.addSuppressed(lerr);

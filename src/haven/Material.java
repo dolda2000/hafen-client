@@ -251,6 +251,23 @@ public class Material implements Pipe.Op {
 	}
     }
 
+    public static class ResMaterial extends Material {
+	public final int id;
+	public final Resource res;
+	public final Res info;
+
+	public ResMaterial(Pipe.Op[] states, Pipe.Op[] dynstates, Res info) {
+	    super(states, dynstates);
+	    this.id = info.id;
+	    this.res = info.getres();
+	    this.info = info;
+	}
+
+	public String toString() {
+	    return(super.toString() + "@" + res.name);
+	}
+    }
+
     @Resource.LayerName("mat2")
     public static class Res extends Resource.Layer implements Resource.IDLayer<Integer> {
 	public final int id;
@@ -295,11 +312,7 @@ public class Material implements Pipe.Op {
 				part.cons(cons, Utils.splice(spec, 1));
 			    i.remove();
 			}
-			m = new Material(cons.states.toArray(new Pipe.Op[0]), cons.dynstates.toArray(new Pipe.Op[0])) {
-				public String toString() {
-				    return(super.toString() + "@" + getres().name);
-				}
-			    };
+			m = new ResMaterial(cons.states.toArray(new Pipe.Op[0]), cons.dynstates.toArray(new Pipe.Op[0]), this);
 			cons = null;
 		    }
 		}

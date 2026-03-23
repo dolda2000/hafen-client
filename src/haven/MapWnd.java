@@ -280,7 +280,7 @@ public class MapWnd extends Window implements Console.Directory {
 		    Tex img = disp.olimg(tag);
 		    if(img != null) {
 			g.chcolor(255, 255, 255, olalpha);
-			g.image(img, ul, img.sz().mul(1 << dmag));
+			g.image(img, ul, img.sz().mul(dmag));
 		    }
 		} catch(Loading l) {
 		}
@@ -368,8 +368,7 @@ public class MapWnd extends Window implements Console.Directory {
 	view.markobjs();
 	if(visible) {
 	    if(mrefocus != null) {
-		List<Predicate<Marker>> all = Arrays.asList(pmarkers, smarkers);
-		for(Predicate<Marker> filter : all) {
+		for(Predicate<Marker> filter : Arrays.asList(pmarkers, smarkers)) {
 		    if(filter.test(mrefocus)) {
 			if(filter != mflt) {
 			    mflt = filter;
