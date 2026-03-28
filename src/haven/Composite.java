@@ -40,7 +40,7 @@ public class Composite extends Drawable implements EquipTarget {
     public final Indir<Resource> base;
     public final Resource baseres;
     public final Composited comp;
-    public int pseq;
+    public int pseq = -1;
     public List<MD> nmod;
     public List<ED> nequ;
     private Collection<ResData> nposes = null, tposes = null;
