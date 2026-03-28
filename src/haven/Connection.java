@@ -40,6 +40,7 @@ public class Connection implements Transport {
     private static final double ACK_HOLD = 0.030;
     private static final double OBJACK_HOLD = 0.08, OBJACK_HOLD_MAX = 0.5;
     public final SocketAddress server;
+    public final Stats stats = new Stats();
     private final Collection<Callback> cbs = new ArrayList<>();
     private final DatagramChannel sk;
     private final Selector sel;
@@ -175,6 +176,59 @@ public class Connection implements Transport {
 	}
     }
 
+    public static class Stats {
+	private final double[] rpltimes = new double[32];
+	private long ptx, prx, pretx;
+	private long btx, brx, prerx, prorx;
+	private int rplhead = 0, nrpls = 0;
+	private double srtt, rttv;
+
+	private void addreply(double time) {
+	    rpltimes[rplhead] = time;
+	    rplhead = (rplhead + 1) % rpltimes.length;
+	    if(nrpls < rpltimes.length)
+		nrpls++;
+	    {
+		double s = 0;
+		for(int i = 0; i < nrpls; i++)
+		    s += rpltimes[i];
+		srtt = s / nrpls;
+	    }
+	    {
+		double v = 0;
+		for(int i = 0; i < nrpls; i++) {
+		    double d = rpltimes[i] - srtt;
+		    v += d * d;
+		}
+		rttv = Math.sqrt(v / nrpls);
+	    }
+	}
+
+	private static final String[] apfx = {"", "k", "M", "G", "T"};
+	private String abbr(String fmt, double n) {
+	    int pi = 0;
+	    while((n >= 1000) && (pi < apfx.length - 1)) {
+		n /= 1000;
+		pi++;
+	    }
+	    return(String.format(fmt, n, apfx[pi]));
+	}
+
+	public String toString() {
+	    StringBuilder buf = new StringBuilder();
+	    buf.append(String.format("RTT %.2f\u00b1%.2f ms", srtt * 1000, rttv * 1000));
+	    buf.append(String.format(", RX %s/%s", abbr("%.0f %sB", brx), abbr("%.0f %sP", prx)));
+	    if((prerx > 0) || (prorx > 0)) {
+		buf.append(String.format(" (R %s, O %s)", abbr("%.0f%s", prerx), abbr("%.0f%s", prorx)));
+	    }
+	    buf.append(String.format(", TX %s/%s", abbr("%.0f %sB", btx), abbr("%.0f %sP", ptx)));
+	    if(pretx > 0) {
+		buf.append(String.format(" (Re %s)", abbr("%.0f%s", pretx)));
+	    }
+	    return(buf.toString());
+	}
+    }
+
     private class Worker extends HackThread {
 	private Task init;
 	
@@ -238,13 +292,18 @@ public class Connection implements Transport {
 	    byte type = recvbuf.get();
 	    byte[] buf = new byte[recvbuf.remaining()];
 	    recvbuf.get(buf);
+	    stats.prx++;
+	    stats.brx += buf.length;
 	    return(new PMessage(type, buf));
 	}
     }
 
     public void send(ByteBuffer msg) {
 	try {
+	    long sz = msg.remaining();
 	    sk.write(msg);
+	    stats.ptx++;
+	    stats.btx += sz;
 	} catch(IOException e) {
 	    /* Generally assume errors are transient and treat them as
 	     * packet loss, but are there perhaps errors that
@@ -346,6 +405,7 @@ public class Connection implements Transport {
 				    if((crypt == null) || cr) {
 					result = 0;
 					Connection.this.crypt = crypt;
+					stats.addreply(Utils.rtime() - last);
 					return(new Main());
 				    }
 				} else {
@@ -441,7 +501,12 @@ public class Connection implements Transport {
 		} while(msg != null);
 		sendack(lastack);
 	    } else if(sd > 0) {
-		waiting.put((short)msg.seq, msg);
+		if(waiting.put((short)msg.seq, msg) == null)
+		    stats.prorx++;
+		else
+		    stats.prerx++;
+	    } else {
+		stats.prerx++;
 	    }
 	}
 
@@ -456,10 +521,12 @@ public class Connection implements Transport {
 		for(Iterator<RMessage> i = pending.iterator(); i.hasNext();) {
 		    RMessage msg = i.next();
 		    short sd = (short)(msg.seq - seq);
-		    if(sd <= 0)
+		    if(sd <= 0) {
+			stats.addreply(now - msg.first);
 			i.remove();
-		    else
+		    } else {
 			break;
+		    }
 		}
 	    }
 	}
@@ -582,6 +649,10 @@ public class Connection implements Transport {
 			rmsg.adduint16(msg.seq).adduint8(msg.type).addbytes(msg.fin());
 			send(rmsg);
 			msg.last = now;
+			if(msg.retx == 0)
+			    msg.first = now;
+			else
+			    stats.pretx++;
 			msg.retx++;
 			lasttx = now;
 		    } else {

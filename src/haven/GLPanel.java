@@ -272,6 +272,8 @@ public interface GLPanel extends UIPanel, UI.Context {
 		FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "Mapview: %s", map.stats());
 		// FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "Click: Map: %s, Obj: %s", map.clmaplist.stats(), map.clobjlist.stats());
 	    }
+	    if((ui.sess != null) && (ui.sess.conn instanceof Connection))
+		FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "Connection: %s", ((Connection)ui.sess.conn).stats);
 	    FastText.aprintf(g, new Coord(10, y -= dy), 0, 1, "Async: L %s, D %s", ui.loader.stats(), Defer.gstats());
 	    int rqd = Resource.local().qdepth() + Resource.remote().qdepth();
 	    if(rqd > 0)
