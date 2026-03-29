@@ -223,7 +223,7 @@ public class Connection implements Transport {
 	    }
 	    buf.append(String.format(", TX %s/%s", abbr("%.0f %sB", btx), abbr("%.0f %sP", ptx)));
 	    if(pretx > 0) {
-		buf.append(String.format(" (Re %s)", abbr("%.0f%s", pretx)));
+		buf.append(String.format(" (R %s)", abbr("%.0f%s", pretx)));
 	    }
 	    return(buf.toString());
 	}
