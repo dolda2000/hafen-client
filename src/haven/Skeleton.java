@@ -491,51 +491,72 @@ public class Skeleton {
 	    });
     }
 
-    public static PoseMod combine(final PoseMod... mods) {
-	PoseMod first = mods[0];
-	return(first.skel().new PoseMod(first.owner) {
-		final boolean stat; {
-		    boolean s = true;
-		    for(PoseMod m : mods)
-			s = s && m.stat();
-		    stat = s;
-		}
+    public class CombinedMod extends PoseMod {
+	private final PoseMod[] mods;
+	private final boolean stat;
 
-		public void apply(Pose p) {
-		    for(PoseMod m : mods)
-			m.apply(p);
-		}
+	public CombinedMod(ModOwner owner, PoseMod... mods) {
+	    super(owner);
+	    this.mods = mods;
+	    boolean s = true;
+	    for(PoseMod m : mods)
+		s = s && m.stat();
+	    stat = s;
+	    if(!stat) {
+		for(PoseMod m : mods)
+		    m.listen(ev -> callback(ev));
+	    }
+	}
 
-		public boolean tick(float dt) {
-		    boolean ret = false;
-		    for(PoseMod m : mods) {
-			if(m.tick(dt))
-			    ret = true;
-		    }
-		    return(ret);
-		}
+	public void apply(Pose p) {
+	    for(PoseMod m : mods)
+		m.apply(p);
+	}
 
-		public void age() {
-		    for(PoseMod m : mods)
-			m.age();
-		}
+	public boolean tick(float dt) {
+	    boolean ret = false;
+	    for(PoseMod m : mods) {
+		if(m.tick(dt))
+		    ret = true;
+	    }
+	    return(ret);
+	}
 
-		public boolean stat() {
-		    return(stat);
-		}
+	public void age() {
+	    for(PoseMod m : mods)
+		m.age();
+	}
 
-		public boolean done() {
-		    for(PoseMod m : mods) {
-			if(m.done())
-			    return(true);
-		    }
-		    return(false);
-		}
+	public boolean stat() {
+	    return(stat);
+	}
 
-		public String toString() {
-		    return("#<combined " + Arrays.asList(mods) + ">");
-		}
-	    });
+	public boolean done() {
+	    for(PoseMod m : mods) {
+		if(m.done())
+		    return(true);
+	    }
+	    return(false);
+	}
+
+	public String toString() {
+	    return("#<combined " + Arrays.asList(mods) + ">");
+	}
+    }
+
+    public static PoseMod combine(PoseMod... mods) {
+	PoseMod[] buf = new PoseMod[mods.length];
+	int n = 0;
+	for(PoseMod mod : mods) {
+	    if(mod != null)
+		buf[n++] = mod;
+	}
+	if(n == 1)
+	    return(buf[0]);
+	PoseMod first = buf[0];
+	if(n < buf.length)
+	    buf = Arrays.copyOf(buf, n);
+	return(first.skel().new CombinedMod(first.owner, buf));
     }
 
     @Resource.PublishedCode(name = "pose")
