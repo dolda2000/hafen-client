@@ -679,14 +679,16 @@ public class Skeleton {
 	    this.effects = effects;
 	    this.len = len;
 	    this.mode = mode;
-	    for(Track t : tracks) {
-		if((t != null) && (t.frames.length > 1)) {
-		    stat = false;
-		    aupdate(0.0f);
-		    return;
+	    boolean stat = effects.length == 0;
+	    if(stat) {
+		for(Track t : tracks) {
+		    if((t != null) && (t.frames.length > 1)) {
+			stat = false;
+			break;
+		    }
 		}
 	    }
-	    stat = done = true;
+	    this.stat = this.done = stat;
 	    aupdate(0.0f);
 	}
 
