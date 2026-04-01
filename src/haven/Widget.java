@@ -514,6 +514,8 @@ public class Widget {
 	    focused.hasfocus = true;
 	    focused.gotfocus();
 	}
+	if(ui != null)
+	    ui.dispatch(this, new GotFocusEvent());
     }
 
     public void dispose() {
@@ -560,6 +562,8 @@ public class Widget {
 	    focused.hasfocus = false;
 	    focused.lostfocus();
 	}
+	if(ui != null)
+	    ui.dispatch(this, new LostFocusEvent());
     }
 
     public void setfocus(Widget w) {
@@ -1202,6 +1206,15 @@ public class Widget {
 	    return(super.shandle(w));
 	}
     }
+
+    public static abstract class FocusChangeEvent extends Event {
+	public boolean propagation(Widget from) {
+	    return(false);
+	}
+    }
+
+    public static class GotFocusEvent extends FocusChangeEvent {}
+    public static class LostFocusEvent extends FocusChangeEvent {}
 
     public static abstract class QueryEvent<R> extends PointerEvent {
 	public final QueryEvent<R> root;
