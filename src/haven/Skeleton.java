@@ -761,7 +761,7 @@ public class Skeleton {
 
 	public boolean tick(float dt) {
 	    if(speedmod)
-		dt *= owner.getv() / nspeed;
+		dt *= owner.getv() / (nspeed * scale);
 	    float nt = time + (back ? -dt : dt);
 	    switch(mode) {
 	    case LOOP:
