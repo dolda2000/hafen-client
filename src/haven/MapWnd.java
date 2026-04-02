@@ -40,6 +40,7 @@ import haven.MapFile.PMarker;
 import haven.MapFile.SMarker;
 import haven.MiniMap.*;
 import haven.BuddyWnd.GroupSelector;
+import haven.MiniMap.Location;
 import static haven.MCache.tilesz;
 import static haven.MCache.cmaps;
 import static haven.Utils.eq;
@@ -66,7 +67,6 @@ public class MapWnd extends Window implements Console.Directory {
     private List<ListMarker> markers = Collections.emptyList();
     private int markerseq = -1;
     private Marker mrefocus = null;
-    private boolean domark = false;
     private int olalpha = 64;
     private final Collection<Runnable> deferred = new LinkedList<>();
 
@@ -104,9 +104,7 @@ public class MapWnd extends Window implements Console.Directory {
 		    recenter();
 		}
 	    }, Coord.z);
-	toolbar.add(new ICheckBox("gfx/hud/mmap/mark", "", "-d", "-h", "-dh"), Coord.z)
-	    .state(() -> domark).set(a -> domark = a)
-	    .settip("Add marker").setgkey(kb_mark);
+	toolbar.add(new MarkButton(), Coord.z).setgkey(kb_mark);
 	toolbar.add(new ICheckBox("gfx/hud/mmap/hmark", "", "-d", "-h", "-dh"))
 	    .state(() -> Utils.eq(markcfg, MarkerConfig.hideall)).click(() -> {
 		    if(Utils.eq(markcfg, MarkerConfig.hideall))
@@ -282,7 +280,7 @@ public class MapWnd extends Window implements Console.Directory {
 	}
     }
 
-    private class View extends MiniMap implements CursorQuery.Handler {
+    private class View extends MiniMap {
 	View(MapFile file) {
 	    super(file);
 	}
@@ -308,7 +306,7 @@ public class MapWnd extends Window implements Console.Directory {
 
 	public boolean clickmarker(DisplayMarker mark, Location loc, int button, boolean press) {
 	    if(button == 1) {
-		if(!compact() && !press && !domark) {
+		if(!compact() && !press) {
 		    focus(mark.m);
 		    return(true);
 		}
@@ -321,7 +319,7 @@ public class MapWnd extends Window implements Console.Directory {
 	}
 
 	public boolean clickicon(DisplayIcon icon, Location loc, int button, boolean press) {
-	    if(!press && !domark) {
+	    if(!press) {
 		mvclick(mv, null, loc, icon.gob, button);
 		return(true);
 	    }
@@ -329,13 +327,6 @@ public class MapWnd extends Window implements Console.Directory {
 	}
 
 	public boolean clickloc(Location loc, int button, boolean press) {
-	    if(domark && (button == 1) && !press) {
-		Marker nm = new PMarker(loc.seg.id, loc.tc, "New marker", BuddyWnd.gc[new Random().nextInt(BuddyWnd.gc.length)], false);
-		file.add(nm);
-		focus(nm);
-		domark = false;
-		return(true);
-	    }
 	    if(!press && (sessloc != null) && (loc.seg == sessloc.seg)) {
 		mvclick(mv, null, loc, null, button);
 		return(true);
@@ -344,10 +335,6 @@ public class MapWnd extends Window implements Console.Directory {
 	}
 
 	public boolean mousedown(MouseDownEvent ev) {
-	    if(domark && (ev.b == 3)) {
-		domark = false;
-		return(true);
-	    }
 	    super.mousedown(ev);
 	    return(true);
 	}
@@ -358,11 +345,85 @@ public class MapWnd extends Window implements Console.Directory {
 	    g.chcolor();
 	    super.draw(g);
 	}
+    }
+
+    public class MarkButton extends ICheckBox implements CursorQuery.Handler {
+	private UI.Grab grab = null;
+
+	private MarkButton() {
+	    super("gfx/hud/mmap/mark", "", "-d", "-h", "-dh");
+	}
+
+	public boolean state() {
+	    return(grab != null);
+	}
+
+	public void click() {
+	    if(grab == null)
+		grab = ui.grabmouse(this);
+	}
+
+	public void mark(Location loc, boolean onmap) {
+	    Marker nm = new PMarker(loc.seg.id, loc.tc, "New marker", BuddyWnd.gc[new Random().nextInt(BuddyWnd.gc.length)], onmap);
+	    file.add(nm);
+	    focus(nm);
+	}
+
+	private boolean ungrab() {
+	    if(grab != null) {
+		grab.remove();
+		grab = null;
+	    }
+	    return(true);
+	}
+
+	public class FindMark extends MapView.Maptest {
+	    private FindMark(MapView mv, Coord c) {mv.super(c);}
+
+	    protected void hit(Coord pc, Coord2d mc) {
+		Location sloc = view.sessloc;
+		if(sloc != null) {
+		    Location loc = new Location(sloc.seg, sloc.tc.add(mc.floor(tilesz)));
+		    mark(loc, true);
+		}
+		ungrab();
+	    }
+	}
+
+	public class PlaceMarker extends Widget.PointerEvent {
+	    public PlaceMarker(Coord c) {super(c);}
+	    public PlaceMarker(PlaceMarker from, Coord c) {super(from, c);}
+	    public PlaceMarker derive(Coord c) {return(new PlaceMarker(this, c));}
+
+	    protected boolean shandle(Widget w) {
+		if((w == MarkButton.this) && checkhit(c)) {
+		    return(ungrab());
+		} else if(w instanceof MiniMap) {
+		    mark(((MiniMap)w).xlate(c), false);
+		    return(ungrab());
+		} else if(w instanceof MapView) {
+		    new FindMark(mv, c).run();
+		    return(true);
+		}
+		return(super.shandle(w));
+	    }
+	}
+
+	public boolean mousedown(MouseDownEvent ev) {
+	    if(!ev.grabbed)
+		return(super.mousedown(ev));
+	    if(ev.b == 1) {
+		Coord gc = ev.c.add(rootpos());
+		ui.dispatch(ui.root, new PlaceMarker(gc));
+		return(true);
+	    } else if(ev.b == 3) {
+		return(ungrab());
+	    }
+	    return(false);
+	}
 
 	public boolean getcurs(CursorQuery ev) {
-	    if(domark)
-		return(ev.set(markcurs));
-	    return(false);
+	    return(ev.grabbed ? ev.set(markcurs) : false);
 	}
     }
 
@@ -773,7 +834,7 @@ public class MapWnd extends Window implements Console.Directory {
 	public final MapWnd mm;
 	private final Map<PMarker, Pair<Gob, RenderTree.Slot>> dcurrent = new HashMap<>();
 	private Collection<PMarker> acurrent = Collections.emptyList();
-	private MiniMap.Location curloc = null;
+	private Location curloc = null;
 	private boolean loading = true;
 
 	public MarkerObjs(MapWnd mm) {
@@ -784,7 +845,7 @@ public class MapWnd extends Window implements Console.Directory {
 	private int markerseq = -1;
 	private void updatepos() {
 	    try {
-		MiniMap.Location loc = mm.view.sessloc;
+		Location loc = mm.view.sessloc;
 		if(loc == null)
 		    return;
 		Coord cc = Coord2d.of(mm.mv.getcc()).floor(tilesz).div(MCache.cutsz);
