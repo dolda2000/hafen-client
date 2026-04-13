@@ -23,23 +23,22 @@ These run today against the already-extracted `StreamBuffer.Pool` and
 - **Pool reuse ordering.** Current behaviour: lowest-index free slot
   reused first. Pin it with a test so a future LIFO/cache-locality
   rewrite is a deliberate decision, not an accident.
-- **`StreamBuffer.Fill.compatible(env)`.** Returns true only for the
-  owning env, false for a foreign one. One-line guard against cross-env
-  data corruption.
-- **`Fill.dispose()` idempotency + Finalizer race.** Call `dispose()`
-  explicitly, then trigger the `Finalizer` cleaner; assert the pool sees
-  exactly one `put` (i.e. the `clear[0]` flag short-circuits the second
-  path).
-- **`Fill.get()` transfers ownership.** After `get()`, dispose must NOT
-  auto-`put` — the caller (the prep lambda's `jdret.put(gl, xfbuf)`)
-  takes over. Observable via the pool: `Fill` constructed → `get()`
-  called → `dispose()` called → pool slot is still marked used.
 
 ## Medium — small refactor unlocks
 
 Each one needs a focused extraction (a couple of methods become a
 package-private helper class) so a fake `Environment`/queue can be
 injected.
+
+- **`StreamBuffer.Fill` lifecycle.** Construct a `Fill`, drive it
+  through its states, observe the pool. `compatible(env)` true only for
+  owning env; `dispose()` idempotent against the `Finalizer` cleaner;
+  after `Fill.get()` the explicit-put handoff means `dispose()` no
+  longer auto-puts. Blocked by `StreamBuffer`'s ctor which builds a
+  `GLBuffer(env)` and calls `env.prepare(this)` — the same kind of
+  small refactor that unlocked the pool tests would unlock these
+  (e.g. a test-only constructor that takes a pre-built `Pool` and a
+  `Disposable` rbuf).
 
 - **`runStreamFill` proxy semantics.** Extract the proxy-`Environment`
   factory from `GLEnvironment.runStreamFill` into a static method on a

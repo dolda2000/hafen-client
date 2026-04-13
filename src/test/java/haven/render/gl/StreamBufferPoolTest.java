@@ -1,7 +1,14 @@
 package haven.render.gl;
 
 import java.nio.ByteBuffer;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 
 import org.junit.jupiter.api.Test;
@@ -118,5 +125,117 @@ public class StreamBufferPoolTest {
     void putNullThrows() {
 	StreamBuffer.Pool pool = new StreamBuffer.Pool(8, sz -> new StubBuffer(sz));
 	assertThrows(NullPointerException.class, () -> pool.put(null));
+    }
+
+    /* Pin the current reuse policy: the lowest-index free slot is reused
+     * first. If a future change moves to LIFO (e.g. for cache locality),
+     * this test must be updated deliberately rather than silently. */
+    @Test
+    void reusesLowestIndexFreeSlot() {
+	CountingAlloc alloc = new CountingAlloc();
+	StreamBuffer.Pool pool = new StreamBuffer.Pool(8, alloc);
+
+	ByteBuffer a = pool.get();   // slot 0
+	ByteBuffer b = pool.get();   // slot 1
+	ByteBuffer c = pool.get();   // slot 2
+	assertEquals(3, alloc.n.get());
+
+	pool.put(a);
+	pool.put(c);
+	// slots 0 and 2 free; lowest-index policy picks 0
+	assertSame(a, pool.get());
+	// slot 2 still free
+	assertSame(c, pool.get());
+	assertEquals(3, alloc.n.get(), "no new allocation needed");
+    }
+
+    /* Stress the pool from multiple threads. Two safety invariants:
+     *
+     *   (1) Mutual exclusion. While a buffer is held, no other get()
+     *       may hand it out. Tracked with an IdentityHashMap of buffer
+     *       -> owning thread; a duplicate hand-out fails the test.
+     *
+     *   (2) Bounded growth. Total allocations must not exceed the peak
+     *       number of buffers held concurrently. If two threads race
+     *       and both grow the pool when one would have sufficed, this
+     *       fails.
+     *
+     * Both invariants hold today because Pool.get/put are synchronized.
+     * The test guards against accidental locking regressions (e.g. a
+     * future "optimization" that drops the monitor). */
+    @Test
+    void concurrencyStress() throws InterruptedException {
+	final int threads = 8;
+	final int iterations = 1000;
+	final int bufSize = 32;
+
+	CountingAlloc alloc = new CountingAlloc();
+	StreamBuffer.Pool pool = new StreamBuffer.Pool(bufSize, alloc);
+
+	IdentityHashMap<ByteBuffer, Thread> heldBy = new IdentityHashMap<>();
+	AtomicInteger heldCount = new AtomicInteger(0);
+	AtomicInteger peakHeld = new AtomicInteger(0);
+	AtomicReference<String> failure = new AtomicReference<>(null);
+
+	CountDownLatch start = new CountDownLatch(1);
+	CountDownLatch done = new CountDownLatch(threads);
+	Thread[] workers = new Thread[threads];
+
+	for(int t = 0; t < threads; t++) {
+	    workers[t] = new Thread(() -> {
+		    try {
+			start.await();
+			for(int i = 0; (i < iterations) && (failure.get() == null); i++) {
+			    ByteBuffer buf = pool.get();
+			    synchronized(heldBy) {
+				Thread prev = heldBy.put(buf, Thread.currentThread());
+				if(prev != null) {
+				    failure.compareAndSet(null,
+					"buffer handed out twice: held by " + prev + " and " + Thread.currentThread());
+				    return;
+				}
+			    }
+			    int held = heldCount.incrementAndGet();
+			    int prevPeak;
+			    do {
+				prevPeak = peakHeld.get();
+				if(held <= prevPeak) break;
+			    } while(!peakHeld.compareAndSet(prevPeak, held));
+
+			    // brief use; force a memory barrier
+			    buf.put(0, (byte)(i & 0x7f));
+
+			    synchronized(heldBy) {
+				heldBy.remove(buf);
+			    }
+			    heldCount.decrementAndGet();
+			    pool.put(buf);
+			}
+		    } catch(InterruptedException e) {
+			Thread.currentThread().interrupt();
+		    } finally {
+			done.countDown();
+		    }
+		}, "pool-stress-" + t);
+	    workers[t].start();
+	}
+
+	start.countDown();
+	assertTrue(done.await(30, TimeUnit.SECONDS), "stress workers did not finish in time");
+
+	assertNull(failure.get(), failure.get());
+	assertEquals(0, heldCount.get(), "all buffers should be released by end");
+	assertTrue(alloc.n.get() <= peakHeld.get(),
+		   "allocations (" + alloc.n.get() + ") should not exceed peak concurrent holds (" + peakHeld.get() + ")");
+	assertTrue(peakHeld.get() <= threads,
+		   "peak concurrent holds (" + peakHeld.get() + ") cannot exceed thread count");
+	assertEquals(alloc.n.get(), pool.allocated(),
+		     "every allocated SysBuffer should still be in the pool");
+
+	// All allocated buffers should be distinct identities.
+	Set<Integer> ids = new HashSet<>();
+	for(StubBuffer sb : alloc.handed)
+	    assertTrue(ids.add(System.identityHashCode(sb.data)),
+		       "allocator should produce distinct ByteBuffers");
     }
 }
