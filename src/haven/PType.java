@@ -93,6 +93,30 @@ public interface PType<T> {
 	}
     }
 
+    public static class MissingArgumentException extends Maybe.MissingValue {
+	public final Object[] args;
+	public final int idx;
+
+	public MissingArgumentException(Object[] args, int idx) {
+	    this.args = args;
+	    this.idx = idx;
+	}
+
+	public String getMessage() {
+	    try {
+		return("Argument " + idx + " not in " + Arrays.asList(args));
+	    } catch(Throwable t) {
+		return("Argument " + idx + " not in list of length " + args.length);
+	    }
+	}
+    }
+
+    public default Maybe<? extends T> opt(Object[] arr, int idx) {
+	if(arr.length > idx)
+	    return(opt(arr[idx]));
+	return(Maybe.not(() -> new MissingArgumentException(arr, idx)));
+    }
+
     public static class PTypes {
 	public static class Or<T> implements PType<T> {
 	    public final String name;
