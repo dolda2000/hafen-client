@@ -44,7 +44,6 @@ public class MapFile {
     public final String filename;
     public final Collection<Long> knownsegs = new HashSet<>();
     public final Collection<Marker> markers = new ArrayList<>();
-    public final Map<Long, SMarker> smarkers = new HashMap<>();
     public int markerseq = 0;
     public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Random rnd = new Random();
@@ -103,8 +102,6 @@ public class MapFile {
 		for(int i = 0, no = data.int32(); i < no; i++) {
 		    Marker mark = loadmarker(data);
 		    file.markers.add(mark);
-		    if((mark instanceof SMarker) && (((SMarker)mark).oid != 0))
-			file.smarkers.put(((SMarker)mark).oid, (SMarker)mark);
 		}
 	    } else {
 		throw(new IOException(String.format("unknown mapfile index version: %d", ver)));
@@ -348,8 +345,6 @@ public class MapFile {
 	lock.writeLock().lock();
 	try {
 	    if(markers.add(mark)) {
-		if((mark instanceof SMarker) && (((SMarker)mark).oid != 0))
-		    smarkers.put(((SMarker)mark).oid, (SMarker)mark);
 		defersave();
 		markerseq++;
 	    }
@@ -362,8 +357,6 @@ public class MapFile {
 	lock.writeLock().lock();
 	try {
 	    if(markers.remove(mark)) {
-		if((mark instanceof SMarker) && (((SMarker)mark).oid != 0))
-		    smarkers.remove(((SMarker)mark).oid, (SMarker)mark);
 		defersave();
 		markerseq++;
 	    }
