@@ -30,15 +30,10 @@ Each one needs a focused extraction (a couple of methods become a
 package-private helper class) so a fake `Environment`/queue can be
 injected.
 
-- **`StreamBuffer.Fill` lifecycle.** Construct a `Fill`, drive it
-  through its states, observe the pool. `compatible(env)` true only for
-  owning env; `dispose()` idempotent against the `Finalizer` cleaner;
-  after `Fill.get()` the explicit-put handoff means `dispose()` no
-  longer auto-puts. Blocked by `StreamBuffer`'s ctor which builds a
-  `GLBuffer(env)` and calls `env.prepare(this)` — the same kind of
-  small refactor that unlocked the pool tests would unlock these
-  (e.g. a test-only constructor that takes a pre-built `Pool` and a
-  `Disposable` rbuf).
+- ~~**`StreamBuffer.Fill` lifecycle.**~~ Done — added a test-only
+  `StreamBuffer(int, Pool, Environment)` ctor and covered by
+  `StreamBufferFillTest` (compatible/dispose-idempotent/get-handoff
+  semantics).
 
 - ~~**`runStreamFill` proxy semantics.**~~ Done — extracted into
   `StreamFiller.runWithPreallocated` and covered by `StreamFillerTest`.
@@ -46,15 +41,16 @@ injected.
   `Fill`) is the direct regression guard for the original
   `ClassCastException` we fixed.
 
-- **prepq/submitted draining order.** Extract the queue manager (the
-  part of `process()` that snapshots `submitted` then `prepq`) into a
-  class with injectable executors. Test: while a writer is enqueueing
-  prep, a reader submits a render — the reader's render must execute
-  strictly after the prep in the next `process()` pass.
+- ~~**prepq/submitted draining order.**~~ Done — queues + invalid flag
+  extracted into `RenderQueue<R>` and covered by `RenderQueueTest`,
+  including a stressed invariant test that no render can land in a
+  drain's submitted snapshot without its prep also being in the same
+  drain (or a prior drain).
 
-- **`enqprep` rejection when invalid.** Set `invalid = true`, call
-  `enqprep(p)`, assert `p.gl.abort()` and `p.dispose()` ran and the
-  queue stays empty. Same queue extraction unlocks this.
+- ~~**`enqprep` rejection when invalid.**~~ Done — covered by
+  `RenderQueueTest.enqueueRejectedAfterInvalidate`. The
+  `GLEnvironment.enqprep` wrapper around it is a 3-line glue
+  (abort + dispose on rejection) that doesn't merit its own test.
 
 ## Hard — needs a real GL or heavyweight harness
 
@@ -73,7 +69,10 @@ Worth attempting only if a regression in this area actually bites.
 
 ## Where to invest next
 
-The medium tier pays off most. The proxy-semantics test in particular
-turns the fix in `runStreamFill` from "documented invariant" into
+The medium tier is fully burned down. Everything that remains is in
+the hard tier and needs a real GL context or step-pause harness.
+
+Historic note: the proxy-semantics test in particular turned the fix
+in `runStreamFill` from "documented invariant" into
 "regression-locked invariant" — at the cost of one small extraction.
 The cheap tier is mechanical and worth burning down opportunistically.

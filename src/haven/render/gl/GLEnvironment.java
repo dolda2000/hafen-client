@@ -39,16 +39,13 @@ public abstract class GLEnvironment implements Environment {
     public final Caps caps;
     public int nilfbo_id = 0, nilfbo_db = 0;
     final Object drawmon = new Object();
-    final Object prepmon = new Object();
     final Collection<GLObject> disposed = new LinkedList<>();
     final List<GLQuery> queries = new LinkedList<>(); // Synchronized on drawmon
     final Queue<Runnable> callbacks = new LinkedList<>();
     Thread cbthread = null;
-    final Queue<GLRender> submitted = new LinkedList<>();
-    final Queue<GLRender> prepq = new LinkedList<>();
+    final RenderQueue<GLRender> queue = new RenderQueue<>();
     Area wnd;
     private Applier curstate = new Applier(this);
-    private volatile boolean invalid = false;
 
     public static class HardwareException extends UnavailableException {
 	public final Caps caps;
@@ -316,18 +313,8 @@ public abstract class GLEnvironment implements Environment {
     }
 
     public void process(GL gl) {
-	Collection<GLRender> prep, copy;
-	synchronized(submitted) {
-	    /* It is important to fetch the submitted renders before
-	     * prep, so that additional ones aren't submitted during
-	     * processing that haven't been prepared. */
-	    copy = new ArrayList<>(submitted);
-	    submitted.clear();
-	}
-	synchronized(prepmon) {
-	    prep = new ArrayList<>(prepq);
-	    prepq.clear();
-	}
+	RenderQueue.Snapshot<GLRender> snap = queue.drain();
+	Collection<GLRender> prep = snap.prep, copy = snap.submitted;
 	try {
 	    synchronized(drawmon) {
 		checkqueries(gl);
@@ -393,27 +380,16 @@ public abstract class GLEnvironment implements Environment {
 	GLRender gcmd = (GLRender)cmd;
 	if(gcmd.env != this)
 	    throw(new IllegalArgumentException("environment mismatch"));
-	boolean inv;
-	synchronized(submitted) {
-	    inv = invalid;
-	    if(gcmd.gl != null) {
-		if(!inv) {
-		    submitted.add(gcmd);
-		    submitted.notifyAll();
-		} else {
-		    gcmd.gl.abort();
-		}
-	    }
-	}
-	if(inv)
+	if(gcmd.gl == null)
+	    return;
+	if(!queue.enqueueSubmitted(gcmd)) {
+	    gcmd.gl.abort();
 	    gcmd.dispose();
+	}
     }
 
     public void submitwait() throws InterruptedException {
-	synchronized(submitted) {
-	    while(submitted.peek() == null)
-		submitted.wait();
-	}
+	queue.awaitSubmitted();
     }
 
     private BufferBGL disposeall() {
@@ -476,13 +452,7 @@ public abstract class GLEnvironment implements Environment {
 	    p.dispose();
 	    return;
 	}
-	boolean inv;
-	synchronized(prepmon) {
-	    inv = invalid;
-	    if(!inv)
-		prepq.add(p);
-	}
-	if(inv) {
+	if(!queue.enqueuePrep(p)) {
 	    p.gl.abort();
 	    p.dispose();
 	}
@@ -1072,29 +1042,16 @@ public abstract class GLEnvironment implements Environment {
     }
 
     public void dispose() {
-	invalid = true;
-	{
-	    Collection<GLRender> copy;
-	    synchronized(submitted) {
-		copy = new ArrayList<>(submitted);
-		submitted.clear();
-	    }
-	    for(GLRender cmd : copy) {
-		cmd.gl.abort();
-		cmd.dispose();
-	    }
+	queue.invalidate();
+	RenderQueue.Snapshot<GLRender> snap = queue.drain();
+	for(GLRender cmd : snap.submitted) {
+	    cmd.gl.abort();
+	    cmd.dispose();
 	}
-	{
-	    Collection<GLRender> copy;
-	    synchronized(prepmon) {
-		copy = new ArrayList<>(prepq);
-		prepq.clear();
-	    }
-	    for(GLRender p : copy) {
-		if(p.gl != null)
-		    p.gl.abort();
-		p.dispose();
-	    }
+	for(GLRender p : snap.prep) {
+	    if(p.gl != null)
+		p.gl.abort();
+	    p.dispose();
 	}
 	{
 	    Collection<GLQuery> copy;
