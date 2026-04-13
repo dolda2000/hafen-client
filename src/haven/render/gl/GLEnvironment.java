@@ -485,7 +485,7 @@ public abstract class GLEnvironment implements Environment {
      * This decouples the STREAM upload path from buf.ro publication
      * order: callers may assign buf.ro after enqueueing the prep without
      * affecting which FillBuffer subtype the Filler receives. */
-    private <T extends DataBuffer> StreamBuffer.Fill runStreamFill(StreamBuffer ret, T buf, DataBuffer.Filler<? super T> init) {
+    <T extends DataBuffer> StreamBuffer.Fill runStreamFill(StreamBuffer ret, T buf, DataBuffer.Filler<? super T> init) {
 	StreamBuffer.Fill fill = ret.new Fill();
 	StreamFiller.runWithPreallocated(this, buf, buf.size(), init, fill, fill::pull);
 	return(fill);
