@@ -444,14 +444,13 @@ public abstract class GLEnvironment implements Environment {
     public abstract SysBuffer malloc(int sz);
     public abstract SysBuffer subsume(ByteBuffer data, int sz);
 
+    /* fillbuf is a pure factory: it always returns a FillBuffers.Array
+     * sized for the requested range, regardless of any GL-side state of
+     * the target. The STREAM upload path that wants to reuse a
+     * StreamBuffer's transfer pool does not go through here -- it
+     * pre-allocates a StreamBuffer.Fill and runs the Filler against a
+     * proxy Environment (see runStreamFill). */
     public FillBuffer fillbuf(DataBuffer tgt, int from, int to) {
-	if((from == 0) && (to == tgt.size())) {
-	    StreamBuffer stb;
-	    if((tgt instanceof VertexArray.Buffer) && ((stb = GLReference.get(((VertexArray.Buffer)tgt).ro, StreamBuffer.class)) != null))
-		return(stb.new Fill());
-	    if((tgt instanceof Model.Indices) && ((stb = GLReference.get(((Model.Indices)tgt).ro, StreamBuffer.class)) != null))
-		return(stb.new Fill());
-	}
 	return(new FillBuffers.Array(this, to - from));
     }
 
@@ -504,6 +503,47 @@ public abstract class GLEnvironment implements Environment {
 	enqprep(p);
     }
 
+    /* Run a Filler against a STREAM-backed buffer, writing directly into a
+     * pre-allocated StreamBuffer.Fill so we avoid the FillBuffers.Array
+     * allocation that env.fillbuf would otherwise hand out. We pass a
+     * proxy Environment whose fillbuf returns the pre-allocated Fill for
+     * the target buffer; standard Fillers call env.fillbuf(tgt) and then
+     * write into the returned FillBuffer, so they end up writing straight
+     * into the Fill. If a non-standard Filler bypasses env.fillbuf and
+     * returns a different FillBuffer, we fall back to a copy.
+     *
+     * This decouples the STREAM upload path from buf.ro publication
+     * order: callers may assign buf.ro after enqueueing the prep without
+     * affecting which FillBuffer subtype the Filler receives. */
+    private <T extends DataBuffer> StreamBuffer.Fill runStreamFill(StreamBuffer ret, T buf, DataBuffer.Filler<? super T> init) {
+	StreamBuffer.Fill fill = ret.new Fill();
+	final GLEnvironment self = this;
+	final DataBuffer target = buf;
+	final int sz = buf.size();
+	Environment proxy = new Environment.Proxy() {
+		public Environment back() {return(self);}
+		public FillBuffer fillbuf(DataBuffer t, int from, int to) {
+		    if((t == target) && (from == 0) && (to == sz))
+			return(fill);
+		    return(self.fillbuf(t, from, to));
+		}
+		public FillBuffer fillbuf(DataBuffer t) {
+		    if(t == target)
+			return(fill);
+		    return(self.fillbuf(t));
+		}
+	    };
+	FillBuffer result = init.fill(buf, proxy);
+	if(result == fill)
+	    return(fill);
+	/* Filler bypassed env.fillbuf; copy its bytes into our Fill. */
+	ByteBuffer src = result.push();
+	((java.nio.Buffer)src).flip();
+	fill.pull(src);
+	result.dispose();
+	return(fill);
+    }
+
     Disposable prepare(Model.Indices buf) {
 	synchronized(buf) {
 	    switch(buf.usage) {
@@ -520,13 +560,12 @@ public abstract class GLEnvironment implements Environment {
 		if(((ret = GLReference.get(buf.ro, StreamBuffer.class)) == null) || (ret.rbuf.env != this)) {
 		    Disposable old = buf.ro;
 		    ret = new StreamBuffer(this, buf.size());
-		    StreamBuffer.Fill data = (buf.init == null) ? null : (StreamBuffer.Fill)buf.init.fill(buf, this);
+		    StreamBuffer.Fill data = (buf.init == null) ? null : runStreamFill(ret, buf, buf.init);
 		    StreamBuffer jdret = ret;
 		    GLBuffer rbuf = ret.rbuf;
-		    /* Enqueue the data-store write before publishing buf.ro
-		     * so any concurrent reader that observes the new ro
-		     * also sees the upload sitting ahead of any render
-		     * they later submit. */
+		    /* Enqueue the data-store write before publishing buf.ro so
+		     * any concurrent reader that observes the new ro also sees
+		     * the upload sitting ahead of any render they later submit. */
 		    prepare((GLRender g) -> {
 			    BGL gl = g.gl();
 			    Vao0State.apply(this, gl, g.state, rbuf);
@@ -590,9 +629,12 @@ public abstract class GLEnvironment implements Environment {
 		if(((ret = GLReference.get(buf.ro, StreamBuffer.class)) == null) || (ret.rbuf.env != this)) {
 		    Disposable old = buf.ro;
 		    ret = new StreamBuffer(this, buf.size());
-		    StreamBuffer.Fill data = (buf.init == null) ? null : (StreamBuffer.Fill)buf.init.fill(buf, this);
+		    StreamBuffer.Fill data = (buf.init == null) ? null : runStreamFill(ret, buf, buf.init);
 		    StreamBuffer jdret = ret;
 		    GLBuffer rbuf = ret.rbuf;
+		    /* Enqueue the data-store write before publishing buf.ro so
+		     * any concurrent reader that observes the new ro also sees
+		     * the upload sitting ahead of any render they later submit. */
 		    prepare((GLRender g) -> {
 			    BGL gl = g.gl();
 			    VboState.apply(gl, g.state, rbuf);
