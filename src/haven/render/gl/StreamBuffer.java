@@ -47,11 +47,23 @@ public class StreamBuffer implements haven.Disposable {
     public final GLBuffer rbuf;
     public final int size;
     private final Pool pool;
+    private final Environment compatEnv;
 
     public StreamBuffer(GLEnvironment env, int size) {
 	this.rbuf = new GLBuffer(env);
 	this.size = size;
 	this.pool = new Pool(size, sz -> env.malloc(sz));
+	this.compatEnv = env;
+    }
+
+    /* Test-only: skip the real GLBuffer/env wiring. Fill.compatible(env)
+     * is true only for `compatEnv`. dispose() leaves rbuf alone (it is
+     * null) and forwards to the supplied pool. */
+    StreamBuffer(int size, Pool pool, Environment compatEnv) {
+	this.rbuf = null;
+	this.size = size;
+	this.pool = pool;
+	this.compatEnv = compatEnv;
     }
 
     public ByteBuffer get() {return(pool.get());}
@@ -85,7 +97,7 @@ public class StreamBuffer implements haven.Disposable {
 	}
 
 	public int size() {return(size);}
-	public boolean compatible(Environment env) {return(env == rbuf.env);}
+	public boolean compatible(Environment env) {return(env == compatEnv);}
 
 	public ByteBuffer push() {
 	    return(data);
@@ -110,7 +122,8 @@ public class StreamBuffer implements haven.Disposable {
     }
 
     public void dispose() {
-	rbuf.dispose();
+	if(rbuf != null)
+	    rbuf.dispose();
 	pool.dispose();
     }
 
