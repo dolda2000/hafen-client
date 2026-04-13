@@ -517,30 +517,7 @@ public abstract class GLEnvironment implements Environment {
      * affecting which FillBuffer subtype the Filler receives. */
     private <T extends DataBuffer> StreamBuffer.Fill runStreamFill(StreamBuffer ret, T buf, DataBuffer.Filler<? super T> init) {
 	StreamBuffer.Fill fill = ret.new Fill();
-	final GLEnvironment self = this;
-	final DataBuffer target = buf;
-	final int sz = buf.size();
-	Environment proxy = new Environment.Proxy() {
-		public Environment back() {return(self);}
-		public FillBuffer fillbuf(DataBuffer t, int from, int to) {
-		    if((t == target) && (from == 0) && (to == sz))
-			return(fill);
-		    return(self.fillbuf(t, from, to));
-		}
-		public FillBuffer fillbuf(DataBuffer t) {
-		    if(t == target)
-			return(fill);
-		    return(self.fillbuf(t));
-		}
-	    };
-	FillBuffer result = init.fill(buf, proxy);
-	if(result == fill)
-	    return(fill);
-	/* Filler bypassed env.fillbuf; copy its bytes into our Fill. */
-	ByteBuffer src = result.push();
-	((java.nio.Buffer)src).flip();
-	fill.pull(src);
-	result.dispose();
+	StreamFiller.runWithPreallocated(this, buf, buf.size(), init, fill, fill::pull);
 	return(fill);
     }
 

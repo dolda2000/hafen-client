@@ -40,23 +40,11 @@ injected.
   (e.g. a test-only constructor that takes a pre-built `Pool` and a
   `Disposable` rbuf).
 
-- **`runStreamFill` proxy semantics.** Extract the proxy-`Environment`
-  factory from `GLEnvironment.runStreamFill` into a static method on a
-  small holder. Then test against a fake `Environment` and synthetic
-  `Filler`s:
-  1. Filler that calls `env.fillbuf(buf)` — no copy, returns the
-     pre-allocated `Fill` identity.
-  2. Filler that calls `env.fillbuf(otherTarget)` — falls through to
-     the back env, does NOT get the pre-allocated `Fill`.
-  3. Filler that calls `env.fillbuf(buf, 0, halfSize)` — partial range,
-     falls through.
-  4. Filler that allocates its own `FillBuffer` and returns it — the
-     fallback copy path runs and the bytes land in the `Fill`.
-
-  Case 1 is the direct regression guard for the original
-  `ClassCastException` we fixed: it would have failed the moment
-  someone reordered `buf.ro` again, regardless of whether `fillbuf` is
-  involved.
+- ~~**`runStreamFill` proxy semantics.**~~ Done — extracted into
+  `StreamFiller.runWithPreallocated` and covered by `StreamFillerTest`.
+  Case 1 (whole-range `fillbuf(target)` returns the pre-allocated
+  `Fill`) is the direct regression guard for the original
+  `ClassCastException` we fixed.
 
 - **prepq/submitted draining order.** Extract the queue manager (the
   part of `process()` that snapshots `submitted` then `prepq`) into a
