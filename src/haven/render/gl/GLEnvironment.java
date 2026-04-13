@@ -955,7 +955,10 @@ public abstract class GLEnvironment implements Environment {
     }
 
     private final Object seqmon = new Object();
-    private boolean[] sequse = new boolean[16];
+    /* Initial size sized to observed steady-state (~32k in-flight
+     * Sequences during normal rendering) so seqresize() doesn't fire
+     * during warm-up. */
+    private boolean[] sequse = new boolean[0x8000];
     private int seqhead = 1, seqtail = seqhead;
 
     private void seqresize(int nsz) {
@@ -964,7 +967,9 @@ public abstract class GLEnvironment implements Environment {
 	for(int i = 0; i < csz; i++)
 	    nseq[(seqtail + i) & (nsz - 1)] = cseq[(seqtail + i) & (csz - 1)];
 	sequse = nseq;
-	if(nsz >= 0x4000)
+	/* Warn at 4x observed steady-state -- a tight enough margin to
+	 * surface real leaks while leaving headroom for transient spikes. */
+	if(nsz >= 0x20000)
 	    Warning.warn("warning: dispose queue size increased to " + nsz);
     }
 
