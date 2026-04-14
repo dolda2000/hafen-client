@@ -90,7 +90,7 @@ public class GobIcon extends GAttrib {
 	    Resource.Image rimg = res.layer(Resource.imgc);
 	    BufferedImage img = rimg.scaled();
 	    Tex tex = rimg.tex();
-	    if ((tex.sz().x > size) || (tex.sz().y > size)) {
+	    if(((tex.sz().x > size) || (tex.sz().y > size)) && !Utils.bv(rimg.info.getOrDefault("mm/noscale", 0))) {
 		BufferedImage buf = rimg.img;
 		buf = PUtils.rasterimg(PUtils.blurmask2(buf.getRaster(), 1, 1, Color.BLACK));
 		Coord tsz;
