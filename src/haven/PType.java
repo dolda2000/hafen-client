@@ -63,7 +63,7 @@ public interface PType<T> {
 							new MapValue<>(COLOR, FColor::new));
     public static final PType<UID> UID = new Cast<>(UID.class);
 
-    public Maybe<? extends T> opt(Object val);
+    public Maybe<T> opt(Object val);
     public default T of(Object val) {
 	if(val == null)
 	    return(null);
@@ -111,7 +111,7 @@ public interface PType<T> {
 	}
     }
 
-    public default Maybe<? extends T> opt(Object[] arr, int idx) {
+    public default Maybe<T> opt(Object[] arr, int idx) {
 	if(arr.length > idx)
 	    return(opt(arr[idx]));
 	return(Maybe.not(() -> new MissingArgumentException(arr, idx)));
@@ -120,17 +120,17 @@ public interface PType<T> {
     public static class PTypes {
 	public static class Or<T> implements PType<T> {
 	    public final String name;
-	    private final Collection<PType<? extends T>> variants;
+	    private final Collection<PType<T>> variants;
 
 	    @SafeVarargs
-	    public Or(String name, PType<? extends T>... variants) {
+	    public Or(String name, PType<T>... variants) {
 		this.name = name;
 		this.variants = Arrays.asList(variants);
 	    }
 
-	    public Maybe<? extends T> opt(Object val) {
-		for(PType<? extends T> var : variants) {
-		    Maybe<? extends T> ret = var.opt(val);
+	    public Maybe<T> opt(Object val) {
+		for(PType<T> var : variants) {
+		    Maybe<T> ret = var.opt(val);
 		    if(ret.has())
 			return(ret);
 		}
@@ -140,14 +140,14 @@ public interface PType<T> {
 
 	public static class OFunction<T> implements PType<T> {
 	    public final String name;
-	    public final Function<Object, Maybe<? extends T>> fun;
+	    public final Function<Object, Maybe<T>> fun;
 
-	    public OFunction(String name, Function<Object, Maybe<? extends T>> fun) {
+	    public OFunction(String name, Function<Object, Maybe<T>> fun) {
 		this.name = name;
 		this.fun = fun;
 	    }
 
-	    public Maybe<? extends T> opt(Object val) {
+	    public Maybe<T> opt(Object val) {
 		return(fun.apply(val));
 	    }
 	}
