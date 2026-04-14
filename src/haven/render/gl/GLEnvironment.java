@@ -46,6 +46,8 @@ public abstract class GLEnvironment implements Environment {
     final RenderQueue<GLRender> queue = new RenderQueue<>();
     Area wnd;
     private Applier curstate = new Applier(this);
+    /* Counter for periodic seq-backlog diagnostics in process(). */
+    private int seqdiagframe = 0;
 
     public static class HardwareException extends UnavailableException {
 	public final Caps caps;
@@ -354,6 +356,14 @@ public abstract class GLEnvironment implements Environment {
 		clean();
 		if(debuglog)
 		    checkdebuglog(gl);
+		/* Log seq-ring stats at a coarse cadence. If span >> alive,
+		 * seqtail is stuck behind a never-disposed Sequence. */
+		if(++seqdiagframe >= 30000) {
+		    seqdiagframe = 0;
+		    int[] st = seqstats();
+		    if(st[0] > 1000)
+			Warning.warn("seq-ring: span=" + st[0] + " alive=" + st[1]);
+		}
 	    }
 	} catch(Exception e) {
 	    for(Throwable c = e; c != null; c = c.getCause()) {
@@ -380,8 +390,14 @@ public abstract class GLEnvironment implements Environment {
 	GLRender gcmd = (GLRender)cmd;
 	if(gcmd.env != this)
 	    throw(new IllegalArgumentException("environment mismatch"));
-	if(gcmd.gl == null)
+	if(gcmd.gl == null) {
+	    /* Empty render (gl() never called -- nothing to run). Caller
+	     * still handed over ownership via submit, so dispose it here;
+	     * otherwise its Sequence sits in the ring until finalization
+	     * and blocks seqtail advancement. */
+	    gcmd.dispose();
 	    return;
+	}
 	if(!queue.enqueueSubmitted(gcmd)) {
 	    gcmd.gl.abort();
 	    gcmd.dispose();
@@ -457,19 +473,40 @@ public abstract class GLEnvironment implements Environment {
 	    p.dispose();
 	}
     }
+    /* Each prepare() overload must dispose its GLRender on any throw
+     * before enqprep; otherwise the Sequence registered in the GLRender
+     * ctor leaks into the sequse ring until finalization. */
     void prepare(GLObject obj) {
 	GLRender p = new GLRender(this);
-	p.gl().bglCreate(obj);
+	boolean ok = false;
+	try {
+	    p.gl().bglCreate(obj);
+	    ok = true;
+	} finally {
+	    if(!ok) p.dispose();
+	}
 	enqprep(p);
     }
     void prepare(BGL.Request req) {
 	GLRender p = new GLRender(this);
-	p.gl().bglSubmit(req);
+	boolean ok = false;
+	try {
+	    p.gl().bglSubmit(req);
+	    ok = true;
+	} finally {
+	    if(!ok) p.dispose();
+	}
 	enqprep(p);
     }
     void prepare(Consumer<GLRender> func) {
 	GLRender p = new GLRender(this);
-	func.accept(p);
+	boolean ok = false;
+	try {
+	    func.accept(p);
+	    ok = true;
+	} finally {
+	    if(!ok) p.dispose();
+	}
 	enqprep(p);
     }
 
@@ -1004,6 +1041,21 @@ public abstract class GLEnvironment implements Environment {
     int dispseq() {
 	synchronized(seqmon) {
 	    return(seqhead);
+	}
+    }
+
+    /* Returns {ring-span, true-alive-count}. Ring-span is seqhead-seqtail
+     * (how far back seqtail is from the frontier). True-alive-count is
+     * the number of sequse slots actually marked in-flight. If ring-span
+     * is much larger than true-alive-count, seqtail is stuck behind one
+     * or a few never-disposed Sequences while younger ones churn freely. */
+    int[] seqstats() {
+	synchronized(seqmon) {
+	    int alive = 0;
+	    for(int i = 0; i < sequse.length; i++) {
+		if(sequse[i]) alive++;
+	    }
+	    return(new int[] {seqhead - seqtail, alive});
 	}
     }
 
