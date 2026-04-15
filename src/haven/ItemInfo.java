@@ -206,6 +206,8 @@ public abstract class ItemInfo {
 	@Resource.PublishedCode.Builtin(type = InfoFactory.class, name = "defn")
 	public static class Default implements InfoFactory {
 	    public static String get(Owner owner) {
+		if(owner instanceof Dynamic)
+		    return(((Dynamic)owner).name());
 		if(owner instanceof SpriteOwner) {
 		    GSprite spr = ((SpriteOwner)owner).sprite();
 		    if(spr instanceof Dynamic)
@@ -361,7 +363,8 @@ public abstract class ItemInfo {
 	List<ItemInfo> ret = new ArrayList<ItemInfo>();
 	Resource.Resolver rr = owner.context(Resource.Resolver.class);
 	for(Object o : raw.data) {
-	    if(o instanceof Object[]) {
+	    if(o == null) {
+	    } else if(o instanceof Object[]) {
 		Object[] a = (Object[])o;
 		ItemInfo inf;
 		if(a[0] instanceof InfoFactory) {
@@ -382,6 +385,8 @@ public abstract class ItemInfo {
 		    ret.add(inf);
 	    } else if(o instanceof String) {
 		ret.add(new AdHoc(owner, (String)o));
+	    } else if(o instanceof ItemInfo) {
+		ret.add((ItemInfo)o);
 	    } else {
 		throw(new ClassCastException("Unexpected object type " + o.getClass() + " in item info array."));
 	    }

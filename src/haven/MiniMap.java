@@ -380,7 +380,7 @@ public class MiniMap extends Widget {
 	}
     }
 
-    public static class DisplayMarker implements OwnerContext {
+    public static class DisplayMarker implements ItemInfo.Owner, ItemInfo.Name.Dynamic {
 	public final Widget wdg;
 	public final Marker m;
 
@@ -417,6 +417,27 @@ public class MiniMap extends Widget {
 	    try {
 		icon().draw(g, c);
 	    } catch(Loading l) {}
+	}
+
+	public String name() {
+	    return(m.nm);
+	}
+
+	private List<ItemInfo> info = null;
+	public List<ItemInfo> info() {
+	    if(info == null) {
+		Object[] raw = icon().info(this);
+		info = ItemInfo.buildinfo(this, raw);
+	    }
+	    return(info);
+	}
+
+	private BufferedImage tooltip = null;
+	public BufferedImage tooltip() {
+	    if(tooltip == null) {
+		tooltip = ItemInfo.longtip(info());
+	    }
+	    return(tooltip);
 	}
     }
 
@@ -951,10 +972,14 @@ public class MiniMap extends Widget {
 	return(true);
     }
 
-    private Text lasttip = null;
+    private String lasttname = null;
+    private Object lastobjid = null;
+    private Tex lasttip = null;
     public Object tooltip(Coord c, Widget prev) {
 	DisplayGrid grid = gridat(c);
-	String tname = null, oname = null;
+	String tname = null;
+	Object objid = null;
+	Supplier<BufferedImage> objtip = null;
 	try {
 	    if((grid != null) && (grid.dc != null)) {
 		DataGrid dgrid = grid.gref.get();
@@ -978,24 +1003,23 @@ public class MiniMap extends Widget {
 	    DisplayIcon icon = iconat(c);
 	    DisplayMarker mark = markerat(mloc.tc);
 	    if(icon != null) {
-		if(icon.icon != null)
-		    oname = icon.icon.name();
+		if(icon.icon != null) {
+		    objid = icon.icon;
+		    objtip = () -> Text.render(icon.icon.name()).img;
+		}
 	    } else if(mark != null) {
-		oname = mark.m.nm;
+		objid = mark;
+		objtip = mark::tooltip;
 	    }
 	}
-	if((tname != null) || (oname != null)) {
-	    StringBuilder buf = new StringBuilder();
-	    if(oname != null)
-		buf.append(RichText.Parser.quote(oname));
-	    if(tname != null) {
-		if(buf.length() > 0)
-		    buf.append("\n");
-		buf.append("Terrain: $col[255,255,128]{" + RichText.Parser.quote(tname) + "}");
+	if((tname != null) || (objid != null)) {
+	    if((tname != lasttname) || (objid != lastobjid)) {
+		BufferedImage tip = ItemInfo.catimgs(0,
+		    (objid == null) ? null : objtip.get(),
+		    (tname == null) ? null : RichText.render("Terrain: $col[255,255,128]{" + RichText.Parser.quote(tname) + "}", 0).img);
+		lasttip = new TexI(tip);
+		lasttname = tname; lastobjid = objid;
 	    }
-	    String tip = buf.toString();
-	    if((lasttip == null) || !lasttip.text.equals(tip))
-		lasttip = RichText.render(tip, 0);
 	} else {
 	    lasttip = null;
 	}

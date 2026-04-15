@@ -66,6 +66,7 @@ public class GobIcon extends GAttrib {
 	public abstract BufferedImage image();
 	public abstract void draw(GOut g, Coord cc);
 	public abstract boolean checkhit(Coord c);
+	public Object[] info(ItemInfo.Owner owner) {return(new Object[] {new Object[] {new ItemInfo.Name.Default()}});}
 	public Object[] id() {return(nilid);}
 	public int z() {return(0);}
 	public Markable markable() {return(Markable.UNMARKABLE);}
