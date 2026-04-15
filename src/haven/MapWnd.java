@@ -522,7 +522,7 @@ public class MapWnd extends Window implements Console.Directory {
 
 	public Tex icon() {
 	    if(icon == null) {
-		Resource.Image fg = MiniMap.DisplayMarker.flagfg, bg = MiniMap.DisplayMarker.flagbg;
+		Resource.Image fg = MiniMap.Flag.fg, bg = MiniMap.Flag.bg;
 		Coord tsz = Coord.of(Math.max(fg.tsz.x, bg.tsz.x), Math.max(fg.tsz.y, bg.tsz.y));
 		Coord bsz = Coord.of(Math.max(tsz.x, tsz.y));
 		Coord o = bsz.sub(tsz);
@@ -920,7 +920,7 @@ public class MapWnd extends Window implements Console.Directory {
 	}
     }
 
-    public void markobj(long gobid, long oid, Indir<Resource> resid, String nm) {
+    public void markobj(long gobid, UID oid, Indir<Resource> resid, byte[] data, String nm) {
 	synchronized(deferred) {
 	    deferred.add(new Runnable() {
 		    double f = 0;
@@ -928,10 +928,8 @@ public class MapWnd extends Window implements Console.Directory {
 			Resource res = resid.get();
 			String rnm = nm;
 			if(rnm == null) {
-			    Resource.Tooltip tt = res.layer(Resource.tooltip);
-			    if(tt == null)
-				return;
-			    rnm = tt.t;
+			    GobIcon.Icon micon = GobIcon.getfac(res).create(wdgctx.curry(MapWnd.this), res, new MessageBuf(data));
+			    rnm = micon.name();
 			}
 			double now = Utils.rtime();
 			if(f == 0)
@@ -954,11 +952,12 @@ public class MapWnd extends Window implements Console.Directory {
 			    Coord sc = tc.add(info.sc.sub(obg.gc).mul(cmaps));
 			    SMarker prev = view.file.smarker(res.name, info.seg, sc);
 			    if(prev == null) {
-				mark = new SMarker(info.seg, sc, rnm, oid, new Resource.Saved(Resource.remote(), res.name, res.ver));
+				mark = new SMarker(info.seg, sc, rnm, oid, new Resource.Saved(Resource.remote(), res.name, res.ver), data);
 				view.file.add(mark);
 			    } else {
 				mark = prev;
-				if((prev.seg != info.seg) || !eq(prev.tc, sc) || !eq(prev.nm, rnm)) {
+				if(!Arrays.equals(prev.data, data) || (prev.seg != info.seg) || !eq(prev.tc, sc) || !eq(prev.nm, rnm)) {
+				    prev.data = data;
 				    prev.seg = info.seg;
 				    prev.tc = sc;
 				    prev.nm = rnm;

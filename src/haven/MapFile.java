@@ -286,19 +286,15 @@ public class MapFile {
     }
 
     public static class SMarker extends Marker {
-	public long oid;
+	public UID oid;
 	public Resource.Saved res;
 	public byte[] data;
 
-	public SMarker(long seg, Coord tc, String nm, long oid, Resource.Saved res, byte[] data) {
+	public SMarker(long seg, Coord tc, String nm, UID oid, Resource.Saved res, byte[] data) {
 	    super(seg, tc, nm);
 	    this.oid = oid;
 	    this.res = res;
 	    this.data = data;
-	}
-
-	public SMarker(long seg, Coord tc, String nm, long oid, Resource.Saved res) {
-	    this(seg, tc, nm, oid, res, new byte[0]);
 	}
     }
 
@@ -315,7 +311,7 @@ public class MapFile {
 		boolean onmap = (ver >= 2) ? fp.uint8() != 0 : false;
 		return(new PMarker(seg, tc, nm, color, onmap));
 	    case 's':
-		long oid = fp.int64();
+		UID oid = UID.of(fp.int64());
 		Resource.Saved res = new Resource.Saved(Resource.remote(), fp.string(), fp.uint16());
 		byte[] data = new byte[0];
 		if(ver >= 3)
@@ -342,7 +338,7 @@ public class MapFile {
 	} else if(mark instanceof SMarker) {
 	    SMarker sm = (SMarker)mark;
 	    fp.adduint8('s');
-	    fp.addint64(sm.oid);
+	    fp.addint64(sm.oid.bits);
 	    fp.addstring(sm.res.name);
 	    fp.adduint16(sm.res.savever());
 	    fp.adduint8(sm.data.length).addbytes(sm.data);
