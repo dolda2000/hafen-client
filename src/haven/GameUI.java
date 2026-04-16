@@ -1302,7 +1302,7 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
 		help.set(res);
 	} else if(msg == "map-mark") {
 	    long gobid = UINT.of(args[0]);
-	    UID oid = UID.of(args[1]);
+	    UID oid = UNIQID.of(args[1]);
 	    Indir<Resource> res = ui.sess.getresv(args[2]);
 	    String nm = STR.of(args[3]);
 	    byte[] data = BYTES.opt(args, 4).or(new byte[0]);
