@@ -329,7 +329,6 @@ public class MapFile {
 	    if(enc.containsKey("col")) {
 		Color color = COLOR.of(enc.get("col"));
 		boolean onmap = BOOL.of(enc.getOrDefault("md", 0));
-		Debug.dump(enc);
 		return(new PMarker(seg, tc, nm, color, onmap));
 	    } else if(enc.containsKey("res")) {
 		UID oid = UNIQID.of(enc.get("oid"));
