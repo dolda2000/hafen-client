@@ -449,7 +449,6 @@ public class MiniMap extends Widget {
 	public final Area mapext;
 	public final Indir<? extends DataGrid> gref;
 	public Coord dc;
-	private DataGrid cgrid = null;
 	private Tex img = null;
 	private Defer.Future<Tex> nextimg = null;
 
