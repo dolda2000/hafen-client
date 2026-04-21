@@ -33,6 +33,7 @@ import java.io.*;
 import java.nio.file.*;
 
 public class BufferBGL extends BGL {
+    public static final boolean DEBUG = false;
     public static final BufferBGL empty = new BufferBGL(0) {
 	    protected void add(Command cmd) {
 		throw(new RuntimeException());
@@ -54,12 +55,17 @@ public class BufferBGL extends BGL {
 	    try {
 		try {
 		    list[i].run(gl);
+		    if(DEBUG)
+			GLException.checkfor(gl, null);
 		} catch(RuntimeException exc) {
 		    gl.xlateexc(exc);
 		    throw(exc);
 		}
 	    } catch(Exception exc) {
-		throw(new BGLException(this, list[i], exc));
+		BGLException e = new BGLException(this, list[i], exc);
+		if(DEBUG)
+		    e.dump.dump();
+		throw(e);
 	    }
 	}
     }
