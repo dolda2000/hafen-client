@@ -72,7 +72,9 @@ public class PUtils {
 	return(new BufferedImage(cm_rgba, img, false, null));
     }
 
-    public static BufferedImage coercergba(BufferedImage img) {
+    public static BufferedImage coercergba(BufferedImage img, boolean copy) {
+	if(!copy && img.getColorModel().equals(cm_rgba))
+	    return(img);
 	int w = img.getWidth(), h = img.getHeight();
 	WritableRaster buf = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE, w, h, 4, null);
 	BufferedImage tgt = new BufferedImage(cm_rgba, buf, false, null);
@@ -80,6 +82,9 @@ public class PUtils {
 	g.drawImage(img, 0, 0, w, h, 0, 0, w, h, null);
 	g.dispose();
 	return(tgt);
+    }
+    public static BufferedImage coercergba(BufferedImage img) {
+	return(coercergba(img, true));
     }
 
     public static Area alphabounds(Raster img, int thres) {
