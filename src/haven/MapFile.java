@@ -194,6 +194,17 @@ public class MapFile {
 	    });
     }
 
+    private static <A> Defer.Callable<A> locked(Defer.Callable<A> f, Lock lock) {
+	return(() -> {
+		lock.lock();
+		try {
+		    return(f.call());
+		} finally {
+		    lock.unlock();
+		}
+	    });
+    }
+
     private static <A, R> Function<A, R> locked(Function<A, R> f, Lock lock) {
 	return(v -> {
 		lock.lock();
@@ -1183,7 +1194,7 @@ public class MapFile {
 	}
 
 	private Future<Grid> loadgrid(long id) {
-	    return(Defer.later(() -> Grid.load(MapFile.this, id)));
+	    return(Defer.later(locked(() -> Grid.load(MapFile.this, id), lock.readLock())));
 	}
 
 	private Cached grid0(long id) {
@@ -1212,7 +1223,7 @@ public class MapFile {
 	}
 
 	private Future<ZoomGrid> loadzgrid(ZoomCoord zc) {
-	    return(Defer.later(() -> ZoomGrid.fetch(MapFile.this, Segment.this, zc.lvl, zc.c)));
+	    return(Defer.later(locked(() -> ZoomGrid.fetch(MapFile.this, Segment.this, zc.lvl, zc.c), lock.readLock())));
 	}
 
 	private class ByZCoord implements Indir<ZoomGrid> {
