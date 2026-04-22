@@ -962,7 +962,7 @@ public class MiniMap extends Widget {
 		if(allowzoomout())
 		    zoomlevel = Math.min(zoomlevel + 1, dlvl + 1);
 	    }
-	} else {
+	} else if(ev.a < 0) {
 	    if(zoomlevel > 0) {
 		zoomlevel--;
 	    } else {
