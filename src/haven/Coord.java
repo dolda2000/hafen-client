@@ -260,4 +260,7 @@ public class Coord implements Comparable<Coord>, java.io.Serializable {
 	return(of(Math.max(this.x, x), Math.max(this.y, y)));
     }
     public Coord max(Coord c) {return(max(c.x, c.y));}
+
+    public int max() {return(Math.max(x, y));}
+    public int min() {return(Math.min(x, y));}
 }
