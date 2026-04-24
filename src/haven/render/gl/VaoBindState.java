@@ -59,6 +59,13 @@ public class VaoBindState extends VaoState {
 	    gl.glBindVertexArray(that.vao);
 	    if(DO_GL_EBO_FIXUP)
 		gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, that.ebo);
+	} else if(DO_GL_EBO_FIXUP && (that.ebo != this.ebo)) {
+	    /* Same VAO, different EBO -- the GL-side EBO slot in the VAO
+	     * was set by whichever bind ran when the VAO was first
+	     * populated. Re-sync it here, otherwise glDrawElements uses
+	     * the stale slot and dereferences NULL when that EBO has
+	     * since been deleted. */
+	    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, that.ebo);
 	}
     }
 

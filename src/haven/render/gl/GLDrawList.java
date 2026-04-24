@@ -851,7 +851,7 @@ public class GLDrawList implements DrawList {
 	    if(st != slot.bk.state())
 		throw(new IllegalArgumentException("Must render with state from rendertree"));
 
-	    BufferBGL gl = new BufferBGL(1);
+	    BufferBGL gl = new BufferBGL(2);
 	    if(GLVertexArray.ephemeralp(mod)) {
 		throw(new NotImplemented("ephemeral models in drawlist"));
 	    } else {
@@ -873,6 +873,12 @@ public class GLDrawList implements DrawList {
 		    else
 			gl.glDrawArraysInstanced(GLRender.glmode(mod.mode), mod.f, mod.n, mod.ninst);
 		} else {
+		    /* Rebind the EBO unconditionally at draw time. The
+		     * VAO's GL-side EBO slot can be stale if the VAO was
+		     * first populated against a different EBO that has
+		     * since been deleted; without this bind,
+		     * glDrawElements dereferences NULL. */
+		    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, ebo);
 		    if(mod.ninst == 1)
 			gl.glDrawElements(GLRender.glmode(mod.mode), mod.n, GLRender.glindexfmt(mod.ind.fmt), mod.f * mod.ind.fmt.size);
 		    else
