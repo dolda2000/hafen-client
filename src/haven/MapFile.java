@@ -278,6 +278,7 @@ public class MapFile {
 	public long seg;
 	public Coord tc;
 	public String nm;
+	public int seq = 0;
 
 	public Marker(long seg, Coord tc, String nm) {
 	    this.seg = seg;
@@ -383,6 +384,7 @@ public class MapFile {
 	    if(markers.add(mark)) {
 		defersave();
 		markerseq++;
+		mark.seq++;
 	    }
 	} finally {
 	    lock.writeLock().unlock();
@@ -395,6 +397,7 @@ public class MapFile {
 	    if(markers.remove(mark)) {
 		defersave();
 		markerseq++;
+		mark.seq++;
 	    }
 	} finally {
 	    lock.writeLock().unlock();
@@ -407,6 +410,7 @@ public class MapFile {
 	    if(markers.contains(mark)) {
 		defersave();
 		markerseq++;
+		mark.seq++;
 	    }
 	} finally {
 	    lock.readLock().unlock();
@@ -1513,6 +1517,7 @@ public class MapFile {
 	    if(mark.seg == src.id) {
 		mark.seg = dst.id;
 		mark.tc = mark.tc.sub(soff.mul(cmaps));
+		mark.seq++;
 		mf = true;
 	    }
 	}
