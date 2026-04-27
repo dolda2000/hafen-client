@@ -102,7 +102,7 @@ public class BinHeap<T> extends AbstractCollection<T> implements Queue<T> {
     }
 
     public int size() {
-	return(size());
+	return(size);
     }
 
     public Iterator<T> iterator() {
