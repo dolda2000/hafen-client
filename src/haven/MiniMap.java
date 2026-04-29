@@ -48,11 +48,11 @@ public class MiniMap extends Widget {
     public static final Tex nomap = Resource.loadtex("gfx/hud/mmap/nomap");
     public static final Tex plp = ((TexI)Resource.loadtex("gfx/hud/mmap/plp")).filter(Texture.Filter.LINEAR);
     public final MapFile file;
+    public Markers markers = new Markers(this);
     public Location curloc;
     public Location sessloc;
     public GobIcon.Settings iconconf;
     public List<DisplayIcon> icons = Collections.emptyList();
-    protected final Markers markers = new Markers(this);
     protected Locator setloc;
     protected boolean follow;
     protected int zoomlevel = 0, maglevel = 1 << Utils.clip((int)Math.round(Math.log(UI.scale(1.0)) / Math.log(2)), 0, 3);
@@ -189,7 +189,7 @@ public class MiniMap extends Widget {
 
 	private static final OwnerContext.ClassResolver<MarkerIcon> ctxr = new OwnerContext.ClassResolver<MarkerIcon>()
 	    .add(Marker.class, i -> i.m)
-	    .add(Widget.class, i -> i.o.mm)
+	    .add(MiniMap.class, i -> i.o.mm)
 	    .add(UI.class, i -> i.o.mm.ui)
 	    .add(Glob.class, i -> i.o.mm.ui.sess.glob)
 	    .add(Session.class, i -> i.o.mm.ui.sess);
@@ -208,11 +208,13 @@ public class MiniMap extends Widget {
 	}
 
 	private void ckload() {
+	    /* XXX: Arguably, the loader task should do this part itself. */
 	    if(load.done()) {
 		icon = load.get();
 		iseq = lseq;
 		load = null;
 		info = null;
+		o.seq++;
 	    }
 	}
 
@@ -240,6 +242,7 @@ public class MiniMap extends Widget {
 		if((load == null) && (icon == null)) {
 		    load = loader.defer(this::create);
 		    lseq = o.mseq;
+		    o.loading = true;
 		}
 		if(load != null)
 		    ckload();
@@ -265,15 +268,18 @@ public class MiniMap extends Widget {
 
     public static class Markers {
 	public final MiniMap mm;
+	public int seq;
 	private final Map<Marker, MarkerIcon> icons = new HashMap<>();
 	private volatile int mseq = -1;
 	private volatile Future<?> updater = null;
+	private boolean loading;
 
 	private Markers(MiniMap mm) {
 	    this.mm = mm;
 	}
 
 	private void update0() {
+	    boolean loading = false;
 	    try(Locked lk = new Locked(mm.file.lock.readLock())) {
 		int nseq = mm.file.markerseq;
 		Set<Marker> current = new HashSet<>(mm.file.markers);
@@ -285,24 +291,33 @@ public class MiniMap extends Widget {
 			if(current.contains(m)) {
 			    current.remove(m);
 			    st.update();
+			    if(st.load != null)
+				loading = true;
 			} else {
 			    i.remove();
 			}
 		    }
+		    boolean ch = false;
 		    for(Marker m : current) {
 			MarkerIcon st = new MarkerIcon(this, m);
 			icons.put(m, st);
 			st.update();
+			if(st.load != null)
+			    loading = true;
+			ch = true;
 		    }
 		    mseq = nseq;
+		    if(ch)
+			seq++;
 		}
 	    } finally {
+		this.loading = loading;
 		updater = null;
 	    }
 	}
 
 	private void update() {
-	    if(mseq != mm.file.markerseq) {
+	    if((mseq != mm.file.markerseq) || loading) {
 		if(updater == null)
 		    updater = Defer.later(this::update0, null);
 	    }
@@ -313,6 +328,10 @@ public class MiniMap extends Widget {
 		update();
 		return(icons.computeIfAbsent(m, k -> new MarkerIcon(this, k)));
 	    }
+	}
+
+	public Collection<? extends MarkerIcon> known() {
+	    return(icons.values());
 	}
     }
 
