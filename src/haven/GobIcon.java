@@ -71,6 +71,8 @@ public class GobIcon extends GAttrib {
 	public int z() {return(0);}
 	public Markable markable() {return(Markable.UNMARKABLE);}
 
+	public boolean hover(Coord c, boolean hovering) {return(false);}
+
 	@Resource.PublishedCode(name = "mapicon")
 	public static interface Factory {
 	    public Icon create(OwnerContext owner, Resource res, Message sdt);

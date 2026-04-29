@@ -56,7 +56,7 @@ public class MiniMap extends Widget {
     protected Locator setloc;
     protected boolean follow;
     protected int zoomlevel = 0, maglevel = 1 << Utils.clip((int)Math.round(Math.log(UI.scale(1.0)) / Math.log(2)), 0, 3);
-    protected DisplayGrid[] display;
+    protected DisplayGrid[] display = {};
     protected Area dgext, dtext;
     protected Segment dseg;
     protected int dlvl, dmag;
@@ -527,6 +527,7 @@ public class MiniMap extends Widget {
     public static class DisplayMarker {
 	public final MiniMap mm;
 	public final Marker m;
+	public Coord sc = null;
 
 	public DisplayMarker(MiniMap mm, Marker marker) {
 	    this.mm = mm;
@@ -744,7 +745,8 @@ public class MiniMap extends Widget {
 	    for(DisplayMarker mark : dgrid.markers(true)) {
 		if(filter(mark))
 		    continue;
-		mark.draw(g, l2dscale(mark.m.tc).sub(l2dscale(dloc.tc)).add(hsz));
+		mark.sc = l2dscale(mark.m.tc).sub(l2dscale(dloc.tc)).add(hsz);
+		mark.draw(g, mark.sc);
 	    }
 	}
     }
@@ -1083,6 +1085,39 @@ public class MiniMap extends Widget {
 	    }
 	}
 	return(true);
+    }
+
+    public boolean mousehover(MouseHoverEvent ev, boolean hovering) {
+	boolean ret = false;
+	if(hovering) {
+	    for(ListIterator<DisplayIcon> it = icons.listIterator(icons.size()); it.hasPrevious();) {
+		DisplayIcon disp = it.previous();
+		if(disp.sc == null)
+		    continue;
+		Coord ic = ev.c.sub(disp.sc);
+		if(disp.icon.hover(ic, hovering && disp.icon.checkhit(ic) && !filter(disp))) {
+		    hovering = false;
+		    ret = true;
+		}
+	    }
+	    for(DisplayGrid dgrid : display) {
+		if(dgrid == null)
+		    continue;
+		for(DisplayMarker mark : dgrid.markers(false)) {
+		    if(mark.sc == null)
+			continue;
+		    try {
+			GobIcon.Icon icon = mark.icon();
+			Coord ic = ev.c.sub(mark.sc);
+			if(icon.hover(ic, hovering && icon.checkhit(ic) && !filter(mark))) {
+			    hovering = false;
+			    ret = true;
+			}
+		    } catch(Loading l) {}
+		}
+	    }
+	}
+	return(ret);
     }
 
     private String lasttname = null;
