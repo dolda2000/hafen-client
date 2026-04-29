@@ -52,6 +52,7 @@ public class MiniMap extends Widget {
     public Location sessloc;
     public GobIcon.Settings iconconf;
     public List<DisplayIcon> icons = Collections.emptyList();
+    protected final Markers markers = new Markers(this);
     protected Locator setloc;
     protected boolean follow;
     protected int zoomlevel = 0, maglevel = 1 << Utils.clip((int)Math.round(Math.log(UI.scale(1.0)) / Math.log(2)), 0, 3);
@@ -169,6 +170,149 @@ public class MiniMap extends Widget {
 	    if(seg == null)
 		return(null);
 	    return(new Location(seg, tc));
+	}
+    }
+
+    public static class MarkerIcon implements ItemInfo.Owner, ItemInfo.Name.Dynamic {
+	public final Markers o;
+	public final Marker m;
+	private final Loader loader;
+	private Loader.Future<GobIcon.Icon> load;
+	private GobIcon.Icon icon;
+	private int lseq, iseq;
+
+	public MarkerIcon(Markers o, Marker m) {
+	    this.o = o;
+	    this.m = m;
+	    this.loader = o.mm.ui.loader;
+	}
+
+	private static final OwnerContext.ClassResolver<MarkerIcon> ctxr = new OwnerContext.ClassResolver<MarkerIcon>()
+	    .add(Marker.class, i -> i.m)
+	    .add(Widget.class, i -> i.o.mm)
+	    .add(UI.class, i -> i.o.mm.ui)
+	    .add(Glob.class, i -> i.o.mm.ui.sess.glob)
+	    .add(Session.class, i -> i.o.mm.ui.sess);
+	public <T> T context(Class<T> cl) {
+	    return(ctxr.context(cl, this));
+	}
+
+	private GobIcon.Icon create() {
+	    if(m instanceof PMarker) {
+		return(new Flag(this, ((PMarker)m).color, m.nm));
+	    } else {
+		SMarker sm = (SMarker)m;
+		Resource res = sm.res.get();
+		return(GobIcon.getfac(res).create(this, res, new MessageBuf(sm.data)));
+	    }
+	}
+
+	private void ckload() {
+	    if(load.done()) {
+		icon = load.get();
+		iseq = lseq;
+		load = null;
+		info = null;
+	    }
+	}
+
+	private void update() {
+	    int nseq = m.seq;
+	    boolean reload = false;
+	    if(load == null) {
+		reload = (nseq != this.iseq);
+	    } else {
+		if(nseq != this.lseq)
+		    reload = true;
+		else
+		    ckload();
+	    }
+	    if(reload) {
+		if(load != null)
+		    load.cancel();
+		load = loader.defer(this::create);
+		lseq = nseq;
+	    }
+	}
+
+	public GobIcon.Icon icon() {
+	    synchronized(o) {
+		if((load == null) && (icon == null)) {
+		    load = loader.defer(this::create);
+		    lseq = o.mseq;
+		}
+		if(load != null)
+		    ckload();
+		if(icon == null)
+		    throw(new Loading());
+		return(icon);
+	    }
+	}
+
+	public String name() {
+	    return(m.nm);
+	}
+
+	private List<ItemInfo> info = null;
+	public List<ItemInfo> info() {
+	    if(info == null) {
+		Object[] raw = icon().info(this);
+		info = ItemInfo.buildinfo(this, raw);
+	    }
+	    return(info);
+	}
+    }
+
+    public static class Markers {
+	public final MiniMap mm;
+	private final Map<Marker, MarkerIcon> icons = new HashMap<>();
+	private volatile int mseq = -1;
+	private volatile Future<?> updater = null;
+
+	private Markers(MiniMap mm) {
+	    this.mm = mm;
+	}
+
+	private void update0() {
+	    try(Locked lk = new Locked(mm.file.lock.readLock())) {
+		int nseq = mm.file.markerseq;
+		Set<Marker> current = new HashSet<>(mm.file.markers);
+		synchronized(this) {
+		    for(Iterator<Map.Entry<Marker, MarkerIcon>> i = icons.entrySet().iterator(); i.hasNext();) {
+			Map.Entry<Marker, MarkerIcon> ent = i.next();
+			Marker m = ent.getKey();
+			MarkerIcon st = ent.getValue();
+			if(current.contains(m)) {
+			    current.remove(m);
+			    st.update();
+			} else {
+			    i.remove();
+			}
+		    }
+		    for(Marker m : current) {
+			MarkerIcon st = new MarkerIcon(this, m);
+			icons.put(m, st);
+			st.update();
+		    }
+		    mseq = nseq;
+		}
+	    } finally {
+		updater = null;
+	    }
+	}
+
+	private void update() {
+	    if(mseq != mm.file.markerseq) {
+		if(updater == null)
+		    updater = Defer.later(this::update0, null);
+	    }
+	}
+
+	public MarkerIcon get(Marker m) {
+	    synchronized(this) {
+		update();
+		return(icons.computeIfAbsent(m, k -> new MarkerIcon(this, k)));
+	    }
 	}
     }
 
@@ -380,37 +524,17 @@ public class MiniMap extends Widget {
 	}
     }
 
-    public static class DisplayMarker implements ItemInfo.Owner, ItemInfo.Name.Dynamic {
-	public final Widget wdg;
+    public static class DisplayMarker {
+	public final MiniMap mm;
 	public final Marker m;
 
-	public DisplayMarker(Widget wdg, Marker marker) {
-	    this.wdg = wdg;
+	public DisplayMarker(MiniMap mm, Marker marker) {
+	    this.mm = mm;
 	    this.m = marker;
 	}
 
-	private static final OwnerContext.ClassResolver<DisplayMarker> ctxr = new OwnerContext.ClassResolver<DisplayMarker>()
-	    .add(Marker.class, m -> m.m)
-	    .add(Widget.class, m -> m.wdg)
-	    .add(UI.class, m -> m.wdg.ui)
-	    .add(Glob.class, m -> m.wdg.ui.sess.glob)
-	    .add(Session.class, m -> m.wdg.ui.sess);
-	public <T> T context(Class<T> cl) {
-	    return(ctxr.context(cl, this));
-	}
-
-	private GobIcon.Icon icon = null;
 	public GobIcon.Icon icon() {
-	    if(icon == null) {
-		if(m instanceof PMarker) {
-		    icon = new Flag(this, ((PMarker)m).color, m.nm);
-		} else {
-		    SMarker sm = (SMarker)m;
-		    Resource res = sm.res.get();
-		    icon = GobIcon.getfac(res).create(this, res, new MessageBuf(sm.data));
-		}
-	    }
-	    return(icon);
+	    return(mm.markers.get(m).icon());
 	}
 
 	public void draw(GOut g, Coord c) {
@@ -419,30 +543,20 @@ public class MiniMap extends Widget {
 	    } catch(Loading l) {}
 	}
 
-	public String name() {
-	    return(m.nm);
-	}
-
-	private List<ItemInfo> info = null;
-	public List<ItemInfo> info() {
-	    if(info == null) {
-		Object[] raw = icon().info(this);
-		info = ItemInfo.buildinfo(this, raw);
-	    }
-	    return(info);
-	}
-
+	private int tseq = -1;
 	private BufferedImage tooltip = null;
 	public BufferedImage tooltip() {
-	    if(tooltip == null) {
-		tooltip = ItemInfo.longtip(info());
+	    MarkerIcon minf = mm.markers.get(m);
+	    if((tooltip == null) || (minf.iseq != tseq)) {
+		tooltip = ItemInfo.longtip(minf.info());
+		tseq = minf.iseq;
 	    }
 	    return(tooltip);
 	}
     }
 
     public static class DisplayGrid {
-	public final Widget wdg;
+	public final MiniMap mm;
 	public final MapFile file;
 	public final Segment seg;
 	public final Coord sc;
@@ -452,8 +566,8 @@ public class MiniMap extends Widget {
 	private Tex img = null;
 	private Defer.Future<Tex> nextimg = null;
 
-	public DisplayGrid(Widget wdg, Segment seg, Coord sc, int lvl, Indir<? extends DataGrid> gref) {
-	    this.wdg = wdg;
+	public DisplayGrid(MiniMap mm, Segment seg, Coord sc, int lvl, Indir<? extends DataGrid> gref) {
+	    this.mm = mm;
 	    this.file = seg.file();
 	    this.seg = seg;
 	    this.sc = sc;
@@ -535,7 +649,7 @@ public class MiniMap extends Widget {
 			ArrayList<DisplayMarker> marks = new ArrayList<>();
 			for(Marker mark : file.markers) {
 			    if((mark.seg == this.seg.id) && mapext.contains(mark.tc))
-				marks.add(new DisplayMarker(wdg, mark));
+				marks.add(new DisplayMarker(mm, mark));
 			}
 			marks.trimToSize();
 			markers = (marks.size() == 0) ? Collections.emptyList() : marks;
