@@ -364,7 +364,7 @@ public class MapWnd extends Window implements Console.Directory {
 	}
 
 	public void mark(Location loc, boolean onmap) {
-	    Marker nm = new PMarker(loc.seg.id, loc.tc, "New marker", BuddyWnd.gc[new Random().nextInt(BuddyWnd.gc.length)], onmap);
+	    Marker nm = new PMarker(file, loc.seg.id, loc.tc, "New marker", BuddyWnd.gc[new Random().nextInt(BuddyWnd.gc.length)], onmap);
 	    file.add(nm);
 	    focus(nm);
 	}
@@ -952,7 +952,7 @@ public class MapWnd extends Window implements Console.Directory {
 			    Coord sc = tc.add(info.sc.sub(obg.gc).mul(cmaps));
 			    SMarker prev = view.file.smarker(res.name, info.seg, sc);
 			    if(prev == null) {
-				mark = new SMarker(info.seg, sc, rnm, oid, new Resource.Saved(Resource.remote(), res.name, res.ver), data);
+				mark = new SMarker(file, info.seg, sc, rnm, oid, new Resource.Saved(Resource.remote(), res.name, res.ver), data);
 				view.file.add(mark);
 			    } else {
 				mark = prev;

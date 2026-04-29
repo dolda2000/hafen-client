@@ -831,7 +831,7 @@ public class MiniMap extends Widget {
 		    SMarker prev = file.smarker(res.name, info.seg, sc);
 		    if(prev == null) {
 			if(icon.conf.getmarkp()) {
-			    mid = new SMarker(info.seg, sc, micon.name(), UID.nil, new Resource.Saved(Resource.remote(), res.name, res.ver), aicon.sdt);
+			    mid = new SMarker(file, info.seg, sc, micon.name(), UID.nil, new Resource.Saved(Resource.remote(), res.name, res.ver), aicon.sdt);
 			    file.add(mid);
 			} else {
 			    mid = null;
