@@ -58,6 +58,33 @@ public class Line2d {
 			  det * ((k.x * mn.y) - (k.y * mn.x))));
     }
 
+    public Line2d clip(Coord2d ul, Coord2d br) {
+	Line2d[] edges = {
+	    twixt(Coord2d.of(ul.x, ul.y), Coord2d.of(br.x, ul.y)),
+	    twixt(Coord2d.of(br.x, ul.y), Coord2d.of(br.x, br.y)),
+	    twixt(Coord2d.of(br.x, br.y), Coord2d.of(ul.x, br.y)),
+	    twixt(Coord2d.of(ul.x, br.y), Coord2d.of(ul.x, ul.y)),
+	};
+	double min = 0, max = 1;
+	for(Line2d e : edges) {
+	    Coord2d x = cross(e);
+	    if(Double.isNaN(x.x))
+		continue;
+	    if(k.dmul(e.k.perp()) > 0) {
+		max = Math.min(max, x.x);
+	    } else {
+		min = Math.max(min, x.x);
+	    }
+	}
+	if(min >= max)
+	    return(null);
+	return(twixt(at(min), at(max)));
+    }
+
+    public Line2d clip(Area area) {
+	return(clip(Coord2d.of(area.ul), Coord2d.of(area.br)));
+    }
+
     public static class GridIsect implements DefaultCollection<Coord2d> {
 	public final Coord2d s, t, d, g, o;
 	public final boolean incl;
@@ -144,4 +171,8 @@ public class Line2d {
     public Collection<Coord2d> gridisect(Coord2d g, Coord2d o, boolean incl) {return(new GridIsect(this, g, o, incl));}
     public Collection<Coord2d> gridisect(Coord2d g, boolean incl) {return(gridisect(g, Coord2d.z, incl));}
     public Collection<Coord2d> gridisect(Coord2d g) {return(gridisect(g, true));}
+
+    public String toString() {
+	return(String.format("%s-%s", m, end()));
+    }
 }

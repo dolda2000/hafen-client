@@ -92,6 +92,11 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
 	return(of(-x, -y));
     }
 
+    /* Opposite to the direction of positive angles. */
+    public Coord2d perp() {
+	return(of(y, -x));
+    }
+
     public Coord2d sub(double X, double Y) {
 	return(of(x - X, y - Y));
     }
@@ -122,6 +127,14 @@ public class Coord2d implements Comparable<Coord2d>, java.io.Serializable {
 
     public Coord2d div(Coord2d b) {
 	return(div(b.x, b.y));
+    }
+
+    public double dmul(double X, double Y) {
+	return((x * X) + (y * Y));
+    }
+
+    public double dmul(Coord2d b) {
+	return(dmul(b.x, b.y));
     }
 
     public Coord round() {

@@ -237,9 +237,17 @@ public class GOut {
     }
 
     public void line(Coord c1, Coord c2, double w) {
+	c1 = c1.add(tx); c2 = c2.add(tx);
+	if(!c1.isect2(ul, br) || !c2.isect2(ul, br)) {
+	    Line2d cl = Line2d.twixt(Coord2d.of(c1), Coord2d.of(c2)).clip(Coord2d.of(ul), Coord2d.of(br.sub(1, 1)));
+	    if(cl == null)
+		return;
+	    c1 = cl.m.round();
+	    c2 = cl.end().round();
+	}
 	usestate(new States.LineWidth(w));
-	float[] data = {c1.x + tx.x + 0.5f, c1.y + tx.y + 0.5f,
-			c2.x + tx.x + 0.5f, c2.y + tx.y + 0.5f};
+	float[] data = {c1.x + 0.5f, c1.y + 0.5f,
+			c2.x + 0.5f, c2.y + 0.5f};
 	drawp(Model.Mode.LINES, data);
     }
 
