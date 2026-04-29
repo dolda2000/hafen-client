@@ -45,7 +45,7 @@ public class MapFile {
     public final String filename;
     public final Collection<Long> knownsegs = new HashSet<>();
     public final Collection<Marker> markers = new ArrayList<>();
-    public int markerseq = 0;
+    public volatile int markerseq = 0;
     public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Random rnd = new Random();
 
@@ -279,13 +279,22 @@ public class MapFile {
 	public long seg;
 	public Coord tc;
 	public String nm;
-	public int seq = 0;
+	public volatile int seq = 0;
 
 	public Marker(MapFile file, long seg, Coord tc, String nm) {
 	    this.file = file;
 	    this.seg = seg;
 	    this.tc = tc;
 	    this.nm = nm;
+	}
+
+	public void update(boolean save) {
+	    if(save) {
+		file.update(this);
+	    } else {
+		seq++;
+		file.markerseq++;
+	    }
 	}
     }
 
@@ -297,6 +306,10 @@ public class MapFile {
 	    super(file, seg, tc, nm);
 	    this.color = color;
 	    this.onmap = onmap;
+	}
+
+	public String toString() {
+	    return(String.format("#<pmarker \"%s\" %s %d>", nm, color, seq));
 	}
     }
 
@@ -310,6 +323,10 @@ public class MapFile {
 	    this.oid = oid;
 	    this.res = res;
 	    this.data = data;
+	}
+
+	public String toString() {
+	    return(String.format("#<smarker \"%s\" %s %s %s>", nm, oid, res.name, seq));
 	}
     }
 
