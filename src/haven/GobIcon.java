@@ -415,7 +415,7 @@ public class GobIcon extends GAttrib {
 		    try {
 			fac = getfac(res);
 		    } catch(Resource.BadVersionException e) {
-			new Warning(e, "Could not re-load saved icon " + res.name).issue();
+			new Warning(e, "Could not re-load saved icon " + res).issue();
 			r = null;
 			continue;
 		    }
