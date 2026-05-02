@@ -411,7 +411,14 @@ public class GobIcon extends GAttrib {
 			r = null;
 			continue;
 		    }
-		    Icon.Factory fac = getfac(res);
+		    Icon.Factory fac;
+		    try {
+			fac = getfac(res);
+		    } catch(Resource.BadVersionException e) {
+			new Warning(e, "Could not re-load saved icon " + res.name).issue();
+			r = null;
+			continue;
+		    }
 		    for(Icon icon : fac.enumerate(Settings.this, res, new MessageBuf(r.data))) {
 			Setting set = new Setting(icon, r);
 			Setting def = defaults.get(r);
