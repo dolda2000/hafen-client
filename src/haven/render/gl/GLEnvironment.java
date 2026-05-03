@@ -39,16 +39,15 @@ public abstract class GLEnvironment implements Environment {
     public final Caps caps;
     public int nilfbo_id = 0, nilfbo_db = 0;
     final Object drawmon = new Object();
-    final Object prepmon = new Object();
     final Collection<GLObject> disposed = new LinkedList<>();
     final List<GLQuery> queries = new LinkedList<>(); // Synchronized on drawmon
     final Queue<Runnable> callbacks = new LinkedList<>();
     Thread cbthread = null;
-    final Queue<GLRender> submitted = new LinkedList<>();
+    final RenderQueue<GLRender> queue = new RenderQueue<>();
     Area wnd;
-    private GLRender prep = null;
     private Applier curstate = new Applier(this);
-    private boolean invalid = false;
+    /* Counter for periodic seq-backlog diagnostics in process(). */
+    private int seqdiagframe = 0;
 
     public static class HardwareException extends UnavailableException {
 	public final Caps caps;
@@ -316,34 +315,28 @@ public abstract class GLEnvironment implements Environment {
     }
 
     public void process(GL gl) {
-	GLRender prep;
-	Collection<GLRender> copy;
-	synchronized(submitted) {
-	    /* It is important to fetch the submitted renders before
-	     * prep, so that additional once aren't submitted during
-	     * processing that haven't been prepared. */
-	    copy = new ArrayList<>(submitted);
-	    submitted.clear();
-	}
-	synchronized(prepmon) {
-	    prep = this.prep;
-	    this.prep = null;
-	}
+	RenderQueue.Snapshot<GLRender> snap = queue.drain();
+	Collection<GLRender> prep = snap.prep, copy = snap.submitted;
 	try {
 	    synchronized(drawmon) {
 		checkqueries(gl);
-		if((prep != null) && (prep.gl != null)) {
-		    BufferBGL xf = new BufferBGL(16);
-		    this.curstate.apply(xf, prep.init);
-		    xf.run(gl);
-		    prep.gl.run(gl);
-		    this.curstate = prep.state;
+		for(GLRender p : prep) {
 		    try {
-			GLException.checkfor(gl, this);
-		    } catch(Exception exc) {
-			throw(new BGL.BGLException(prep.gl, null, exc));
+			if(p.gl != null) {
+			    BufferBGL xf = new BufferBGL(16);
+			    this.curstate.apply(xf, p.init);
+			    xf.run(gl);
+			    p.gl.run(gl);
+			    this.curstate = p.state;
+			    try {
+				GLException.checkfor(gl, this);
+			    } catch(Exception exc) {
+				throw(new BGL.BGLException(p.gl, null, exc));
+			    }
+			}
+		    } finally {
+			p.dispose();
 		    }
-		    prep.dispose();
 		}
 		for(GLRender cmd : copy) {
 		    BufferBGL xf = new BufferBGL(16);
@@ -363,6 +356,14 @@ public abstract class GLEnvironment implements Environment {
 		clean();
 		if(debuglog)
 		    checkdebuglog(gl);
+		/* Log seq-ring stats at a coarse cadence. If span >> alive,
+		 * seqtail is stuck behind a never-disposed Sequence. */
+		if(++seqdiagframe >= 30000) {
+		    seqdiagframe = 0;
+		    int[] st = seqstats();
+		    if(st[0] > 1000)
+			Warning.warn("seq-ring: span=" + st[0] + " alive=" + st[1]);
+		}
 	    }
 	} catch(Exception e) {
 	    for(Throwable c = e; c != null; c = c.getCause()) {
@@ -389,27 +390,22 @@ public abstract class GLEnvironment implements Environment {
 	GLRender gcmd = (GLRender)cmd;
 	if(gcmd.env != this)
 	    throw(new IllegalArgumentException("environment mismatch"));
-	boolean inv;
-	synchronized(submitted) {
-	    inv = invalid;
-	    if(gcmd.gl != null) {
-		if(!inv) {
-		    submitted.add(gcmd);
-		    submitted.notifyAll();
-		} else {
-		    gcmd.gl.abort();
-		}
-	    }
-	}
-	if(inv)
+	if(gcmd.gl == null) {
+	    /* Empty render (gl() never called -- nothing to run). Caller
+	     * still handed over ownership via submit, so dispose it here;
+	     * otherwise its Sequence sits in the ring until finalization
+	     * and blocks seqtail advancement. */
 	    gcmd.dispose();
+	    return;
+	}
+	if(!queue.enqueueSubmitted(gcmd)) {
+	    gcmd.gl.abort();
+	    gcmd.dispose();
+	}
     }
 
     public void submitwait() throws InterruptedException {
-	synchronized(submitted) {
-	    while(submitted.peek() == null)
-		submitted.wait();
-	}
+	queue.awaitSubmitted();
     }
 
     private BufferBGL disposeall() {
@@ -440,14 +436,13 @@ public abstract class GLEnvironment implements Environment {
     public abstract SysBuffer malloc(int sz);
     public abstract SysBuffer subsume(ByteBuffer data, int sz);
 
+    /* fillbuf is a pure factory: it always returns a FillBuffers.Array
+     * sized for the requested range, regardless of any GL-side state of
+     * the target. The STREAM upload path that wants to reuse a
+     * StreamBuffer's transfer pool does not go through here -- it
+     * pre-allocates a StreamBuffer.Fill and runs the Filler against a
+     * proxy Environment (see runStreamFill). */
     public FillBuffer fillbuf(DataBuffer tgt, int from, int to) {
-	if((from == 0) && (to == tgt.size())) {
-	    StreamBuffer stb;
-	    if((tgt instanceof VertexArray.Buffer) && ((stb = GLReference.get(((VertexArray.Buffer)tgt).ro, StreamBuffer.class)) != null))
-		return(stb.new Fill());
-	    if((tgt instanceof Model.Indices) && ((stb = GLReference.get(((Model.Indices)tgt).ro, StreamBuffer.class)) != null))
-		return(stb.new Fill());
-	}
 	return(new FillBuffers.Array(this, to - from));
     }
 
@@ -465,25 +460,72 @@ public abstract class GLEnvironment implements Environment {
 	return(Environment.super.fillbuf(target));
     }
 
-    GLRender prepare() {
-	if(prep == null)
-	    prep = new GLRender(this);
-	return(prep);
-    }
-    void prepare(GLObject obj) {
-	synchronized(prepmon) {
-	    prepare().gl().bglCreate(obj);
+    /* Build a one-shot prep render, run func against it, and enqueue it
+     * for the next process() pass. Each prep call gets its own private
+     * GLRender so callers don't share a multi-writer buffer. */
+    private void enqprep(GLRender p) {
+	if(p.gl == null) {
+	    p.dispose();
+	    return;
 	}
+	if(!queue.enqueuePrep(p)) {
+	    p.gl.abort();
+	    p.dispose();
+	}
+    }
+    /* Each prepare() overload must dispose its GLRender on any throw
+     * before enqprep; otherwise the Sequence registered in the GLRender
+     * ctor leaks into the sequse ring until finalization. */
+    void prepare(GLObject obj) {
+	GLRender p = new GLRender(this);
+	boolean ok = false;
+	try {
+	    p.gl().bglCreate(obj);
+	    ok = true;
+	} finally {
+	    if(!ok) p.dispose();
+	}
+	enqprep(p);
     }
     void prepare(BGL.Request req) {
-	synchronized(prepmon) {
-	    prepare().gl().bglSubmit(req);
+	GLRender p = new GLRender(this);
+	boolean ok = false;
+	try {
+	    p.gl().bglSubmit(req);
+	    ok = true;
+	} finally {
+	    if(!ok) p.dispose();
 	}
+	enqprep(p);
     }
     void prepare(Consumer<GLRender> func) {
-	synchronized(prepmon) {
-	    func.accept(prepare());
+	GLRender p = new GLRender(this);
+	boolean ok = false;
+	try {
+	    func.accept(p);
+	    ok = true;
+	} finally {
+	    if(!ok) p.dispose();
 	}
+	enqprep(p);
+    }
+
+    /* Run a Filler against a STREAM-backed buffer, writing directly into a
+     * pre-allocated StreamBuffer.Fill so we avoid the FillBuffers.Array
+     * allocation that env.fillbuf would otherwise hand out. We pass a
+     * proxy Environment whose fillbuf returns the pre-allocated Fill for
+     * the target buffer; standard Fillers call env.fillbuf(tgt) and then
+     * write into the returned FillBuffer, so they end up writing straight
+     * into the Fill. If a non-standard Filler bypasses env.fillbuf and
+     * returns a different FillBuffer, we fall back to a copy.
+     *
+     * This decouples the STREAM upload path from buf.ro publication
+     * order: callers may assign buf.ro after enqueueing the prep without
+     * affecting which FillBuffer subtype the Filler receives. */
+    <T extends DataBuffer> StreamBuffer.Fill runStreamFill(StreamBuffer ret, T buf, DataBuffer.Filler<? super T> init) {
+	StreamBuffer.Fill fill = ret.new Fill();
+	StreamFiller.runWithPreallocated(this, buf, buf.size(), init, fill, fill::pull);
+	return(fill);
     }
 
     Disposable prepare(Model.Indices buf) {
@@ -500,12 +542,14 @@ public abstract class GLEnvironment implements Environment {
 	    case STREAM: {
 		StreamBuffer ret;
 		if(((ret = GLReference.get(buf.ro, StreamBuffer.class)) == null) || (ret.rbuf.env != this)) {
-		    if(buf.ro != null)
-			buf.ro.dispose();
-		    buf.ro = new GLReference<>(ret = new StreamBuffer(this, buf.size()));
-		    StreamBuffer.Fill data = (buf.init == null) ? null : (StreamBuffer.Fill)buf.init.fill(buf, this);
+		    Disposable old = buf.ro;
+		    ret = new StreamBuffer(this, buf.size());
+		    StreamBuffer.Fill data = (buf.init == null) ? null : runStreamFill(ret, buf, buf.init);
 		    StreamBuffer jdret = ret;
 		    GLBuffer rbuf = ret.rbuf;
+		    /* Enqueue the data-store write before publishing buf.ro so
+		     * any concurrent reader that observes the new ro also sees
+		     * the upload sitting ahead of any render they later submit. */
 		    prepare((GLRender g) -> {
 			    BGL gl = g.gl();
 			    Vao0State.apply(this, gl, g.state, rbuf);
@@ -520,15 +564,17 @@ public abstract class GLEnvironment implements Environment {
 				gl.glObjectLabel(GL.GL_BUFFER, rbuf, String.valueOf(buf.desc));
 			    rbuf.setmem(MemStats.INDICES, buf.size());
 			});
+		    if(old != null)
+			old.dispose();
+		    buf.ro = new GLReference<>(ret);
 		}
 		return(ret);
 	    }
 	    case STATIC: {
 		GLBuffer ret;
 		if(((ret = GLReference.get(buf.ro, GLBuffer.class)) == null) || (ret.env != this)) {
-		    if(buf.ro != null)
-			buf.ro.dispose();
-		    buf.ro = new GLReference<>(ret = new GLBuffer(this));
+		    Disposable old = buf.ro;
+		    ret = new GLBuffer(this);
 		    FillBuffers.Array data = (buf.init == null) ? null : (FillBuffers.Array)buf.init.fill(buf, this);
 		    GLBuffer jdret = ret;
 		    prepare((GLRender g) -> {
@@ -540,6 +586,9 @@ public abstract class GLEnvironment implements Environment {
 			    jdret.setmem(MemStats.INDICES, buf.size());
 			    if(data != null) data.dispose();
 			});
+		    if(old != null)
+			old.dispose();
+		    buf.ro = new GLReference<>(ret);
 		}
 		return(ret);
 	    }
@@ -562,12 +611,14 @@ public abstract class GLEnvironment implements Environment {
 	    case STREAM: {
 		StreamBuffer ret;
 		if(((ret = GLReference.get(buf.ro, StreamBuffer.class)) == null) || (ret.rbuf.env != this)) {
-		    if(buf.ro != null)
-			buf.ro.dispose();
-		    buf.ro = new GLReference<>(ret = new StreamBuffer(this, buf.size()));
-		    StreamBuffer.Fill data = (buf.init == null) ? null : (StreamBuffer.Fill)buf.init.fill(buf, this);
+		    Disposable old = buf.ro;
+		    ret = new StreamBuffer(this, buf.size());
+		    StreamBuffer.Fill data = (buf.init == null) ? null : runStreamFill(ret, buf, buf.init);
 		    StreamBuffer jdret = ret;
 		    GLBuffer rbuf = ret.rbuf;
+		    /* Enqueue the data-store write before publishing buf.ro so
+		     * any concurrent reader that observes the new ro also sees
+		     * the upload sitting ahead of any render they later submit. */
 		    prepare((GLRender g) -> {
 			    BGL gl = g.gl();
 			    VboState.apply(gl, g.state, rbuf);
@@ -582,15 +633,17 @@ public abstract class GLEnvironment implements Environment {
 				gl.glObjectLabel(GL.GL_BUFFER, rbuf, String.valueOf(buf.desc));
 			    rbuf.setmem(MemStats.VERTICES, buf.size());
 			});
+		    if(old != null)
+			old.dispose();
+		    buf.ro = new GLReference<>(ret);
 		}
 		return(ret);
 	    }
 	    case STATIC: {
 		GLBuffer ret;
 		if(((ret = GLReference.get(buf.ro, GLBuffer.class)) == null) || (ret.env != this)) {
-		    if(buf.ro != null)
-			buf.ro.dispose();
-		    buf.ro = new GLReference<>(ret = new GLBuffer(this));
+		    Disposable old = buf.ro;
+		    ret = new GLBuffer(this);
 		    FillBuffers.Array data = (buf.init == null) ? null : (FillBuffers.Array)buf.init.fill(buf, this);
 		    GLBuffer jdret = ret;
 		    prepare((GLRender g) -> {
@@ -602,6 +655,9 @@ public abstract class GLEnvironment implements Environment {
 			    jdret.setmem(MemStats.VERTICES, buf.size());
 			    if(data != null) data.dispose();
 			});
+		    if(old != null)
+			old.dispose();
+		    buf.ro = new GLReference<>(ret);
 		}
 		return(ret);
 	    }
@@ -936,7 +992,10 @@ public abstract class GLEnvironment implements Environment {
     }
 
     private final Object seqmon = new Object();
-    private boolean[] sequse = new boolean[16];
+    /* Initial size sized to observed steady-state (~32k in-flight
+     * Sequences during normal rendering) so seqresize() doesn't fire
+     * during warm-up. */
+    private boolean[] sequse = new boolean[0x8000];
     private int seqhead = 1, seqtail = seqhead;
 
     private void seqresize(int nsz) {
@@ -945,7 +1004,9 @@ public abstract class GLEnvironment implements Environment {
 	for(int i = 0; i < csz; i++)
 	    nseq[(seqtail + i) & (nsz - 1)] = cseq[(seqtail + i) & (csz - 1)];
 	sequse = nseq;
-	if(nsz >= 0x4000)
+	/* Warn at 4x observed steady-state -- a tight enough margin to
+	 * surface real leaks while leaving headroom for transient spikes. */
+	if(nsz >= 0x20000)
 	    Warning.warn("warning: dispose queue size increased to " + nsz);
     }
 
@@ -980,6 +1041,21 @@ public abstract class GLEnvironment implements Environment {
     int dispseq() {
 	synchronized(seqmon) {
 	    return(seqhead);
+	}
+    }
+
+    /* Returns {ring-span, true-alive-count}. Ring-span is seqhead-seqtail
+     * (how far back seqtail is from the frontier). True-alive-count is
+     * the number of sequse slots actually marked in-flight. If ring-span
+     * is much larger than true-alive-count, seqtail is stuck behind one
+     * or a few never-disposed Sequences while younger ones churn freely. */
+    int[] seqstats() {
+	synchronized(seqmon) {
+	    int alive = 0;
+	    for(int i = 0; i < sequse.length; i++) {
+		if(sequse[i]) alive++;
+	    }
+	    return(new int[] {seqhead - seqtail, alive});
 	}
     }
 
@@ -1023,17 +1099,16 @@ public abstract class GLEnvironment implements Environment {
     }
 
     public void dispose() {
-	{
-	    Collection<GLRender> copy;
-	    synchronized(submitted) {
-		copy = new ArrayList<>(submitted);
-		submitted.clear();
-		invalid = true;
-	    }
-	    for(GLRender cmd : copy) {
-		cmd.gl.abort();
-		cmd.dispose();
-	    }
+	queue.invalidate();
+	RenderQueue.Snapshot<GLRender> snap = queue.drain();
+	for(GLRender cmd : snap.submitted) {
+	    cmd.gl.abort();
+	    cmd.dispose();
+	}
+	for(GLRender p : snap.prep) {
+	    if(p.gl != null)
+		p.gl.abort();
+	    p.dispose();
 	}
 	{
 	    Collection<GLQuery> copy;
