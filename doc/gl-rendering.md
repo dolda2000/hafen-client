@@ -208,48 +208,60 @@ slots. If `span >> alive`, the tail is stuck. Process logs this every
 
 ## VAO / EBO binding
 
-The crash analysis in `bin/hs_err_pid23396_analysis.md` covers this in
-depth. The short version:
+Full crash walkthrough lives in [`doc/gl-crash-analysis.md`](gl-crash-analysis.md).
+Short version:
 
 ### VAO caching
 
-`GLVertexArray.ProgIndex.get` (`GLVertexArray.java:227-240`) caches
-one VAO per `(Model, program.attribs[])`. The VAO is `init`'d once
-with whichever `GL_ELEMENT_ARRAY_BUFFER` was current at creation
-time (`GLVertexArray.java:85-167`, explicit bind at 111-116). The
-cached VAO is **not** re-init'd if the Model's EBO later changes —
-for STREAM-backed indices the EBO can change because
-`StreamBuffer.rbuf` is recreated whenever `buf.ro` is invalidated.
+`GLVertexArray.ProgIndex.get` caches one VAO per `(Model,
+program.attribs[])`. The VAO is `init`'d once with whichever
+`GL_ELEMENT_ARRAY_BUFFER` was current at creation time and never
+re-init'd. `GLDrawList` separately caches a `VaoSetting` per
+`(vao, ebo)` pair, so each `(vao, ebo)` combination gets a distinct
+`VaoSetting` instance — but a given `vao` reference only ever pairs
+with one `ebo` in practice (VAOs are immutable once built).
 
-`GLDrawList` additionally caches a `VaoSetting` per `(vao, ebo)`
-pair (`GLDrawList.java:826-836`). Different EBOs with the same VAO
-produce different `VaoSetting` instances.
+`VaoBindState` keeps `DO_GL_EBO_FIXUP` permanently true: on every
+`apply()`, the EBO is explicitly rebound after `glBindVertexArray`,
+because some drivers don't reliably track the EBO with the VAO.
 
-### The historical bug (fixed on this branch)
+### The historical bug
 
-The state-tracker `VaoBindState.applyto` (`VaoBindState.java`)
-previously only rebound the EBO when the VAO itself changed. A
-transition `(vao=V, ebo=A) → (vao=V, ebo=B)` silently skipped the
-EBO rebind. The VAO's *GL-internal* EBO slot then kept pointing at
-A (from init time). If A was later deleted, the next
-`glDrawElements` ran with no EBO bound, and the driver fell back to
-the legacy "indices is a client pointer" path — dereferencing
-`indices=0` as NULL.
+The crash everyone has been chasing is a state-tracker desync inside
+`GLDrawList.SlotRender.draw`. The compiled per-slot `bglCallList`s
+internally rebind VAOs to suit each slot's program/attribs, so when
+the loop ends the actual GL VAO is whichever the last slot bound -
+but the `GLRender`'s `g.state` tracker had only seen `assume(last.bk.state())`,
+which doesn't touch the VAO slot. Tracker says "VAO V0 is bound";
+real GL has V_last. The next draw's `Applier.apply` sees no VAO
+transition (V0 -> V0) and emits no rebind. `glDrawElements` runs
+against V_last, whose internal EBO slot is stale, the driver falls
+back to "indices is a client pointer", and `indices=0` becomes a
+NULL deref.
 
-Two fixes applied (both kept):
+### The fix
 
-1. **State-tracker fix** (`VaoBindState.java:62-69`): `applyto` now
-   rebinds on same-VAO/EBO-only transitions, mirroring `apply()`.
-2. **Draw-site fix** (`GLDrawList.java:875-882`): the per-draw
-   `BufferBGL` unconditionally emits
-   `glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo)` immediately before
-   `glDrawElements`. This is the robust layer — the VAO's internal
-   EBO slot is overridden right before it matters, so no amount of
-   state-tracker confusion can reach the draw.
+Loftar's commit `2c183d2fd` (upstream) - one line in
+`GLDrawList.SlotRender.draw`, after the existing `assume(...)`:
 
-The `DO_GL_EBO_FIXUP` constant in `VaoBindState` is effectively a
-permanent `true` — the author already acknowledged VAO-tracked EBO
-state is unreliable. A future cleanup can inline it.
+```java
+g.state.apply(null, VaoState.slot, ((VaoSetting)last.settings[idx_vao]).st);
+```
+
+`apply(null, ...)` updates only the tracker (no GL emit). After the
+list ends the tracker matches reality, so the next draw's `applyto`
+correctly sees a VAO transition and rebinds.
+
+Thunder also has a draw-site defense in `4140e547` that emits an
+unconditional `glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo)` into the
+per-draw `BufferBGL` immediately before `glDrawElements`. This stops
+the crash but doesn't address the underlying state-tracker desync -
+the wrong VAO is still bound, so vertex attribute bindings can be
+off. With loftar's fix in place this is belt-and-braces, not the
+primary fix. The same-VAO/different-EBO branch added to
+`VaoBindState.applyto` in that commit is dead code (VAOs in this
+codebase are immutable, so the transition can't occur) and is
+slated for removal.
 
 ## STREAM buffers
 
@@ -331,30 +343,39 @@ Shared-state protection:
 
 ## Known bugs and fixes applied on `eliminate-glenv-prep`
 
-Referenced in commit history and `bin/hs_err_pid23396_analysis.md`.
-Ordered by commit:
+Crash walkthrough: [`doc/gl-crash-analysis.md`](gl-crash-analysis.md).
+Most of the prep/STREAM commits below were downstream of an incorrect
+premise about a `prep` multi-writer race that doesn't actually exist
+(the three `prepare(GLObject|BGL.Request|Consumer)` overloads are all
+synchronized on `prepmon`, so writes to `this.prep` are serialized).
+PR feedback on https://github.com/dolda2000/hafen-client/pull/22
+sorted this out. Listed for history; revisit before relanding.
 
 1. `beaff5f39` — Eliminated `this.prep` shared render; each prepare
-   now gets its own `GLRender`.
+   now gets its own `GLRender`. *Premise wrong: the original `prep`
+   was already protected by `prepmon`.*
 2. `33a4b26d6` — Decouple STREAM prepare from `buf.ro` publication
-   order (upload enqueued before ro assignment).
-3. `aec453e0e` — `StreamBuffer.Pool` concurrency stress and reuse-order
-   tests.
+   order. *Only needed because (1) introduced a CCE; can be reverted
+   once (1) is.*
+3. `aec453e0e` — `StreamBuffer.Pool` concurrency tests.
 4. `5b35ca266` — Extracted `StreamFiller.runWithPreallocated`; CCE
    regression pinned.
 5. `93c8e3e8b` — `StreamBuffer.Fill` lifecycle tests via test-only ctor.
-6. `50e1859b6` — Extracted `RenderQueue`; locked the submitted-first
-   drain invariant.
+6. `50e1859b6` — Extracted `RenderQueue`.
 7. `3d37a8937` — `GLRender.update` routes STREAM uploads through
    `runStreamFill`.
 8. `ea26a4f8a` — Sized dispose ring to observed steady-state (32k).
-9. **VAO/EBO fix** — `VaoBindState.applyto` rebinds EBO on
-   same-VAO/EBO-only transitions; draw site unconditionally rebinds
-   EBO immediately before `glDrawElements`.
+   *Tunable, not a correctness claim; keep.*
+9. `4140e547` — VAO/EBO defensive draw-site rebind. *Layer-2 fix
+   (per-draw `glBindBuffer(EBO)`) masks the crash; superseded by
+   loftar's `2c183d2fd` which fixes the actual state-tracker desync.
+   Layer-1 same-VAO/EBO-only branch in `VaoBindState.applyto` is
+   dead code, drop it.*
 10. **Sequence-leak fixes** — `env.submit` disposes empty renders;
     three `prepare(...)` overloads dispose on any throw; `process()`
     periodically logs `seq-ring: span=N alive=M` to detect stuck
-    tails.
+    tails. *These look real and independent of the prep-race
+    premise; worth keeping.*
 
 ## Instrumentation points
 
@@ -373,6 +394,7 @@ Ordered by commit:
 
 ## Pointers
 
-- Crash analysis: `bin/hs_err_pid23396_analysis.md`.
-- Test coverage roadmap: `doc/gl-test-coverage.md`.
+- Crash analysis: [`doc/gl-crash-analysis.md`](gl-crash-analysis.md).
+- Test coverage roadmap: [`doc/gl-test-coverage.md`](gl-test-coverage.md).
 - GPU profiling notes: `doc/gpu-profiling/`.
+- PR thread: https://github.com/dolda2000/hafen-client/pull/22.
