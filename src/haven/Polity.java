@@ -102,6 +102,14 @@ public abstract class Polity extends Widget {
 
 	protected Widget makeitem(Member m, int idx, Coord sz) {
 	    return(new ItemWidget<Member>(this, sz, m) {
+		    protected boolean clicked(MouseDownEvent ev) {
+			if((mw instanceof MemberWidget) && Utils.eq(((MemberWidget)mw).id, item.id))
+			    list.change(null);
+			else
+			    list.change(item);
+			return(true);
+		    }
+
 		    public void draw(GOut g) {item.draw(g);}
 		});
 	}
