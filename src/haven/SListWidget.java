@@ -58,11 +58,22 @@ public abstract class SListWidget<I, W extends Widget> extends Widget {
 	    this.item = item;
 	}
 
+	protected boolean toggle() {return(false);}
+
+	protected boolean clicked(MouseDownEvent ev) {
+	    if(toggle() && (list.sel == item))
+		list.change(null);
+	    else
+		list.change(item);
+	    return(true);
+	}
+
 	public boolean mousedown(MouseDownEvent ev) {
 	    if(ev.propagate(this) || super.mousedown(ev))
 		return(true);
-	    list.change(item);
-	    return(true);
+	    if(ev.b == 1)
+		return(clicked(ev));
+	    return(false);
 	}
     }
 
