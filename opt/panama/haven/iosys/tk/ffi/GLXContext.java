@@ -1826,12 +1826,18 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 		    if(windows.containsKey(owner))
 			throw(new RuntimeException("selection requested for own window"));
 		}
-		XSetWindowAttributes attr = xlib.XSetWindowAttributes();
-		attr.event_mask(XLib.PropertyChangeMask);
-		this.twnd = xlib.XCreateWindow(dpy, screen.root(), 0, 0, 1, 1, 0, 0, XLib.InputOnly, vis.visual(), XLib.CWEventMask, attr);
-		register(this);
-		xlib.XConvertSelection(dpy, selection, target, SELECTED_DATA.id, twnd, time);
-		this.timeout = Timeout.later(Utils.rtime() + 5, () -> xrun(this::timeout), null);
+		if(this.owner.equals(XID.None)) {
+		    this.twnd = null;
+		    this.resp = new XProperty(dpy, SELECTED_DATA.id, ATOM.id, 32, 0, new byte[0]);
+		    promise.resolve(this);
+		} else {
+		    XSetWindowAttributes attr = xlib.XSetWindowAttributes();
+		    attr.event_mask(XLib.PropertyChangeMask);
+		    this.twnd = xlib.XCreateWindow(dpy, screen.root(), 0, 0, 1, 1, 0, 0, XLib.InputOnly, vis.visual(), XLib.CWEventMask, attr);
+		    register(this);
+		    xlib.XConvertSelection(dpy, selection, target, SELECTED_DATA.id, twnd, time);
+		    this.timeout = Timeout.later(Utils.rtime() + 5, () -> xrun(this::timeout), null);
+		}
 	    }
 
 	    private SelectionRequest(Atom selection, Atom target, long time) {
@@ -1844,7 +1850,8 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 
 	    public void dispose() {
 		if(!done) {
-		    xlib.XDestroyWindow(dpy, twnd);
+		    if(twnd != null)
+			xlib.XDestroyWindow(dpy, twnd);
 		    done = true;
 		}
 	    }
