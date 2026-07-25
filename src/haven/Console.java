@@ -120,4 +120,63 @@ public class Console {
 		public void flush() {}
 	    });
     }
+
+    static {
+	setscmd("die", (cons, args) -> {
+	    throw(new Error("Triggered death"));
+	});
+	setscmd("sleep", (cons, args) -> {
+	    long ms = (long)(Double.parseDouble(args[1]) * 1000);
+	    try {
+		Thread.sleep(ms);
+	    } catch(InterruptedException e) {
+		Thread.currentThread().interrupt();
+		throw(new RuntimeException(e));
+	    }
+	});
+	setscmd("lockdie", (cons, args) -> {
+	    Object m1 = new Object(), m2 = new Object();
+	    int[] sync = {0};
+	    new HackThread(() -> {
+		    try {
+			synchronized(m2) {
+			    synchronized(sync) {
+				while(sync[0] != 1)
+				    sync.wait();
+				sync[0] = 2;
+				sync.notifyAll();
+			    }
+			    synchronized(m1) {
+				synchronized(sync) {
+				    sync[0] = 3;
+				    sync.notifyAll();
+				}
+			    }
+			}
+		    } catch(InterruptedException e) {}
+	    }, "Deadlocker").start();
+	    try {
+		synchronized(m1) {
+		    synchronized(sync) {
+			sync[0] = 1;
+			sync.notifyAll();
+			while(sync[0] != 2)
+			    sync.wait();
+		    }
+		    synchronized(m2) {
+			synchronized(sync) {
+			    sync[0] = 3;
+			    sync.notifyAll();
+			}
+		    }
+		}
+	    } catch(InterruptedException e) {}
+	});
+	setscmd("threads", (cons, args) -> {
+	    Utils.dumptg(null, cons.out);
+	});
+	setscmd("gc", (cons, args) -> {
+	    System.gc();
+	});
+    }
 }
