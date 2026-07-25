@@ -128,21 +128,28 @@ public class UI {
 		});
 	}
 	
-	private void findcmds(Map<String, Command> map, Widget wdg) {
+	private Command findcmd(Widget wdg, String name) {
+	    for(Widget ch = wdg.child; ch != null; ch = ch.next) {
+		Command ret = findcmd(ch, name);
+		if(ret != null)
+		    return(ret);
+	    }
 	    if(wdg instanceof Directory) {
 		Map<String, Command> cmds = ((Directory)wdg).findcmds();
 		synchronized(cmds) {
-		    map.putAll(cmds);
+		    Command ret = cmds.get(name);
+		    if(ret != null)
+			return(ret);
 		}
 	    }
-	    for(Widget ch = wdg.child; ch != null; ch = ch.next)
-		findcmds(map, ch);
+	    return(null);
 	}
 
-	public Map<String, Command> findcmds() {
-	    Map<String, Command> ret = super.findcmds();
-	    findcmds(ret, root);
-	    return(ret);
+	public Command findcmd(String name) {
+	    Command ret = findcmd(root, name);
+	    if(ret != null)
+		return(ret);
+	    return(super.findcmd(name));
 	}
     }
 

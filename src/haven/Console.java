@@ -30,12 +30,12 @@ import java.util.*;
 import java.io.*;
 
 public class Console {
-    private static final Map<String, Command> scommands = new TreeMap<String, Command>();
-    private final Map<String, Command> commands = new TreeMap<String, Command>();
+    private static final Map<String, Command> scommands = new HashMap<String, Command>();
+    private final Map<String, Command> commands = new HashMap<String, Command>();
     private final Collection<Directory> dirs = new LinkedList<Directory>();
     private final ThreadLocal<Host> host = new ThreadLocal<>();
     public PrintWriter out;
-    
+
     {
 	clearout();
     }
@@ -43,51 +43,49 @@ public class Console {
     public static interface Command {
 	public void run(Console cons, String[] args) throws Exception;
     }
-    
+
     public static interface Directory {
 	public Map<String, Command> findcmds();
     }
 
     public static interface Host {
     }
-    
+
     public static void setscmd(String name, Command cmd) {
 	synchronized(scommands) {
 	    scommands.put(name, cmd);
 	}
     }
-    
+
     public void setcmd(String name, Command cmd) {
 	synchronized(commands) {
 	    commands.put(name, cmd);
 	}
     }
-    
-    public Map<String, Command> findcmds() {
-	Map<String, Command> ret = new TreeMap<String, Command>();
+
+    public Command findcmd(String name) {
+	Command ret;
 	synchronized(scommands) {
-	    ret.putAll(scommands);
+	    if((ret = scommands.get(name)) != null)
+		return(ret);
 	}
 	synchronized(commands) {
-	    ret.putAll(commands);
+	    if((ret = commands.get(name)) != null)
+		return(ret);
 	}
 	synchronized(dirs) {
 	    for(Directory dir : dirs) {
-		Map<String, Command> cmds = dir.findcmds();
-		ret.putAll(cmds);
+		if((ret = dir.findcmds().get(name)) != null)
+		    return(ret);
 	    }
 	}
-	return(ret);
+	return(null);
     }
-    
+
     public void add(Directory dir) {
 	synchronized(dirs) {
 	    dirs.add(dir);
 	}
-    }
-    
-    public Command findcmd(String name) {
-	return(findcmds().get(name));
     }
 
     public void run(Host host, String[] args) throws Exception {
@@ -104,7 +102,7 @@ public class Console {
 	    this.host.set(ph);
 	}
     }
-    
+
     public void run(Host host, String cmdl) throws Exception {
 	run(host, Utils.splitwords(cmdl));
     }
@@ -112,7 +110,7 @@ public class Console {
     public Host host() {
 	return(host.get());
     }
-    
+
     public void clearout() {
 	out = new PrintWriter(new Writer() {
 		public void write(char[] b, int o, int c) {}
