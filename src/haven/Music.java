@@ -161,34 +161,30 @@ public class Music {
     }
 
     static {
-	Console.setscmd("bgm", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    int i = 1;
-		    String opt;
-		    boolean loop = false;
-		    if(i < args.length) {
-			while((opt = args[i]).charAt(0) == '-') {
-			    i++;
-			    if(opt.equals("-l"))
-				loop = true;
-			}
-			String resnm = args[i++];
-			int ver = -1;
-			if(i < args.length)
-			    ver = Integer.parseInt(args[i++]);
-			Music.play(Resource.remote().load(resnm, ver), loop);
-		    } else {
-			Music.play(null, false);
-		    }		
+	Console.setscmd("bgm", (cons, args) -> {
+	    int i = 1;
+	    String opt;
+	    boolean loop = false;
+	    if(i < args.length) {
+		while((opt = args[i]).charAt(0) == '-') {
+		    i++;
+		    if(opt.equals("-l"))
+			loop = true;
 		}
-	    });
-	Console.setscmd("bgmsw", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    if(args.length < 2)
-			enable(!enabled);
-		    else
-			enable(Utils.parsebool(args[1], true));
-		}
-	    });
+		String resnm = args[i++];
+		int ver = -1;
+		if(i < args.length)
+		    ver = Integer.parseInt(args[i++]);
+		Music.play(Resource.remote().load(resnm, ver), loop);
+	    } else {
+		Music.play(null, false);
+	    }
+	});
+	Console.setscmd("bgmsw", (cons, args) -> {
+	    if(args.length < 2)
+		enable(!enabled);
+	    else
+		enable(Utils.parsebool(args[1], true));
+	});
     }
 }

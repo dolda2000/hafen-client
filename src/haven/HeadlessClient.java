@@ -150,11 +150,9 @@ public class HeadlessClient implements Console.Directory, Console.Host {
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
-	cmdmap.put("q", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    mt.interrupt();
-		}
-	    });
+	cmdmap.put("q", (cons, args) -> {
+	    mt.interrupt();
+	});
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);

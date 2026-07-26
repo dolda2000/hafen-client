@@ -185,11 +185,9 @@ public interface ReadLine {
 	}
 
 	static {
-	    Console.setscmd("editmode", new Console.Command() {
-		    public void run(Console cons, String[] args) {
-			Utils.setpref("editmode", args[1]);
-		    }
-		});
+	    Console.setscmd("editmode", (cons, args) -> {
+		Utils.setpref("editmode", args[1]);
+	    });
 	}
     }
 

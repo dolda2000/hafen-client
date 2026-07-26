@@ -70,10 +70,8 @@ public class PosLight extends Light {
     }
 
     static {
-	Console.setscmd("lightcut", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    atoverride = Float.parseFloat(args[1]);
-		}
-	    });
+	Console.setscmd("lightcut", (cons, args) -> {
+	    atoverride = Float.parseFloat(args[1]);
+	});
     }
 }

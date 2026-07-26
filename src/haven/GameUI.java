@@ -1286,16 +1286,14 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
 	}
 	private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
 	{
-	    cmdmap.put("rmseg", new Console.Command() {
-		    public void run(Console cons, String[] args) {
-			MiniMap.Location loc = curloc;
-			if(loc != null) {
-			    try(Locked lk = new Locked(file.lock.writeLock())) {
-				file.segments.remove(loc.seg.id);
-			    }
-			}
+	    cmdmap.put("rmseg", (cons, args) -> {
+		MiniMap.Location loc = curloc;
+		if(loc != null) {
+		    try(Locked lk = new Locked(file.lock.writeLock())) {
+			file.segments.remove(loc.seg.id);
 		    }
-		});
+		}
+	    });
 	}
 	public Map<String, Console.Command> findcmds() {
 	    return(cmdmap);
@@ -1848,51 +1846,41 @@ public class GameUI extends ConsoleHost implements Console.Directory, UI.Notice.
     
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
-	cmdmap.put("afk", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    afk = true;
-		    wdgmsg("afk");
-		}
-	    });
-	cmdmap.put("act", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    Object[] ad = new Object[args.length - 1];
-		    System.arraycopy(args, 1, ad, 0, ad.length);
-		    wdgmsg("act", ad);
-		}
-	    });
-	cmdmap.put("belt", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    if(args[1].equals("f")) {
-			beltwdg.destroy();
-			beltwdg = add(new FKeyBelt());
-			Utils.setpref("belttype", "f");
-			resize(sz);
-		    } else if(args[1].equals("n")) {
-			beltwdg.destroy();
-			beltwdg = add(new NKeyBelt());
-			Utils.setpref("belttype", "n");
-			resize(sz);
-		    }
-		}
-	    });
-	cmdmap.put("chrmap", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    Utils.setpref("mapfile/" + chrid, args[1]);
-		}
-	    });
-	cmdmap.put("tool", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    try {
-			Object[] wargs = new Object[args.length - 2];
-			for(int i = 0; i < wargs.length; i++)
-			    wargs[i] = args[i + 2];
-			add(gettype(args[1]).create(ui, wargs), 200, 200);
-		    } catch(RuntimeException e) {
-			e.printStackTrace(Debug.log);
-		    }
-		}
-	    });
+	cmdmap.put("afk", (cons, args) -> {
+	    afk = true;
+	    wdgmsg("afk");
+	});
+	cmdmap.put("act", (cons, args) -> {
+		Object[] ad = new Object[args.length - 1];
+		System.arraycopy(args, 1, ad, 0, ad.length);
+		wdgmsg("act", ad);
+	});
+	cmdmap.put("belt", (cons, args) -> {
+	    if(args[1].equals("f")) {
+		beltwdg.destroy();
+		beltwdg = add(new FKeyBelt());
+		Utils.setpref("belttype", "f");
+		resize(sz);
+	    } else if(args[1].equals("n")) {
+		beltwdg.destroy();
+		beltwdg = add(new NKeyBelt());
+		Utils.setpref("belttype", "n");
+		resize(sz);
+	    }
+	});
+	cmdmap.put("chrmap", (cons, args) -> {
+	    Utils.setpref("mapfile/" + GameUI.this.chrid, args[1]);
+	});
+	cmdmap.put("tool", (cons, args) -> {
+	    try {
+		Object[] wargs = new Object[args.length - 2];
+		for(int i = 0; i < wargs.length; i++)
+		    wargs[i] = args[i + 2];
+		add(gettype(args[1]).create(ui, wargs), 200, 200);
+	    } catch(RuntimeException e) {
+		e.printStackTrace(Debug.log);
+	    }
+	});
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);

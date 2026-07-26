@@ -1127,22 +1127,18 @@ public class MapWnd extends Window implements Console.Directory {
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
-	cmdmap.put("exportmap", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    if(args.length > 1)
-			exportmap(Utils.path(args[1]));
-		    else
-			exportmap();
-		}
-	    });
-	cmdmap.put("importmap", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    if(args.length > 1)
-			importmap(Utils.path(args[1]));
-		    else
-			importmap();
-		}
-	    });
+	cmdmap.put("exportmap", (cons, args) -> {
+	    if(args.length > 1)
+		exportmap(Utils.path(args[1]));
+	    else
+		exportmap();
+	});
+	cmdmap.put("importmap", (cons, args) -> {
+	    if(args.length > 1)
+		importmap(Utils.path(args[1]));
+	    else
+		importmap();
+	});
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);

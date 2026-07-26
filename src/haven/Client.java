@@ -237,40 +237,36 @@ public class Client implements Console.Directory {
     private Windeye.State prevfsstate = Windeye.State.NORMAL;
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
-	cmdmap.put("q", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    mt.interrupt();
-		}
-	    });
-	cmdmap.put("fs", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    if(args.length >= 2) {
-			if(Utils.parsebool(args[1])) {
-			    if(wnd.state() != Windeye.State.EXCLUSIVE) {
-				prevfsstate = wnd.state();
-				wnd.state(Windeye.State.EXCLUSIVE);
-			    }
-			} else {
-			    wnd.state(prevfsstate);
-			}
+	cmdmap.put("q", (cons, args) -> {
+	    mt.interrupt();
+	});
+	cmdmap.put("fs", (cons, args) -> {
+	    if(args.length >= 2) {
+		Windeye wnd = Client.this.wnd;
+		if(Utils.parsebool(args[1])) {
+		    if(wnd.state() != Windeye.State.EXCLUSIVE) {
+			prevfsstate = wnd.state();
+			wnd.state(Windeye.State.EXCLUSIVE);
 		    }
+		} else {
+		    wnd.state(prevfsstate);
 		}
-	    });
-	cmdmap.put("sz", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    if(args.length >= 3) {
-			Coord sz = Coord.of(Integer.parseInt(args[1]),
-					    Integer.parseInt(args[2]));
-			if((args.length >= 4) && args[3].equals("lock")) {
-			    Utils.setprefc("mainwnd/locksize", sz);
-			    wnd.sizing(new Windeye.Sizing().fixsize(sz));
-			} else {
-			    Utils.setprefc("mainwnd/locksize", null);
-			    wnd.sizing(new Windeye.Sizing().minsize(UI.scale(800, 600)).normsize(sz));
-			}
-		    }
+	    }
+	});
+	cmdmap.put("sz", (cons, args) -> {
+	    if(args.length >= 3) {
+		Coord sz = Coord.of(Integer.parseInt(args[1]),
+				    Integer.parseInt(args[2]));
+		Windeye wnd = Client.this.wnd;
+		if((args.length >= 4) && args[3].equals("lock")) {
+		    Utils.setprefc("mainwnd/locksize", sz);
+		    wnd.sizing(new Windeye.Sizing().fixsize(sz));
+		} else {
+		    Utils.setprefc("mainwnd/locksize", null);
+		    wnd.sizing(new Windeye.Sizing().minsize(UI.scale(800, 600)).normsize(sz));
 		}
-	    });
+	    }
+	});
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);

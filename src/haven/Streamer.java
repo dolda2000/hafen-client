@@ -141,11 +141,9 @@ public class Streamer implements Console.Directory {
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
-	cmdmap.put("q", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    mt.interrupt();
-		}
-	    });
+	cmdmap.put("q", (cons, args) -> {
+	    mt.interrupt();
+	});
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);

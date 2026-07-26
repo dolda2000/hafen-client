@@ -129,10 +129,8 @@ public class OverTex extends State {
     }
 
     static {
-	Console.setscmd("otexdb", new Console.Command() {
-		public void run(Console cons, String[] args) {
-		    otexdb = Utils.parsebool(args[1], false);
-		}
-	    });
+	Console.setscmd("otexdb", (cons, args) -> {
+	    otexdb = Utils.parsebool(args[1], false);
+	});
     }
 }

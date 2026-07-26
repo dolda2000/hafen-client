@@ -171,25 +171,23 @@ public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Widget
 
     private Map<String, Console.Command> cmdmap = new TreeMap<String, Console.Command>();
     {
-	cmdmap.put("wdgtree", new Console.Command() {
-		public void run(Console cons, String[] args) throws Exception {
-		    for(Widget w = RootWidget.this; w != null; w = w.rnext()) {
-			for(Widget p = w.parent; p != null; p = p.parent)
-			    cons.out.write('\t');
-			cons.out.write(w.visible ? 'S' : 'H');
-			cons.out.write(' ');
-			cons.out.write(w.hasfocus ? "F" : "f");
-			cons.out.write(w.focusctl ? "C" : "c");
-			cons.out.write(w.focustab ? "T" : "t");
-			cons.out.write(w.canfocus ? "A" : "a");
-			cons.out.write(w.autofocus ? "T" : "t");
-			cons.out.write(((w.parent != null) && (w.parent.focused == w)) ? "P" : "p");
-			cons.out.write(' ');
-			cons.out.write(w.toString());
-			cons.out.write('\n');
-		    }
-		}
-	    });
+	cmdmap.put("wdgtree", (cons, args) -> {
+	    for(Widget w = RootWidget.this; w != null; w = w.rnext()) {
+		for(Widget p = w.parent; p != null; p = p.parent)
+		    cons.out.write('\t');
+		cons.out.write(w.visible ? 'S' : 'H');
+		cons.out.write(' ');
+		cons.out.write(w.hasfocus ? "F" : "f");
+		cons.out.write(w.focusctl ? "C" : "c");
+		cons.out.write(w.focustab ? "T" : "t");
+		cons.out.write(w.canfocus ? "A" : "a");
+		cons.out.write(w.autofocus ? "T" : "t");
+		cons.out.write(((w.parent != null) && (w.parent.focused == w)) ? "P" : "p");
+		cons.out.write(' ');
+		cons.out.write(w.toString());
+		cons.out.write('\n');
+	    }
+	});
     }
     public Map<String, Console.Command> findcmds() {
 	return(cmdmap);
