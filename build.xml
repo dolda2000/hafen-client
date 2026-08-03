@@ -172,7 +172,6 @@
     <copy todir="build">
       <fileset dir="lib/ext/jogl"><include name="*.jar" /></fileset>
       <fileset dir="lib/ext/lwjgl"><include name="*.jar" /></fileset>
-      <fileset dir="lib/ext/steamworks"><include name="*.jar" /></fileset>
     </copy>
     <copy file="local-config.properties" tofile="build/haven-config.properties" failonerror="false" quiet="true" />
   </target>
