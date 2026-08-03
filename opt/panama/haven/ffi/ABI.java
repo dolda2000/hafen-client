@@ -44,6 +44,8 @@ public class ABI {
     public static final MemoryLayout SIZE_T = systypes.get("size_t");
     public static final MemoryLayout C_ENUM = C_INT;
     public static final MemoryLayout PTRINT_T = (ValueLayout.ADDRESS.byteSize() == 8) ? ValueLayout.JAVA_LONG : ValueLayout.JAVA_INT;
+    /* XXX? This is kind of cheating, but not being able to handle invoke() calls with flexible typing is quite restricting... */
+    public static final MemoryLayout C_BOOL = C_CHAR;
 
     private static final Linker ld() {
 	try {
