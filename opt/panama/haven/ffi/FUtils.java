@@ -29,6 +29,7 @@ package haven.ffi;
 import haven.*;
 import java.nio.*;
 import java.nio.charset.*;
+import java.nio.file.*;
 import java.lang.invoke.*;
 import java.lang.foreign.*;
 import java.util.*;
@@ -249,5 +250,51 @@ public class FUtils {
 	if(ret == null)
 	    return(Long.toUnsignedString(val, 16));
 	return(ret);
+    }
+
+    private static Collection<Path> libpath = null;
+    public static SymbolLookup loadlib(String name, Arena arena) {
+	Collection<Path> libpath;
+	synchronized(FUtils.class) {
+	    if(FUtils.libpath == null) {
+		String spec = Utils.getprop("java.library.path", "");
+		if(spec.equals("")) {
+		    FUtils.libpath = Collections.emptyList();
+		} else {
+		    ArrayList<Path> buf = new ArrayList<>();
+		    int p = 0;
+		    String sep = java.io.File.pathSeparator;
+		    boolean done = false;
+		    while(!done) {
+			int p2 = spec.indexOf(sep, p);
+			String nm;
+			if(p2 < 0) {
+			    nm = spec.substring(p);
+			    done = true;
+			} else {
+			    nm = spec.substring(p, p2);
+			    p = p2 + sep.length();
+			}
+			try {
+			    buf.add(Paths.get(nm));
+			} catch(InvalidPathException e) {
+			    new Warning(e, "invalid library path: " + e).issue();
+			}
+		    }
+		    FUtils.libpath = buf;
+		}
+	    }
+	    libpath = FUtils.libpath;
+	}
+	if(libpath != null) {
+	    for(Path p : libpath) {
+		try {
+		    return(SymbolLookup.libraryLookup(p.resolve(name), arena));
+		} catch(IllegalArgumentException e) {
+		    e.printStackTrace();
+		}
+	    }
+	}
+	return(SymbolLookup.libraryLookup(name, arena));
     }
 }
