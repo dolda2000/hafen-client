@@ -105,6 +105,7 @@ public class ASound implements AudioSystem {
 	    return(ret);
 	}
 
+	private boolean xrwarn = false;
 	private double fxrun = -1;
 	private int xruns = 0;
 	public void run() {
@@ -139,8 +140,12 @@ public class ASound implements AudioSystem {
 		    if(stop)
 			break;
 		    if((fxrun >= 0) && (Utils.rtime() - fxrun > 2)) {
-			if(xruns > 1)
-			    Warning.warn(xruns + " alsa underruns detected; audio buffer size too small?");
+			if(xruns > 1) {
+			    if(!xrwarn)
+				xrwarn = true;
+			    else
+				Warning.warn(xruns + " alsa underruns detected; audio buffer size too small?");
+			}
 			fxrun = -1;
 			xruns = 0;
 		    }
