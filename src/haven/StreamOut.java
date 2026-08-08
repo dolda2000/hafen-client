@@ -345,7 +345,7 @@ public class StreamOut {
 	    }
 
 	    public long codepts(long nextpts) {
-		long ret = nextpts & ((1 << ptsshift) - 1);
+		long ret = nextpts & ((1l << ptsshift) - 1);
 		if(lsb2full(ret) == nextpts)
 		    return(ret);
 		return(nextpts + (1l << ptsshift));
