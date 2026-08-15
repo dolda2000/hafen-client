@@ -188,7 +188,7 @@ public class GLRender implements Render, Disposable {
 	    boolean[] instanced = new boolean[enable.length];
 	    for(int i = 0; i < enable.length; i++) {
 		/* XXX: Properly handle input attributes not present in the program. */
-		enable[i] = state.prog().cattrib(data.va.fmt.inputs[i].tgt);
+		enable[i] = state.prog().attrib(data.va.fmt.inputs[i].tgt);
 		instanced[i] = data.va.fmt.inputs[i].instanced;
 	    }
 	    Vao0State.apply(this.env, this.gl, state, enable, instanced);
