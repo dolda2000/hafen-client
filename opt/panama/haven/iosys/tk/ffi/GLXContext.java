@@ -982,8 +982,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 			    }
 			}
 		    } else {
-			xlib.XChangeProperty(dpy, id, _NET_WM_STATE.id, ATOM.id, XLib.PropModeReplace,
-					     new Atom[] {});
+			xlib.XChangeProperty(dpy, id, _NET_WM_STATE.id, ATOM.id, XLib.PropModeReplace, st);
 		    }
 		    curstate = (st.length == 0) ? Collections.emptySet() : new HashSet<>(Arrays.asList(st));
 		});
