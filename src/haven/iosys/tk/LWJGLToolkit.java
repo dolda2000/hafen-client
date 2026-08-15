@@ -172,6 +172,8 @@ public class LWJGLToolkit extends AWTToolkit {
 	}
     }
 
+    private static final Pipe.Op glfb = Pipe.Op.compose(new FragColor<>(FragColor.defcolor),
+							new DepthBuffer<>(DepthBuffer.defdepth));
     public class LWJGLWindow extends AWTWindow {
 	public final LWJGLPanel panel;
 	private final EventQueue dsp;
@@ -188,6 +190,10 @@ public class LWJGLToolkit extends AWTToolkit {
 
 	public Environment env() {
 	    return(panel.env());
+	}
+
+	public Pipe.Op fbstate() {
+	    return(glfb);
 	}
 
 	public void swapbuffers(Render buf, Object mode) {

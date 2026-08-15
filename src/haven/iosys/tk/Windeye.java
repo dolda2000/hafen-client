@@ -50,6 +50,7 @@ public interface Windeye {
     public default Visibility visible() {return(Visibility.UNKNOWN);}
 
     public Environment env();
+    public Pipe.Op fbstate();
     public void swapbuffers(Render g, Object mode);
 
     public default Clipboard clipboard(Object id) {return(Clipboard.nil);}

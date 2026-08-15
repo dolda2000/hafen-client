@@ -214,6 +214,8 @@ public class JOGLToolkit extends AWTToolkit {
 	}
     }
 
+    private static final Pipe.Op glfb = Pipe.Op.compose(new FragColor<>(FragColor.defcolor),
+							new DepthBuffer<>(DepthBuffer.defdepth));
     public class JOGLWindow extends AWTWindow {
 	public final JOGLPanel panel;
 	private final EventQueue dsp;
@@ -246,6 +248,10 @@ public class JOGLToolkit extends AWTToolkit {
 		    throw(new RuntimeException("Did not get GL environment even after display"));
 	    }
 	    return(panel.env);
+	}
+
+	public Pipe.Op fbstate() {
+	    return(glfb);
 	}
 
 	public void swapbuffers(Render buf, Object mode) {

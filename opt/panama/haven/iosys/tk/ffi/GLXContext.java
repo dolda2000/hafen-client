@@ -1049,6 +1049,12 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 		return(renv);
 	    }
 
+	    private static final Pipe.Op glfb = Pipe.Op.compose(new FragColor<>(FragColor.defcolor),
+								new DepthBuffer<>(DepthBuffer.defdepth));
+	    public Pipe.Op fbstate() {
+		return(glfb);
+	    }
+
 	    private void glswap(GL gl, int ival) {
 		GLException.checkfor(gl, null);
 		if(ival != cursi)

@@ -265,7 +265,7 @@ public abstract class UILoop implements Console.Directory {
 
     protected Pipe basestate() {
 	Pipe base = new BufPipe();
-	base.prep(new FragColor<>(FragColor.defcolor)).prep(new DepthBuffer<>(DepthBuffer.defdepth));
+	base.prep(wnd.fbstate());
 	return(base);
     }
 

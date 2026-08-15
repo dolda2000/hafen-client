@@ -68,6 +68,10 @@ public class DummyToolkit implements Toolkit {
 		    return(env);
 		}
 
+		public Pipe.Op fbstate() {
+		    return(Pipe.Op.nil);
+		}
+
 		public void swapbuffers(Render buf, Object mode) {
 		    if(swap != null)
 			swap.accept(buf);

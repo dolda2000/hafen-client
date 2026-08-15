@@ -253,6 +253,9 @@ public class NEWTContext implements Providers.Factory<Toolkit> {
 	    public NEWTKeyUpEvent(com.jogamp.newt.event.KeyEvent newt) {super(newt);}
 	}
 
+
+	private static final Pipe.Op glfb = Pipe.Op.compose(new FragColor<>(FragColor.defcolor),
+							    new DepthBuffer<>(DepthBuffer.defdepth));
 	public class NEWTWindow implements Windeye {
 	    public final GLWindow bk;
 	    private final Collection<EventListener> callbacks = new java.util.concurrent.CopyOnWriteArrayList<>();
@@ -487,6 +490,10 @@ public class NEWTContext implements Providers.Factory<Toolkit> {
 			throw(new RuntimeException("Did not get GL environment even after display"));
 		}
 		return(this.env);
+	    }
+
+	    public Pipe.Op fbstate() {
+		return(glfb);
 	    }
 
 	    private void glswap(haven.render.gl.GL gl, int ival) {

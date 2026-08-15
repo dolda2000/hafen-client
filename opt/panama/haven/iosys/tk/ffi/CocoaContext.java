@@ -246,6 +246,12 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		return(null);
 	    }
 
+	    private static final Pipe.Op glfb = Pipe.Op.compose(new FragColor<>(FragColor.defcolor),
+								new DepthBuffer<>(DepthBuffer.defdepth));
+	    public Pipe.Op fbstate() {
+		return(glfb);
+	    }
+
 	    public void swapbuffers(Render out, Object mode) {
 	    }
 
