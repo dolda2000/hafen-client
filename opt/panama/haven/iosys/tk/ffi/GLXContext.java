@@ -1945,7 +1945,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	    }
 	}
 
-	public static class XRRMonitor implements Monitor {
+	public class XRRMonitor implements Monitor {
 	    public final Xrandr.XRROutputInfo out;
 	    public final Xrandr.XRRCrtcInfo ctl;
 
@@ -1969,13 +1969,24 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 		return(sz);
 	    }
 
+	    public double userdpi() {
+		XrmValue dpi = xlib.XrmGetResource(xrdb, "Xft.dpi", "Xft.Dpi");
+		if(dpi != null) {
+		    try {
+			return(Double.parseDouble(dpi.string()));
+		    } catch(IllegalArgumentException e) {
+		    }
+		}
+		return(0);
+	    }
+
 	    public double density() {
 		Coord r = resolution(), sz = size();
 		return((((double)r.x / sz.x) + ((double)r.y / sz.y)) * 25.4 / 2);
 	    }
 
 	    public String toString() {
-		return(String.format("#<x11-monitor %s %spx %smm %.1fdpi>", out.name(), resolution(), size(), density()));
+		return(String.format("#<x11-monitor %s %spx %smm u%.1fdpi p%.1fdpi>", out.name(), resolution(), size(), userdpi(), density()));
 	    }
 	}
 
