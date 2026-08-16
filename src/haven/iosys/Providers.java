@@ -96,6 +96,29 @@ public class Providers<S, A extends Annotation> {
 	return(found);
     }
 
+    public static <S> S findfirst(Collection<Factory<? extends S>> prov, String desc) {
+	List<Factory<? extends S>> types = new ArrayList<>(prov);
+	Collections.sort(types, Comparator.comparing(Factory<? extends S>::priority).reversed());
+	Collection<Throwable> errors = new ArrayList<>();
+	S first = null;
+	for(Factory<? extends S> type : types) {
+	    if(!type.autouse() || (type.experimental() && !Config.exp.get()))
+		continue;
+	    try {
+		first = type.open();
+		break;
+	    } catch(Unavailable e) {
+		errors.add(e);
+	    }
+	}
+	if(first == null) {
+	    Unavailable exc = new Unavailable("could find no working " + desc);
+	    errors.forEach(exc::addSuppressed);
+	    throw(exc);
+	}
+	return(first);
+    }
+
     private S instance = null;
     public S instance() {
 	if(instance == null) {
@@ -116,26 +139,7 @@ public class Providers<S, A extends Annotation> {
 			    throw(new Unavailable("no such " + desc + " name: " + fnm));
 			instance = (p < 0) ? f.open() : f.open(spec.substring(p + 1));;
 		    } else {
-			List<Factory<? extends S>> types = new ArrayList<>(found().values());
-			Collections.sort(types, Comparator.comparing(Factory<? extends S>::priority).reversed());
-			Collection<Throwable> errors = new ArrayList<>();
-			S first = null;
-			for(Factory<? extends S> type : types) {
-			    if(!type.autouse() || (type.experimental() && !Config.exp.get()))
-				continue;
-			    try {
-				first = type.open();
-				break;
-			    } catch(Unavailable e) {
-				errors.add(e);
-			    }
-			}
-			if(first == null) {
-			    Unavailable exc = new Unavailable("could find no working " + desc);
-			    errors.forEach(exc::addSuppressed);
-			    throw(exc);
-			}
-			instance = first;
+			instance = findfirst(found().values(), desc);
 		    }
 		}
 	    }
