@@ -149,6 +149,8 @@ public class IndirectToolkit implements Toolkit {
 	return(new IndirectWindow());
     }
 
+    public boolean sharedenvs() {return(true);}
+
     public Collection<Monitor> monitors() {
 	return(frontend.monitors());
     }

@@ -39,6 +39,7 @@ public interface Toolkit {
     public default Collection<Monitor> monitors() {return(Collections.emptyList());}
     public Cursor.Caps cursorcaps();
     public Cursor makecursor(BufferedImage img, Coord hotspot);
+    public default boolean sharedenvs() {return(false);}
     public Windeye window();
 
     public void dispose();
