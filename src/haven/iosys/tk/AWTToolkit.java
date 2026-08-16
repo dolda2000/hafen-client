@@ -870,7 +870,7 @@ public abstract class AWTToolkit implements Toolkit {
 	}
 
 	public String toString() {
-	    return(dev.toString());
+	    return(String.format("#<awt-monitor %s %s %.2fdpi>", dev.toString(), resolution(), density()));
 	}
     }
 
