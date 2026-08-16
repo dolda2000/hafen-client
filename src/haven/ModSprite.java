@@ -141,6 +141,10 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    }
 	    return(new UnionMap<>(infos));
 	}
+
+	public String toString() {
+	    return(String.format("#<mod-part %s w=%s, st=%s, ds=%s>", obj, wraps, state, dynstate));
+	}
     }
 
     public class Cons {
@@ -511,8 +515,6 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    return(main.owner.mkrandoom());
 	}
 
-	public int order() {return(2000);}
-
 	@RMod.Global
 	public static class $res implements RMod {
 	    public void operate(ResData dat) {
@@ -624,6 +626,34 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    pose.gbuild();
 	}
 
+	public class Applier implements Mod {
+	    public void operate(Cons cons) {
+		for(Part part : cons.parts) {
+		    if(part.obj instanceof FastMesh) {
+			FastMesh m = (FastMesh)part.obj;
+			if(PoseMorph.boned(m)) {
+			    String bnm = PoseMorph.boneidp(m);
+			    if(bnm == null) {
+				PoseMorph st = new PoseMorph(pose, m);
+				part.dynstate.add(st::state);
+				if(bonedb)
+				    part.state.add(morphed);
+			    } else {
+				part.dynstate.add(pose.bonetrans2(skel.bones.get(bnm).idx));
+				if(bonedb)
+				    part.state.add(rigid);
+			    }
+			} else {
+			    if(bonedb)
+				part.state.add(unboned);
+			}
+		    }
+		}
+	    }
+
+	    public int order() {return(1010);}
+	}
+
 	public void operate(Cons cons) {
 	    int flags = cons.spr().flags;
 	    stat = true;
@@ -647,30 +677,9 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    this.ids = newids.isEmpty() ? Collections.emptyMap() : newids;
 	    rebuild();
 
-	    for(Part part : cons.parts) {
-		if(part.obj instanceof FastMesh) {
-		    FastMesh m = (FastMesh)part.obj;
-		    if(PoseMorph.boned(m)) {
-			String bnm = PoseMorph.boneidp(m);
-			if(bnm == null) {
-			    PoseMorph st = new PoseMorph(pose, m);
-			    part.dynstate.add(st::state);
-			    if(bonedb)
-				part.state.add(morphed);
-			} else {
-			    part.dynstate.add(pose.bonetrans2(skel.bones.get(bnm).idx));
-			    if(bonedb)
-				part.state.add(rigid);
-			}
-		    } else {
-			if(bonedb)
-			    part.state.add(unboned);
-		    }
-		}
-	    }
-
 	    cons.tickers.add(this);
 	    cons.eqtgts.add(this);
+	    cons.add(new Applier());
 	    // cons.add(new Part(pose.new Debug()));
 	}
 
@@ -728,7 +737,7 @@ public class ModSprite extends Sprite implements Sprite.CUpd, EquipTarget {
 	    this.oldpose = null;
 	}
 
-	public int order() {return(1010);}
+	public int order() {return(-1000);}
 
 	@RMod.Global
 	public static class $res implements RMod {
