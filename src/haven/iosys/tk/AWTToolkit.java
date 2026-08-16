@@ -865,12 +865,12 @@ public abstract class AWTToolkit implements Toolkit {
 	    return(dev.getDisplayMode().getRefreshRate());
 	}
 
-	public double density() {
+	public double userdpi() {
 	    return(java.awt.Toolkit.getDefaultToolkit().getScreenResolution());
 	}
 
 	public String toString() {
-	    return(String.format("#<awt-monitor %s %s %.2fdpi>", dev.toString(), resolution(), density()));
+	    return(String.format("#<awt-monitor %s %s %.2fdpi>", dev.toString(), resolution(), userdpi()));
 	}
     }
 

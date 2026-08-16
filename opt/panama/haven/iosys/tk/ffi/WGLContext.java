@@ -179,8 +179,16 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		return(0);
 	    }
 
-	    public double density() {
+	    public double scaling() {
+		return(fac);
+	    }
+
+	    public double userdpi() {
 		return((udpi == 0) ? gdpi : udpi);
+	    }
+
+	    public double density() {
+		return(mdpi);
 	    }
 
 	    public String toString() {

@@ -1039,9 +1039,11 @@ public class UI {
 		    Toolkit tk = Toolkit.instance();
 		    for(Monitor dev : tk.monitors()) {
 			Coord res = dev.resolution();
-			double scale = Math.min(res.x / 800.0, res.y / 600.0);
-			fscale = Math.max(fscale, scale);
-			sscale = Math.max(sscale, Math.rint(dev.density() / 5.0) * 0.05);
+			fscale = Math.max(fscale, Math.min(res.x / 800.0, res.y / 600.0));
+			double prefscale = dev.scaling();
+			if(prefscale == 0) prefscale = (dev.userdpi() / 96.0);
+			if(prefscale == 0) prefscale = (dev.density() / 100.0);
+			sscale = Math.max(sscale, Math.rint(prefscale / 0.05) * 0.05);
 		    }
 		} catch(Exception exc) {
 		    new Warning(exc, "could not determine maximum scaling factor").issue();

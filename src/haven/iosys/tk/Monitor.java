@@ -31,5 +31,7 @@ import haven.*;
 public interface Monitor {
     public Coord resolution();
     public int refresh();
-    public double density();
+    public default double scaling() {return(0);}
+    public default double userdpi() {return(0);}
+    public default double density() {return(0);}
 }
