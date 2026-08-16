@@ -160,7 +160,7 @@ public class DesktopPortal {
 		public void filter(String desc, String... exts) {
 		    List<Object> edesc = new ArrayList<>();
 		    for(String ext : exts)
-			edesc.add(Arrays.asList(0, ext));
+			edesc.add(Arrays.asList(0, "*." + ext));
 		    filters.add(Arrays.asList(desc, edesc));
 		}
 
