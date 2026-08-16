@@ -87,7 +87,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
     }
 
     public Toolkit open(String... args) {
-	return(new GLXToolkit(null, -1));
+	return(new GLXToolkit((args.length == 0) ? null : args[0], -1));
     }
 
     public int priority() {
