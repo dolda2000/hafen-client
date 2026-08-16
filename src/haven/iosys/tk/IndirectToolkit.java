@@ -182,10 +182,12 @@ public class IndirectToolkit implements Toolkit {
 	public IndirectToolkit open(String... args) {
 	    Toolkit frontend;
 	    if((args.length > 0) && (args[0].length() > 0)) {
-		Providers.Factory<? extends Toolkit> fp = Toolkit.toolkits().get(args[0]);
+		int p = args[0].indexOf(':');
+		String fnm = (p < 0) ? args[0] : args[0].substring(0, p);
+		Providers.Factory<? extends Toolkit> fp = Toolkit.toolkits().get(fnm);
 		if(fp == null)
-		    throw(new Unavailable("no such toolkit type: " + args[0]));
-		frontend = fp.open();
+		    throw(new Unavailable("no such toolkit type: " + fnm));
+		frontend = (p < 0) ? fp.open() : fp.open(args[0].substring(p + 1));
 	    } else {
 		frontend = Providers.findfirst(Toolkit.toolkits().values(), "toolkit");
 	    }
