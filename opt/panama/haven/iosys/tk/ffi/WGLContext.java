@@ -150,9 +150,9 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	    }
 	}
 
-	public class W32Monitor implements Monitor {
+	public class W32Monitor implements Monitor { 
 	    public final MONITORINFO minf;
-	    public final int mdpi, gdpi;
+	    public final int udpi, mdpi, gdpi;
 	    public final int fac;
 
 	    public W32Monitor(Handle hm, int gdpi) {
@@ -160,11 +160,13 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		win.GetMonitorInfo(hm, minf);
 		this.gdpi = gdpi;
 		if(shcore != null) {
-		    Coord mdpi = shcore.GetDpiForMonitor(hm, SHCore.MDT_EFFECTIVE_DPI);
+		    Coord udpi = shcore.GetDpiForMonitor(hm, SHCore.MDT_EFFECTIVE_DPI);
+		    this.udpi = (udpi.x + udpi.y) / 2;
+		    Coord mdpi = shcore.GetDpiForMonitor(hm, SHCore.MDT_RAW_DPI);
 		    this.mdpi = (mdpi.x + mdpi.y) / 2;
 		    this.fac = shcore.GetScaleFactorForMonitor(hm);
 		} else {
-		    this.mdpi = 0;
+		    this.udpi = this.mdpi = 0;
 		    this.fac = 0;
 		}
 	    }
@@ -178,11 +180,11 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    public double density() {
-		return((mdpi == 0) ? gdpi : mdpi);
+		return((udpi == 0) ? gdpi : udpi);
 	    }
 
 	    public String toString() {
-		return(String.format("#<w32-monitor %s m%ddpi g%ddpi %d%%>", minf.rcMonitor(), mdpi, gdpi, fac));
+		return(String.format("#<w32-monitor %s u%ddpi m%ddpi g%ddpi %d%%>", minf.rcMonitor(), udpi, mdpi, gdpi, fac));
 	    }
 	}
 
