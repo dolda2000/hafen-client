@@ -73,6 +73,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	}
 	xlib.XInitThreads();
 	xlib.XSetErrorHandler();
+	xlib.XrmInitialize();
     }
 
     private static GLXContext instance = null;
@@ -145,6 +146,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	public final Map<Integer, XIPointerInfo> pointers = new HashMap<>();
 	public final Cursor.Caps ccaps;
 	public final Xrandr.XRRExtensionInfo xrrinfo;
+	public final XrmDatabase xrdb;
 	public final Atomic ATOM = new Atomic("ATOM");
 	public final Atomic CARDINAL = new Atomic("CARDINAL");
 	public final Atomic WINDOW = new Atomic("WINDOW");
@@ -347,6 +349,15 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 			XdndEnter, XdndLeave, XdndPosition, XdndStatus, XdndDrop, XdndFinished,
 			XdndActionCopy, XdndActionMove, XdndActionLink
 			);
+
+		/* xrdb */
+		{
+		    XrmDatabase xrdb = xlib.XrmGetStringDatabase(xlib.XResourceManagerString(dpy));
+		    xrdb = xlib.XrmMergeDatabases(xlib.XrmGetStringDatabase(xlib.XScreenResourceString(screen)), xrdb);
+		    xrdb = xlib.XrmMergeDatabases(xlib.XrmGetFileDatabase(Utils.pj(Utils.path(System.getProperty("user.home")), ".Xdefaults").toString()), xrdb);
+		    xrdb = xlib.XrmMergeDatabases(xlib.XrmGetStringDatabase(System.getenv("XENVIRONMENT")), xrdb);
+		    this.xrdb = xrdb;
+		}
 
 		/* Keyboard input */
 		{

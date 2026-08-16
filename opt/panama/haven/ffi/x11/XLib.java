@@ -729,6 +729,30 @@ public abstract class XLib {
 	}
     }
 
+    public static interface XrmDatabase {}
+
+    public static class XrmValue {
+	public final String type;
+	public final byte[] data;
+
+	public XrmValue(String type, byte[] data) {
+	    this.type = type;
+	    this.data = data;
+	}
+
+	public String string() {
+	    if(!Utils.eq(type, "String"))
+		throw(new IllegalArgumentException(type));
+	    if((data.length == 0) || (data[data.length - 1] != 0))
+		throw(new IllegalArgumentException(Utils.bprint.enc(data)));
+	    return(new String(data, 0, data.length - 1, C_CHARSET));
+	}
+
+	public String toString() {
+	    return(type + ": " + ((data == null) ? "''" : Utils.bprint.enc(data)));
+	}
+    }
+
     public static class XSizeHints {
 	public long flags;
 	public int x, y;
@@ -831,6 +855,14 @@ public abstract class XLib {
     public abstract XID XGetSelectionOwner(XLib.Display dpy, Atom selection);
     public abstract int XSetSelectionOwner(XLib.Display dpy, Atom selection, XID owner, long time);
     public abstract int XConvertSelection(XLib.Display dpy, Atom selection, Atom target, Atom property, XID requestor, long time);
+
+    public abstract void XrmInitialize();
+    public abstract String XResourceManagerString(Display dpy);
+    public abstract String XScreenResourceString(Screen screen);
+    public abstract XrmDatabase XrmGetStringDatabase(String data);
+    public abstract XrmDatabase XrmGetFileDatabase(String filename);
+    public abstract XrmDatabase XrmMergeDatabases(XrmDatabase source, XrmDatabase target);
+    public abstract XrmValue XrmGetResource(XrmDatabase database, String name, String cls);
 
     public abstract boolean XkbLibraryVersion(int[] version);
     public abstract XkbExtensionInfo XkbQueryExtension(Display dpy, int major, int minor);
@@ -2629,6 +2661,146 @@ public abstract class XLib {
 		throw(new RuntimeException(e));
 	    } finally {
 		checkerror();
+	    }
+	}
+
+	static class XrmDatabase implements XLib.XrmDatabase {
+	    private final MemorySegment[] memp;
+	    private final Runnable clean;
+
+	    public XrmDatabase(libX11_so_6 lib, MemorySegment mem) {
+		MemorySegment[] memp = {mem};
+		this.memp = memp;
+		this.clean = Finalizer.finalize(this, () -> {
+		    if(memp[0] != null)
+			lib.XrmDestroyDatabase(memp[0]);
+		});
+	    }
+
+	    MemorySegment mem() {return(memp[0]);}
+
+	    void invalid() {
+		memp[0] = null;
+	    }
+	}
+
+	private final MethodHandle XrmDestroyDatabase = ld.downcallHandle(xlib.find("XrmDestroyDatabase").get(), FunctionDescriptor.ofVoid(ADDRESS));
+	void XrmDestroyDatabase(MemorySegment mem) {
+	    try {
+		XrmDestroyDatabase.invoke(mem);
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
+	private final MethodHandle XResourceManagerString = ld.downcallHandle(xlib.find("XResourceManagerString").get(), FunctionDescriptor.of(ADDRESS, ADDRESS));
+	public String XResourceManagerString(XLib.Display dpy) {
+	    MemorySegment rv;
+	    try {
+		rv = (MemorySegment)XResourceManagerString.invoke(((Display)dpy).mem());
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	    return(nullp(rv) ? null : (rv.reinterpret(Long.MAX_VALUE).getString(0, C_CHARSET)));
+	}
+
+	private final MethodHandle XScreenResourceString = ld.downcallHandle(xlib.find("XScreenResourceString").get(), FunctionDescriptor.of(ADDRESS, ADDRESS));
+	public String XScreenResourceString(XLib.Screen screen) {
+	    MemorySegment rv;
+	    try {
+		rv = (MemorySegment)XScreenResourceString.invoke(((Screen)screen).mem());
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	    String ret = null;
+	    if(!nullp(rv)) {
+		ret = (rv.reinterpret(Long.MAX_VALUE).getString(0, C_CHARSET));
+		XFree(rv);
+	    }
+	    return(ret);
+	}
+
+	private final MethodHandle XrmInitialize = ld.downcallHandle(xlib.find("XrmInitialize").get(), FunctionDescriptor.ofVoid());
+	public void XrmInitialize() {
+	    try {
+		XrmInitialize.invoke();
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
+	private final MethodHandle XrmGetStringDatabase = ld.downcallHandle(xlib.find("XrmGetStringDatabase").get(), FunctionDescriptor.of(ADDRESS, ADDRESS));
+	public XrmDatabase XrmGetStringDatabase(String data) {
+	    if(data == null)
+		return(null);
+	    try(Arena st = Arena.ofConfined()) {
+		MemorySegment rv;
+		try {
+		    rv = (MemorySegment)XrmGetStringDatabase.invoke(st.allocateFrom(data, C_CHARSET));
+		} catch(Throwable e) {
+		    throw(new RuntimeException(e));
+		}
+		return(nullp(rv) ? null : new XrmDatabase(this, rv));
+	    }
+	}
+
+	private final MethodHandle XrmGetFileDatabase = ld.downcallHandle(xlib.find("XrmGetFileDatabase").get(), FunctionDescriptor.of(ADDRESS, ADDRESS));
+	public XrmDatabase XrmGetFileDatabase(String filename) {
+	    try(Arena st = Arena.ofConfined()) {
+		MemorySegment rv;
+		try {
+		    rv = (MemorySegment)XrmGetFileDatabase.invoke(st.allocateFrom(filename, C_CHARSET));
+		} catch(Throwable e) {
+		    throw(new RuntimeException(e));
+		}
+		return(nullp(rv) ? null : new XrmDatabase(this, rv));
+	    }
+	}
+
+	private final MethodHandle XrmMergeDatabases = ld.downcallHandle(xlib.find("XrmMergeDatabases").get(), FunctionDescriptor.ofVoid(ADDRESS, ADDRESS));
+	public XLib.XrmDatabase XrmMergeDatabases(XLib.XrmDatabase source, XLib.XrmDatabase target) {
+	    if(source == null)
+		return(target);
+	    try(Arena st = Arena.ofConfined()) {
+		MemorySegment tbuf = st.allocateFrom(ADDRESS, (target == null) ? MemorySegment.NULL : (((XrmDatabase)target).mem()));
+		try {
+		    XrmMergeDatabases.invoke(((XrmDatabase)source).mem(), tbuf);
+		} catch(Throwable e) {
+		    throw(new RuntimeException(e));
+		}
+		((XrmDatabase)source).invalid();
+		((XrmDatabase)target).invalid();
+		MemorySegment rv = tbuf.get(ADDRESS, 0);
+		return(nullp(rv) ? null : new XrmDatabase(this, rv));
+	    }
+	}
+
+	public static final StructLayout _XrmValue = struct(new MemoryLayout[] {
+		C_INT.withName("size"),
+		ADDRESS.withName("addr"),
+	    });
+	private static final VarHandle _XrmValue_size = _XrmValue.varHandle(PathElement.groupElement("size"));
+	private static final VarHandle _XrmValue_addr = _XrmValue.varHandle(PathElement.groupElement("addr"));
+
+	private final MethodHandle XrmGetResource = ld.downcallHandle(xlib.find("XrmGetResource").get(), FunctionDescriptor.of(C_XBool, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
+	public XrmValue XrmGetResource(XLib.XrmDatabase database, String name, String cls) {
+	    if(database == null)
+		return(null);
+	    try(Arena st = Arena.ofConfined()) {
+		int rv;
+		MemorySegment rtbuf = st.allocate(ADDRESS), rvbuf = st.allocate(_XrmValue);
+		try {
+		    rv = (int)XrmGetResource.invoke(((XrmDatabase)database).mem(), st.allocateFrom(name, C_CHARSET), st.allocateFrom(cls, C_CHARSET), rtbuf, rvbuf);
+		} catch(Throwable e) {
+		    throw(new RuntimeException(e));
+		}
+		if(rv == 0)
+		    return(null);
+		MemorySegment rt = rtbuf.get(ADDRESS, 0);
+		int sz = (int)_XrmValue_size.get(rvbuf, 0);
+		MemorySegment data = (MemorySegment)_XrmValue_addr.get(rvbuf, 0);
+		return(new XrmValue(nullp(rt) ? null : rt.reinterpret(Long.MAX_VALUE).getString(0, C_CHARSET),
+				    nullp(data) ? null : memcpy(new byte[sz], data.reinterpret(sz), 0, 0, sz)));
 	    }
 	}
 
