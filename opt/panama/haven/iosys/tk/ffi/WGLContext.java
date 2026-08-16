@@ -180,7 +180,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    public double scaling() {
-		return(fac);
+		return(fac / 100.0);
 	    }
 
 	    public double userdpi() {
