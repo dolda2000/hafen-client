@@ -33,7 +33,7 @@ import haven.iosys.*;
 import haven.render.*;
 import java.awt.image.BufferedImage;
 
-@Toolkit.Available(name = "indir")
+@Toolkit.Available(name = "indirect")
 public class IndirectToolkit implements Toolkit {
     public final Acephal backend;
     public final Toolkit frontend;
