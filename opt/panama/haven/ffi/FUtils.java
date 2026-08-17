@@ -160,6 +160,15 @@ public class FUtils {
 	    dst[doff + i] = (byte)src.get(ValueLayout.JAVA_BYTE, soff + i);
 	return(dst);
     }
+    public static byte[] memcpy(MemorySegment src, long soff, int len) {
+	return(memcpy(new byte[len], src, 0, soff, len));
+    }
+
+    public static MemorySegment memcpya(MemorySegment src, long soff, int len) {
+	MemorySegment buf = MemorySegment.ofArray(new long[(len + 7) >> 3]);
+	MemorySegment.copy(src, soff, buf, 0, len);
+	return(buf);
+    }
 
     public static String nstring(MemorySegment src, long off, int len, Charset charset) {
 	return(new String(memcpy(new byte[len], src.reinterpret(off + len), 0, off, len), charset));
