@@ -2769,7 +2769,8 @@ public abstract class XLib {
 		    throw(new RuntimeException(e));
 		}
 		((XrmDatabase)source).invalid();
-		((XrmDatabase)target).invalid();
+		if(target != null)
+		    ((XrmDatabase)target).invalid();
 		MemorySegment rv = tbuf.get(ADDRESS, 0);
 		return(nullp(rv) ? null : new XrmDatabase(this, rv));
 	    }
