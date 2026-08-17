@@ -156,8 +156,7 @@ public class FUtils {
     }
 
     public static byte[] memcpy(byte[] dst, MemorySegment src, int doff, long soff, int len) {
-	for(int i = 0; i < len; i++)
-	    dst[doff + i] = (byte)src.get(ValueLayout.JAVA_BYTE, soff + i);
+	MemorySegment.copy(src, soff, MemorySegment.ofArray(dst), doff, len);
 	return(dst);
     }
     public static byte[] memcpy(MemorySegment src, long soff, int len) {
@@ -171,18 +170,16 @@ public class FUtils {
     }
 
     public static String nstring(MemorySegment src, long off, int len, Charset charset) {
-	return(new String(memcpy(new byte[len], src.reinterpret(off + len), 0, off, len), charset));
+	return(new String(memcpy(src.reinterpret(off + len), off, len), charset));
     }
 
     public static MemorySegment memcpy(MemorySegment dst, ByteBuffer src, long doff, int soff, int len) {
-	for(int i = 0; i < len; i++)
-	    dst.set(ValueLayout.JAVA_BYTE, doff + i, src.get(soff + i));
+	MemorySegment.copy(MemorySegment.ofBuffer(src), soff, dst, doff, len);
 	return(dst);
     }
 
     public static MemorySegment memcpy(MemorySegment dst, byte[] v) {
-	for(int i = 0; i < v.length; i++)
-	    dst.set(ValueLayout.JAVA_BYTE, i, v[i]);
+	MemorySegment.copy(MemorySegment.ofArray(v), 0, dst, 0, v.length);
 	return(dst);
     }
 
