@@ -32,8 +32,9 @@ import haven.ffi.objc.Runtime.*;
 import haven.ffi.objc.CoreGraphics.*;
 import java.lang.invoke.*;
 import java.lang.foreign.*;
-import java.lang.foreign.MemoryLayout.PathElement;
 import java.util.*;
+import haven.ffi.objc.Runtime.Class;
+import java.lang.foreign.MemoryLayout.PathElement;
 import static haven.ffi.ABI.*;
 import static haven.ffi.FUtils.*;
 import static java.lang.foreign.ValueLayout.ADDRESS;
@@ -60,8 +61,14 @@ public abstract class AppKit {
 	public void run();
     }
 
+    public interface WindowDelegate {
+	public default boolean windowShouldClose(ID sender) {return(true);}
+	public default void windowWillClose(ID notification) {}
+    }
+
     public interface NSWindow {
 	public ID id();
+	public void setDelegate(WindowDelegate delegate);
 	public int styleMask();
 	public void setStyleMask(int value);
 	public void setContentSize(Coord sz);
@@ -82,6 +89,7 @@ public abstract class AppKit {
 	private static final MemoryLayout OC_BOOL = Runtime.objc4.OC_BOOL;
 	private static final MemoryLayout NSUInteger = C_LONG;
 	private final SymbolLookup dylib = SymbolLookup.libraryLookup("/System/Library/Frameworks/AppKit.framework/AppKit", Arena.global());
+	private final Arena localarena = Arena.ofAuto();
 	final Runtime rt = Runtime.get();
 	final CoreGraphics cg = CoreGraphics.get();
 	final Foundation fnd = Foundation.get();
@@ -105,15 +113,70 @@ public abstract class AppKit {
 	    return(new NSApplication(rt.objc_msgSend_id(NSApplication.id(), sel_sharedApplication)));
 	}
 
+	private Class WindowDelegateAdapter = null;
+	class WindowDelegateAdapter {
+	    private static final Map<Integer, WindowDelegateAdapter> reg = new HashMap<>();
+	    private static int nextkey = 0;
+	    public final ID id;
+	    public final WindowDelegate callback;
+
+	    public WindowDelegateAdapter(WindowDelegate callback) {
+		synchronized(WindowDelegateAdapter.class) {
+		    if(WindowDelegateAdapter == null) {
+			WindowDelegateAdapter = rt.objc_allocateClassPair(rt.objc_getClass("NSObject"), "IOSYSWindowDelegateAdapter", 0);
+			rt.class_addIvar(WindowDelegateAdapter, "java", 4, 2, "i");
+			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowShouldClose:"),
+					   ld.upcallStub(MethodHandles.insertArguments(slookup(MethodHandles.lookup(), WindowDelegateAdapter.class, "windowShouldClose",
+											       Byte.TYPE, VersionC.class, MemorySegment.class, MemorySegment.class, MemorySegment.class),
+										       0, VersionC.this),
+							 FunctionDescriptor.of(OC_BOOL, C_ID, C_ID, C_ID), localarena),
+					   "B@:@");
+		    }
+		    int key = nextkey++;
+		    ID id = this.id = rt.objc_msgSend_id(WindowDelegateAdapter.id(), sel_alloc);
+		    this.callback = callback;
+		    reg.put(key, this);
+		    Runtime rt = VersionC.this.rt;
+		    Finalizer.finalize(this, () -> {
+			synchronized(reg) {
+			    reg.remove(key);
+			    rt.release(id);
+			}
+		    });
+		}
+	    }
+
+	    private static byte windowShouldClose(VersionC ak, MemorySegment objp, MemorySegment self, MemorySegment sender) {
+		try {
+		    Runtime rt = ak.rt;
+		    ID obj = rt.id(objp);
+		    int key = rt.object_getIvar(obj, ak.WindowDelegateAdapter, "java", ValueLayout.JAVA_INT).get(ValueLayout.JAVA_INT, 0);
+		    WindowDelegateAdapter java;
+		    synchronized(reg) {
+			java = reg.get(key);
+		    }
+		    return(java.callback.windowShouldClose(rt.id(sender)) ? (byte)1 : 0);
+		} catch(Throwable t) {
+		    Thread.UncaughtExceptionHandler h = Thread.currentThread().getUncaughtExceptionHandler();
+		    if(h == null)
+			new Warning(t, "Uncaught exception in maintask").issue();
+		    else
+			h.uncaughtException(Thread.currentThread(), t);
+		    return(0);
+		}
+	    }
+	}
+
 	private final Runtime.Class NSWindow = rt.objc_getClass("NSWindow");
+	private final SEL sel_setDelegate = rt.sel_registerName("setDelegate:");
 	private final SEL sel_styleMask = rt.sel_registerName("styleMask");
-	private final SEL sel_setStyleMask = rt.sel_registerName("setStyleMask");
-	private final SEL sel_setContentSize = rt.sel_registerName("setContentSize");
-	private final SEL sel_setContentMinSize = rt.sel_registerName("setContentMinSize");
-	private final SEL sel_setContentMaxSize = rt.sel_registerName("setContentMaxSize");
+	private final SEL sel_setStyleMask = rt.sel_registerName("setStyleMask:");
+	private final SEL sel_setContentSize = rt.sel_registerName("setContentSize:");
+	private final SEL sel_setContentMinSize = rt.sel_registerName("setContentMinSize:");
+	private final SEL sel_setContentMaxSize = rt.sel_registerName("setContentMaxSize:");
 	private final SEL sel_makeKeyAndOrderFront = rt.sel_registerName("makeKeyAndOrderFront:");
-	private final SEL sel_orderOut = rt.sel_registerName("orderOut");
-	private final SEL sel_setTitle = rt.sel_registerName("setTitle");
+	private final SEL sel_orderOut = rt.sel_registerName("orderOut:");
+	private final SEL sel_setTitle = rt.sel_registerName("setTitle:");
 	private final SEL sel_center = rt.sel_registerName("center");
 	private final SEL sel_cascadeTopLeftFromPoint = rt.sel_registerName("cascadeTopLeftFromPoint:");
 	private final MethodHandle sendmsg_void_CGSize = rt.msgtype(null, cg.C_CGSize());
@@ -128,6 +191,12 @@ public abstract class AppKit {
 	    }
 
 	    public ID id() {return(id);}
+
+	    private WindowDelegateAdapter delegate = null;
+	    public void setDelegate(WindowDelegate delegate) {
+		this.delegate = new WindowDelegateAdapter(delegate);
+		rt.objc_msgSend_void(id, sel_setDelegate, this.delegate.id);
+	    }
 	    
 	    public int styleMask() {
 		try {
@@ -240,6 +309,13 @@ public abstract class AppKit {
 	    AppKit api = AppKit.get();
 	    NSApplication app = api.NSApplication_sharedApplication();
 	    NSWindow wnd = api.NSWindow(Area.sized(Coord.of(100, 100), Coord.of(600, 600)), 15, 2, true);
+	    wnd.setTitle("Test");
+	    wnd.setDelegate(new WindowDelegate() {
+		public boolean windowShouldClose(ID sender) {
+		    Debug.dump(sender);
+		    return(true);
+		}
+	    });
 	    wnd.makeKeyAndOrderFront(null);
 	    app.run();
 	});
