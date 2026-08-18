@@ -131,8 +131,11 @@ public abstract class Runtime {
     }
 
     private final Supplier<SEL> sel_release = Utils.cache(() -> sel_registerName("release"));
+    public void release(ID id) {
+	objc_msgSend_void(id, sel_release.get());
+    }
     public void gcrelease(Object obj, ID id) {
-	Finalizer.finalize(obj, () -> objc_msgSend_void(id, sel_release.get()));
+	Finalizer.finalize(obj, () -> release(id));
     }
 
     static class objc4 extends Runtime {
