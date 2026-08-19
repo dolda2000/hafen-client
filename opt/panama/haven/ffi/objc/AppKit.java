@@ -96,6 +96,7 @@ public abstract class AppKit {
 	final CoreGraphics cg = CoreGraphics.get();
 	final Foundation fnd = Foundation.get();
 	private final SEL sel_alloc = rt.sel_registerName("alloc");
+	private final SEL sel_init = rt.sel_registerName("init");
 
 	private final Runtime.Class NSApplication = rt.objc_getClass("NSApplication");
 	private final SEL sel_run = rt.sel_registerName("run");
@@ -135,7 +136,7 @@ public abstract class AppKit {
 						   null, C_ID, C_SEL, C_ID), "B@:@");
 		    }
 		    int key = nextkey++;
-		    ID id = this.id = rt.objc_msgSend_id(WindowDelegateAdapter.id(), sel_alloc);
+		    ID id = this.id = rt.objc_msgSend_id(rt.objc_msgSend_id(WindowDelegateAdapter.id(), sel_alloc), sel_init);
 		    this.callback = callback;
 		    reg.put(key, this);
 		    Runtime rt = VersionC.this.rt;
