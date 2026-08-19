@@ -87,6 +87,7 @@ public abstract class AppKit {
 
     static class VersionC extends AppKit {
 	private static final MemoryLayout C_ID = Runtime.objc4.C_ID;
+	private static final MemoryLayout C_SEL = Runtime.objc4.C_SEL;
 	private static final MemoryLayout OC_BOOL = Runtime.objc4.OC_BOOL;
 	private static final MemoryLayout NSUInteger = C_LONG;
 	private final SymbolLookup dylib = SymbolLookup.libraryLookup("/System/Library/Frameworks/AppKit.framework/AppKit", Arena.global());
@@ -128,7 +129,10 @@ public abstract class AppKit {
 			rt.class_addIvar(WindowDelegateAdapter, "java", 4, 2, "i");
 			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowShouldClose:"),
 					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowShouldClose", VersionC.this,
-						   OC_BOOL, C_ID, C_ID, C_ID), "B@:@");
+						   OC_BOOL, C_ID, C_SEL, C_ID), "B@:@");
+			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowWillClose:"),
+					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowWillClose", VersionC.this,
+						   null, C_ID, C_SEL, C_ID), "B@:@");
 		    }
 		    int key = nextkey++;
 		    ID id = this.id = rt.objc_msgSend_id(WindowDelegateAdapter.id(), sel_alloc);
@@ -164,8 +168,16 @@ public abstract class AppKit {
 		}
 	    }
 
+	    private static void callback(VersionC ak, MemorySegment objp, Consumer<WindowDelegate> fun) {
+		callback(ak, objp, dlg -> {fun.accept(dlg); return(null);}, null);
+	    }
+
 	    private static byte windowShouldClose(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment sender) {
 		return((byte)callback(ak, objp, dg -> (byte)(dg.windowShouldClose(ak.rt.id(sender)) ? 1 : 0), 0));
+	    }
+
+	    private static void windowWillClose(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment notification) {
+		callback(ak, objp, dg -> dg.windowWillClose(ak.rt.id(notification)));
 	    }
 	}
 
@@ -316,6 +328,9 @@ public abstract class AppKit {
 		public boolean windowShouldClose(ID sender) {
 		    Debug.dump(sender);
 		    return(true);
+		}
+		public void windowWillClose(ID sender) {
+		    Debug.dump(sender);
 		}
 	    });
 	    wnd.makeKeyAndOrderFront(null);
