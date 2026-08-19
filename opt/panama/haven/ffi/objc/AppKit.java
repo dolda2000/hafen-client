@@ -65,6 +65,11 @@ public abstract class AppKit {
     public interface WindowDelegate {
 	public default boolean windowShouldClose(ID sender) {return(true);}
 	public default void windowWillClose(ID notification) {}
+	public default void windowDidResize(ID notification) {}
+	public default void windowDidMiniaturize(ID notification) {}
+	public default void windowDidDeminiaturize(ID notification) {}
+	public default void windowDidBecomeKey(ID notification) {}
+	public default void windowDidResignKey(ID notification) {}
     }
 
     public interface NSWindow {
@@ -134,6 +139,21 @@ public abstract class AppKit {
 			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowWillClose:"),
 					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowWillClose", VersionC.this,
 						   null, C_ID, C_SEL, C_ID), "B@:@");
+			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowDidResize:"),
+					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidResize", VersionC.this,
+						   null, C_ID, C_SEL, C_ID), "B@:@");
+			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowDidMiniaturize:"),
+					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidMiniaturize", VersionC.this,
+						   null, C_ID, C_SEL, C_ID), "B@:@");
+			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowDidDeminiaturize:"),
+					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidDeminiaturize", VersionC.this,
+						   null, C_ID, C_SEL, C_ID), "B@:@");
+			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowDidBecomeKey:"),
+					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidBecomeKey", VersionC.this,
+						   null, C_ID, C_SEL, C_ID), "B@:@");
+			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowDidResignKey:"),
+					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidResignKey", VersionC.this,
+						   null, C_ID, C_SEL, C_ID), "B@:@");
 		    }
 		    int key = nextkey++;
 		    ID id = this.id = rt.objc_msgSend_id(rt.objc_msgSend_id(WindowDelegateAdapter.id(), sel_alloc), sel_init);
@@ -179,6 +199,26 @@ public abstract class AppKit {
 
 	    private static void windowWillClose(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment notification) {
 		callback(ak, objp, dg -> dg.windowWillClose(ak.rt.id(notification)));
+	    }
+
+	    private static void windowDidResize(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment notification) {
+		callback(ak, objp, dg -> dg.windowDidResize(ak.rt.id(notification)));
+	    }
+
+	    private static void windowDidMiniaturize(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment notification) {
+		callback(ak, objp, dg -> dg.windowDidMiniaturize(ak.rt.id(notification)));
+	    }
+
+	    private static void windowDidDeminiaturize(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment notification) {
+		callback(ak, objp, dg -> dg.windowDidDeminiaturize(ak.rt.id(notification)));
+	    }
+
+	    private static void windowDidBecomeKey(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment notification) {
+		callback(ak, objp, dg -> dg.windowDidBecomeKey(ak.rt.id(notification)));
+	    }
+
+	    private static void windowDidResignKey(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment notification) {
+		callback(ak, objp, dg -> dg.windowDidResignKey(ak.rt.id(notification)));
 	    }
 	}
 
@@ -329,9 +369,6 @@ public abstract class AppKit {
 		public boolean windowShouldClose(ID sender) {
 		    Debug.dump(sender);
 		    return(true);
-		}
-		public void windowWillClose(ID sender) {
-		    Debug.dump(sender);
 		}
 	    });
 	    wnd.makeKeyAndOrderFront(null);
