@@ -154,6 +154,7 @@ public abstract class AppKit {
 			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowDidResignKey:"),
 					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidResignKey", VersionC.this,
 						   null, C_ID, C_SEL, C_ID), "B@:@");
+			rt.objc_registerClassPair(WindowDelegateAdapter);
 		    }
 		    int key = nextkey++;
 		    ID id = this.id = rt.objc_msgSend_id(rt.objc_msgSend_id(WindowDelegateAdapter.id(), sel_alloc), sel_init);
