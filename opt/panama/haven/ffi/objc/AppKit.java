@@ -33,6 +33,7 @@ import haven.ffi.objc.CoreGraphics.*;
 import java.lang.invoke.*;
 import java.lang.foreign.*;
 import java.util.*;
+import java.util.function.*;
 import haven.ffi.objc.Runtime.Class;
 import java.lang.foreign.MemoryLayout.PathElement;
 import static haven.ffi.ABI.*;
@@ -126,11 +127,8 @@ public abstract class AppKit {
 			WindowDelegateAdapter = rt.objc_allocateClassPair(rt.objc_getClass("NSObject"), "IOSYSWindowDelegateAdapter", 0);
 			rt.class_addIvar(WindowDelegateAdapter, "java", 4, 2, "i");
 			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowShouldClose:"),
-					   ld.upcallStub(MethodHandles.insertArguments(slookup(MethodHandles.lookup(), WindowDelegateAdapter.class, "windowShouldClose",
-											       Byte.TYPE, VersionC.class, MemorySegment.class, MemorySegment.class, MemorySegment.class),
-										       0, VersionC.this),
-							 FunctionDescriptor.of(OC_BOOL, C_ID, C_ID, C_ID), localarena),
-					   "B@:@");
+					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowShouldClose", VersionC.this,
+						   OC_BOOL, C_ID, C_ID, C_ID), "B@:@");
 		    }
 		    int key = nextkey++;
 		    ID id = this.id = rt.objc_msgSend_id(WindowDelegateAdapter.id(), sel_alloc);
@@ -146,7 +144,7 @@ public abstract class AppKit {
 		}
 	    }
 
-	    private static byte windowShouldClose(VersionC ak, MemorySegment objp, MemorySegment self, MemorySegment sender) {
+	    private static <R> R callback(VersionC ak, MemorySegment objp, Function<WindowDelegate, R> fun, R eret) {
 		try {
 		    Runtime rt = ak.rt;
 		    ID obj = rt.id(objp);
@@ -155,15 +153,19 @@ public abstract class AppKit {
 		    synchronized(reg) {
 			java = reg.get(key);
 		    }
-		    return(java.callback.windowShouldClose(rt.id(sender)) ? (byte)1 : 0);
+		    return(fun.apply(java.callback));
 		} catch(Throwable t) {
 		    Thread.UncaughtExceptionHandler h = Thread.currentThread().getUncaughtExceptionHandler();
 		    if(h == null)
-			new Warning(t, "Uncaught exception in maintask").issue();
+			new Warning(t, "Uncaught exception in window delegate").issue();
 		    else
 			h.uncaughtException(Thread.currentThread(), t);
-		    return(0);
+		    return(eret);
 		}
+	    }
+
+	    private static byte windowShouldClose(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment sender) {
+		return((byte)callback(ak, objp, dg -> (byte)(dg.windowShouldClose(ak.rt.id(sender)) ? 1 : 0), 0));
 	    }
 	}
 

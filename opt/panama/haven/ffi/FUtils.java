@@ -32,6 +32,7 @@ import java.nio.charset.*;
 import java.nio.file.*;
 import java.lang.invoke.*;
 import java.lang.foreign.*;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.*;
 import java.lang.foreign.MemoryLayout.PathElement;
@@ -87,6 +88,43 @@ public class FUtils {
 	} catch(NoSuchMethodException | IllegalAccessException e) {
 	    throw(new RuntimeException(e));
 	}
+    }
+
+    public static Method smethod(Class<?> cl, String name) {
+	Method fm = null;
+	for(Method m : cl.getDeclaredMethods()) {
+	    if(m.getName().equals(name) && ((m.getModifiers() & Modifier.STATIC) != 0)) {
+		if(fm == null)
+		    fm = m;
+		else
+		    throw(new RuntimeException(name + " is ambiguous between " + m + " and " + fm));
+	    }
+	}
+	return(fm);
+    }
+
+    public static Method vmethod(Class<?> cl, String name) {
+	Method fm = null;
+	for(Method m : cl.getDeclaredMethods()) {
+	    if(m.getName().equals(name) && ((m.getModifiers() & Modifier.STATIC) == 0)) {
+		if(fm == null)
+		    fm = m;
+		else
+		    throw(new RuntimeException(name + " is ambiguous between " + m + " and " + fm));
+	    }
+	}
+	return(fm);
+    }
+
+    public static MemorySegment supcall(Arena alloc, MethodHandles.Lookup lookup, Class<?> cl, String name, Object arg1, MemoryLayout rtype, MemoryLayout... ptypes) {
+	Method m = smethod(cl, name);
+	MethodHandle h = slookup(lookup, cl, name, m.getReturnType(), m.getParameterTypes());
+	if(arg1 != null)
+	    h = MethodHandles.insertArguments(h, 0, arg1);
+	if(rtype == null)
+	    return(ABI.ld.upcallStub(h, FunctionDescriptor.ofVoid(ptypes), alloc));
+	else
+	    return(ABI.ld.upcallStub(h, FunctionDescriptor.of(rtype, ptypes), alloc));
     }
 
     public static String fmtstruct(String name, MemorySegment mem, StructLayout desc) {
