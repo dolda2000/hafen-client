@@ -40,6 +40,7 @@ import haven.ffi.*;
 import haven.ffi.objc.*;
 import haven.ffi.gl.*;
 import haven.ffi.objc.AppKit.*;
+import haven.ffi.objc.CGL.*;
 import haven.ffi.objc.Runtime;
 import static haven.iosys.tk.Key.Std.*;
 
@@ -48,12 +49,16 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
     private final Runtime rt;
     private final Foundation fnd;
     private final AppKit ak;
+    private final CGL cgl;
+    private final OpenGL gl;
 
     private CocoaContext() {
 	try {
 	    rt = Runtime.get();
 	    fnd = Foundation.get();
 	    ak = AppKit.get();
+	    cgl = CGL.get();
+	    gl = cgl.gl();
 	} catch(RuntimeException e) {
 	    throw(new Unavailable("Cocoa libraries not available", e));
 	}
@@ -85,16 +90,49 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	synchronized(this) {
 	    if(app == null) {
 		app = ak.NSApplication_sharedApplication();
-		rt.mainrun(app::run);
+		/*
+		rt.mainrun(() -> {
+		    app.setActivationPolicy(AppKit.NSApplicationActivationPolicyRegular);
+		    app.finishLaunching();
+		    app.run();
+		});
+		*/
 	    }
 	    return(app);
 	}
     }
 
     public class CocoaToolkit implements Toolkit {
-	public final NSApplication app = app();
+	private static final int glversions[] = {
+	    CGL.NSOpenGLProfileVersion4_1Core,
+	    CGL.NSOpenGLProfileVersion3_2Core,
+	    CGL.NSOpenGLProfileVersionLegacy,
+	};
+	public final NSApplication app;
+	public final NSOpenGLContext ctx;
 
 	private CocoaToolkit() {
+	    try {
+		javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
+	    } catch(Exception e) {
+		throw(new RuntimeException(e));
+	    }
+	    app = app();
+	    NSOpenGLPixelFormat fmt = null;
+	    for(int ver : glversions) {
+		int[] ctxattribs = {
+		    CGL.NSOpenGLPFADoubleBuffer,
+		    CGL.NSOpenGLPFAColorSize, 24,
+		    CGL.NSOpenGLPFAAlphaSize, 8,
+		    CGL.NSOpenGLPFAOpenGLProfile, ver,
+		    0, 0
+		};
+		if((fmt = cgl.NSOpenGLPixelFormat(ctxattribs)) != null)
+		    break;
+	    }
+	    if(fmt == null)
+		throw(new Unavailable("could not create OpenGL context"));
+	    ctx = cgl.NSOpenGLContext(fmt, null);
 	}
 
 	public Cursor.Caps cursorcaps() {
@@ -108,7 +146,6 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	void mainrun(Runnable task) {
 	    rt.mainrun(task);
 	}
-
 
 	private <T> T mainrun(Supplier<T> task) {
 	    class Runner implements Runnable {
@@ -140,11 +177,66 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    return(r.val);
 	}
 
+	private <T> T glrun0(NSView view, Supplier<T> task) {
+	    ctx.setView(view);
+	    ctx.makeCurrentContext();
+	    try {
+		ctx.update();
+		return(task.get());
+	    } finally {
+		ctx.clearCurrentContext();
+		// ctx.clearDrawable();
+	    }
+	}
+
+	<T> T glrun(NSView view, Supplier<T> task) {
+	    return(mainrun(() -> glrun0(view, task)));
+	}
+
+	void glrun(NSView view, Runnable task) {
+	    mainrun(() -> {glrun0(view, () -> {task.run(); return(null);});});
+	}
+
 	public class CocoaWindow implements Windeye {
 	    public final NSWindow nsw;
+	    public final NSView view;
 	    private final Collection<EventListener> callbacks = new java.util.concurrent.CopyOnWriteArrayList<>();
 	    private boolean shown = false;
 	    private Sizing sizeinfo = new Sizing().normsize(Coord.of(800, 600));
+	    private CGLEnvironment renv;
+
+	    public class CGLEnvironment extends FFIEnvironment {
+		private int qstate;
+
+		private CGLEnvironment() {
+		    super(gl, Area.sized(Coord.of(1, 1)));
+		}
+
+		private void process() {
+		    synchronized(this) {
+			qstate = 2;
+		    }
+		    process(gl);
+		    synchronized(this) {
+			if((qstate & 1) != 0)
+			    glrun(view, (Runnable)this::process);
+			qstate &= ~2;
+		    }
+		}
+
+		public void submit(Render cmd) {
+		    super.submit(cmd);
+		    synchronized(this) {
+			if(renv == this) {
+			    if(qstate == 0)
+				glrun(view, (Runnable)this::process);
+			    qstate |= 1;
+			}
+		    }
+		}
+
+		public CocoaWindow wnd() {return(CocoaWindow.this);}
+	    }
 
 	    private CocoaWindow() {
 		nsw = mainrun(() -> ak.NSWindow(Area.sized(Coord.of(1, 1)), 
@@ -154,6 +246,19 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 						AppKit.NSWindowStyleMaskResizable,
 						AppKit.NSBackingStoreBuffered,
 						true));
+		mainrun(() -> nsw.setDelegate(new WindowDelegate()));
+		view = mainrun(() -> ak.NSView(new ViewDelegate(), Area.sized(Coord.of(1, 1))));
+		mainrun(() -> nsw.setContentView(view));
+	    }
+
+	    class WindowDelegate implements AppKit.WindowDelegate {
+		public boolean windowShouldClose(NSWindow sender) {
+		    callback(new CloseRequest() {});
+		    return(false);
+		}
+	    }
+
+	    class ViewDelegate extends AppKit.NSViewDelegate {
 	    }
 
 	    public CocoaToolkit toolkit() {
@@ -243,7 +348,13 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    public Environment env() {
-		return(null);
+		if(renv == null) {
+		    synchronized(this) {
+			if(renv == null)
+			    renv = glrun(view, CGLEnvironment::new);
+		    }
+		}
+		return(renv);
 	    }
 
 	    private static final Pipe.Op glfb = Pipe.Op.compose(new FragColor<>(FragColor.defcolor),
@@ -252,7 +363,19 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		return(glfb);
 	    }
 
-	    public void swapbuffers(Render out, Object mode) {
+	    private void glswap(GL gl, int ival) {
+		GLException.checkfor(gl, null);
+		ctx.flushBuffer();
+		GLException.checkfor(gl, null);
+	    }
+
+	    public void swapbuffers(Render buf, Object mode) {
+		GLRender gbuf = (GLRender)buf;
+		if(((CGLEnvironment)gbuf.env).wnd() != this)
+		    throw(new IllegalArgumentException());
+		if(!(mode instanceof Boolean))
+		    throw(new IllegalArgumentException());
+		gbuf.submit(gl -> this.glswap(gl, ((Boolean)mode) ? 1 : 0));
 	    }
 
 	    public void dispose() {

@@ -57,13 +57,19 @@ public abstract class AppKit {
     public static final int NSBackingStoreRetained = 0;
     public static final int NSBackingStoreBuffered = 2;
 
+    public static final int NSApplicationActivationPolicyRegular = 0;
+    public static final int NSApplicationActivationPolicyAccessory = 1;
+    public static final int NSApplicationActivationPolicyProhibited = 2;
+
     public interface NSApplication {
 	public ID id();
 	public void run();
+	public void finishLaunching();
+	public void setActivationPolicy(int policy);
     }
 
     public interface WindowDelegate {
-	public default boolean windowShouldClose(ID sender) {return(true);}
+	public default boolean windowShouldClose(NSWindow sender) {return(true);}
 	public default void windowWillClose(ID notification) {}
 	public default void windowDidResize(ID notification) {}
 	public default void windowDidMiniaturize(ID notification) {}
@@ -85,10 +91,20 @@ public abstract class AppKit {
 	public void setTitle(String title);
 	public void center();
 	public Coord cascadeTopLeftFromPoint(Coord c);
+	public void setContentView(NSView contentView);
+    }
+
+    public interface NSView {
+	public ID id();
+    }
+
+    public static class NSViewDelegate {
+	public boolean acceptsFirstResponder() {return(false);}
     }
 
     public abstract NSApplication NSApplication_sharedApplication();
     public abstract NSWindow NSWindow(Area contentRect, int style, int backingStoreType, boolean defer);
+    public abstract NSView NSView(NSViewDelegate dg, Area frameRect);
 
     static class VersionC extends AppKit {
 	private static final MemoryLayout C_ID = Runtime.objc4.C_ID;
@@ -105,6 +121,8 @@ public abstract class AppKit {
 
 	private final Runtime.Class NSApplication = rt.objc_getClass("NSApplication");
 	private final SEL sel_run = rt.sel_registerName("run");
+	private final SEL sel_finishLaunching = rt.sel_registerName("finishLaunching");
+	private final SEL sel_setActivationPolicy = rt.sel_registerName("setActivationPolicy:");
 	class NSApplication implements AppKit.NSApplication {
 	    public final ID id;
 
@@ -114,6 +132,10 @@ public abstract class AppKit {
 
 	    public ID id() {return(id);}
 	    public void run() {rt.objc_msgSend_void(id, sel_run);}
+	    public void finishLaunching() {rt.objc_msgSend_void(id, sel_finishLaunching);}
+	    public void setActivationPolicy(int policy) {
+		rt.objc_msgSend_bool(id, sel_setActivationPolicy, policy);
+	    }
 	}
 
 	private final SEL sel_sharedApplication = rt.sel_registerName("sharedApplication");
@@ -158,6 +180,7 @@ public abstract class AppKit {
 		    }
 		    int key = nextkey++;
 		    ID id = this.id = rt.objc_msgSend_id(rt.objc_msgSend_id(WindowDelegateAdapter.id(), sel_alloc), sel_init);
+		    rt.object_getIvar(id, WindowDelegateAdapter, "java", ValueLayout.JAVA_INT).set(ValueLayout.JAVA_INT, 0, key);
 		    this.callback = callback;
 		    reg.put(key, this);
 		    Runtime rt = VersionC.this.rt;
@@ -195,7 +218,7 @@ public abstract class AppKit {
 	    }
 
 	    private static byte windowShouldClose(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment sender) {
-		return((byte)callback(ak, objp, dg -> (byte)(dg.windowShouldClose(ak.rt.id(sender)) ? 1 : 0), 0));
+		return((byte)callback(ak, objp, dg -> (byte)(dg.windowShouldClose(NSWindow.of(ak, ak.rt.id(sender))) ? 1 : 0), 0));
 	    }
 
 	    private static void windowWillClose(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment notification) {
@@ -223,7 +246,7 @@ public abstract class AppKit {
 	    }
 	}
 
-	private final Runtime.Class NSWindow = rt.objc_getClass("NSWindow");
+	private final Runtime.Class cls_NSWindow = rt.objc_getClass("NSWindow");
 	private final SEL sel_setDelegate = rt.sel_registerName("setDelegate:");
 	private final SEL sel_styleMask = rt.sel_registerName("styleMask");
 	private final SEL sel_setStyleMask = rt.sel_registerName("setStyleMask:");
@@ -235,6 +258,7 @@ public abstract class AppKit {
 	private final SEL sel_setTitle = rt.sel_registerName("setTitle:");
 	private final SEL sel_center = rt.sel_registerName("center");
 	private final SEL sel_cascadeTopLeftFromPoint = rt.sel_registerName("cascadeTopLeftFromPoint:");
+	private final SEL sel_setContentView = rt.sel_registerName("setContentView:");
 	private final MethodHandle sendmsg_void_CGSize = rt.msgtype(null, cg.C_CGSize());
 	private final MethodHandle sendmsg_CGPoint_CGPoint = rt.msgtype(cg.C_CGPoint(), cg.C_CGPoint());
 	private final MethodHandle sendmsg_NSUInt = rt.msgtype(NSUInteger);
@@ -244,6 +268,10 @@ public abstract class AppKit {
 
 	    public NSWindow(ID id) {
 		this.id = id;
+	    }
+
+	    public static NSWindow of(VersionC ak, ID id) {
+		return(ak.new NSWindow(id));
 	    }
 
 	    public ID id() {return(id);}
@@ -328,11 +356,14 @@ public abstract class AppKit {
 		    return(Coord.of((int)rpt.x(), (int)rpt.y()));
 		}
 	    }
+	    public void setContentView(AppKit.NSView view) {
+		rt.objc_msgSend_void(id, sel_setContentView, view.id());
+	    }
 	}
 	private final SEL sel_initWithContentRect_styleMask_backing_defer = rt.sel_registerName("initWithContentRect:styleMask:backing:defer:");
 	private final MethodHandle sendmsg_id_CGRect_int_int_bool = rt.msgtype(C_ID, cg.C_CGRect(), NSUInteger, NSUInteger, OC_BOOL);
 	public NSWindow NSWindow(Area contentRect, int style, int backingStoreType, boolean defer) {
-	    ID id = rt.objc_msgSend_id(NSWindow.id(), sel_alloc);
+	    ID id = rt.objc_msgSend_id(cls_NSWindow.id(), sel_alloc);
 	    CGRect rect = cg.CGRect();
 	    rect.origin().x(contentRect.ul.x).y(contentRect.ul.y);
 	    rect.size().width(contentRect.sz().x).height(contentRect.sz().y);
@@ -344,6 +375,85 @@ public abstract class AppKit {
 		throw(new RuntimeException(t));
 	    }
 	    return(new NSWindow(id));
+	}
+
+	private final Class IOSYSView;
+	{
+	    IOSYSView = rt.objc_allocateClassPair(rt.objc_getClass("NSView"), "IOSYSView", 0);
+	    rt.class_addIvar(IOSYSView, "java", 4, 2, "i");
+	    rt.class_addMethod(IOSYSView, rt.sel_registerName("acceptsFirstResponder"),
+			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "acceptsFirstResponder", this,
+				       OC_BOOL, C_ID, C_SEL), "B@:");
+	    rt.objc_registerClassPair(IOSYSView);
+	}
+	class IOSYSView implements NSView {
+	    private static final Map<Integer, IOSYSView> reg = new HashMap<>();
+	    private static int nextkey = 0;
+	    private final ID id;
+	    private final NSViewDelegate dg;
+
+	    IOSYSView(NSViewDelegate dg) {
+		synchronized(IOSYSView.class) {
+		    this.dg = dg;
+		    int key = nextkey++;
+		    ID id = this.id = rt.objc_msgSend_id(IOSYSView.id(), sel_alloc);
+		    reg.put(key, this);
+		    Runtime rt = VersionC.this.rt;
+		    Finalizer.finalize(this, () -> {
+			    synchronized(reg) {
+				reg.remove(key);
+				rt.release(id);
+			    }
+			});
+		}
+	    }
+
+	    public ID id() {
+		return(id);
+	    }
+
+	    private static <R> R callback(VersionC ak, MemorySegment objp, Function<IOSYSView, R> fun, R eret) {
+		try {
+		    Runtime rt = ak.rt;
+		    ID obj = rt.id(objp);
+		    int key = rt.object_getIvar(obj, ak.IOSYSView, "java", ValueLayout.JAVA_INT).get(ValueLayout.JAVA_INT, 0);
+		    IOSYSView java;
+		    synchronized(reg) {
+			java = reg.get(key);
+		    }
+		    return(fun.apply(java));
+		} catch(Throwable t) {
+		    Thread.UncaughtExceptionHandler h = Thread.currentThread().getUncaughtExceptionHandler();
+		    if(h == null)
+			new Warning(t, "Uncaught exception in window delegate").issue();
+		    else
+			h.uncaughtException(Thread.currentThread(), t);
+		    return(eret);
+		}
+	    }
+
+	    private static void callback(VersionC ak, MemorySegment objp, Consumer<IOSYSView> fun) {
+		callback(ak, objp, view -> {fun.accept(view); return(null);}, null);
+	    }
+
+	    private static byte acceptsFirstResponder(VersionC ak, MemorySegment objp, MemorySegment sel) {
+		return((byte)callback(ak, objp, view -> (byte)(view.dg.acceptsFirstResponder() ? 1 : 0), 0));
+	    }
+	}
+
+	private final SEL sel_initWithFrame = rt.sel_registerName("initWithFrame:");
+	private final MethodHandle sendmsg_id_CGRect = rt.msgtype(C_ID, cg.C_CGRect());
+	public NSView NSView(NSViewDelegate dg, Area frameRect) {
+	    IOSYSView view = new IOSYSView(dg);
+	    CGRect rect = cg.CGRect();
+	    rect.origin().x(frameRect.ul.x).y(frameRect.ul.y);
+	    rect.size().width(frameRect.sz().x).height(frameRect.sz().y);
+	    try {
+		sendmsg_id_CGRect.invoke(view.id.mem(), sel_initWithFrame.mem(), rect.mem());
+	    } catch(Throwable t) {
+		throw(new RuntimeException(t));
+	    }
+	    return(view);
 	}
     }
 
@@ -361,6 +471,7 @@ public abstract class AppKit {
 
     public static void main(String[] args) throws Exception {
 	Runtime rt = Runtime.get();
+	boolean[] done = {false};
 	rt.mainrun(() -> {
 	    AppKit api = AppKit.get();
 	    NSApplication app = api.NSApplication_sharedApplication();
@@ -368,8 +479,11 @@ public abstract class AppKit {
 	    wnd.setTitle("Test");
 	    wnd.setDelegate(new WindowDelegate() {
 		public boolean windowShouldClose(ID sender) {
-		    Debug.dump(sender);
-		    return(true);
+		    synchronized(done) {
+			done[0] = true;
+			done.notifyAll();
+		    }
+		    return(false);
 		}
 	    });
 	    wnd.makeKeyAndOrderFront(null);
@@ -377,6 +491,9 @@ public abstract class AppKit {
 	});
 	Thread.sleep(1000);
 	rt.mainrun(() -> System.err.println(Foundation.get().processInfo().operatingSystemVersionString()));
-	Thread.sleep(1000);
+	synchronized(done) {
+	    while(!done[0])
+		done.wait();
+	}
     }
 }
