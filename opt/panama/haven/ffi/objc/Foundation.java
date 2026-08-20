@@ -54,6 +54,7 @@ public abstract class Foundation {
     static class VersionC extends Foundation {
 	private final SymbolLookup dylib = SymbolLookup.libraryLookup("/System/Library/Frameworks/Foundation.framework/Foundation", Arena.global());
 	private final Runtime rt = Runtime.get();
+	private final SEL sel_alloc = rt.sel_registerName("alloc");
 
 	private final Runtime.Class NSString = rt.objc_getClass("NSString");
 	private final SEL sel_UTF8String = rt.sel_registerName("UTF8String");
@@ -73,10 +74,10 @@ public abstract class Foundation {
 	    public String toString() {return(str());}
 	}
 
-	private final SEL sel_stringWithUTF8String = rt.sel_registerName("stringWithUTF8String:");
+	private final SEL sel_initWithUTF8String = rt.sel_registerName("initWithUTF8String:");
 	public NSString NSString(String str) {
 	    try(Arena st = Arena.ofConfined()) {
-		return(new NSString(rt.objc_msgSend_id(NSString.id(), sel_stringWithUTF8String, st.allocateFrom(str, Utils.utf8))));
+		return(new NSString(rt.objc_msgSend_id(rt.objc_msgSend_id(NSString.id(), sel_alloc), sel_initWithUTF8String, st.allocateFrom(str, Utils.utf8))));
 	    }
 	}
 

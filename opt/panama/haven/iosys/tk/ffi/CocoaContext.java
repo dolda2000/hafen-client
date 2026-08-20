@@ -48,6 +48,7 @@ import static haven.iosys.tk.Key.Std.*;
 public class CocoaContext implements Providers.Factory<Toolkit> {
     private final Runtime rt;
     private final Foundation fnd;
+    private final CoreGraphics cg;
     private final AppKit ak;
     private final CGL cgl;
     private final OpenGL gl;
@@ -56,6 +57,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	try {
 	    rt = Runtime.get();
 	    fnd = Foundation.get();
+	    cg = CoreGraphics.get();
 	    ak = AppKit.get();
 	    cgl = CGL.get();
 	    gl = cgl.gl();
@@ -204,6 +206,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    private boolean shown = false;
 	    private Sizing sizeinfo = new Sizing().normsize(Coord.of(800, 600));
 	    private CGLEnvironment renv;
+	    private Coord size = Coord.z;
 
 	    public class CGLEnvironment extends FFIEnvironment {
 		private int qstate;
@@ -239,7 +242,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    private CocoaWindow() {
-		nsw = mainrun(() -> ak.NSWindow(Area.sized(Coord.of(1, 1)), 
+		nsw = mainrun(() -> ak.NSWindow(cg.CGRect(Area.sized(Coord.of(1, 1))), 
 						AppKit.NSWindowStyleMaskTitled |
 						AppKit.NSWindowStyleMaskClosable |
 						AppKit.NSWindowStyleMaskMiniaturizable |
@@ -247,14 +250,21 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 						AppKit.NSBackingStoreBuffered,
 						true));
 		mainrun(() -> nsw.setDelegate(new WindowDelegate()));
-		view = mainrun(() -> ak.NSView(new ViewDelegate(), Area.sized(Coord.of(1, 1))));
-		mainrun(() -> nsw.setContentView(view));
+		view = mainrun(() -> ak.NSView(new ViewDelegate(), cg.CGRect(Area.sized(Coord.of(1, 1)))));
+		mainrun(() -> {
+		    view.setWantsBestResolutionOpenGLSurface(true);
+		    nsw.setContentView(view);
+		});
 	    }
 
 	    class WindowDelegate implements AppKit.WindowDelegate {
 		public boolean windowShouldClose(NSWindow sender) {
 		    callback(new CloseRequest() {});
 		    return(false);
+		}
+
+		public void windowDidResize(NSNotification notification) {
+		    size = view.convertRectToBacking(view.bounds()).size().c();
 		}
 	    }
 
@@ -277,15 +287,15 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    private void updatesizing(Sizing info) {
 		if(info.fixsize != null) {
 		    nsw.setStyleMask(nsw.styleMask() & ~AppKit.NSWindowStyleMaskResizable);
-		    nsw.setContentSize(info.fixsize);
+		    nsw.setContentSize(view.convertSizeFromBacking(cg.CGSize(info.fixsize)));
 		} else {
 		    nsw.setStyleMask(nsw.styleMask() | AppKit.NSWindowStyleMaskResizable);
 		    if(info.normsize != null)
-			nsw.setContentSize(info.normsize);
+			nsw.setContentSize(view.convertSizeFromBacking(cg.CGSize(info.normsize)));
 		    if(info.minsize != null)
-			nsw.setContentMinSize(info.minsize);
+			nsw.setContentMinSize(view.convertSizeFromBacking(cg.CGSize(info.minsize)));
 		    if(info.maxsize != null)
-			nsw.setContentMaxSize(info.maxsize);
+			nsw.setContentMaxSize(view.convertSizeFromBacking(cg.CGSize(info.maxsize)));
 		}
 	    }
 
@@ -294,7 +304,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		    if(!shown) {
 			if(show) {
 			    updatesizing(sizeinfo);
-			    nsw.cascadeTopLeftFromPoint(Coord.z);
+			    nsw.cascadeTopLeftFromPoint(cg.CGPoint(Coord.z));
 			    nsw.makeKeyAndOrderFront(null);
 			    shown = true;
 			}
@@ -336,7 +346,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    public Coord size() {
-		return(null);
+		return(size);
 	    }
 
 	    public State state() {

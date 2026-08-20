@@ -70,12 +70,16 @@ public abstract class AppKit {
 
     public interface WindowDelegate {
 	public default boolean windowShouldClose(NSWindow sender) {return(true);}
-	public default void windowWillClose(ID notification) {}
-	public default void windowDidResize(ID notification) {}
-	public default void windowDidMiniaturize(ID notification) {}
-	public default void windowDidDeminiaturize(ID notification) {}
-	public default void windowDidBecomeKey(ID notification) {}
-	public default void windowDidResignKey(ID notification) {}
+	public default void windowWillClose(NSNotification notification) {}
+	public default void windowDidResize(NSNotification notification) {}
+	public default void windowDidMiniaturize(NSNotification notification) {}
+	public default void windowDidDeminiaturize(NSNotification notification) {}
+	public default void windowDidBecomeKey(NSNotification notification) {}
+	public default void windowDidResignKey(NSNotification notification) {}
+    }
+
+    public interface NSNotification {
+	public ID id();
     }
 
     public interface NSWindow {
@@ -83,19 +87,26 @@ public abstract class AppKit {
 	public void setDelegate(WindowDelegate delegate);
 	public int styleMask();
 	public void setStyleMask(int value);
-	public void setContentSize(Coord sz);
-	public void setContentMinSize(Coord sz);
-	public void setContentMaxSize(Coord sz);
+	public void setContentSize(CGSize sz);
+	public void setContentMinSize(CGSize sz);
+	public void setContentMaxSize(CGSize sz);
 	public void makeKeyAndOrderFront(ID sender);
 	public void orderOut(ID sender);
 	public void setTitle(String title);
 	public void center();
-	public Coord cascadeTopLeftFromPoint(Coord c);
+	public CGPoint cascadeTopLeftFromPoint(CGPoint c);
 	public void setContentView(NSView contentView);
     }
 
     public interface NSView {
 	public ID id();
+	public CGRect frame();
+	public CGRect bounds();
+	public CGRect convertRectToBacking(CGRect rect);
+	public CGRect convertRectFromBacking(CGRect rect);
+	public CGSize convertSizeToBacking(CGSize size);
+	public CGSize convertSizeFromBacking(CGSize size);
+	public void setWantsBestResolutionOpenGLSurface(boolean val);
     }
 
     public static class NSViewDelegate {
@@ -103,8 +114,8 @@ public abstract class AppKit {
     }
 
     public abstract NSApplication NSApplication_sharedApplication();
-    public abstract NSWindow NSWindow(Area contentRect, int style, int backingStoreType, boolean defer);
-    public abstract NSView NSView(NSViewDelegate dg, Area frameRect);
+    public abstract NSWindow NSWindow(CGRect contentRect, int style, int backingStoreType, boolean defer);
+    public abstract NSView NSView(NSViewDelegate dg, CGRect frameRect);
 
     static class VersionC extends AppKit {
 	private static final MemoryLayout C_ID = Runtime.objc4.C_ID;
@@ -218,32 +229,46 @@ public abstract class AppKit {
 	    }
 
 	    private static byte windowShouldClose(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment sender) {
-		return((byte)callback(ak, objp, dg -> (byte)(dg.windowShouldClose(NSWindow.of(ak, ak.rt.id(sender))) ? 1 : 0), 0));
+		return((byte)callback(ak, objp, dg -> (byte)(dg.windowShouldClose(NSWindow.unretained(ak, ak.rt.id(sender))) ? 1 : 0), 0));
 	    }
 
 	    private static void windowWillClose(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment notification) {
-		callback(ak, objp, dg -> dg.windowWillClose(ak.rt.id(notification)));
+		callback(ak, objp, dg -> dg.windowWillClose(NSNotification.unretained(ak, ak.rt.id(notification))));
 	    }
 
 	    private static void windowDidResize(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment notification) {
-		callback(ak, objp, dg -> dg.windowDidResize(ak.rt.id(notification)));
+		callback(ak, objp, dg -> dg.windowDidResize(NSNotification.unretained(ak, ak.rt.id(notification))));
 	    }
 
 	    private static void windowDidMiniaturize(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment notification) {
-		callback(ak, objp, dg -> dg.windowDidMiniaturize(ak.rt.id(notification)));
+		callback(ak, objp, dg -> dg.windowDidMiniaturize(NSNotification.unretained(ak, ak.rt.id(notification))));
 	    }
 
 	    private static void windowDidDeminiaturize(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment notification) {
-		callback(ak, objp, dg -> dg.windowDidDeminiaturize(ak.rt.id(notification)));
+		callback(ak, objp, dg -> dg.windowDidDeminiaturize(NSNotification.unretained(ak, ak.rt.id(notification))));
 	    }
 
 	    private static void windowDidBecomeKey(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment notification) {
-		callback(ak, objp, dg -> dg.windowDidBecomeKey(ak.rt.id(notification)));
+		callback(ak, objp, dg -> dg.windowDidBecomeKey(NSNotification.unretained(ak, ak.rt.id(notification))));
 	    }
 
 	    private static void windowDidResignKey(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment notification) {
-		callback(ak, objp, dg -> dg.windowDidResignKey(ak.rt.id(notification)));
+		callback(ak, objp, dg -> dg.windowDidResignKey(NSNotification.unretained(ak, ak.rt.id(notification))));
 	    }
+	}
+
+	class NSNotification implements AppKit.NSNotification {
+	    public final ID id;
+
+	    public NSNotification(ID id) {
+		this.id = id;
+	    }
+
+	    public static NSNotification unretained(VersionC ak, ID id) {
+		return(ak.new NSNotification(id));
+	    }
+
+	    public ID id() {return(id);}
 	}
 
 	private final Runtime.Class cls_NSWindow = rt.objc_getClass("NSWindow");
@@ -259,8 +284,6 @@ public abstract class AppKit {
 	private final SEL sel_center = rt.sel_registerName("center");
 	private final SEL sel_cascadeTopLeftFromPoint = rt.sel_registerName("cascadeTopLeftFromPoint:");
 	private final SEL sel_setContentView = rt.sel_registerName("setContentView:");
-	private final MethodHandle sendmsg_void_CGSize = rt.msgtype(null, cg.C_CGSize());
-	private final MethodHandle sendmsg_CGPoint_CGPoint = rt.msgtype(cg.C_CGPoint(), cg.C_CGPoint());
 	private final MethodHandle sendmsg_NSUInt = rt.msgtype(NSUInteger);
 	private final MethodHandle sendmsg_void_NSUInt = rt.msgtype(null, NSUInteger);
 	class NSWindow implements AppKit.NSWindow {
@@ -270,7 +293,7 @@ public abstract class AppKit {
 		this.id = id;
 	    }
 
-	    public static NSWindow of(VersionC ak, ID id) {
+	    public static NSWindow unretained(VersionC ak, ID id) {
 		return(ak.new NSWindow(id));
 	    }
 
@@ -296,38 +319,14 @@ public abstract class AppKit {
 		    throw(new RuntimeException(t));
 		}
 	    }
-	    public void setContentSize(Coord sz) {
-		try(Arena st = Arena.ofConfined()) {
-		    CGSize cgsz = cg.CGSize(st);
-		    cgsz.width(sz.x).height(sz.y);
-		    try {
-			sendmsg_void_CGSize.invoke(id.mem(), sel_setContentSize.mem(), cgsz.mem());
-		    } catch(Throwable t) {
-			throw(new RuntimeException(t));
-		    }
-		}
+	    public void setContentSize(CGSize sz) {
+		cg.objc_msgSend_void(id, sel_setContentSize, sz);
 	    }
-	    public void setContentMinSize(Coord sz) {
-		try(Arena st = Arena.ofConfined()) {
-		    CGSize cgsz = cg.CGSize(st);
-		    cgsz.width(sz.x).height(sz.y);
-		    try {
-			sendmsg_void_CGSize.invoke(id.mem(), sel_setContentMinSize.mem(), cgsz.mem());
-		    } catch(Throwable t) {
-			throw(new RuntimeException(t));
-		    }
-		}
+	    public void setContentMinSize(CGSize sz) {
+		cg.objc_msgSend_void(id, sel_setContentMinSize, sz);
 	    }
-	    public void setContentMaxSize(Coord sz) {
-		try(Arena st = Arena.ofConfined()) {
-		    CGSize cgsz = cg.CGSize(st);
-		    cgsz.width(sz.x).height(sz.y);
-		    try {
-			sendmsg_void_CGSize.invoke(id.mem(), sel_setContentMaxSize.mem(), cgsz.mem());
-		    } catch(Throwable t) {
-			throw(new RuntimeException(t));
-		    }
-		}
+	    public void setContentMaxSize(CGSize sz) {
+		cg.objc_msgSend_void(id, sel_setContentMaxSize, sz);
 	    }
 	    public void makeKeyAndOrderFront(ID sender) {
 		rt.objc_msgSend_void(id, sel_makeKeyAndOrderFront, sender);
@@ -341,20 +340,8 @@ public abstract class AppKit {
 	    public void center() {
 		rt.objc_msgSend_void(id, sel_center);
 	    }
-	    public Coord cascadeTopLeftFromPoint(Coord c) {
-		try(Arena st = Arena.ofConfined()) {
-		    MemorySegment rv;
-		    CGPoint pt = cg.CGPoint(st);
-		    pt.x(c.x).y(c.y);
-		    try {
-			rv = (MemorySegment)sendmsg_CGPoint_CGPoint.invoke(st, id.mem(), sel_cascadeTopLeftFromPoint.mem(),
-									   pt.mem());
-		    } catch(Throwable t) {
-			throw(new RuntimeException(t));
-		    }
-		    CGPoint rpt = cg.CGPoint(rv);
-		    return(Coord.of((int)rpt.x(), (int)rpt.y()));
-		}
+	    public CGPoint cascadeTopLeftFromPoint(CGPoint c) {
+		return(cg.objc_msgSend_CGPoint(id, sel_cascadeTopLeftFromPoint, c));
 	    }
 	    public void setContentView(AppKit.NSView view) {
 		rt.objc_msgSend_void(id, sel_setContentView, view.id());
@@ -362,15 +349,12 @@ public abstract class AppKit {
 	}
 	private final SEL sel_initWithContentRect_styleMask_backing_defer = rt.sel_registerName("initWithContentRect:styleMask:backing:defer:");
 	private final MethodHandle sendmsg_id_CGRect_int_int_bool = rt.msgtype(C_ID, cg.C_CGRect(), NSUInteger, NSUInteger, OC_BOOL);
-	public NSWindow NSWindow(Area contentRect, int style, int backingStoreType, boolean defer) {
+	public NSWindow NSWindow(CGRect contentRect, int style, int backingStoreType, boolean defer) {
 	    ID id = rt.objc_msgSend_id(cls_NSWindow.id(), sel_alloc);
-	    CGRect rect = cg.CGRect();
-	    rect.origin().x(contentRect.ul.x).y(contentRect.ul.y);
-	    rect.size().width(contentRect.sz().x).height(contentRect.sz().y);
 	    try {
 		id = rt.id((MemorySegment)sendmsg_id_CGRect_int_int_bool.invoke(id.mem(),
 										sel_initWithContentRect_styleMask_backing_defer.mem(),
-										rect.mem(), style, backingStoreType, defer ? (byte)1 : (byte)0));
+										contentRect.mem(), style, backingStoreType, defer ? (byte)1 : (byte)0));
 	    } catch(Throwable t) {
 		throw(new RuntimeException(t));
 	    }
@@ -386,6 +370,13 @@ public abstract class AppKit {
 				       OC_BOOL, C_ID, C_SEL), "B@:");
 	    rt.objc_registerClassPair(IOSYSView);
 	}
+	private final SEL sel_frame = rt.sel_registerName("frame");
+	private final SEL sel_bounds = rt.sel_registerName("bounds");
+	private final SEL sel_convertRectToBacking = rt.sel_registerName("convertRectToBacking:");
+	private final SEL sel_convertRectFromBacking = rt.sel_registerName("convertRectFromBacking:");
+	private final SEL sel_convertSizeToBacking = rt.sel_registerName("convertSizeToBacking:");
+	private final SEL sel_convertSizeFromBacking = rt.sel_registerName("convertSizeFromBacking:");
+	private final SEL sel_setWantsBestResolutionOpenGLSurface = rt.sel_registerName("setWantsBestResolutionOpenGLSurface:");
 	class IOSYSView implements NSView {
 	    private static final Map<Integer, IOSYSView> reg = new HashMap<>();
 	    private static int nextkey = 0;
@@ -410,6 +401,17 @@ public abstract class AppKit {
 
 	    public ID id() {
 		return(id);
+	    }
+
+	    public CGRect frame() {return(cg.objc_msgSend_CGRect(id, sel_frame));}
+	    public CGRect bounds() {return(cg.objc_msgSend_CGRect(id, sel_bounds));}
+	    public CGRect convertRectToBacking(CGRect rect) {return(cg.objc_msgSend_CGRect(id, sel_convertRectToBacking, rect));}
+	    public CGRect convertRectFromBacking(CGRect rect) {return(cg.objc_msgSend_CGRect(id, sel_convertRectFromBacking, rect));}
+	    public CGSize convertSizeToBacking(CGSize rect) {return(cg.objc_msgSend_CGSize(id, sel_convertSizeToBacking, rect));}
+	    public CGSize convertSizeFromBacking(CGSize rect) {return(cg.objc_msgSend_CGSize(id, sel_convertSizeFromBacking, rect));}
+
+	    public void setWantsBestResolutionOpenGLSurface(boolean val) {
+		rt.objc_msgSend_void(id, sel_setWantsBestResolutionOpenGLSurface, val);
 	    }
 
 	    private static <R> R callback(VersionC ak, MemorySegment objp, Function<IOSYSView, R> fun, R eret) {
@@ -443,13 +445,10 @@ public abstract class AppKit {
 
 	private final SEL sel_initWithFrame = rt.sel_registerName("initWithFrame:");
 	private final MethodHandle sendmsg_id_CGRect = rt.msgtype(C_ID, cg.C_CGRect());
-	public NSView NSView(NSViewDelegate dg, Area frameRect) {
+	public NSView NSView(NSViewDelegate dg, CGRect frameRect) {
 	    IOSYSView view = new IOSYSView(dg);
-	    CGRect rect = cg.CGRect();
-	    rect.origin().x(frameRect.ul.x).y(frameRect.ul.y);
-	    rect.size().width(frameRect.sz().x).height(frameRect.sz().y);
 	    try {
-		sendmsg_id_CGRect.invoke(view.id.mem(), sel_initWithFrame.mem(), rect.mem());
+		sendmsg_id_CGRect.invoke(view.id.mem(), sel_initWithFrame.mem(), frameRect.mem());
 	    } catch(Throwable t) {
 		throw(new RuntimeException(t));
 	    }
@@ -474,8 +473,9 @@ public abstract class AppKit {
 	boolean[] done = {false};
 	rt.mainrun(() -> {
 	    AppKit api = AppKit.get();
+	    CoreGraphics cg = CoreGraphics.get();
 	    NSApplication app = api.NSApplication_sharedApplication();
-	    NSWindow wnd = api.NSWindow(Area.sized(Coord.of(100, 100), Coord.of(600, 600)), 15, 2, true);
+	    NSWindow wnd = api.NSWindow(cg.CGRect(Area.sized(Coord.of(100, 100), Coord.of(600, 600))), 15, 2, true);
 	    wnd.setTitle("Test");
 	    wnd.setDelegate(new WindowDelegate() {
 		public boolean windowShouldClose(ID sender) {
