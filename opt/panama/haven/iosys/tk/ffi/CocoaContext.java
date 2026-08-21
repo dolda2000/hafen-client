@@ -199,6 +199,39 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    mainrun(() -> {glrun0(view, () -> {task.run(); return(null);});});
 	}
 
+	public static class CocoaMouseBtn implements MouseBtn {
+	    public final int number;
+
+	    public CocoaMouseBtn(int number) {
+		this.number = number;
+	    }
+
+	    public String id() {return(("cocoa:" + number).intern());}
+	    public String nm() {return("Button " + (number + 1));}
+	}
+
+	public static MouseBtn buttonid(int num) {
+	    switch(num) {
+	    case 0: return(MouseBtn.Std.LEFT);
+	    case 1: return(MouseBtn.Std.RIGHT);
+	    case 2: return(MouseBtn.Std.MIDDLE);
+	    }
+	    return(new CocoaMouseBtn(num));
+	}
+
+	public static Set<Key.Mod> modflags(int flags) {
+	    Set<Key.Mod> ret = EnumSet.noneOf(Key.Mod.class);
+	    if((flags & AppKit.NSShiftKeyMask) != 0)
+		ret.add(Key.Mod.SHIFT);
+	    if((flags & AppKit.NSControlKeyMask) != 0)
+		ret.add(Key.Mod.CONTROL);
+	    if((flags & AppKit.NSAlternateKeyMask) != 0) {
+		ret.add(Key.Mod.ALT);
+		ret.add(Key.Mod.META);
+	    }
+	    return(ret);
+	}
+
 	public class CocoaWindow implements Windeye {
 	    public final NSWindow nsw;
 	    public final NSView view;
@@ -249,7 +282,10 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 						AppKit.NSWindowStyleMaskResizable,
 						AppKit.NSBackingStoreBuffered,
 						true));
-		mainrun(() -> nsw.setDelegate(new WindowDelegate()));
+		mainrun(() -> {
+		    nsw.setDelegate(new WindowDelegate());
+		    nsw.setAcceptsMouseMovedEvents(true);
+		});
 		view = mainrun(() -> ak.NSView(new ViewDelegate(), cg.CGRect(Area.sized(Coord.of(1, 1)))));
 		mainrun(() -> {
 		    view.setWantsBestResolutionOpenGLSurface(true);
@@ -269,6 +305,125 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    class ViewDelegate extends AppKit.NSViewDelegate {
+		private final StringBuilder textbuf = new StringBuilder();
+		private double sax = 0, say = 0;
+
+		public boolean acceptsFirstResponder() {return(true);}
+
+		public void mouseDown(NSEvent event) {callback(new CocoaMouseDownEvent(event));}
+		public void mouseDragged(NSEvent event) {callback(new CocoaMouseMoveEvent(event));}
+		public void mouseUp(NSEvent event) {callback(new CocoaMouseUpEvent(event));}
+		public void rightMouseDown(NSEvent event) {callback(new CocoaMouseDownEvent(event));}
+		public void rightMouseDragged(NSEvent event) {callback(new CocoaMouseMoveEvent(event));}
+		public void rightMouseUp(NSEvent event) {callback(new CocoaMouseUpEvent(event));}
+		public void otherMouseDown(NSEvent event) {callback(new CocoaMouseDownEvent(event));}
+		public void otherMouseDragged(NSEvent event) {callback(new CocoaMouseMoveEvent(event));}
+		public void otherMouseUp(NSEvent event) {callback(new CocoaMouseUpEvent(event));}
+
+		public void scrollWheel(NSEvent event) {
+		    double x = event.scrollingDeltaX();
+		    double y = event.scrollingDeltaY();
+		    if(event.hasPreciseScrollingDeltas()) {
+			x /= 15;
+			y /= 15;
+		    }
+		    if(x != 0) {
+			sax += x;
+			int amount = (int)sax;
+			sax -= amount;
+			callback(new CocoaMouseWheelEvent(event, MouseWheelEvent.Axis.HORIZ, amount, x));
+		    }
+		    if(y != 0) {
+			say += y;
+			int amount = (int)say;
+			say -= amount;
+			callback(new CocoaMouseWheelEvent(event, MouseWheelEvent.Axis.VERT, amount, y));
+		    }
+		}
+
+		public void mouseMoved(NSEvent event) {
+		    callback(new CocoaMouseMoveEvent(event));
+		}
+
+		public void keyDown(NSEvent event) {
+		    if(textbuf.length() > 0) {
+			Warning.warn("unexpected text accumulated at beginning of keyDown: " + textbuf);
+			textbuf.setLength(0);
+		    }
+		    view.interpretKeyEvents(fnd.NSArray(event));
+		    Debug.dump(Utils.bprint.enc(textbuf.toString().getBytes()), event.keyCode());
+		    textbuf.setLength(0);
+		}
+
+		public void insertText(String string) {
+		    textbuf.append(string);
+		}
+
+		private final Runtime.SEL sel_insertNewline = rt.sel_registerName("insertNewline:");
+		private final Runtime.SEL sel_insertTab = rt.sel_registerName("insertTab:");
+		private final Runtime.SEL sel_deleteBackward = rt.sel_registerName("deleteBackward:");
+		public void doCommandBySelector(Runtime.SEL selector) {
+		    if(selector.equals(sel_insertNewline)) {
+			textbuf.append('\n');
+		    } else if(selector.equals(sel_insertTab)) {
+			textbuf.append('\t');
+		    } else if(selector.equals(sel_deleteBackward)) {
+			textbuf.append('\b');
+		    }
+		}
+	    }
+
+	    public class CocoaMouseEvent {
+		public final NSEvent event;
+		public final Coord wndc;
+
+		public CocoaMouseEvent(NSEvent event) {
+		    this.event = event;
+		    this.wndc = Coord.of(0, size.y)
+			.add(view.convertPointToBacking(event.locationInWindow()).c().mul(1, -1));
+		}
+
+		public Coord wndc() {return(wndc);}
+		public MouseBtn button() {return(buttonid(event.buttonNumber()));}
+
+		public Set<MouseBtn> held() {
+		    Set<MouseBtn> ret = new HashSet<>();
+		    int fl = ak.NSEvent_pressedMouseButtons();
+		    while(true) {
+			int bit = Integer.numberOfTrailingZeros(fl);
+			if(bit >= 32)
+			    return(ret);
+			ret.add(buttonid(bit));
+			fl &= ~(1 << bit);
+		    }
+		}
+
+		public Set<Key.Mod> mods() {return(modflags(event.modifierFlags()));}
+	    }
+	    public class CocoaMouseMoveEvent extends CocoaMouseEvent implements MouseMoveEvent {
+		public CocoaMouseMoveEvent(NSEvent event) {super(event);}
+	    }
+	    public class CocoaMouseDownEvent extends CocoaMouseEvent implements MouseDownEvent {
+		public CocoaMouseDownEvent(NSEvent event) {super(event);}
+	    }
+	    public class CocoaMouseUpEvent extends CocoaMouseEvent implements MouseUpEvent {
+		public CocoaMouseUpEvent(NSEvent event) {super(event);}
+	    }
+	    public class CocoaMouseWheelEvent extends CocoaMouseEvent implements MouseWheelEvent {
+		public final Axis axis;
+		public final int amount;
+		public final double sub;
+
+		public CocoaMouseWheelEvent(NSEvent event, Axis axis, int amount, double sub) {
+		    super(event);
+		    this.axis = axis;
+		    this.amount = amount;
+		    this.sub = sub;
+		}
+
+		public Axis axis() {return(axis);}
+		public int amount() {return(amount);}
+		public double subamount() {return(sub);}
 	    }
 
 	    public CocoaToolkit toolkit() {

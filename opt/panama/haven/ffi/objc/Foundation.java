@@ -38,12 +38,20 @@ import static haven.ffi.FUtils.*;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 
 public abstract class Foundation {
-    public static interface NSString {
+    public static interface NSString extends Runtime.NSObject {
 	public ID id();
 	public String str();
     }
 
+    public abstract NSString NSString(ID id);
     public abstract NSString NSString(String str);
+    public abstract String fromNSString(ID id);
+
+    public static interface NSArray extends Runtime.NSObject {
+	public ID id();
+    }
+
+    public abstract NSArray NSArray(NSObject... objects);
 
     public static interface NSProcessInfo {
 	public String operatingSystemVersionString();
@@ -55,15 +63,27 @@ public abstract class Foundation {
 	private final SymbolLookup dylib = SymbolLookup.libraryLookup("/System/Library/Frameworks/Foundation.framework/Foundation", Arena.global());
 	private final Runtime rt = Runtime.get();
 	private final SEL sel_alloc = rt.sel_registerName("alloc");
+	private final SEL sel_retain = rt.sel_registerName("retain");
 
-	private final Runtime.Class NSString = rt.objc_getClass("NSString");
+	private final Runtime.Class cls_NSString = rt.objc_getClass("NSString");
 	private final SEL sel_UTF8String = rt.sel_registerName("UTF8String");
 	class NSString implements Foundation.NSString {
 	    public final ID id;
 
 	    NSString(ID id) {
 		this.id = id;
-		rt.gcrelease(this, id);
+	    }
+
+	    static NSString unretained(VersionC fnd, ID id) {
+		return(fnd.new NSString(id));
+	    }
+	    static NSString retained(VersionC fnd, ID id) {
+		NSString ret = unretained(fnd, id);
+		fnd.rt.gcrelease(ret, id);
+		return(ret);
+	    }
+	    static NSString retain(VersionC fnd, ID id) {
+		return(retained(fnd, fnd.rt.objc_msgSend_id(id, fnd.sel_retain)));
 	    }
 
 	    public ID id() {return(id);}
@@ -74,10 +94,55 @@ public abstract class Foundation {
 	    public String toString() {return(str());}
 	}
 
+	public NSString NSString(ID id) {
+	    if(id == null)
+		return(null);
+	    return(NSString.retain(this, id));
+	}
+
+	public String fromNSString(ID id) {
+	    if(id == null)
+		return(null);
+	    return(NSString.unretained(this, id).str());
+	}
+
 	private final SEL sel_initWithUTF8String = rt.sel_registerName("initWithUTF8String:");
 	public NSString NSString(String str) {
 	    try(Arena st = Arena.ofConfined()) {
-		return(new NSString(rt.objc_msgSend_id(rt.objc_msgSend_id(NSString.id(), sel_alloc), sel_initWithUTF8String, st.allocateFrom(str, Utils.utf8))));
+		return(NSString.retained(this, rt.objc_msgSend_id(rt.objc_msgSend_id(cls_NSString.id(), sel_alloc), sel_initWithUTF8String, st.allocateFrom(str, Utils.utf8))));
+	    }
+	}
+
+	private final Runtime.Class cls_NSArray = rt.objc_getClass("NSArray");
+	class NSArray implements Foundation.NSArray {
+	    public final ID id;
+
+	    NSArray(ID id) {
+		this.id = id;
+	    }
+
+	    static NSArray unretained(VersionC fnd, ID id) {
+		return(fnd.new NSArray(id));
+	    }
+	    static NSArray retained(VersionC fnd, ID id) {
+		NSArray ret = unretained(fnd, id);
+		fnd.rt.gcrelease(ret, id);
+		return(ret);
+	    }
+	    static NSArray retain(VersionC fnd, ID id) {
+		return(retained(fnd, fnd.rt.objc_msgSend_id(id, fnd.sel_retain)));
+	    }
+
+	    public ID id() {return(id);}
+	}
+
+	private final SEL sel_initWithObjects_count = rt.sel_registerName("initWithObjects:count:");
+	public NSArray NSArray(NSObject... objects) {
+	    try(Arena st = Arena.ofConfined()) {
+		MemorySegment buf = st.allocate(ADDRESS, objects.length);
+		for(int i = 0; i < objects.length; i++)
+		    buf.setAtIndex(ADDRESS, i, objects[i].id().mem());
+		return(NSArray.retained(this, rt.objc_msgSend_id(rt.objc_msgSend_id(cls_NSArray.id(), sel_alloc), sel_initWithObjects_count, buf, objects.length)));
 	    }
 	}
 
@@ -93,7 +158,7 @@ public abstract class Foundation {
 	    public ID id() {return(id);}
 
 	    public String operatingSystemVersionString() {
-		return(new NSString(rt.objc_msgSend_id(id, sel_operatingSystemVersionString)).str());
+		return(NSString.retained(VersionC.this, rt.objc_msgSend_id(id, sel_operatingSystemVersionString)).str());
 	    }
 	}
 

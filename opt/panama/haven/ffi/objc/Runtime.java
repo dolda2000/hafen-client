@@ -53,6 +53,10 @@ public abstract class Runtime {
 	MemorySegment mem();
     }
 
+    public static interface NSObject {
+	public ID id();
+    }
+
     public abstract Class objc_getClass(String name);
     public abstract String object_getClassName(ID id);
     public abstract Ivar class_getInstanceVariable(Runtime.Class cls, String name);
@@ -67,6 +71,7 @@ public abstract class Runtime {
     abstract MemoryLayout C_ID();
     abstract MemoryLayout C_SEL();
     abstract ID id(MemorySegment mem);
+    abstract SEL sel(MemorySegment mem);
     abstract MethodHandle msgtype(MemoryLayout rtype, MemoryLayout... args);
 
     public abstract void objc_msgSend_void(ID self, SEL sel);
@@ -76,10 +81,14 @@ public abstract class Runtime {
     public abstract void objc_msgSend_void(ID self, SEL sel, SEL arg1, ID arg2, boolean arg3);
     public abstract ID objc_msgSend_id(ID self, SEL sel);
     public abstract ID objc_msgSend_id(ID self, SEL sel, MemorySegment arg1);
+    public abstract ID objc_msgSend_id(ID self, SEL sel, MemorySegment arg1, int arg2);
     public abstract ID objc_msgSend_id(ID self, SEL sel, ID arg1);
     public abstract ID objc_msgSend_id(ID self, SEL sel, ID arg1, ID arg2);
-    abstract MemorySegment objc_msgSend_ptr(Runtime.ID self, Runtime.SEL sel);
-    public abstract boolean objc_msgSend_bool(Runtime.ID self, Runtime.SEL sel, int arg1);
+    abstract MemorySegment objc_msgSend_ptr(ID self, SEL sel);
+    public abstract boolean objc_msgSend_bool(ID self, SEL sel);
+    public abstract boolean objc_msgSend_bool(ID self, SEL sel, int arg1);
+    public abstract int objc_msgSend_int(ID self, SEL sel);
+    public abstract double objc_msgSend_double(ID self, SEL sel);
 
 
     public String object_getClassName(Class cls) {return(object_getClassName(cls.id()));}
@@ -134,12 +143,23 @@ public abstract class Runtime {
 	}
     }
 
+    private final Supplier<SEL> sel_retain = Utils.cache(() -> sel_registerName("retain"));
     private final Supplier<SEL> sel_release = Utils.cache(() -> sel_registerName("release"));
     public void release(ID id) {
 	objc_msgSend_void(id, sel_release.get());
     }
     public void gcrelease(Object obj, ID id) {
+	if(id == null)
+	    throw(new NullPointerException());
 	Finalizer.finalize(obj, () -> release(id));
+    }
+    public void gcrelease(NSObject obj) {
+	gcrelease(obj, obj.id());
+    }
+    public <T extends NSObject> T retain(T obj) {
+	objc_msgSend_id(obj.id(), sel_retain.get());
+	gcrelease(obj);
+	return(obj);
     }
 
     static class objc4 extends Runtime {
@@ -148,6 +168,8 @@ public abstract class Runtime {
 	static final MemoryLayout C_ID = ADDRESS;
 	static final MemoryLayout C_Ivar = ADDRESS;
 	static final MemoryLayout OC_BOOL = C_CHAR;
+	static final MemoryLayout NSInteger = C_LONG;
+	static final MemoryLayout NSUInteger = C_LONG;
 	private final SymbolLookup rt = SymbolLookup.libraryLookup("libobjc.A.dylib", Arena.global());
 
 	objc4() {
@@ -213,13 +235,22 @@ public abstract class Runtime {
 		this.lib = lib;
 	    }
 
+	    static SEL of(objc4 lib, MemorySegment mem) {
+		return(nullp(mem) ? null : new SEL(lib, mem));
+	    }
+
 	    protected StructLayout $layout() {return(_SEL);}
 	    public MemorySegment mem() {return(mem);}
+
+	    public boolean equals(SEL that) {return(this.mem.equals(that.mem));}
+	    public boolean equals(Object x) {return((x instanceof SEL) && equals((SEL)x));}
+	    public int hashCode() {return(Long.hashCode(mem.address()));}
 
 	    public String toString() {
 		return("\"" + lib.sel_getName(this) + "\"");
 	    }
 	}
+	SEL sel(MemorySegment mem) {return(SEL.of(this, mem));}
 
 	static final StructLayout _ID = struct(new MemoryLayout[] {
 		C_Class.withName("isa"),
@@ -451,6 +482,15 @@ public abstract class Runtime {
 	    }
 	}
 
+	private final MethodHandle objc_msgSend_id_ptr_NSUint = msgtype(C_ID, ADDRESS, NSUInteger);
+	public ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, MemorySegment arg1, int arg2) {
+	    try {
+		return(id((MemorySegment)objc_msgSend_id_ptr_NSUint.invoke(self.mem(), sel.mem(), arg1, arg2)));
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
 	private final MethodHandle objc_msgSend_id_id = msgtype(C_ID, C_ID);
 	public ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, Runtime.ID arg1) {
 	    try {
@@ -478,10 +518,37 @@ public abstract class Runtime {
 	    }
 	}
 
+	private final MethodHandle objc_msgSend_bool = msgtype(OC_BOOL);
+	public boolean objc_msgSend_bool(Runtime.ID self, Runtime.SEL sel) {
+	    try {
+		return((int)objc_msgSend_bool.invoke(self.mem(), sel.mem()) != 0);
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
 	private final MethodHandle objc_msgSend_bool_int = msgtype(OC_BOOL, C_INT);
 	public boolean objc_msgSend_bool(Runtime.ID self, Runtime.SEL sel, int arg1) {
 	    try {
 		return((int)objc_msgSend_bool_int.invoke(self.mem(), sel.mem(), arg1) != 0);
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
+	private final MethodHandle objc_msgSend_int = msgtype(C_INT);
+	public int objc_msgSend_int(Runtime.ID self, Runtime.SEL sel) {
+	    try {
+		return((int)objc_msgSend_int.invoke(self.mem(), sel.mem()));
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
+	private final MethodHandle objc_msgSend_double = msgtype(C_DOUBLE);
+	public double objc_msgSend_double(Runtime.ID self, Runtime.SEL sel) {
+	    try {
+		return((double)objc_msgSend_double.invoke(self.mem(), sel.mem()));
 	    } catch(Throwable e) {
 		throw(new RuntimeException(e));
 	    }
