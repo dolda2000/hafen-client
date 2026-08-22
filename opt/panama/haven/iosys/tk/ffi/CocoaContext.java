@@ -796,8 +796,11 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		return(glfb);
 	    }
 
+	    private int cursi = -1;
 	    private void glswap(GL gl, int ival) {
 		GLException.checkfor(gl, null);
+		if(ival != cursi)
+		    ctx.setParameters(new int[] {cursi = ival}, CGL.NSOpenGLCPSwapInterval);
 		ctx.flushBuffer();
 		GLException.checkfor(gl, null);
 	    }

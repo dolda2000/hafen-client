@@ -76,11 +76,12 @@ public abstract class Runtime {
 
     public abstract void objc_msgSend_void(ID self, SEL sel);
     public abstract void objc_msgSend_void(ID self, SEL sel, boolean arg1);
+    public abstract void objc_msgSend_void(ID self, SEL sel, MemorySegment arg1, int arg2);
     public abstract void objc_msgSend_void(ID self, SEL sel, ID arg1);
     public abstract void objc_msgSend_void(ID self, SEL sel, ID arg1, boolean arg2);
     public abstract void objc_msgSend_void(ID self, SEL sel, SEL arg1, ID arg2, boolean arg3);
     public abstract ID objc_msgSend_id(ID self, SEL sel);
-    public abstract ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, int arg1);
+    public abstract ID objc_msgSend_id(ID self, SEL sel, int arg1);
     public abstract ID objc_msgSend_id(ID self, SEL sel, MemorySegment arg1);
     public abstract ID objc_msgSend_id(ID self, SEL sel, MemorySegment arg1, int arg2);
     public abstract ID objc_msgSend_id(ID self, SEL sel, ID arg1);
@@ -89,7 +90,7 @@ public abstract class Runtime {
     public abstract boolean objc_msgSend_bool(ID self, SEL sel);
     public abstract boolean objc_msgSend_bool(ID self, SEL sel, int arg1);
     public abstract int objc_msgSend_int(ID self, SEL sel);
-    public abstract int objc_msgSend_NSUInt(Runtime.ID self, Runtime.SEL sel);
+    public abstract int objc_msgSend_NSUInt(ID self, SEL sel);
     public abstract double objc_msgSend_double(ID self, SEL sel);
 
 
@@ -434,6 +435,15 @@ public abstract class Runtime {
 	public void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, boolean arg1) {
 	    try {
 		objc_msgSend_void_bool.invoke(self.mem(), sel.mem(), arg1 ? (byte)1 : (byte)0);
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
+	private final MethodHandle objc_msgSend_void_ptr_int = msgtype(null, ADDRESS, C_INT);
+	public void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, MemorySegment arg1, int arg2) {
+	    try {
+		objc_msgSend_void_ptr_int.invoke(self.mem(), sel.mem(), arg1, arg2);
 	    } catch(Throwable e) {
 		throw(new RuntimeException(e));
 	    }

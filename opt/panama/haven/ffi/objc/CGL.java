@@ -54,6 +54,8 @@ public abstract class CGL {
     public static final int NSOpenGLProfileVersion3_2Core = 0x3200;
     public static final int NSOpenGLProfileVersion4_1Core = 0x4100;
 
+    public static final int NSOpenGLCPSwapInterval = 222;
+
     public interface NSOpenGLPixelFormat {
 	public ID id();
     }
@@ -66,6 +68,7 @@ public abstract class CGL {
 	public void update();
 	public void clearDrawable();
 	public void flushBuffer();
+	public void setParameters(int[] vals, int param);
     }
 
     public abstract NSOpenGLPixelFormat NSOpenGLPixelFormat(int[] attribs);
@@ -111,6 +114,7 @@ public abstract class CGL {
 	private final SEL sel_update = rt.sel_registerName("update");
 	private final SEL sel_clearDrawable = rt.sel_registerName("clearDrawable");
 	private final SEL sel_flushBuffer = rt.sel_registerName("flushBuffer");
+	private final SEL sel_setValue_forParameter = rt.sel_registerName("setValues:forParameter:");
 	class NSOpenGLContext implements CGL.NSOpenGLContext {
 	    final ID id;
 
@@ -143,6 +147,13 @@ public abstract class CGL {
 
 	    public void flushBuffer() {
 		rt.objc_msgSend_void(id, sel_flushBuffer);
+	    }
+
+	    public void setParameters(int[] vals, int param) {
+		try(Arena st = Arena.ofConfined()) {
+		    MemorySegment buf = memcpy(st.allocate(C_INT, vals.length), vals);
+		    rt.objc_msgSend_void(id, sel_setValue_forParameter, buf, param);
+		}
 	    }
 	}
 
