@@ -108,6 +108,7 @@ public abstract class AppKit {
 	public String charactersIgnoringModifiers();
 	public int keyCode();
 	public boolean isARepeat();
+	public CoreGraphics.CGEvent CGEvent();
     }
 
     public interface NSScreen extends Runtime.NSObject {
@@ -353,6 +354,7 @@ public abstract class AppKit {
 	private final SEL sel_charactersIgnoringModifiers = rt.sel_registerName("charactersIgnoringModifiers");
 	private final SEL sel_keyCode = rt.sel_registerName("keyCode");
 	private final SEL sel_isARepeat = rt.sel_registerName("isARepeat");
+	private final SEL sel_CGEvent = rt.sel_registerName("CGEvent");
 	class NSEvent implements AppKit.NSEvent {
 	    public final ID id;
 
@@ -412,6 +414,9 @@ public abstract class AppKit {
 	    }
 	    public boolean isARepeat() {
 		return(rt.objc_msgSend_bool(id, sel_isARepeat));
+	    }
+	    public CoreGraphics.CGEvent CGEvent() {
+		return(cg.CGEvent(rt.objc_msgSend_ptr(id, sel_CGEvent)));
 	    }
 	}
 

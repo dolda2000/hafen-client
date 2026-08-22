@@ -38,6 +38,15 @@ import static haven.ffi.FUtils.*;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 
 public abstract class CoreGraphics {
+    public static final int kCGMouseEventDeltaX = 4;
+    public static final int kCGMouseEventDeltaY = 5;
+    public static final int kCGScrollWheelEventDeltaAxis1 = 11;
+    public static final int kCGScrollWheelEventDeltaAxis2 = 12;
+    public static final int kCGScrollWheelEventFixedPtDeltaAxis1 = 93;
+    public static final int kCGScrollWheelEventFixedPtDeltaAxis2 = 94;
+    public static final int kCGScrollWheelEventPointDeltaAxis1 = 96;
+    public static final int kCGScrollWheelEventPointDeltaAxis2 = 97;
+
     public static interface CGPoint {
 	MemorySegment mem();
 
@@ -89,6 +98,12 @@ public abstract class CoreGraphics {
     public abstract CGRect CGRect();
     public CGRect CGRect(Area a) {return(CGRect().a(a));}
 
+    public static interface CGEvent {
+	public double getDoubleValueField(int field);
+	public long getIntegerValueField(int field);
+    }
+    abstract CGEvent CGEvent(MemorySegment ref);
+
     public abstract CGSize CGDisplayScreenSize(int display);
     public abstract long CGDisplayPixelsWide(int display);
     public abstract long CGDisplayPixelsHigh(int display);
@@ -106,8 +121,10 @@ public abstract class CoreGraphics {
     static class VersionA extends CoreGraphics {
 	static final MemoryLayout CGFloat = C_DOUBLE;
 	static final MemoryLayout CGDirectDisplayID = ValueLayout.JAVA_INT;
+	static final MemoryLayout CGEventField = ValueLayout.JAVA_INT;
 	private final SymbolLookup dylib = SymbolLookup.libraryLookup("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics", Arena.global());
 	private final Runtime rt = Runtime.get();
+	private final CoreFoundation cf = CoreFoundation.get();
 
 	static final StructLayout _CGPoint = struct(new MemoryLayout[] {
 		CGFloat.withName("x"),
@@ -195,6 +212,33 @@ public abstract class CoreGraphics {
 	public MemoryLayout C_CGRect() {return(_CGRect);}
 	public CGRect CGRect(MemorySegment mem) {return(new CGRect(mem));}
 	public CGRect CGRect() {return(new CGRect());}
+
+	private final MethodHandle CGEventGetDoubleValueField = ld.downcallHandle(dylib.find("CGEventGetDoubleValueField").get(), FunctionDescriptor.of(C_DOUBLE, ADDRESS, CGEventField));
+	private final MethodHandle CGEventGetIntegerValueField = ld.downcallHandle(dylib.find("CGEventGetIntegerValueField").get(), FunctionDescriptor.of(ValueLayout.JAVA_LONG, ADDRESS, CGEventField));
+	class CGEvent implements CoreGraphics.CGEvent {
+	    final MemorySegment ref;
+
+	    CGEvent(MemorySegment ref, boolean release) {
+		this.ref = ref;
+		if(release)
+		    cf.gcrelease(this, ref);
+	    }
+
+	    public double getDoubleValueField(int field) {
+		try {
+		    return((double)CGEventGetDoubleValueField.invoke(ref, field));
+		} catch(Throwable e) {throw(new RuntimeException(e));}
+	    }
+	    public long getIntegerValueField(int field) {
+		try {
+		    return((long)CGEventGetIntegerValueField.invoke(ref, field));
+		} catch(Throwable e) {throw(new RuntimeException(e));}
+	    }
+	}
+
+	CGEvent CGEvent(MemorySegment ref) {
+	    return(new CGEvent(cf.CFRetain(ref), true));
+	}
 
 	private final MethodHandle CGDisplayScreenSize = ld.downcallHandle(dylib.find("CGDisplayScreenSize").get(), FunctionDescriptor.of(_CGSize, CGDirectDisplayID));
 	public CGSize CGDisplayScreenSize(int display) {

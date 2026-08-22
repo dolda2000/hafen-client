@@ -191,9 +191,6 @@ public abstract class Carbon {
     public static final String kTISTypeKeyboardKeyboardViewer = "TISTypeKeyboardKeyboardViewer";
     public static final String kTISTypeKeyboardInk = "TISTypeKeyboardInk";
 
-    public static interface CFData {
-    }
-
     public static interface UCKeyboardLayout {
     }
 
@@ -204,8 +201,6 @@ public abstract class Carbon {
 	public UCKeyboardLayout unicodeKeyLayoutData();
     }
 
-    abstract void CFRelease(MemorySegment object);
-
     public abstract List<TISInputSource> TISCreateInputSourceList(boolean all);
     public abstract TISInputSource TISCopyCurrentKeyboardLayoutInputSource();
     public abstract TISInputSource TISCopyCurrentASCIICapableKeyboardLayoutInputSource();
@@ -214,8 +209,9 @@ public abstract class Carbon {
 
     static class VersionA extends Carbon {
 	private final SymbolLookup dylib = SymbolLookup.libraryLookup("/System/Library/Frameworks/Carbon.framework/Carbon", Arena.global());
+	private final CoreFoundation cf = CoreFoundation.get();
 	private static final Charset C_UNICHARSET = Charset.forName(ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN ? "UTF-16LE" : "UTF-16BE");
-	private static final MemoryLayout CFTypeRef = ADDRESS;
+	private static final MemoryLayout CFTypeRef = CoreFoundation.VersionA.CFTypeRef;
 	private static final MemoryLayout UniChar = ValueLayout.JAVA_CHAR;
 	private static final MemoryLayout UniCharCount = C_LONG;
 	private static final MemoryLayout OSStatus = ValueLayout.JAVA_INT;
@@ -224,45 +220,6 @@ public abstract class Carbon {
 	private static final MemoryLayout OC_BOOL = Runtime.objc4.OC_BOOL;
 	private static final Runtime rt = Runtime.get();
 	private static final Foundation fnd = Foundation.get();
-
-	private final MethodHandle CFRelease = ld.downcallHandle(dylib.find("CFRelease").get(), FunctionDescriptor.ofVoid(CFTypeRef));
-	void CFRelease(MemorySegment object) {
-	    try {
-		CFRelease.invoke(object);
-	    } catch(Throwable e) {throw(new RuntimeException(e));}
-	}
-
-	private final MethodHandle CFRetain = ld.downcallHandle(dylib.find("CFRetain").get(), FunctionDescriptor.of(CFTypeRef, CFTypeRef));
-	MemorySegment CFRetain(MemorySegment object) {
-	    try {
-		return((MemorySegment)CFRetain.invoke(object));
-	    } catch(Throwable e) {throw(new RuntimeException(e));}
-	}
-
-	void gcrelease(Object obj, MemorySegment object) {
-	    if(object == null)
-		throw(new NullPointerException());
-	    Finalizer.finalize(obj, () -> CFRelease(object));
-	}
-
-	private final MethodHandle CFDataGetBytePtr = ld.downcallHandle(dylib.find("CFDataGetBytePtr").get(), FunctionDescriptor.of(ADDRESS, ADDRESS));
-	class CFData implements Carbon.CFData {
-	    final MemorySegment ref;
-	    final Object keep;
-
-	    CFData(MemorySegment ref, boolean release, Object keep) {
-		this.ref = ref;
-		this.keep = keep;
-		if(release)
-		    gcrelease(this, ref);
-	    }
-
-	    MemorySegment getBytePtr() {
-		try {
-		    return((MemorySegment)CFDataGetBytePtr.invoke(ref));
-		} catch(Throwable e) {throw(new RuntimeException(e));}
-	    }
-	}
 
 	class UCKeyboardLayout implements Carbon.UCKeyboardLayout {
 	    final MemorySegment mem;
@@ -285,7 +242,7 @@ public abstract class Carbon {
 	    TISInputSource(MemorySegment ref, boolean release) {
 		this.ref = ref;
 		if(release)
-		    gcrelease(this, ref);
+		    cf.gcrelease(this, ref);
 	    }
 
 	    MemorySegment property(MemorySegment key) {
@@ -307,7 +264,7 @@ public abstract class Carbon {
 	    }
 
 	    public UCKeyboardLayout unicodeKeyLayoutData() {
-		return(new UCKeyboardLayout(new CFData(property(kTISPropertyUnicodeKeyLayoutData), false, this).getBytePtr(), this));
+		return(new UCKeyboardLayout(cf.CFData(property(kTISPropertyUnicodeKeyLayoutData), false, this).getBytePtr(), this));
 	    }
 	}
 
@@ -320,7 +277,7 @@ public abstract class Carbon {
 	    NSArray list = fnd.NSArray(rt.id(rv));
 	    ArrayList<Carbon.TISInputSource> ret = new ArrayList<>();
 	    for(int i = 0; i < list.size(); i++)
-		ret.add(new TISInputSource(CFRetain(list.get(i).mem()), true));
+		ret.add(new TISInputSource(cf.CFRetain(list.get(i).mem()), true));
 	    return(ret);
 	}
 
