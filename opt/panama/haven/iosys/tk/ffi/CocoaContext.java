@@ -42,6 +42,7 @@ import haven.ffi.gl.*;
 import haven.ffi.objc.AppKit.*;
 import haven.ffi.objc.CGL.*;
 import haven.ffi.objc.Runtime;
+import static haven.ffi.objc.Carbon.*;
 import static haven.iosys.tk.Key.Std.*;
 
 @Toolkit.Available(name = "cgl")
@@ -49,6 +50,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
     private final Runtime rt;
     private final Foundation fnd;
     private final CoreGraphics cg;
+    private final Carbon carb;
     private final AppKit ak;
     private final CGL cgl;
     private final OpenGL gl;
@@ -58,6 +60,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    rt = Runtime.get();
 	    fnd = Foundation.get();
 	    cg = CoreGraphics.get();
+	    carb = Carbon.get();
 	    ak = AppKit.get();
 	    cgl = CGL.get();
 	    gl = cgl.gl();
@@ -112,12 +115,19 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	};
 	public final NSApplication app;
 	public final NSOpenGLContext ctx;
+	public final Map<String, LayoutMap> layouts = new IdentityHashMap<>();
+	public final int kbdtype;
 
 	private CocoaToolkit() {
 	    try {
 		javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
 	    } catch(Exception e) {
 		throw(new RuntimeException(e));
+	    }
+	    kbdtype = carb.LMGetKbdType();
+	    for(Carbon.TISInputSource is : carb.TISCreateInputSourceList(false)) {
+		if(is.inputSourceType() == Carbon.kTISTypeKeyboardLayout)
+		    layouts.put(is.inputSourceID(), new LayoutMap(is));
 	    }
 	    app = app();
 	    NSOpenGLPixelFormat fmt = null;
@@ -232,6 +242,160 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    return(ret);
 	}
 
+	public class NamedSym implements Key.Sym {
+	    public final String nm, id;
+
+	    public NamedSym(String nm) {
+		this.nm = nm;
+		this.id = ("osxn:" + nm).intern();
+	    }
+
+	    public String id() {return(id);}
+	    public String nm() {return(nm);}
+
+	    public int hashCode() {return(nm.hashCode());}
+	    public boolean equals(NamedSym that) {return(this.nm.equals(that.nm));}
+	    public boolean equals(Object x) {return((x instanceof NamedSym) && equals((NamedSym)x));}
+
+	    public String toString() {return(String.format("{" + nm + "}"));}
+	}
+
+	public class CodeSym implements Key.Sym {
+	    public final int kc;
+	    public final String nm, id;
+
+	    public CodeSym(int kc) {
+		this.kc = kc;
+		this.id = ("osxc:" + kc).intern();
+		this.nm = String.format("Unknown key " + kc);
+	    }
+
+	    public String id() {return(id);}
+	    public String nm() {return(nm);}
+
+	    public int hashCode() {return(kc);}
+	    public boolean equals(CodeSym that) {return(this.kc == that.kc);}
+	    public boolean equals(Object x) {return((x instanceof CodeSym) && equals((CodeSym)x));}
+
+	    public String toString() {return(String.format("#<key " + kc + ">"));}
+	}
+
+	public class LayoutMap {
+	    public static final int[] states = {
+		0,
+		Carbon.shiftKey,
+		Carbon.optionKey,
+		Carbon.optionKey | Carbon.shiftKey,
+		Carbon.alphaLock,
+		Carbon.alphaLock | Carbon.shiftKey,
+		Carbon.alphaLock | Carbon.optionKey,
+		Carbon.alphaLock | Carbon.optionKey | Carbon.shiftKey,
+	    };
+	    public final String id;
+	    public final Carbon.UCKeyboardLayout layout;
+	    private final Map<Integer, Key.Sym[]> names = new HashMap<>();
+
+	    public LayoutMap(Carbon.TISInputSource layout) {
+		this.id = layout.inputSourceID();
+		this.layout = layout.unicodeKeyLayoutData();
+	    }
+
+	    public Key.Sym[] get(int code) {
+		Key.Sym[] ret = names.get(code);
+		if(ret == null) {
+		    List<Key.Sym> buf = new ArrayList<>();
+		    for(int state : states) {
+			String name = carb.UCKeyTranslate(layout, code, Carbon.kUCKeyActionDown, (state >> 8) & 0xff, kbdtype, Carbon.kUCKeyTranslateNoDeadKeysMask);
+			if((name == null) || (name.length() == 0))
+			    continue;
+			Key.Sym sym = null;
+			if(name.length() == 1) {
+			    char ch = name.charAt(0);
+			    if((sym = stdcsyms.get(name.charAt(0))) == null)
+				sym = stdcsyms.get(Character.toUpperCase(name.charAt(0)));
+			}
+			if((sym == null) && (name.charAt(0) >= 32))
+			    sym = new NamedSym(name);
+			if(sym != null && !buf.contains(sym))
+			    buf.add(sym);
+		    }
+		    names.put(code, ret = buf.toArray(new Key.Sym[0]));
+		}
+		return(ret);
+	    }
+	}
+
+	private void addlayout(List<LayoutMap> buf, LayoutMap map) {
+	    for(LayoutMap prev : buf) {
+		if(prev.id == map.id)
+		    return;
+	    }
+	    buf.add(map);
+	}
+	private void addlayout(List<LayoutMap> buf, Carbon.TISInputSource layout) {
+	    addlayout(buf, layouts.computeIfAbsent(layout.inputSourceID(), key -> new LayoutMap(layout)));
+	}
+
+	private List<LayoutMap> curlayouts() {
+	    List<LayoutMap> ret = new ArrayList<>();
+	    addlayout(ret, carb.TISCopyCurrentKeyboardLayoutInputSource());
+	    addlayout(ret, carb.TISCopyCurrentASCIICapableKeyboardLayoutInputSource());
+	    for(LayoutMap layout : layouts.values())
+		addlayout(ret, layout);
+	    return(ret);
+	}
+
+	public class CocoaKey implements Key {
+	    public final String playout;
+	    public final int kc;
+	    public final Sym[] syms;
+
+	    public CocoaKey(int kc) {
+		this.kc = kc;
+		Sym vsym = stdvsyms.get(kc);
+		if(vsym == null) vsym = new CodeSym(kc);
+		ArrayList<Sym> syms = new ArrayList<>();
+		syms.add(vsym);
+		String playout = null;
+		for(LayoutMap layout : curlayouts()) {
+		    if(playout == null)
+			playout = layout.id;
+		    for(Sym sym : layout.get(kc)) {
+			if(!syms.contains(sym))
+			    syms.add(sym);
+		    }
+		}
+		this.syms = syms.toArray(new Sym[0]);
+		this.playout = playout;
+	    }
+
+	    public String id() {
+		return(("osx:" + kc).intern());
+	    }
+
+	    public Sym primary() {
+		if(syms.length > 0)
+		    return(syms[0]);
+		return(null);
+	    }
+
+	    public Sym primary(Collection<? extends Sym> of) {
+		for(Sym sym : syms) {
+		    if(of.contains(sym))
+			return(sym);
+		}
+		return(null);
+	    }
+
+	    public int hashCode() {return((playout.hashCode() * 31) + kc);}
+	    public boolean equals(CocoaKey that) {return(Utils.eq(this.playout, that.playout) && (this.kc == that.kc));}
+	    public boolean equals(Object x) {return((x instanceof CocoaKey) && equals((CocoaKey)x));}
+
+	    public String toString() {
+		return(String.format("#<osxkey kc=%x syms=%s>", kc, Arrays.deepToString(syms)));
+	    }
+	}
+
 	public class CocoaWindow implements Windeye {
 	    public final NSWindow nsw;
 	    public final NSView view;
@@ -305,7 +469,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    class ViewDelegate extends AppKit.NSViewDelegate {
-		private final StringBuilder textbuf = new StringBuilder();
+		private StringBuilder textbuf = null;
 		private double sax = 0, say = 0;
 
 		public boolean acceptsFirstResponder() {return(true);}
@@ -346,17 +510,22 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		}
 
 		public void keyDown(NSEvent event) {
-		    if(textbuf.length() > 0) {
-			Warning.warn("unexpected text accumulated at beginning of keyDown: " + textbuf);
-			textbuf.setLength(0);
-		    }
+		    textbuf = new StringBuilder();
 		    view.interpretKeyEvents(fnd.NSArray(event));
-		    Debug.dump(Utils.bprint.enc(textbuf.toString().getBytes()), event.keyCode());
-		    textbuf.setLength(0);
+		    callback(new CocoaKeyDownEvent(event, textbuf.toString()));
+		    textbuf = null;
+		}
+
+		public void keyUp(NSEvent event) {
+		    callback(new CocoaKeyUpEvent(event));
 		}
 
 		public void insertText(String string) {
-		    textbuf.append(string);
+		    if(textbuf != null) {
+			textbuf.append(string);
+		    } else {
+			callback(new CocoaInsertTextEvent(string));
+		    }
 		}
 
 		private final Runtime.SEL sel_insertNewline = rt.sel_registerName("insertNewline:");
@@ -371,6 +540,71 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 			textbuf.append('\b');
 		    }
 		}
+	    }
+
+	    public class CocoaKeyEvent {
+		public final NSEvent event;
+		public final CocoaKey key;
+		public final Set<Key.Mod> mods;
+
+		public CocoaKeyEvent(NSEvent event) {
+		    this.event = event;
+		    this.key = new CocoaKey(event.keyCode());
+		    this.mods = modflags(event.modifierFlags());
+		}
+
+		public String string() {return("");}
+		public Key key() {return(key);}
+		public Set<Key.Mod> mods() {return(mods);}
+	    }
+
+	    public class CocoaKeyDownEvent extends CocoaKeyEvent implements KeyDownEvent {
+		public final Key.Sym sym;
+		public final String text;
+
+		public CocoaKeyDownEvent(NSEvent event, String text) {
+		    super(event);
+		    if((text.length() == 0) && mods.contains(Key.Mod.CONTROL)) {
+			Key.Sym ctl = key.primary(ctlkeys);
+			if(ctl != null)
+			    text = Character.toString(ctlkeys.indexOf(ctl));
+		    }
+		    this.text = text;
+		    Key.Sym psym = null;
+		    if(text.length() == 1) {
+			for(Key.Sym sym : key.syms) {
+			    if((sym instanceof Key.Std) && (((Key.Std)sym).ch == Character.toUpperCase(text.charAt(0)))) {
+				psym = sym;
+				break;
+			    } else if((sym instanceof NamedSym) && ((NamedSym)sym).nm.equals(text)) {
+				psym = sym;
+				break;
+			    }
+			}
+		    }
+		    if(psym == null)
+			psym = key.primary();
+		    this.sym = psym;
+		}
+
+		public Key.Sym sym() {return(sym);}
+		public String string() {return(text);}
+	    }
+	    public class CocoaKeyUpEvent extends CocoaKeyEvent implements KeyUpEvent {
+		public CocoaKeyUpEvent(NSEvent event) {super(event);}
+	    }
+
+	    public class CocoaInsertTextEvent implements KeyDownEvent {
+		public final String text;
+
+		public CocoaInsertTextEvent(String text) {
+		    this.text = text;
+		}
+
+		public Key key() {return(null);}
+		public Key.Sym sym() {return(null);}
+		public String string() {return(text);}
+		public Set<Key.Mod> mods() {return(Collections.emptySet());}
 	    }
 
 	    public class CocoaMouseEvent {
@@ -558,4 +792,45 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	public void dispose() {
 	}
     }
+
+    private static Map<Character, Key.Std> stdcsyms() {
+	Map<Character, Key.Std> ret = new HashMap<>();
+	for(Key.Std sym : Key.Std.values()) {
+	    if((sym.ch != 0) && !ret.containsKey(sym.ch))
+		ret.put(sym.ch, sym);
+	}
+	return(ret);
+    }
+
+    public static final Map<Integer, Key.Std> stdvsyms = Utils.<Integer, Key.Std>map()
+	.put(kVK_ANSI_KeypadDecimal, NP_DEC)   .put(kVK_ANSI_KeypadMultiply, NP_MUL)   .put(kVK_ANSI_KeypadPlus, NP_ADD)
+	.put(kVK_ANSI_KeypadDivide, NP_DIV)    .put(kVK_ANSI_KeypadMinus, NP_SUB)      .put(kVK_ANSI_Keypad0, NP0)
+	.put(kVK_ANSI_Keypad1, NP1)            .put(kVK_ANSI_Keypad2, NP2)             .put(kVK_ANSI_Keypad2, NP2)
+	.put(kVK_ANSI_Keypad4, NP4)            .put(kVK_ANSI_Keypad5, NP5)             .put(kVK_ANSI_Keypad6, NP6)
+	.put(kVK_ANSI_Keypad7, NP7)            .put(kVK_ANSI_Keypad8, NP8)             .put(kVK_ANSI_Keypad9, NP9)
+
+	.put(kVK_Return, ENTER)       .put(kVK_Tab, TAB)           .put(kVK_Space, SPACE)
+	.put(kVK_Delete, BACKSPACE)   .put(kVK_Escape, ESCAPE)     .put(kVK_Shift, SHIFT)
+	.put(kVK_CapsLock, CAPSLOCK)  .put(kVK_Option, ALT)        .put(kVK_Control, CONTROL)
+	.put(kVK_RightShift, SHIFT)   .put(kVK_RightOption, ALT)   .put(kVK_RightControl, CONTROL)
+	.put(kVK_F17, F17)            .put(kVK_F18, F18)           .put(kVK_F19, F19)
+	.put(kVK_F20, F20)            .put(kVK_F5, F5)             .put(kVK_F6, F6)
+	.put(kVK_F7, F7)              .put(kVK_F3, F3)             .put(kVK_F8, F8)
+	.put(kVK_F9, F9)              .put(kVK_F11, F11)           .put(kVK_F13, F13)
+	.put(kVK_F16, F16)            .put(kVK_F14, F14)           .put(kVK_F10, F10)
+	.put(kVK_F12, F12)            .put(kVK_F15, F15)           .put(kVK_Help, HELP)
+	.put(kVK_Home, HOME)          .put(kVK_PageUp, PAGEUP)     .put(kVK_ForwardDelete, DELETE)
+	.put(kVK_F4, F4)              .put(kVK_End, END)           .put(kVK_F2, F2)
+	.put(kVK_PageDown, PAGEDOWN)  .put(kVK_F1, F1)             .put(kVK_LeftArrow, LEFT)
+	.put(kVK_RightArrow, RIGHT)   .put(kVK_DownArrow, DOWN)    .put(kVK_UpArrow, UP)
+	.map();
+
+    public static final Map<Character, Key.Std> stdcsyms = stdcsyms();
+
+    public static final List<Key.Std> ctlkeys = Arrays.asList(new Key.Std[] {
+	SPACE,
+	A, B, C, D, E, F, G, H, I, J, K, L, M,
+	N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+	LEFTBRACKET, BACKSLASH, RIGHTBRACKET,
+    });
 }

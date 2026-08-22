@@ -80,6 +80,7 @@ public abstract class Runtime {
     public abstract void objc_msgSend_void(ID self, SEL sel, ID arg1, boolean arg2);
     public abstract void objc_msgSend_void(ID self, SEL sel, SEL arg1, ID arg2, boolean arg3);
     public abstract ID objc_msgSend_id(ID self, SEL sel);
+    public abstract ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, int arg1);
     public abstract ID objc_msgSend_id(ID self, SEL sel, MemorySegment arg1);
     public abstract ID objc_msgSend_id(ID self, SEL sel, MemorySegment arg1, int arg2);
     public abstract ID objc_msgSend_id(ID self, SEL sel, ID arg1);
@@ -88,6 +89,7 @@ public abstract class Runtime {
     public abstract boolean objc_msgSend_bool(ID self, SEL sel);
     public abstract boolean objc_msgSend_bool(ID self, SEL sel, int arg1);
     public abstract int objc_msgSend_int(ID self, SEL sel);
+    public abstract int objc_msgSend_NSUInt(Runtime.ID self, Runtime.SEL sel);
     public abstract double objc_msgSend_double(ID self, SEL sel);
 
 
@@ -473,6 +475,15 @@ public abstract class Runtime {
 	    }
 	}
 
+	private final MethodHandle objc_msgSend_id_NSUInt = msgtype(C_ID, NSUInteger);
+	public ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, int arg1) {
+	    try {
+		return(id((MemorySegment)objc_msgSend_id_NSUInt.invoke(self.mem(), sel.mem(), arg1)));
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
 	private final MethodHandle objc_msgSend_id_ptr = msgtype(C_ID, ADDRESS);
 	public ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, MemorySegment arg1) {
 	    try {
@@ -482,10 +493,10 @@ public abstract class Runtime {
 	    }
 	}
 
-	private final MethodHandle objc_msgSend_id_ptr_NSUint = msgtype(C_ID, ADDRESS, NSUInteger);
+	private final MethodHandle objc_msgSend_id_ptr_NSUInt = msgtype(C_ID, ADDRESS, NSUInteger);
 	public ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, MemorySegment arg1, int arg2) {
 	    try {
-		return(id((MemorySegment)objc_msgSend_id_ptr_NSUint.invoke(self.mem(), sel.mem(), arg1, arg2)));
+		return(id((MemorySegment)objc_msgSend_id_ptr_NSUInt.invoke(self.mem(), sel.mem(), arg1, arg2)));
 	    } catch(Throwable e) {
 		throw(new RuntimeException(e));
 	    }
@@ -540,6 +551,15 @@ public abstract class Runtime {
 	public int objc_msgSend_int(Runtime.ID self, Runtime.SEL sel) {
 	    try {
 		return((int)objc_msgSend_int.invoke(self.mem(), sel.mem()));
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
+	private final MethodHandle objc_msgSend_NSUInt = msgtype(NSUInteger);
+	public int objc_msgSend_NSUInt(Runtime.ID self, Runtime.SEL sel) {
+	    try {
+		return((int)(long)objc_msgSend_NSUInt.invoke(self.mem(), sel.mem()));
 	    } catch(Throwable e) {
 		throw(new RuntimeException(e));
 	    }

@@ -49,8 +49,11 @@ public abstract class Foundation {
 
     public static interface NSArray extends Runtime.NSObject {
 	public ID id();
+	public int size();
+	public ID get(int idx);
     }
 
+    abstract NSArray NSArray(ID id);
     public abstract NSArray NSArray(NSObject... objects);
 
     public static interface NSProcessInfo {
@@ -114,6 +117,8 @@ public abstract class Foundation {
 	}
 
 	private final Runtime.Class cls_NSArray = rt.objc_getClass("NSArray");
+	private final SEL sel_count = rt.sel_registerName("count");
+	private final SEL sel_objectAtIndex = rt.sel_registerName("objectAtIndex:");
 	class NSArray implements Foundation.NSArray {
 	    public final ID id;
 
@@ -134,6 +139,13 @@ public abstract class Foundation {
 	    }
 
 	    public ID id() {return(id);}
+
+	    public int size() {return(rt.objc_msgSend_NSUInt(id, sel_count));}
+	    public ID get(int idx) {return(rt.objc_msgSend_id(id, sel_objectAtIndex, idx));}
+	}
+
+	NSArray NSArray(ID id) {
+	    return(NSArray.retained(this, id));
 	}
 
 	private final SEL sel_initWithObjects_count = rt.sel_registerName("initWithObjects:count:");
