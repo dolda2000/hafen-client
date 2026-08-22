@@ -519,8 +519,8 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		public void otherMouseUp(NSEvent event) {callback(new CocoaMouseUpEvent(event));}
 
 		public void scrollWheel(NSEvent event) {
-		    double x = event.scrollingDeltaX();
-		    double y = event.scrollingDeltaY();
+		    double x = -event.scrollingDeltaX();
+		    double y = -event.scrollingDeltaY();
 		    if(event.hasPreciseScrollingDeltas()) {
 			x /= 15;
 			y /= 15;
