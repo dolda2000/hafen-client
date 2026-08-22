@@ -55,6 +55,10 @@ public abstract class AppKit {
     public static final int NSWindowStyleMaskFullScreen             = 1 << 14;
     public static final int NSWindowStyleMaskFullSizeContentView    = 1 << 15;
 
+    public static final int NSWindowCollectionBehaviorFullScreenPrimary   = 1 << 7;
+    public static final int NSWindowCollectionBehaviorFullScreenAuxiliary = 1 << 8;
+    public static final int NSWindowCollectionBehaviorFullScreenNone      = 1 << 9;
+
     public static final int NSBackingStoreRetained = 0;
     public static final int NSBackingStoreBuffered = 2;
 
@@ -133,6 +137,8 @@ public abstract class AppKit {
 	public void setAcceptsMouseMovedEvents(boolean val);
 	public int styleMask();
 	public void setStyleMask(int value);
+	public int collectionBehavior();
+	public void setCollectionBehavior(int value);
 	public void setContentSize(CGSize sz);
 	public void setContentMinSize(CGSize sz);
 	public void setContentMaxSize(CGSize sz);
@@ -142,6 +148,14 @@ public abstract class AppKit {
 	public void center();
 	public CGPoint cascadeTopLeftFromPoint(CGPoint c);
 	public void setContentView(NSView contentView);
+	public boolean isZoomed();
+	public void zoom();
+	public void performZoom();
+	public boolean isMiniaturized();
+	public void miniaturize();
+	public void deminiaturize();
+	public void performMiniaturize();
+	public void toggleFullScreen();
     }
 
     public interface NSView extends Runtime.NSObject {
@@ -510,6 +524,8 @@ public abstract class AppKit {
 	private final SEL sel_setAcceptsMouseMovedEvents = rt.sel_registerName("setAcceptsMouseMovedEvents:");
 	private final SEL sel_styleMask = rt.sel_registerName("styleMask");
 	private final SEL sel_setStyleMask = rt.sel_registerName("setStyleMask:");
+	private final SEL sel_collectionBehavior = rt.sel_registerName("collectionBehavior");
+	private final SEL sel_setCollectionBehavior = rt.sel_registerName("setCollectionBehavior:");
 	private final SEL sel_setContentSize = rt.sel_registerName("setContentSize:");
 	private final SEL sel_setContentMinSize = rt.sel_registerName("setContentMinSize:");
 	private final SEL sel_setContentMaxSize = rt.sel_registerName("setContentMaxSize:");
@@ -519,6 +535,14 @@ public abstract class AppKit {
 	private final SEL sel_center = rt.sel_registerName("center");
 	private final SEL sel_cascadeTopLeftFromPoint = rt.sel_registerName("cascadeTopLeftFromPoint:");
 	private final SEL sel_setContentView = rt.sel_registerName("setContentView:");
+	private final SEL sel_isZoomed = rt.sel_registerName("isZoomed");
+	private final SEL sel_zoom = rt.sel_registerName("zoom:");
+	private final SEL sel_performZoom = rt.sel_registerName("performZoom:");
+	private final SEL sel_isMiniaturized = rt.sel_registerName("isMiniaturized");
+	private final SEL sel_miniaturize = rt.sel_registerName("miniaturize:");
+	private final SEL sel_deminiaturize = rt.sel_registerName("deminiaturize:");
+	private final SEL sel_performMiniaturize = rt.sel_registerName("performMiniaturize:");
+	private final SEL sel_toggleFullScreen = rt.sel_registerName("toggleFullScreen:");
 	class NSWindow implements AppKit.NSWindow {
 	    public final ID id;
 
@@ -547,6 +571,12 @@ public abstract class AppKit {
 	    public void setStyleMask(int value) {
 		objc_msgSend_void_NSUInt(id, sel_setStyleMask, value);
 	    }
+	    public int collectionBehavior() {
+		return(objc_msgSend_NSUInt(id, sel_collectionBehavior));
+	    }
+	    public void setCollectionBehavior(int value) {
+		objc_msgSend_void_NSUInt(id, sel_setCollectionBehavior, value);
+	    }
 	    public void setContentSize(CGSize sz) {
 		cg.objc_msgSend_void(id, sel_setContentSize, sz);
 	    }
@@ -573,6 +603,30 @@ public abstract class AppKit {
 	    }
 	    public void setContentView(AppKit.NSView view) {
 		rt.objc_msgSend_void(id, sel_setContentView, view.id());
+	    }
+	    public boolean isZoomed() {
+		return(rt.objc_msgSend_bool(id, sel_isZoomed));
+	    }
+	    public void zoom() {
+		rt.objc_msgSend_void(id, sel_zoom, id);
+	    }
+	    public void performZoom() {
+		rt.objc_msgSend_void(id, sel_performZoom, id);
+	    }
+	    public boolean isMiniaturized() {
+		return(rt.objc_msgSend_bool(id, sel_isMiniaturized));
+	    }
+	    public void miniaturize() {
+		rt.objc_msgSend_void(id, sel_miniaturize, id);
+	    }
+	    public void deminiaturize() {
+		rt.objc_msgSend_void(id, sel_deminiaturize, id);
+	    }
+	    public void performMiniaturize() {
+		rt.objc_msgSend_void(id, sel_performMiniaturize, id);
+	    }
+	    public void toggleFullScreen() {
+		rt.objc_msgSend_void(id, sel_toggleFullScreen, id);
 	    }
 	}
 	private final SEL sel_initWithContentRect_styleMask_backing_defer = rt.sel_registerName("initWithContentRect:styleMask:backing:defer:");

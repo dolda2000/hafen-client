@@ -436,6 +436,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    private final Collection<EventListener> callbacks = new java.util.concurrent.CopyOnWriteArrayList<>();
 	    private boolean shown = false;
 	    private Sizing sizeinfo = new Sizing().normsize(Coord.of(800, 600));
+	    private State showstate = null;
 	    private CGLEnvironment renv;
 	    private Coord size = Coord.z;
 
@@ -483,6 +484,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		mainrun(() -> {
 		    nsw.setDelegate(new WindowDelegate());
 		    nsw.setAcceptsMouseMovedEvents(true);
+		    nsw.setCollectionBehavior(AppKit.NSWindowCollectionBehaviorFullScreenPrimary);
 		});
 		view = mainrun(() -> ak.NSView(new ViewDelegate(), cg.CGRect(Area.sized(Coord.of(1, 1)))));
 		mainrun(() -> {
@@ -729,6 +731,19 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		}
 	    }
 
+	    private void updstate(State st) {
+		if(nsw.isMiniaturized() && (st != State.MINIMIZED))
+		    nsw.deminiaturize();
+		if(((nsw.styleMask() & AppKit.NSWindowStyleMaskFullScreen) != 0) && (st != State.EXCLUSIVE))
+		    nsw.toggleFullScreen();
+		switch(st) {
+		case MAXIMIZED: nsw.performZoom(); break;
+		case NORMAL: if(nsw.isZoomed()) nsw.zoom(); break;
+		case MINIMIZED: nsw.performMiniaturize(); break;
+		case EXCLUSIVE: if((nsw.styleMask() & AppKit.NSWindowStyleMaskFullScreen) == 0) nsw.toggleFullScreen(); break;
+		}
+	    }
+
 	    public CocoaWindow show(boolean show) {
 		mainrun(() -> {
 		    if(!shown) {
@@ -736,6 +751,10 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 			    updatesizing(sizeinfo);
 			    nsw.cascadeTopLeftFromPoint(cg.CGPoint(Coord.z));
 			    nsw.makeKeyAndOrderFront(null);
+			    if(showstate != null) {
+				updstate(showstate);
+				showstate = null;
+			    }
 			    shown = true;
 			}
 		    } else {
@@ -743,6 +762,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 			    nsw.makeKeyAndOrderFront(null);
 			} else {
 			    nsw.orderOut(null);
+			    shown = false;
 			}
 		    }
 		});
@@ -772,6 +792,13 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    public CocoaWindow state(State st) {
+		mainrun(() -> {
+		    if(!shown) {
+			showstate = st;
+		    } else {
+			updstate(st);
+		    }
+		});
 		return(this);
 	    }
 
@@ -780,7 +807,11 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    public State state() {
-		return(State.NORMAL);
+		return(mainrun(() -> {
+		    if(nsw.isZoomed())
+			return(State.MAXIMIZED);
+		    return(State.NORMAL);
+		}));
 	    }
 
 	    public boolean focused() {
