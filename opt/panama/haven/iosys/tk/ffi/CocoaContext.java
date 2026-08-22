@@ -519,11 +519,18 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		public void otherMouseUp(NSEvent event) {callback(new CocoaMouseUpEvent(event));}
 
 		public void scrollWheel(NSEvent event) {
-		    double x = -event.scrollingDeltaX();
-		    double y = -event.scrollingDeltaY();
+		    double x, y;
 		    if(event.hasPreciseScrollingDeltas()) {
-			x /= 15;
-			y /= 15;
+			x = event.scrollingDeltaX() / -15;
+			y = event.scrollingDeltaY() / -15;
+		    } else {
+			CGEvent cg = event.CGEvent();
+			x = -cg.getIntegerValueField(CoreGraphics.kCGScrollWheelEventDeltaAxis2);
+			y = -cg.getIntegerValueField(CoreGraphics.kCGScrollWheelEventDeltaAxis1);
+			if((event.modifierFlags() & AppKit.NSShiftKeyMask) != 0) {
+			    double t = x;
+			    x = y; y = t;
+			}
 		    }
 		    if(x != 0) {
 			sax += x;
