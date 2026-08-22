@@ -89,7 +89,6 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	return(System.getProperty("os.name", "").startsWith("Mac OS") ? 100 : 0);
     }
     public boolean experimental() {return(true);}
-    public boolean autouse() {return(false);}
 
     private NSApplication app = null;
     public NSApplication app() {
