@@ -59,6 +59,8 @@ public abstract class AppKit {
     public static final int NSWindowCollectionBehaviorFullScreenAuxiliary = 1 << 8;
     public static final int NSWindowCollectionBehaviorFullScreenNone      = 1 << 9;
 
+    public static final int NSWindowOcclusionStateVisible = 1 << 1;
+
     public static final int NSBackingStoreRetained = 0;
     public static final int NSBackingStoreBuffered = 2;
 
@@ -80,6 +82,7 @@ public abstract class AppKit {
 	public void run();
 	public void finishLaunching();
 	public void setActivationPolicy(int policy);
+	public boolean isActive();
     }
 
     public interface WindowDelegate {
@@ -156,6 +159,8 @@ public abstract class AppKit {
 	public void deminiaturize();
 	public void performMiniaturize();
 	public void toggleFullScreen();
+	public boolean isKeyWindow();
+	public int occlusionState();
     }
 
     public interface NSView extends Runtime.NSObject {
@@ -216,6 +221,7 @@ public abstract class AppKit {
 	private final SEL sel_run = rt.sel_registerName("run");
 	private final SEL sel_finishLaunching = rt.sel_registerName("finishLaunching");
 	private final SEL sel_setActivationPolicy = rt.sel_registerName("setActivationPolicy:");
+	private final SEL sel_isActive = rt.sel_registerName("isActive");
 	class NSApplication implements AppKit.NSApplication {
 	    public final ID id;
 
@@ -228,6 +234,9 @@ public abstract class AppKit {
 	    public void finishLaunching() {rt.objc_msgSend_void(id, sel_finishLaunching);}
 	    public void setActivationPolicy(int policy) {
 		rt.objc_msgSend_bool(id, sel_setActivationPolicy, policy);
+	    }
+	    public boolean isActive() {
+		return(rt.objc_msgSend_bool(id, sel_isActive));
 	    }
 	}
 
@@ -543,6 +552,8 @@ public abstract class AppKit {
 	private final SEL sel_deminiaturize = rt.sel_registerName("deminiaturize:");
 	private final SEL sel_performMiniaturize = rt.sel_registerName("performMiniaturize:");
 	private final SEL sel_toggleFullScreen = rt.sel_registerName("toggleFullScreen:");
+	private final SEL sel_isKeyWindow = rt.sel_registerName("isKeyWindow");
+	private final SEL sel_occlusionState = rt.sel_registerName("occlusionState");
 	class NSWindow implements AppKit.NSWindow {
 	    public final ID id;
 
@@ -627,6 +638,12 @@ public abstract class AppKit {
 	    }
 	    public void toggleFullScreen() {
 		rt.objc_msgSend_void(id, sel_toggleFullScreen, id);
+	    }
+	    public boolean isKeyWindow() {
+		return(rt.objc_msgSend_bool(id, sel_isKeyWindow));
+	    }
+	    public int occlusionState() {
+		return(rt.objc_msgSend_NSUInt(id, sel_occlusionState));
 	    }
 	}
 	private final SEL sel_initWithContentRect_styleMask_backing_defer = rt.sel_registerName("initWithContentRect:styleMask:backing:defer:");

@@ -815,7 +815,12 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    public boolean focused() {
-		return(true);
+		return(nsw.isKeyWindow() && app.isActive());
+	    }
+	    public Visibility visible() {
+		if((nsw.occlusionState() & AppKit.NSWindowOcclusionStateVisible) == 0)
+		    return(Visibility.NONE);
+		return(Visibility.FULL);
 	    }
 
 	    public Environment env() {
