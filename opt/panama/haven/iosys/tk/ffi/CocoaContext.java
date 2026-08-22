@@ -118,6 +118,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	public final NSOpenGLContext ctx;
 	public final Map<String, LayoutMap> layouts = new IdentityHashMap<>();
 	public final int kbdtype;
+	public final NSCursor nocursor = ak.NSCursor(ak.NSImage(cg.CGSize(Coord.of(1, 1))), cg.CGPoint(Coord.z));
 
 	private CocoaToolkit() {
 	    try {
@@ -439,6 +440,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    private State showstate = null;
 	    private CGLEnvironment renv;
 	    private Coord size = Coord.z;
+	    private NSCursor cursor = null;
 
 	    public class CGLEnvironment extends FFIEnvironment {
 		private int qstate;
@@ -582,6 +584,10 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		    } else if(selector.equals(sel_deleteBackward)) {
 			textbuf.append('\b');
 		    }
+		}
+
+		public void resetCursorRects() {
+		    updatecursor();
 		}
 	    }
 
@@ -778,7 +784,38 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		return(this);
 	    }
 
+	    private void updatecursor() {
+		view.discardCursorRects();
+		if(cursor != null)
+		    view.addCursorRect(view.frame(), cursor);
+	    }
+
 	    public CocoaWindow cursor(Cursor curs) {
+		mainrun(() -> {
+		    NSCursor nsc = null;
+		    if(curs instanceof Cursor.Std) {
+			switch((Cursor.Std)curs) {
+			case DEFAULT: nsc = null; break;
+			case NONE: nsc = nocursor; break;
+			case POINTER: nsc = ak.NSCursor_arrowCursor(); break;
+			case WAIT: nsc = ak.NSCursor_arrowCursor(); break;
+			case HAND: nsc = ak.NSCursor_pointingHandCursor(); break;
+			case MOVE: nsc = ak.NSCursor_closedHandCursor(); break;
+			case CARET: nsc = ak.NSCursor_IBeamCursor(); break;
+			case CROSSHAIR: nsc = ak.NSCursor_crosshairCursor(); break;
+			case SIZE_N: nsc = ak.NSCursor_resizeUpCursor(); break;
+			case SIZE_E: nsc = ak.NSCursor_resizeRightCursor(); break;
+			case SIZE_S: nsc = ak.NSCursor_resizeDownCursor(); break;
+			case SIZE_W: nsc = ak.NSCursor_resizeLeftCursor(); break;
+			case SIZE_NE: nsc = ak.NSCursor_crosshairCursor(); break;
+			case SIZE_SE: nsc = ak.NSCursor_crosshairCursor(); break;
+			case SIZE_SW: nsc = ak.NSCursor_crosshairCursor(); break;
+			case SIZE_NW: nsc = ak.NSCursor_crosshairCursor(); break;
+			}
+		    }
+		    this.cursor = nsc;
+		    updatecursor();
+		});
 		return(this);
 	    }
 

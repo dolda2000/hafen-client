@@ -85,19 +85,31 @@ public abstract class AppKit {
 	public boolean isActive();
     }
 
-    public interface WindowDelegate {
-	public default boolean windowShouldClose(NSWindow sender) {return(true);}
-	public default void windowWillClose(NSNotification notification) {}
-	public default void windowDidResize(NSNotification notification) {}
-	public default void windowDidMiniaturize(NSNotification notification) {}
-	public default void windowDidDeminiaturize(NSNotification notification) {}
-	public default void windowDidBecomeKey(NSNotification notification) {}
-	public default void windowDidResignKey(NSNotification notification) {}
-    }
-
     public interface NSNotification extends Runtime.NSObject {
 	public ID id();
     }
+
+    public interface NSImage extends Runtime.NSObject {
+	public ID id();
+    }
+
+    public abstract NSImage NSImage(CGSize size);
+
+    public interface NSCursor extends Runtime.NSObject {
+	public ID id();
+    }
+
+    public abstract NSCursor NSCursor(NSImage image, CGPoint hotspot);
+
+    public abstract NSCursor NSCursor_arrowCursor();
+    public abstract NSCursor NSCursor_IBeamCursor();
+    public abstract NSCursor NSCursor_crosshairCursor();
+    public abstract NSCursor NSCursor_closedHandCursor();
+    public abstract NSCursor NSCursor_pointingHandCursor();
+    public abstract NSCursor NSCursor_resizeLeftCursor();
+    public abstract NSCursor NSCursor_resizeUpCursor();
+    public abstract NSCursor NSCursor_resizeRightCursor();
+    public abstract NSCursor NSCursor_resizeDownCursor();
 
     public interface NSEvent extends Runtime.NSObject {
 	public ID id();
@@ -163,6 +175,16 @@ public abstract class AppKit {
 	public int occlusionState();
     }
 
+    public interface WindowDelegate {
+	public default boolean windowShouldClose(NSWindow sender) {return(true);}
+	public default void windowWillClose(NSNotification notification) {}
+	public default void windowDidResize(NSNotification notification) {}
+	public default void windowDidMiniaturize(NSNotification notification) {}
+	public default void windowDidDeminiaturize(NSNotification notification) {}
+	public default void windowDidBecomeKey(NSNotification notification) {}
+	public default void windowDidResignKey(NSNotification notification) {}
+    }
+
     public interface NSView extends Runtime.NSObject {
 	public ID id();
 	public void interpretKeyEvents(NSArray events);
@@ -175,6 +197,8 @@ public abstract class AppKit {
 	public CGPoint convertPointToBacking(CGPoint point);
 	public CGPoint convertPointFromBacking(CGPoint point);
 	public void setWantsBestResolutionOpenGLSurface(boolean val);
+	public void addCursorRect(CGRect rect, NSCursor cursor);
+	public void discardCursorRects();
     }
 
     public static class NSViewDelegate {
@@ -196,6 +220,7 @@ public abstract class AppKit {
 	public void keyUp(NSEvent event) {}
 	public void insertText(String string) {}
 	public void doCommandBySelector(SEL selector) {}
+	public void resetCursorRects() {}
     }
 
     public abstract NSApplication NSApplication_sharedApplication();
@@ -361,6 +386,61 @@ public abstract class AppKit {
 
 	    public ID id() {return(id);}
 	}
+
+	private final Class cls_NSImage = rt.objc_getClass("NSImage");
+	class NSImage implements AppKit.NSImage {
+	    public final ID id;
+
+	    public NSImage(ID id, boolean release) {
+		this.id = id;
+		if(release)
+		    rt.gcrelease(this, id);
+	    }
+
+	    public ID id() {return(id);}
+	}
+
+	private final SEL sel_initWithSize = rt.sel_registerName("initWithSize:");
+	public NSImage NSImage(CGSize size) {
+	    return(new NSImage(cg.objc_msgSend_id(rt.objc_msgSend_id(cls_NSImage.id(), sel_alloc), sel_initWithSize, size), true));
+	}
+
+	private final Class cls_NSCursor = rt.objc_getClass("NSCursor");
+	class NSCursor implements AppKit.NSCursor {
+	    public final ID id;
+
+	    public NSCursor(ID id, boolean release) {
+		this.id = id;
+		if(release)
+		    rt.gcrelease(this, id);
+	    }
+
+	    public ID id() {return(id);}
+	}
+
+	private final SEL sel_initWithImage_hotSpot = rt.sel_registerName("initWithImage:hotSpot:");
+	public NSCursor NSCursor(AppKit.NSImage image, CGPoint hotspot) {
+	    return(new NSCursor(cg.objc_msgSend_id(rt.objc_msgSend_id(cls_NSCursor.id(), sel_alloc), sel_initWithImage_hotSpot, image.id(), hotspot), true));
+	}
+
+	private final SEL sel_arrowCursor = rt.sel_registerName("arrowCursor");
+	private final SEL sel_IBeamCursor = rt.sel_registerName("IBeamCursor");
+	private final SEL sel_crosshairCursor = rt.sel_registerName("crosshairCursor");
+	private final SEL sel_closedHandCursor = rt.sel_registerName("closedHandCursor");
+	private final SEL sel_pointingHandCursor = rt.sel_registerName("pointingHandCursor");
+	private final SEL sel_resizeLeftCursor = rt.sel_registerName("resizeLeftCursor");
+	private final SEL sel_resizeUpCursor = rt.sel_registerName("resizeUpCursor");
+	private final SEL sel_resizeRightCursor = rt.sel_registerName("resizeRightCursor");
+	private final SEL sel_resizeDownCursor = rt.sel_registerName("resizeDownCursor");
+	public NSCursor NSCursor_arrowCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_arrowCursor), false));}
+	public NSCursor NSCursor_IBeamCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_IBeamCursor), false));}
+	public NSCursor NSCursor_crosshairCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_crosshairCursor), false));}
+	public NSCursor NSCursor_closedHandCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_closedHandCursor), false));}
+	public NSCursor NSCursor_pointingHandCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_pointingHandCursor), false));}
+	public NSCursor NSCursor_resizeLeftCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_resizeLeftCursor), false));}
+	public NSCursor NSCursor_resizeUpCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_resizeUpCursor), false));}
+	public NSCursor NSCursor_resizeRightCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_resizeRightCursor), false));}
+	public NSCursor NSCursor_resizeDownCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_resizeDownCursor), false));}
 
 	private final Class cls_NSEvent = rt.objc_getClass("NSEvent");
 	private final SEL sel_type = rt.sel_registerName("type");
@@ -718,6 +798,9 @@ public abstract class AppKit {
 	    rt.class_addMethod(IOSYSView, rt.sel_registerName("doCommandBySelector:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "doCommandBySelector", this,
 				       null, C_ID, C_SEL, C_SEL), "v@::");
+	    rt.class_addMethod(IOSYSView, rt.sel_registerName("resetCursorRects"),
+			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "resetCursorRects", this,
+				       null, C_ID, C_SEL), "v@:");
 	    rt.objc_registerClassPair(IOSYSView);
 	}
 	private final SEL sel_interpretKeyEvents = rt.sel_registerName("interpretKeyEvents:");
@@ -727,6 +810,8 @@ public abstract class AppKit {
 	private final SEL sel_convertPointToBacking = rt.sel_registerName("convertPointToBacking:");
 	private final SEL sel_convertPointFromBacking = rt.sel_registerName("convertPointFromBacking:");
 	private final SEL sel_setWantsBestResolutionOpenGLSurface = rt.sel_registerName("setWantsBestResolutionOpenGLSurface:");
+	private final SEL sel_addCursorRect_cursor = rt.sel_registerName("addCursorRect:cursor:");
+	private final SEL sel_discardCursorRects = rt.sel_registerName("discardCursorRects");
 	class IOSYSView implements NSView {
 	    private static final Map<Integer, IOSYSView> reg = new HashMap<>();
 	    private static int nextkey = 0;
@@ -765,6 +850,13 @@ public abstract class AppKit {
 	    public CGSize convertSizeFromBacking(CGSize size) {return(cg.objc_msgSend_CGSize(id, sel_convertSizeFromBacking, size));}
 	    public CGPoint convertPointToBacking(CGPoint point) {return(cg.objc_msgSend_CGPoint(id, sel_convertPointToBacking, point));}
 	    public CGPoint convertPointFromBacking(CGPoint point) {return(cg.objc_msgSend_CGPoint(id, sel_convertPointFromBacking, point));}
+
+	    public void addCursorRect(CGRect rect, AppKit.NSCursor cursor) {
+		cg.objc_msgSend_void(id, sel_addCursorRect_cursor, rect, cursor.id());
+	    }
+	    public void discardCursorRects() {
+		rt.objc_msgSend_void(id, sel_discardCursorRects);
+	    }
 
 	    public void setWantsBestResolutionOpenGLSurface(boolean val) {
 		rt.objc_msgSend_void(id, sel_setWantsBestResolutionOpenGLSurface, val);
@@ -847,6 +939,9 @@ public abstract class AppKit {
 	    }
 	    private static void doCommandBySelector(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment selector) {
 		callback(ak, objp, view -> view.dg.doCommandBySelector(ak.rt.sel(selector)));
+	    }
+	    private static void resetCursorRects(VersionC ak, MemorySegment objp, MemorySegment sel) {
+		callback(ak, objp, view -> view.dg.resetCursorRects());
 	    }
 	}
 

@@ -109,12 +109,15 @@ public abstract class CoreGraphics {
     public abstract long CGDisplayPixelsHigh(int display);
 
     public abstract void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, CGPoint rect);
+    public abstract ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, ID arg1, CGPoint arg2);
     public abstract CGPoint objc_msgSend_CGPoint(Runtime.ID self, Runtime.SEL sel);
     public abstract CGPoint objc_msgSend_CGPoint(Runtime.ID self, Runtime.SEL sel, CGPoint rect);
     public abstract void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, CGSize rect);
+    public abstract ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, CoreGraphics.CGSize rect);
     public abstract CGSize objc_msgSend_CGSize(Runtime.ID self, Runtime.SEL sel);
     public abstract CGSize objc_msgSend_CGSize(Runtime.ID self, Runtime.SEL sel, CGSize rect);
     public abstract void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, CGRect rect);
+    public abstract void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, CGRect arg1, Runtime.ID arg2);
     public abstract CGRect objc_msgSend_CGRect(Runtime.ID self, Runtime.SEL sel);
     public abstract CGRect objc_msgSend_CGRect(Runtime.ID self, Runtime.SEL sel, CGRect rect);
 
@@ -267,6 +270,12 @@ public abstract class CoreGraphics {
 		objc_msgSend_void_CGPoint.invoke(self.mem(), sel.mem(), rect.mem());
 	    } catch(Throwable e) {throw(new RuntimeException(e));}
 	}
+	private final MethodHandle objc_msgSend_id_id_CGPoint = rt.msgtype(rt.C_ID(), rt.C_ID(), _CGPoint);
+	public ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, ID arg1, CoreGraphics.CGPoint arg2) {
+	    try {
+		return(rt.id((MemorySegment)objc_msgSend_id_id_CGPoint.invoke(self.mem(), sel.mem(), arg1.mem(), arg2.mem())));
+	    } catch(Throwable e) {throw(new RuntimeException(e));}
+	}
 	private final MethodHandle objc_msgSend_CGPoint = rt.msgtype(_CGPoint);
 	public CGPoint objc_msgSend_CGPoint(Runtime.ID self, Runtime.SEL sel) {
 	    try {
@@ -286,6 +295,12 @@ public abstract class CoreGraphics {
 		objc_msgSend_void_CGSize.invoke(self.mem(), sel.mem(), rect.mem());
 	    } catch(Throwable e) {throw(new RuntimeException(e));}
 	}
+	private final MethodHandle objc_msgSend_id_CGSize = rt.msgtype(rt.C_ID(), _CGSize);
+	public ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, CoreGraphics.CGSize rect) {
+	    try {
+		return(rt.id((MemorySegment)objc_msgSend_id_CGSize.invoke(self.mem(), sel.mem(), rect.mem())));
+	    } catch(Throwable e) {throw(new RuntimeException(e));}
+	}
 	private final MethodHandle objc_msgSend_CGSize = rt.msgtype(_CGSize);
 	public CGSize objc_msgSend_CGSize(Runtime.ID self, Runtime.SEL sel) {
 	    try {
@@ -303,6 +318,12 @@ public abstract class CoreGraphics {
 	public void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, CoreGraphics.CGRect rect) {
 	    try {
 		objc_msgSend_void_CGRect.invoke(self.mem(), sel.mem(), rect.mem());
+	    } catch(Throwable e) {throw(new RuntimeException(e));}
+	}
+	private final MethodHandle objc_msgSend_void_CGRect_id = rt.msgtype(null, _CGRect, rt.C_ID());
+	public void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, CoreGraphics.CGRect arg1, Runtime.ID arg2) {
+	    try {
+		objc_msgSend_void_CGRect_id.invoke(self.mem(), sel.mem(), arg1.mem(), arg2.mem());
 	    } catch(Throwable e) {throw(new RuntimeException(e));}
 	}
 	private final MethodHandle objc_msgSend_CGRect = rt.msgtype(_CGRect);
