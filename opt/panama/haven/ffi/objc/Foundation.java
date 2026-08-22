@@ -47,14 +47,47 @@ public abstract class Foundation {
     public abstract NSString NSString(String str);
     public abstract String fromNSString(ID id);
 
-    public static interface NSArray extends Runtime.NSObject {
+    public static interface NSArray extends Runtime.NSObject, Iterable<ID> {
 	public ID id();
 	public int size();
 	public ID get(int idx);
+
+	public default Iterator<ID> iterator() {
+	    return(new Iterator<ID>() {
+		private int i = 0;
+		public boolean hasNext() {return(i < size());}
+		public ID next() {return(get(i++));}
+	    });
+	}
     }
 
     abstract NSArray NSArray(ID id);
     public abstract NSArray NSArray(NSObject... objects);
+
+    public static interface NSDictionary extends Runtime.NSObject {
+	public ID id();
+	public ID valueForKey(NSString key);
+	public ID valueForKey(String key);
+	public ID objectForKey(NSObject key);
+    }
+
+    abstract NSDictionary NSDictionary(ID id);
+
+    public static interface NSValue extends Runtime.NSObject {
+	public ID id();
+	public CoreGraphics.CGPoint pointValue();
+	public CoreGraphics.CGSize sizeValue();
+	public CoreGraphics.CGRect rectValue();
+    }
+
+    abstract NSValue NSValue(ID id);
+
+    public static interface NSNumber extends Runtime.NSObject {
+	public ID id();
+	public int intValue();
+    }
+
+    abstract NSNumber NSNumber(ID id);
 
     public static interface NSProcessInfo {
 	public String operatingSystemVersionString();
@@ -156,6 +189,115 @@ public abstract class Foundation {
 		    buf.setAtIndex(ADDRESS, i, objects[i].id().mem());
 		return(NSArray.retained(this, rt.objc_msgSend_id(rt.objc_msgSend_id(cls_NSArray.id(), sel_alloc), sel_initWithObjects_count, buf, objects.length)));
 	    }
+	}
+
+	private final SEL sel_valueForKey = rt.sel_registerName("valueForKey:");
+	private final SEL sel_objectForKey = rt.sel_registerName("objectForKey:");
+	class NSDictionary implements Foundation.NSDictionary {
+	    public final ID id;
+
+	    NSDictionary(ID id) {
+		this.id = id;
+	    }
+
+	    static NSDictionary unretained(VersionC fnd, ID id) {
+		return(fnd.new NSDictionary(id));
+	    }
+	    static NSDictionary retained(VersionC fnd, ID id) {
+		NSDictionary ret = unretained(fnd, id);
+		fnd.rt.gcrelease(ret, id);
+		return(ret);
+	    }
+	    static NSDictionary retain(VersionC fnd, ID id) {
+		return(retained(fnd, fnd.rt.objc_msgSend_id(id, fnd.sel_retain)));
+	    }
+
+	    public ID id() {return(id);}
+
+	    public ID valueForKey(Foundation.NSString key) {
+		return(rt.objc_msgSend_id(id, sel_valueForKey, key.id()));
+	    }
+	    public ID valueForKey(String key) {
+		return(valueForKey(NSString(key)));
+	    }
+
+	    public ID objectForKey(NSObject key) {
+		return(rt.objc_msgSend_id(id, sel_objectForKey, key.id()));
+	    }
+	}
+
+	NSDictionary NSDictionary(ID id) {
+	    return(NSDictionary.retained(this, id));
+	}
+
+	private final SEL sel_pointValue = rt.sel_registerName("pointValue");
+	private final SEL sel_sizeValue = rt.sel_registerName("sizeValue");
+	private final SEL sel_rectValue = rt.sel_registerName("rectValue");
+	class NSValue implements Foundation.NSValue {
+	    public final ID id;
+
+	    NSValue(ID id) {
+		this.id = id;
+	    }
+
+	    static NSValue unretained(VersionC fnd, ID id) {
+		return(fnd.new NSValue(id));
+	    }
+	    static NSValue retained(VersionC fnd, ID id) {
+		NSValue ret = unretained(fnd, id);
+		fnd.rt.gcrelease(ret, id);
+		return(ret);
+	    }
+	    static NSValue retain(VersionC fnd, ID id) {
+		return(retained(fnd, fnd.rt.objc_msgSend_id(id, fnd.sel_retain)));
+	    }
+
+	    public ID id() {return(id);}
+
+	    public CoreGraphics.CGPoint pointValue() {
+		return(CoreGraphics.get().objc_msgSend_CGPoint(id, sel_pointValue));
+	    }
+	    public CoreGraphics.CGSize sizeValue() {
+		return(CoreGraphics.get().objc_msgSend_CGSize(id, sel_sizeValue));
+	    }
+	    public CoreGraphics.CGRect rectValue() {
+		return(CoreGraphics.get().objc_msgSend_CGRect(id, sel_rectValue));
+	    }
+	}
+
+	NSValue NSValue(ID id) {
+	    return(NSValue.retained(this, id));
+	}
+
+	private final SEL sel_intValue = rt.sel_registerName("intValue");
+	class NSNumber implements Foundation.NSNumber {
+	    public final ID id;
+
+	    NSNumber(ID id) {
+		this.id = id;
+	    }
+
+	    static NSNumber unretained(VersionC fnd, ID id) {
+		return(fnd.new NSNumber(id));
+	    }
+	    static NSNumber retained(VersionC fnd, ID id) {
+		NSNumber ret = unretained(fnd, id);
+		fnd.rt.gcrelease(ret, id);
+		return(ret);
+	    }
+	    static NSNumber retain(VersionC fnd, ID id) {
+		return(retained(fnd, fnd.rt.objc_msgSend_id(id, fnd.sel_retain)));
+	    }
+
+	    public ID id() {return(id);}
+
+	    public int intValue() {
+		return(rt.objc_msgSend_int(id, sel_intValue));
+	    }
+	}
+
+	NSNumber NSNumber(ID id) {
+	    return(NSNumber.retained(this, id));
 	}
 
 	private final Runtime.Class NSProcessInfo = rt.objc_getClass("NSProcessInfo");

@@ -102,10 +102,28 @@ public abstract class AppKit {
 	public boolean hasPreciseScrollingDeltas();
 	public double scrollingDeltaX();
 	public double scrollingDeltaY();
+	public double deltaX();
+	public double deltaY();
 	public String characters();
 	public String charactersIgnoringModifiers();
 	public int keyCode();
 	public boolean isARepeat();
+    }
+
+    public interface NSScreen extends Runtime.NSObject {
+	public ID id();
+	public CGRect frame();
+	public String localizedName();
+	public double backingScaleFactor();
+	public CGRect convertRectToBacking(CGRect rect);
+	public CGRect convertRectFromBacking(CGRect rect);
+	public double minimumRefreshInterval();
+	public double maximumRefreshInterval();
+	public NSDictionary deviceDescription();
+	public String deviceColorSpaceName();
+	public CGSize deviceResolution();
+	public CGSize deviceSize();
+	public int screenNumber();
     }
 
     public interface NSWindow extends Runtime.NSObject {
@@ -162,6 +180,7 @@ public abstract class AppKit {
 
     public abstract NSApplication NSApplication_sharedApplication();
     public abstract int NSEvent_pressedMouseButtons();
+    public abstract List<AppKit.NSScreen> NSScreen_screens();
     public abstract NSWindow NSWindow(CGRect contentRect, int style, int backingStoreType, boolean defer);
     public abstract NSView NSView(NSViewDelegate dg, CGRect frameRect);
 
@@ -328,6 +347,8 @@ public abstract class AppKit {
 	private final SEL sel_hasPreciseScrollingDeltas = rt.sel_registerName("hasPreciseScrollingDeltas");
 	private final SEL sel_scrollingDeltaX = rt.sel_registerName("scrollingDeltaX");
 	private final SEL sel_scrollingDeltaY = rt.sel_registerName("scrollingDeltaY");
+	private final SEL sel_deltaX = rt.sel_registerName("deltaX");
+	private final SEL sel_deltaY = rt.sel_registerName("deltaY");
 	private final SEL sel_characters = rt.sel_registerName("characters");
 	private final SEL sel_charactersIgnoringModifiers = rt.sel_registerName("charactersIgnoringModifiers");
 	private final SEL sel_keyCode = rt.sel_registerName("keyCode");
@@ -374,6 +395,12 @@ public abstract class AppKit {
 	    public double scrollingDeltaY() {
 		return(rt.objc_msgSend_double(id, sel_scrollingDeltaY));
 	    }
+	    public double deltaX() {
+		return(rt.objc_msgSend_double(id, sel_deltaX));
+	    }
+	    public double deltaY() {
+		return(rt.objc_msgSend_double(id, sel_deltaY));
+	    }
 	    public String characters() {
 		return(fnd.fromNSString(rt.objc_msgSend_id(id, sel_characters)));
 	    }
@@ -404,6 +431,73 @@ public abstract class AppKit {
 	    try {
 		objc_msgSend_void_NSUInt.invoke(self.mem(), sel.mem(), arg1);
 	    } catch(Throwable e) {throw(new RuntimeException(e));}
+	}
+
+	private final Runtime.Class cls_NSScreen = rt.objc_getClass("NSScreen");
+	private final SEL sel_frame = rt.sel_registerName("frame");
+	private final SEL sel_localizedName = rt.sel_registerName("localizedName");
+	private final SEL sel_backingScaleFactor = rt.sel_registerName("backingScaleFactor");
+	private final SEL sel_convertRectToBacking = rt.sel_registerName("convertRectToBacking:");
+	private final SEL sel_convertRectFromBacking = rt.sel_registerName("convertRectFromBacking:");
+	private final SEL sel_minimumRefreshInterval = rt.sel_registerName("minimumRefreshInterval");
+	private final SEL sel_maximumRefreshInterval = rt.sel_registerName("maximumRefreshInterval");
+	private final SEL sel_deviceDescription = rt.sel_registerName("deviceDescription");
+	private final NSString NSDeviceColorSpaceName = fnd.NSString(rt.id(dylib.find("NSDeviceColorSpaceName").get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0)));
+	private final NSString NSDeviceResolution = fnd.NSString(rt.id(dylib.find("NSDeviceResolution").get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0)));
+	private final NSString NSDeviceSize = fnd.NSString(rt.id(dylib.find("NSDeviceSize").get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0)));
+	class NSScreen implements AppKit.NSScreen {
+	    public final ID id;
+
+	    public NSScreen(ID id, boolean release) {
+		this.id = id;
+		if(release)
+		    rt.gcrelease(this, id);
+	    }
+
+	    public ID id() {return(id);}
+
+	    public CGRect frame() {
+		return(cg.objc_msgSend_CGRect(id, sel_frame));
+	    }
+
+	    public String localizedName() {
+		return(fnd.fromNSString(rt.objc_msgSend_id(id, sel_localizedName)));
+	    }
+
+	    public double backingScaleFactor() {
+		return(rt.objc_msgSend_double(id, sel_backingScaleFactor));
+	    }
+
+	    public CGRect convertRectToBacking(CGRect rect) {return(cg.objc_msgSend_CGRect(id, sel_convertRectToBacking, rect));}
+	    public CGRect convertRectFromBacking(CGRect rect) {return(cg.objc_msgSend_CGRect(id, sel_convertRectFromBacking, rect));}
+
+	    public double minimumRefreshInterval() {return(rt.objc_msgSend_double(id, sel_minimumRefreshInterval));}
+	    public double maximumRefreshInterval() {return(rt.objc_msgSend_double(id, sel_maximumRefreshInterval));}
+
+	    public NSDictionary deviceDescription() {
+		return(fnd.NSDictionary(rt.objc_msgSend_id(id, sel_deviceDescription)));
+	    }
+
+	    public String deviceColorSpaceName() {
+		return(fnd.fromNSString(deviceDescription().valueForKey(NSDeviceColorSpaceName)));
+	    }
+	    public CGSize deviceResolution() {
+		return(fnd.NSValue(deviceDescription().valueForKey(NSDeviceResolution)).sizeValue());
+	    }
+	    public CGSize deviceSize() {
+		return(fnd.NSValue(deviceDescription().valueForKey(NSDeviceSize)).sizeValue());
+	    }
+	    public int screenNumber() {
+		return(fnd.NSNumber(deviceDescription().valueForKey("NSScreenNumber")).intValue());
+	    }
+	}
+
+	private final SEL sel_screens = rt.sel_registerName("screens");
+	public List<AppKit.NSScreen> NSScreen_screens() {
+	    List<AppKit.NSScreen> ret = new ArrayList<>();
+	    for(ID id : fnd.NSArray(rt.objc_msgSend_id(cls_NSScreen.id(), sel_screens)))
+		ret.add(rt.retain(new NSScreen(id, true)));
+	    return(ret);
 	}
 
 	private final Runtime.Class cls_NSWindow = rt.objc_getClass("NSWindow");
@@ -551,10 +645,7 @@ public abstract class AppKit {
 	    rt.objc_registerClassPair(IOSYSView);
 	}
 	private final SEL sel_interpretKeyEvents = rt.sel_registerName("interpretKeyEvents:");
-	private final SEL sel_frame = rt.sel_registerName("frame");
 	private final SEL sel_bounds = rt.sel_registerName("bounds");
-	private final SEL sel_convertRectToBacking = rt.sel_registerName("convertRectToBacking:");
-	private final SEL sel_convertRectFromBacking = rt.sel_registerName("convertRectFromBacking:");
 	private final SEL sel_convertSizeToBacking = rt.sel_registerName("convertSizeToBacking:");
 	private final SEL sel_convertSizeFromBacking = rt.sel_registerName("convertSizeFromBacking:");
 	private final SEL sel_convertPointToBacking = rt.sel_registerName("convertPointToBacking:");

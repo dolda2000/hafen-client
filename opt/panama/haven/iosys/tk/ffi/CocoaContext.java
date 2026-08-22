@@ -41,6 +41,7 @@ import haven.ffi.objc.*;
 import haven.ffi.gl.*;
 import haven.ffi.objc.AppKit.*;
 import haven.ffi.objc.CGL.*;
+import haven.ffi.objc.CoreGraphics.*;
 import haven.ffi.objc.Runtime;
 import static haven.ffi.objc.Carbon.*;
 import static haven.iosys.tk.Key.Std.*;
@@ -145,6 +146,39 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    if(fmt == null)
 		throw(new Unavailable("could not create OpenGL context"));
 	    ctx = cgl.NSOpenGLContext(fmt, null);
+	}
+
+	public class CocoaMonitor implements Monitor {
+	    public final String nm;
+	    public final Coord res;
+	    public final int id, refresh;
+	    public final double scale, density;
+
+	    public CocoaMonitor(NSScreen scr) {
+		nm = scr.localizedName();
+		id = scr.screenNumber();
+		res = scr.convertRectToBacking(scr.frame()).size().c();
+		refresh = (int)Math.round(1.0 / scr.maximumRefreshInterval());
+		scale = scr.backingScaleFactor();
+		CGSize sz = cg.CGDisplayScreenSize(id);
+		density = 25.4 * ((res.x / sz.width()) + (res.y / sz.height())) / 2;
+	    }
+
+	    public Coord resolution() {return(res);}
+	    public int refresh() {return(refresh);}
+	    public double scaling() {return(scale);}
+	    public double density() {return(density);}
+
+	    public String toString() {
+		return(String.format("#<screen %d (%s) %dx%d@%d, scale=%.1f, dpi=%.1f>", id, nm, res.x, res.y, refresh, scale, density));
+	    }
+	}
+
+	public Collection<Monitor> monitors() {
+	    List<Monitor> ret = new ArrayList<>();
+	    for(NSScreen scr : ak.NSScreen_screens())
+		ret.add(new CocoaMonitor(scr));
+	    return(ret);
 	}
 
 	public Cursor.Caps cursorcaps() {

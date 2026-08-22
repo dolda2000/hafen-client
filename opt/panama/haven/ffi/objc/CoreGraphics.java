@@ -89,6 +89,10 @@ public abstract class CoreGraphics {
     public abstract CGRect CGRect();
     public CGRect CGRect(Area a) {return(CGRect().a(a));}
 
+    public abstract CGSize CGDisplayScreenSize(int display);
+    public abstract long CGDisplayPixelsWide(int display);
+    public abstract long CGDisplayPixelsHigh(int display);
+
     public abstract void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, CGPoint rect);
     public abstract CGPoint objc_msgSend_CGPoint(Runtime.ID self, Runtime.SEL sel);
     public abstract CGPoint objc_msgSend_CGPoint(Runtime.ID self, Runtime.SEL sel, CGPoint rect);
@@ -101,6 +105,7 @@ public abstract class CoreGraphics {
 
     static class VersionA extends CoreGraphics {
 	static final MemoryLayout CGFloat = C_DOUBLE;
+	static final MemoryLayout CGDirectDisplayID = ValueLayout.JAVA_INT;
 	private final SymbolLookup dylib = SymbolLookup.libraryLookup("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics", Arena.global());
 	private final Runtime rt = Runtime.get();
 
@@ -190,6 +195,27 @@ public abstract class CoreGraphics {
 	public MemoryLayout C_CGRect() {return(_CGRect);}
 	public CGRect CGRect(MemorySegment mem) {return(new CGRect(mem));}
 	public CGRect CGRect() {return(new CGRect());}
+
+	private final MethodHandle CGDisplayScreenSize = ld.downcallHandle(dylib.find("CGDisplayScreenSize").get(), FunctionDescriptor.of(_CGSize, CGDirectDisplayID));
+	public CGSize CGDisplayScreenSize(int display) {
+	    try {
+		return(CGSize((MemorySegment)CGDisplayScreenSize.invoke(Arena.ofAuto(), display)));
+	    } catch(Throwable e) {throw(new RuntimeException(e));}
+	}
+
+	private final MethodHandle CGDisplayPixelsWide = ld.downcallHandle(dylib.find("CGDisplayPixelsWide").get(), FunctionDescriptor.of(SIZE_T, CGDirectDisplayID));
+	public long CGDisplayPixelsWide(int display) {
+	    try {
+		return((long)CGDisplayPixelsWide.invoke(display));
+	    } catch(Throwable e) {throw(new RuntimeException(e));}
+	}
+
+	private final MethodHandle CGDisplayPixelsHigh = ld.downcallHandle(dylib.find("CGDisplayPixelsHigh").get(), FunctionDescriptor.of(SIZE_T, CGDirectDisplayID));
+	public long CGDisplayPixelsHigh(int display) {
+	    try {
+		return((long)CGDisplayPixelsHigh.invoke(display));
+	    } catch(Throwable e) {throw(new RuntimeException(e));}
+	}
 
 	private final MethodHandle objc_msgSend_void_CGPoint = rt.msgtype(null, _CGPoint);
 	public void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, CoreGraphics.CGPoint rect) {
