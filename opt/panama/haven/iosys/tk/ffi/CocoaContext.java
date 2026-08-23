@@ -549,9 +549,16 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 			x = event.scrollingDeltaX() / -15;
 			y = event.scrollingDeltaY() / -15;
 		    } else {
+			/* HACK: Assume non-precise scrolling deltas
+			 * mean we have a coarse, physical
+			 * scroll-wheel, and try to undo Cocoa's
+			 * scroll acceleration and Shift-axis-mangling
+			 * the best we can. :/ */
 			CGEvent cg = event.CGEvent();
-			x = -cg.getIntegerValueField(CoreGraphics.kCGScrollWheelEventDeltaAxis2);
-			y = -cg.getIntegerValueField(CoreGraphics.kCGScrollWheelEventDeltaAxis1);
+			x = cg.getIntegerValueField(CoreGraphics.kCGScrollWheelEventDeltaAxis2);
+			y = cg.getIntegerValueField(CoreGraphics.kCGScrollWheelEventDeltaAxis1);
+			if(x < 0) x = 1; else if(x > 0) x = -1;
+			if(y < 0) y = 1; else if(y > 0) y = -1;
 			if((event.modifierFlags() & AppKit.NSShiftKeyMask) != 0) {
 			    double t = x;
 			    x = y; y = t;
