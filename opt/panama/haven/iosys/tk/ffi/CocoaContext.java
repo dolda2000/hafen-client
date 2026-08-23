@@ -604,6 +604,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		private final Runtime.SEL sel_insertNewline = rt.sel_registerName("insertNewline:");
 		private final Runtime.SEL sel_insertTab = rt.sel_registerName("insertTab:");
 		private final Runtime.SEL sel_deleteBackward = rt.sel_registerName("deleteBackward:");
+		private final Runtime.SEL sel_cancelOperation = rt.sel_registerName("cancelOperation:");
 		public void doCommandBySelector(Runtime.SEL selector) {
 		    if(selector.equals(sel_insertNewline)) {
 			textbuf.append('\n');
@@ -611,6 +612,8 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 			textbuf.append('\t');
 		    } else if(selector.equals(sel_deleteBackward)) {
 			textbuf.append('\b');
+		    } else if(selector.equals(sel_cancelOperation)) {
+			textbuf.append('\033');
 		    }
 		}
 
