@@ -33,6 +33,7 @@ import java.lang.invoke.*;
 import java.lang.foreign.*;
 import java.lang.foreign.MemoryLayout.PathElement;
 import java.util.*;
+import java.awt.image.*;
 import static haven.ffi.ABI.*;
 import static haven.ffi.FUtils.*;
 import static java.lang.foreign.ValueLayout.ADDRESS;
@@ -46,6 +47,25 @@ public abstract class CoreGraphics {
     public static final int kCGScrollWheelEventFixedPtDeltaAxis2 = 94;
     public static final int kCGScrollWheelEventPointDeltaAxis1 = 96;
     public static final int kCGScrollWheelEventPointDeltaAxis2 = 97;
+
+    public static final int kCGImageAlphaNone               = 0;
+    public static final int kCGImageAlphaPremultipliedLast  = 1;
+    public static final int kCGImageAlphaPremultipliedFirst = 2;
+    public static final int kCGImageAlphaLast               = 3;
+    public static final int kCGImageAlphaFirst              = 4;
+    public static final int kCGImageAlphaNoneSkipLast       = 5;
+    public static final int kCGImageAlphaNoneSkipFirst      = 6;
+    public static final int kCGImageAlphaNoneOnly           = 7;
+    public static final int kCGImageByteOrderDefault  = 0 << 12;
+    public static final int kCGImageByteOrder16Little = 1 << 12;
+    public static final int kCGImageByteOrder32Little = 2 << 12;
+    public static final int kCGImageByteOrder16Big    = 3 << 12;
+    public static final int kCGImageByteOrder32Big    = 4 << 12;
+    public static final int kCGRenderingIntentDefault              = 0;
+    public static final int kCGRenderingIntentAbsoluteColorimetric = 1;
+    public static final int kCGRenderingIntentRelativeColorimetric = 2;
+    public static final int kCGRenderingIntentPerceptual           = 3;
+    public static final int kCGRenderingIntentSaturation           = 4;
 
     public static interface CGPoint {
 	MemorySegment mem();
@@ -104,6 +124,46 @@ public abstract class CoreGraphics {
     }
     abstract CGEvent CGEvent(MemorySegment ref);
 
+    public static interface CGColorSpace {
+    }
+    abstract CGColorSpace CGColorSpaceCreateDeviceRGB();
+
+    public static interface CGDataProvider {
+    }
+    abstract CGDataProvider CGDataProviderCreateWithData(MemorySegment data);
+
+    public static interface CGImage {
+	MemorySegment ref();
+	public int getWidth();
+	public int getHeight();
+	public int getBitsPerComponent();
+	public int getBitsPerPixel();
+	public int getBytesPerRow();
+	public int getAlphaInfo();
+	public CGColorSpace getColorSpace();
+    }
+    abstract CGImage CGImageCreate(int width, int height, int bitsPerComponent, int bitsPerPixel, int bytesPerRow, CGColorSpace space, int bitmapInfo, CGDataProvider provider, MemorySegment decode, boolean interpolate, int intent);
+
+    public CGImage CGImageCreate(BufferedImage image) {
+	image = PUtils.coercergba(image, false);
+	int w = image.getWidth(), h = image.getHeight();
+	Raster idat = image.getRaster();
+	MemorySegment data = Arena.ofAuto().allocate(ValueLayout.JAVA_INT, w * h);
+	for(int y = 0, o = 0; y < h; y++) {
+	    for(int x = 0; x < w; x++, o++) {
+		data.setAtIndex(ValueLayout.JAVA_INT, o,
+				(idat.getSample(x, y, 0) <<  0) | (idat.getSample(x, y, 1) <<  8) |
+				(idat.getSample(x, y, 2) << 16) | (idat.getSample(x, y, 3) << 24));
+	    }
+	}
+	CoreGraphics cg = CoreGraphics.get();
+	return(cg.CGImageCreate(w, h, 8, 32, w * 4,
+				cg.CGColorSpaceCreateDeviceRGB(),
+				CoreGraphics.kCGImageAlphaLast | CoreGraphics.kCGImageByteOrder32Big,
+				cg.CGDataProviderCreateWithData(data),
+				MemorySegment.NULL, false, CoreGraphics.kCGRenderingIntentDefault));
+    }
+
     public abstract CGSize CGDisplayScreenSize(int display);
     public abstract long CGDisplayPixelsWide(int display);
     public abstract long CGDisplayPixelsHigh(int display);
@@ -114,6 +174,7 @@ public abstract class CoreGraphics {
     public abstract CGPoint objc_msgSend_CGPoint(Runtime.ID self, Runtime.SEL sel, CGPoint rect);
     public abstract void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, CGSize rect);
     public abstract ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, CoreGraphics.CGSize rect);
+    abstract ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, MemorySegment arg1, CoreGraphics.CGSize arg2);
     public abstract CGSize objc_msgSend_CGSize(Runtime.ID self, Runtime.SEL sel);
     public abstract CGSize objc_msgSend_CGSize(Runtime.ID self, Runtime.SEL sel, CGSize rect);
     public abstract void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, CGRect rect);
@@ -243,6 +304,114 @@ public abstract class CoreGraphics {
 	    return(new CGEvent(cf.CFRetain(ref), true));
 	}
 
+	class CGColorSpace implements CoreGraphics.CGColorSpace {
+	    final MemorySegment ref;
+
+	    CGColorSpace(MemorySegment ref, boolean release) {
+		this.ref = ref;
+		if(release)
+		    cf.gcrelease(this, ref);
+	    }
+	}
+
+	private final MethodHandle CGColorSpaceCreateDeviceRGB = ld.downcallHandle(dylib.find("CGColorSpaceCreateDeviceRGB").get(), FunctionDescriptor.of(ADDRESS));
+	public CGColorSpace CGColorSpaceCreateDeviceRGB() {
+	    MemorySegment rv;
+	    try {
+		rv = (MemorySegment)CGColorSpaceCreateDeviceRGB.invoke();
+	    } catch(Throwable e) {throw(new RuntimeException(e));}
+	    return(nullp(rv) ? null : new CGColorSpace(rv, true));
+	}
+
+	class CGDataProvider implements CoreGraphics.CGDataProvider {
+	    final MemorySegment ref;
+	    final Object keep;
+
+	    CGDataProvider(MemorySegment ref, boolean release, Object keep) {
+		this.ref = ref;
+		this.keep = keep;
+		if(release)
+		    cf.gcrelease(this, ref);
+	    }
+	}
+
+	private final MethodHandle CGDataProviderCreateWithData = ld.downcallHandle(dylib.find("CGDataProviderCreateWithData").get(), FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS, SIZE_T, ADDRESS));
+	public CGDataProvider CGDataProviderCreateWithData(MemorySegment data) {
+	    MemorySegment rv;
+	    try {
+		rv = (MemorySegment)CGDataProviderCreateWithData.invoke(MemorySegment.NULL, data, data.byteSize(), MemorySegment.NULL);
+	    } catch(Throwable e) {throw(new RuntimeException(e));}
+	    return(nullp(rv) ? null : new CGDataProvider(rv, true, data));
+	}
+
+	private final MethodHandle CGImageGetWidth = ld.downcallHandle(dylib.find("CGImageGetWidth").get(), FunctionDescriptor.of(SIZE_T, ADDRESS));
+	private final MethodHandle CGImageGetHeight = ld.downcallHandle(dylib.find("CGImageGetHeight").get(), FunctionDescriptor.of(SIZE_T, ADDRESS));
+	private final MethodHandle CGImageGetBitsPerComponent = ld.downcallHandle(dylib.find("CGImageGetBitsPerComponent").get(), FunctionDescriptor.of(SIZE_T, ADDRESS));
+	private final MethodHandle CGImageGetBitsPerPixel = ld.downcallHandle(dylib.find("CGImageGetBitsPerPixel").get(), FunctionDescriptor.of(SIZE_T, ADDRESS));
+	private final MethodHandle CGImageGetBytesPerRow = ld.downcallHandle(dylib.find("CGImageGetBytesPerRow").get(), FunctionDescriptor.of(SIZE_T, ADDRESS));
+	private final MethodHandle CGImageGetAlphaInfo = ld.downcallHandle(dylib.find("CGImageGetAlphaInfo").get(), FunctionDescriptor.of(ValueLayout.JAVA_INT, ADDRESS));
+	private final MethodHandle CGImageGetColorSpace = ld.downcallHandle(dylib.find("CGImageGetColorSpace").get(), FunctionDescriptor.of(ADDRESS, ADDRESS));
+	class CGImage implements CoreGraphics.CGImage {
+	    final MemorySegment ref;
+	    final Object keep;
+
+	    CGImage(MemorySegment ref, boolean release, Object keep) {
+		this.ref = ref;
+		this.keep = keep;
+		if(release)
+		    cf.gcrelease(this, ref);
+	    }
+
+	    public MemorySegment ref() {return(ref);}
+
+	    public int getWidth() {
+		try {
+		    return((int)(long)CGImageGetWidth.invoke(ref));
+		} catch(Throwable e) {throw(new RuntimeException(e));}
+	    }
+	    public int getHeight() {
+		try {
+		    return((int)(long)CGImageGetHeight.invoke(ref));
+		} catch(Throwable e) {throw(new RuntimeException(e));}
+	    }
+	    public int getBitsPerComponent() {
+		try {
+		    return((int)(long)CGImageGetBitsPerComponent.invoke(ref));
+		} catch(Throwable e) {throw(new RuntimeException(e));}
+	    }
+	    public int getBitsPerPixel() {
+		try {
+		    return((int)(long)CGImageGetBitsPerPixel.invoke(ref));
+		} catch(Throwable e) {throw(new RuntimeException(e));}
+	    }
+	    public int getBytesPerRow() {
+		try {
+		    return((int)(long)CGImageGetBytesPerRow.invoke(ref));
+		} catch(Throwable e) {throw(new RuntimeException(e));}
+	    }
+	    public int getAlphaInfo() {
+		try {
+		    return((int)CGImageGetAlphaInfo.invoke(ref));
+		} catch(Throwable e) {throw(new RuntimeException(e));}
+	    }
+	    public CGColorSpace getColorSpace() {
+		MemorySegment rv;
+		try {
+		    rv = (MemorySegment)CGImageGetColorSpace.invoke(ref);
+		} catch(Throwable e) {throw(new RuntimeException(e));}
+		return(nullp(rv) ? null : new CGColorSpace(cf.CFRetain(rv), true));
+	    }
+	}
+
+	private final MethodHandle CGImageCreate = ld.downcallHandle(dylib.find("CGImageCreate").get(), FunctionDescriptor.of(ADDRESS, SIZE_T, SIZE_T, SIZE_T, SIZE_T, SIZE_T, ADDRESS, ValueLayout.JAVA_INT, ADDRESS, ADDRESS, C_BOOL, ValueLayout.JAVA_INT));
+	CGImage CGImageCreate(int width, int height, int bitsPerComponent, int bitsPerPixel, int bytesPerRow, CoreGraphics.CGColorSpace space, int bitmapInfo, CoreGraphics.CGDataProvider provider, MemorySegment decode, boolean interpolate, int intent) {
+	    MemorySegment rv;
+	    try {
+		rv = (MemorySegment)CGImageCreate.invoke(width, height, bitsPerComponent, bitsPerPixel, bytesPerRow, ((CGColorSpace)space).ref, bitmapInfo, ((CGDataProvider)provider).ref, decode, interpolate ? (byte)1 : (byte)0, intent);
+	    } catch(Throwable e) {throw(new RuntimeException(e));}
+	    return(nullp(rv) ? null : new CGImage(rv, true, provider));
+	}
+
 	private final MethodHandle CGDisplayScreenSize = ld.downcallHandle(dylib.find("CGDisplayScreenSize").get(), FunctionDescriptor.of(_CGSize, CGDirectDisplayID));
 	public CGSize CGDisplayScreenSize(int display) {
 	    try {
@@ -299,6 +468,12 @@ public abstract class CoreGraphics {
 	public ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, CoreGraphics.CGSize rect) {
 	    try {
 		return(rt.id((MemorySegment)objc_msgSend_id_CGSize.invoke(self.mem(), sel.mem(), rect.mem())));
+	    } catch(Throwable e) {throw(new RuntimeException(e));}
+	}
+	private final MethodHandle objc_msgSend_id_ptr_CGSize = rt.msgtype(rt.C_ID(), ADDRESS, _CGSize);
+	public ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, MemorySegment arg1, CoreGraphics.CGSize arg2) {
+	    try {
+		return(rt.id((MemorySegment)objc_msgSend_id_ptr_CGSize.invoke(self.mem(), sel.mem(), arg1, arg2.mem())));
 	    } catch(Throwable e) {throw(new RuntimeException(e));}
 	}
 	private final MethodHandle objc_msgSend_CGSize = rt.msgtype(_CGSize);

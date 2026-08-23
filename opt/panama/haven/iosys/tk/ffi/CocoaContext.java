@@ -181,12 +181,34 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    return(ret);
 	}
 
+	public class CocoaCursor implements Cursor {
+	    public final CGImage img;
+	    public final Coord hs;
+	    private NSCursor nsc;
+
+	    public CocoaCursor(CGImage img, Coord hs) {
+		this.img = img;
+		this.hs = hs;
+	    }
+
+	    public NSCursor nsc(NSView view) {
+		if(nsc == null) {
+		    NSImage nsi = ak.NSImage(view.convertSizeFromBacking(cg.CGSize(Coord.of(img.getWidth(), img.getHeight()))));
+		    nsi.addRepresentation(ak.NSBitmapImageRep(img));
+		    nsc = ak.NSCursor(nsi, view.convertPointFromBacking(cg.CGPoint(hs)));
+		}
+		return(nsc);
+	    }
+
+	    public void dispose() {}
+	}
+
 	public Cursor.Caps cursorcaps() {
-	    return(null);
+	    return(new Cursor.Caps(256, 0));
 	}
 
 	public Cursor makecursor(BufferedImage img, Coord hs) {
-	    return(null);
+	    return(new CocoaCursor(cg.CGImageCreate(img), hs));
 	}
 
 	void mainrun(Runnable task) {
@@ -811,6 +833,8 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 			case SIZE_SW: nsc = ak.NSCursor_crosshairCursor(); break;
 			case SIZE_NW: nsc = ak.NSCursor_crosshairCursor(); break;
 			}
+		    } else if(curs instanceof CocoaCursor) {
+			nsc = ((CocoaCursor)curs).nsc(view);
 		    }
 		    this.cursor = nsc;
 		    updatecursor();

@@ -73,6 +73,13 @@ public abstract class Foundation {
 
     abstract NSDictionary NSDictionary(ID id);
 
+    public static interface NSData extends Runtime.NSObject {
+	public ID id();
+	public byte[] data();
+    }
+
+    abstract NSData NSData(ID id, boolean retain);
+
     public static interface NSValue extends Runtime.NSObject {
 	public ID id();
 	public CoreGraphics.CGPoint pointValue();
@@ -228,6 +235,42 @@ public abstract class Foundation {
 
 	NSDictionary NSDictionary(ID id) {
 	    return(NSDictionary.retained(this, id));
+	}
+
+	private final SEL sel_bytes = rt.sel_registerName("bytes");
+	private final SEL sel_length = rt.sel_registerName("length");
+	class NSData implements Foundation.NSData {
+	    public final ID id;
+
+	    NSData(ID id) {
+		this.id = id;
+	    }
+
+	    static NSData unretained(VersionC fnd, ID id) {
+		return(fnd.new NSData(id));
+	    }
+	    static NSData retained(VersionC fnd, ID id) {
+		NSData ret = unretained(fnd, id);
+		fnd.rt.gcrelease(ret, id);
+		return(ret);
+	    }
+	    static NSData retain(VersionC fnd, ID id) {
+		return(retained(fnd, fnd.rt.objc_msgSend_id(id, fnd.sel_retain)));
+	    }
+
+	    public ID id() {return(id);}
+
+	    public byte[] data() {
+		return(memcpy(rt.objc_msgSend_ptr(id, sel_bytes), 0, rt.objc_msgSend_NSUInt(id, sel_length)));
+	    }
+	}
+
+	NSData NSData(ID id, boolean retain) {
+	    if(id == null)
+		return(null);
+	    NSData rv = NSData.retained(this, id);
+	    if(retain) rt.retain(rv);
+	    return(rv);
 	}
 
 	private final SEL sel_pointValue = rt.sel_registerName("pointValue");

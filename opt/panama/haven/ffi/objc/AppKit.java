@@ -35,6 +35,7 @@ import java.lang.invoke.*;
 import java.lang.foreign.*;
 import java.util.*;
 import java.util.function.*;
+import java.awt.image.*;
 import haven.ffi.objc.Runtime.Class;
 import java.lang.foreign.MemoryLayout.PathElement;
 import static haven.ffi.ABI.*;
@@ -89,11 +90,30 @@ public abstract class AppKit {
 	public ID id();
     }
 
-    public interface NSImage extends Runtime.NSObject {
+    public interface NSImageRep extends Runtime.NSObject {
 	public ID id();
     }
 
+    public interface NSBitmapImageRep extends NSImageRep {
+    }
+    public abstract NSBitmapImageRep NSBitmapImageRep(CGImage image);
+
+    public interface NSImage extends Runtime.NSObject {
+	public ID id();
+	public boolean isValid();
+	public CGSize size();
+	public void addRepresentation(NSImageRep rep);
+	public NSData TIFFRepresentation();
+    }
+
     public abstract NSImage NSImage(CGSize size);
+    public abstract NSImage NSImage(CGImage image, CGSize size);
+
+    public NSImage NSImage(BufferedImage image, CGSize size) {
+	NSImage ret = NSImage(size);
+	ret.addRepresentation(NSBitmapImageRep(CoreGraphics.get().CGImageCreate(image)));
+	return(ret);
+    }
 
     public interface NSCursor extends Runtime.NSObject {
 	public ID id();
@@ -387,7 +407,28 @@ public abstract class AppKit {
 	    public ID id() {return(id);}
 	}
 
+	private final Class cls_NSBitmapImageRep = rt.objc_getClass("NSBitmapImageRep");
+	class NSBitmapImageRep implements AppKit.NSBitmapImageRep {
+	    public final ID id;
+
+	    public NSBitmapImageRep(ID id, boolean release) {
+		this.id = id;
+		if(release)
+		    rt.gcrelease(this, id);
+	    }
+
+	    public ID id() {return(id);}
+	}
+	private final SEL sel_initWithCGImage = rt.sel_registerName("initWithCGImage:");
+	public NSBitmapImageRep NSBitmapImageRep(CGImage image) {
+	    return(new NSBitmapImageRep(rt.objc_msgSend_id(rt.objc_msgSend_id(cls_NSBitmapImageRep.id(), sel_alloc), sel_initWithCGImage, image.ref()), true));
+	}
+
 	private final Class cls_NSImage = rt.objc_getClass("NSImage");
+	private final SEL sel_isValid = rt.sel_registerName("isValid");
+	private final SEL sel_size = rt.sel_registerName("size");
+	private final SEL sel_TIFFRepresentation = rt.sel_registerName("TIFFRepresentation");
+	private final SEL sel_addRepresentation = rt.sel_registerName("addRepresentation:");
 	class NSImage implements AppKit.NSImage {
 	    public final ID id;
 
@@ -398,11 +439,24 @@ public abstract class AppKit {
 	    }
 
 	    public ID id() {return(id);}
+
+	    public boolean isValid() {return(rt.objc_msgSend_bool(id, sel_isValid));}
+	    public CGSize size() {return(cg.objc_msgSend_CGSize(id, sel_size));}
+	    public void addRepresentation(NSImageRep rep) {
+		rt.objc_msgSend_void(id, sel_addRepresentation, rep.id());
+	    }
+	    public NSData TIFFRepresentation() {
+		return(fnd.NSData(rt.objc_msgSend_id(id, sel_TIFFRepresentation), true));
+	    }
 	}
 
 	private final SEL sel_initWithSize = rt.sel_registerName("initWithSize:");
 	public NSImage NSImage(CGSize size) {
 	    return(new NSImage(cg.objc_msgSend_id(rt.objc_msgSend_id(cls_NSImage.id(), sel_alloc), sel_initWithSize, size), true));
+	}
+	private final SEL sel_initWithCGImage_size = rt.sel_registerName("initWithCGImage:size:");
+	public NSImage NSImage(CGImage image, CGSize size) {
+	    return(new NSImage(cg.objc_msgSend_id(rt.objc_msgSend_id(cls_NSImage.id(), sel_alloc), sel_initWithSize, image.ref(), size), true));
 	}
 
 	private final Class cls_NSCursor = rt.objc_getClass("NSCursor");
