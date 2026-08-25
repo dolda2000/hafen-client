@@ -82,7 +82,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
     }
 
     public Toolkit open(String... args) {
-	return(new CocoaToolkit());
+	return(mainrun(CocoaToolkit::new));
     }
 
     public int priority() {
@@ -105,6 +105,40 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    }
 	    return(app);
 	}
+    }
+
+    void mainrun(Runnable task) {
+	rt.mainrun(task);
+    }
+
+    <T> T mainrun(Supplier<T> task) {
+	class Runner implements Runnable {
+	    T val;
+	    boolean done;
+
+	    public void run() {
+		val = task.get();
+		synchronized(this) {
+		    done = true;
+		    notifyAll();
+		}
+	    }
+	}
+	Runner r = new Runner();
+	mainrun(r);
+	boolean irq = false;
+	synchronized(r) {
+	    while(!r.done) {
+		try {
+		    r.wait();
+		} catch(InterruptedException e) {
+		    irq = true;
+		}
+	    }
+	}
+	if(irq)
+	    Thread.currentThread().interrupt();
+	return(r.val);
     }
 
     public class CocoaToolkit implements Toolkit {
@@ -209,40 +243,6 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 
 	public Cursor makecursor(BufferedImage img, Coord hs) {
 	    return(new CocoaCursor(cg.CGImageCreate(img), hs));
-	}
-
-	void mainrun(Runnable task) {
-	    rt.mainrun(task);
-	}
-
-	private <T> T mainrun(Supplier<T> task) {
-	    class Runner implements Runnable {
-		T val;
-		boolean done;
-
-		public void run() {
-		    val = task.get();
-		    synchronized(this) {
-			done = true;
-			notifyAll();
-		    }
-		}
-	    }
-	    Runner r = new Runner();
-	    mainrun(r);
-	    boolean irq = false;
-	    synchronized(r) {
-		while(!r.done) {
-		    try {
-			r.wait();
-		    } catch(InterruptedException e) {
-			irq = true;
-		    }
-		}
-	    }
-	    if(irq)
-		Thread.currentThread().interrupt();
-	    return(r.val);
 	}
 
 	private <T> T glrun0(NSView view, Supplier<T> task) {
