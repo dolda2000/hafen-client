@@ -497,23 +497,19 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    private CocoaWindow() {
-		nsw = mainrun(() -> ak.NSWindow(cg.CGRect(Area.sized(Coord.of(1, 1))), 
-						AppKit.NSWindowStyleMaskTitled |
-						AppKit.NSWindowStyleMaskClosable |
-						AppKit.NSWindowStyleMaskMiniaturizable |
-						AppKit.NSWindowStyleMaskResizable,
-						AppKit.NSBackingStoreBuffered,
-						true));
-		mainrun(() -> {
-		    nsw.setDelegate(new WindowDelegate());
-		    nsw.setAcceptsMouseMovedEvents(true);
-		    nsw.setCollectionBehavior(AppKit.NSWindowCollectionBehaviorFullScreenPrimary);
-		});
-		view = mainrun(() -> ak.NSView(new ViewDelegate(), cg.CGRect(Area.sized(Coord.of(1, 1)))));
-		mainrun(() -> {
-		    view.setWantsBestResolutionOpenGLSurface(true);
-		    nsw.setContentView(view);
-		});
+		nsw = ak.NSWindow(cg.CGRect(Area.sized(Coord.of(1, 1))), 
+				  AppKit.NSWindowStyleMaskTitled |
+				  AppKit.NSWindowStyleMaskClosable |
+				  AppKit.NSWindowStyleMaskMiniaturizable |
+				  AppKit.NSWindowStyleMaskResizable,
+				  AppKit.NSBackingStoreBuffered,
+				  true);
+		nsw.setDelegate(new WindowDelegate());
+		nsw.setAcceptsMouseMovedEvents(true);
+		nsw.setCollectionBehavior(AppKit.NSWindowCollectionBehaviorFullScreenPrimary);
+		view = ak.NSView(new ViewDelegate(), cg.CGRect(Area.sized(Coord.of(1, 1))));
+		view.setWantsBestResolutionOpenGLSurface(true);
+		nsw.setContentView(view);
 	    }
 
 	    class WindowDelegate implements AppKit.WindowDelegate {
@@ -932,7 +928,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	}
 
 	public Windeye window() {
-	    return(new CocoaWindow());
+	    return(mainrun(CocoaWindow::new));
 	}
 
 	public String description() {
