@@ -35,6 +35,8 @@ public abstract class StructInstance {
     protected String $name() {return("struct " + this.getClass().getSimpleName().toLowerCase());}
 
     protected StructInstance(MemorySegment mem) {
+	if(FUtils.nullp(mem))
+	    throw(new NullPointerException());
 	this.mem = mem.reinterpret($layout().byteSize());
     }
 

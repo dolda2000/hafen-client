@@ -139,8 +139,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	public final GLX.GLXContext ctx;
 	public final XIM im;
 	public final long imstyle;
-	public final int mincode, maxcode;
-	public final XID[][] keymap;
+	public final XkbDesc xkb;
 	public final int mod_alt, mod_meta, mod_altgr, mod_super;
 	public final Map<Integer, Integer> rmodmap = new HashMap<>();
 	public final Map<Integer, XIPointerInfo> pointers = new HashMap<>();
@@ -395,9 +394,15 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 		    }
 		}
 		{
-		    int[] ival = xlib.XDisplayKeycodes(dpy);
-		    mincode = ival[0]; maxcode = ival[1];
-		    keymap = xlib.XGetKeyboardMapping(dpy, mincode, maxcode + 1 - mincode);
+		    xkb = xlib.XkbGetMap(dpy,
+					   XLib.XkbKeySymsMask | XLib.XkbModifierMapMask
+					 | XLib.XkbVirtualModsMask | XLib.XkbVirtualModMapMask,
+					 XLib.XkbUseCoreKbd);
+		    xlib.XkbGetNames(dpy,
+				       XLib.XkbKeycodesNameMask | XLib.XkbSymbolsNameMask
+				     | XLib.XkbKeyNamesMask | XLib.XkbVirtualModNamesMask,
+				     xkb);
+
 		    int[][] modmap = xlib.XGetModifierMapping(dpy).mapping();
 		    for(int i = 0; i < 8; i++) {
 			for(int key : modmap[i])
@@ -406,15 +411,17 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 		    int mod_alt = 0, mod_meta = 0, mod_altgr = 0, mod_super = 0;
 		    for(int i = 3; i < 8; i++) {
 			for(int key : modmap[i]) {
-			    for(XID sym : keymap[key - mincode]) {
-				if(sym.equals(XK_Alt_L) || sym.equals(XK_Alt_R)) {
-				    mod_alt = i;
-				} else if(sym.equals(XK_Meta_L) || sym.equals(XK_Meta_R)) {
-				    mod_meta = i;
-				} else if(sym.equals(XK_ISO_Level3_Shift)) {
-				    mod_altgr = i;
-				} else if(sym.equals(XK_Super_L) || sym.equals(XK_Super_R)) {
-				    mod_super = i;
+			    for(XID[] grp : xkb.map().key_sym_map().get(key).keysyms()) {
+				for(XID sym : grp) {
+				    if(sym.equals(XK_Alt_L) || sym.equals(XK_Alt_R)) {
+					mod_alt = i;
+				    } else if(sym.equals(XK_Meta_L) || sym.equals(XK_Meta_R)) {
+					mod_meta = i;
+				    } else if(sym.equals(XK_ISO_Level3_Shift)) {
+					mod_altgr = i;
+				    } else if(sym.equals(XK_Super_L) || sym.equals(XK_Super_R)) {
+					mod_super = i;
+				    }
 				}
 			    }
 			}
@@ -2360,19 +2367,33 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 
     public static class X11Key implements Key {
 	public final int code;
-	public final XID[] rawsyms;
+	public final XID[][] rawsyms;
 	public final Sym[] keysyms;
 	public final String id;
 
-	private X11Key(GLXToolkit tk, int code) {
+	private X11Key(GLXToolkit tk, int code, int group) {
 	    this.code = code;
-	    if((code >= tk.mincode) && (code <= tk.maxcode))
-		this.rawsyms = tk.keymap[code - tk.mincode];
+	    XkbDesc xkb = tk.xkb;
+	    XkbSymMap map = xkb.map().key_sym_map().get(code);
+	    if((code >= xkb.min_key_code()) && (code <= xkb.max_key_code()))
+		this.rawsyms = map.keysyms();
 	    else
-		this.rawsyms = new XID[0];
-	    this.keysyms = new Sym[this.rawsyms.length];
-	    for(int i = 0; i < this.rawsyms.length; i++)
-		this.keysyms[i] = tk.ctx().getkeysym(this.rawsyms[i]);
+		this.rawsyms = new XID[0][0];
+	    if(this.rawsyms.length > 0) {
+		int cg = map.egroup(group);
+		Sym[] buf = new Sym[rawsyms.length * rawsyms[0].length];
+		int n = 0;
+		for(int gi = 0; gi < rawsyms.length; gi++) {
+		    int g = (gi == 0) ? cg : (gi <= cg) ? gi - 1 : gi;
+		    for(int l = 0; l < rawsyms[g].length; l++) {
+			if(!rawsyms[g][l].equals(XID.None))
+			    buf[n++] = tk.ctx().getkeysym(rawsyms[g][l]);
+		    }
+		}
+		this.keysyms = Arrays.copyOf(buf, n);
+	    } else {
+		this.keysyms = new Sym[0];
+	    }
 	    this.id = ("x11:" + code).intern();
 	}
 
@@ -2407,8 +2428,9 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	public GLXKeyEvent(GLXToolkit.GLXWindow wnd, XKeyEvent ev, boolean include) {
 	    this.wnd = wnd;
 	    this.state = ev.state();
-	    this.key = new X11Key(wnd.toolkit(), ev.keycode());
+	    this.key = new X11Key(wnd.toolkit(), ev.keycode(), wnd.toolkit().ctx().xlib.XkbGroupForCoreState(state));
 	    this.mods = wnd.toolkit().mods(ev.state(), ev.keycode(), include);
+	    Debug.dump(key);
 	}
 
 	public String string() {return(str);}
