@@ -2430,7 +2430,6 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	    this.state = ev.state();
 	    this.key = new X11Key(wnd.toolkit(), ev.keycode(), wnd.toolkit().ctx().xlib.XkbGroupForCoreState(state));
 	    this.mods = wnd.toolkit().mods(ev.state(), ev.keycode(), include);
-	    Debug.dump(key);
 	}
 
 	public String string() {return(str);}
