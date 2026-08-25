@@ -134,6 +134,7 @@ public class Client implements Console.Directory {
 		    ui.keyup(AWTCompat.mkawt((Toolkit.KeyEvent)ev));
 		    Debug.keyevent(AWTCompat.mkawt((Toolkit.KeyEvent)ev));
 		}
+		ui.lastevent = Utils.rtime();
 	    }
 	}
     }
