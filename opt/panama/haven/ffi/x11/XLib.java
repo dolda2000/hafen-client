@@ -221,6 +221,9 @@ public abstract class XLib {
     public static final int XkbMajorVersion = 1;
     public static final int XkbMinorVersion = 0;
     public static final int XkbNumKbdGroups = 4;
+    public static final int XkbNumVirtualMods = 16;
+    public static final int XkbNumIndicators = 32;
+    public static final int XkbKeyNameLength = 4;
     public static final int XkbUseCoreKbd = 0x0100;
     public static final int XkbClientMapMask     = 1 << 0;
     public static final int XkbServerMapMask     = 1 << 1;
@@ -843,6 +846,17 @@ public abstract class XLib {
 	public abstract byte[] modmap();
     }
 
+    public static abstract class XkbNames extends StructInstance {
+	protected XkbNames(MemorySegment mem) {
+	    super(mem);
+	}
+
+	MemorySegment mem() {return(mem);}
+
+	public abstract Atom[] vmods();
+	public abstract List<String> keys();
+    }
+
     public static abstract class XkbDesc extends StructInstance {
 	protected XkbDesc(MemorySegment mem) {
 	    super(mem);
@@ -855,6 +869,7 @@ public abstract class XLib {
 	public abstract int min_key_code();
 	public abstract int max_key_code();
 	public abstract XkbClientMap map();
+	public abstract XkbNames names();
     }
 
     private static final ThreadLocal<Supplier<RuntimeException>> lasterror = new ThreadLocal<>();
@@ -3025,6 +3040,58 @@ public abstract class XLib {
 	    }
 	}
 
+	public static final StructLayout _XkbKeyNameRec = struct(new MemoryLayout[] {
+	    MemoryLayout.sequenceLayout(XkbKeyNameLength, C_CHAR).withName("name"),
+	});
+	public static final StructLayout _XkbNamesRec = struct(new MemoryLayout[] {
+	    C_Atom.withName("keycodes"),
+	    C_Atom.withName("geometry"),
+	    C_Atom.withName("symbols"),
+	    C_Atom.withName("types"),
+	    C_Atom.withName("compat"),
+	    MemoryLayout.sequenceLayout(XkbNumVirtualMods, C_Atom).withName("vmods"),
+	    MemoryLayout.sequenceLayout(XkbNumIndicators, C_Atom).withName("indicators"),
+	    MemoryLayout.sequenceLayout(XkbNumKbdGroups, C_Atom).withName("groups"),
+	    ADDRESS.withName("keys"),
+	    ADDRESS.withName("key_aliases"),
+	    ADDRESS.withName("radio_groups"),
+	    C_Atom.withName("phys_symbols"),
+	    C_CHAR.withName("num_keys"),
+	    C_CHAR.withName("num_key_aliases"),
+	    C_SHORT.withName("num_rg"),
+	});
+	public static class XkbNames extends XLib.XkbNames {
+	    public final XkbDesc xkb;
+
+	    private XkbNames(XkbDesc xkb, MemorySegment mem) {
+		super(mem);
+		this.xkb = xkb;
+	    }
+
+	    protected StructLayout $layout() {return(_XkbNamesRec);}
+
+	    private static final VarHandle vmods = _XkbNamesRec.varHandle(PathElement.groupElement("vmods"), PathElement.sequenceElement());
+	    public Atom[] vmods() {
+		Atom[] ret = new Atom[XkbNumVirtualMods];
+		for(int i = 0; i < XkbNumVirtualMods; i++)
+		    ret[i] = Atom.of((long)vmods.get(mem, 0, i));
+		return(ret);
+	    }
+
+	    private static String name2str(MemorySegment mem) {
+		byte[] name = memcpy(mem, 0, (int)C_CHAR.byteSize() * XkbKeyNameLength);
+		int l = XkbKeyNameLength;
+		while((l > 0) && (name[l - 1] == 0)) l--;
+		return(new String(name, 0, l, Utils.ascii));
+	    }
+
+	    private static final VarHandle keys = _XkbNamesRec.varHandle(PathElement.groupElement("keys"));
+	    private static final VarHandle num_keys = _XkbNamesRec.varHandle(PathElement.groupElement("num_keys"));
+	    public List<String> keys() {return(new MemArray<String>((MemorySegment)keys.get(mem, 0), _XkbKeyNameRec,
+								    (int)num_keys.get(mem, 0) & 0xff,
+								    XkbNames::name2str));}
+	}
+
 	public static final StructLayout _XkbDescRec = struct(new MemoryLayout[] {
 	    ADDRESS.withName("dpy"),
 	    C_SHORT.withName("flags"),
@@ -3058,6 +3125,8 @@ public abstract class XLib {
 
 	    private static final VarHandle map = _XkbDescRec.varHandle(PathElement.groupElement("map"));
 	    public XkbClientMap map() {MemorySegment rv = (MemorySegment)map.get(mem, 0); return(nullp(rv) ? null : new XkbClientMap(this, rv));}
+	    private static final VarHandle names = _XkbDescRec.varHandle(PathElement.groupElement("names"));
+	    public XkbNames names() {MemorySegment rv = (MemorySegment)names.get(mem, 0); return(nullp(rv) ? null : new XkbNames(this, rv));}
 	}
 
 	private final MethodHandle XkbFreeKeyboard = ld.downcallHandle(xlib.find("XkbFreeKeyboard").get(), FunctionDescriptor.ofVoid(ADDRESS, C_INT, C_XBool));

@@ -2369,7 +2369,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	public final int code;
 	public final XID[][] rawsyms;
 	public final Sym[] keysyms;
-	public final String id;
+	public final String id, nm;
 
 	private X11Key(GLXToolkit tk, int code, int group) {
 	    this.code = code;
@@ -2395,6 +2395,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 		this.keysyms = new Sym[0];
 	    }
 	    this.id = ("x11:" + code).intern();
+	    this.nm = xkb.names().keys().get(code);
 	}
 
 	public String id() {return(id);}
@@ -2412,7 +2413,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	}
 
 	public String toString() {
-	    return(String.format("#<x-key %d syms=%s>", code, Arrays.deepToString(keysyms)));
+	    return(String.format("#<x-key %d <%S> syms=%s>", code, nm, Arrays.deepToString(keysyms)));
 	}
     }
 
