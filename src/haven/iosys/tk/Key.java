@@ -257,6 +257,22 @@ public interface Key {
 	public final static Set<Std> ALL = new HashSet<Std>(Arrays.asList(Std.values()));
     }
 
+    public static interface Loc {
+	public String id();
+
+	public static enum Std implements Loc {
+	    ESC,  FK01, FK02, FK03, FK04, FK05, FK06, FK07, FK08, FK09, FK10, FK11, FK12,         PRSC, SCLK, PAUS,
+
+	    TLDE, AE01, AE02, AE03, AE04, AE05, AE06, AE07, AE08, AE09, AE10, AE11, AE12, BKSP,   INS,  HOME, PGUP,   NMLK, KPDV, KPMU, KPSU,
+	    TAB,  AD01, AD02, AD03, AD04, AD05, AD06, AD07, AD08, AD09, AD10, AD11, AD12,         DEL,  END,  PGDN,   KP7,  KP8,  KP9,  KPAD,
+	    CAPS, AC01, AC02, AC03, AC04, AC05, AC06, AC07, AC08, AC09, AC10, AC11, BKSL, RTRN,                       KP4,  KP5,  KP6,
+	    LFSH, LSGT, AB01, AB02, AB03, AB04, AB05, AB06, AB07, AB08, AB09, AB10,       RTSH,         UP,           KP1,  KP2,  KP3,  KPEN,
+	    LCTL, LWIN, LALT,                   SPCE,                   RALT, RWIN, COMP, RCTL,   LEFT, DOWN, RGHT,   KP0,        KPDL;
+
+	    public String id() {return(("std:" + this.name()).intern());}
+	}
+    }
+
     public static enum Mod {
 	SHIFT, CONTROL, META, ALT, SUPER, ALTGR
     }

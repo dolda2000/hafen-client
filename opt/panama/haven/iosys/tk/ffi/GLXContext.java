@@ -2097,6 +2097,18 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	    return(ret);
 	}
 
+	private Key.Loc getkeyloc(int keycode) {
+	    if((keycode < xkb.min_key_code()) || (keycode > xkb.max_key_code()))
+		return(null);
+	    String nm = xkb.names().keys().get(keycode);
+	    if((nm == null) || (nm.length() == 0))
+		return(null);
+	    Key.Loc ret = stdkeys.get(nm);
+	    if(ret == null)
+		return(new X11KeyName(nm));
+	    return(ret);
+	}
+
 	public class DesktopPicker implements FilePicker.Factory {
 	    public final DesktopPortal.FileChooser iface;
 
@@ -2343,6 +2355,17 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	return(ret);
     }
 
+    public static class X11KeyName implements Key.Loc {
+	public final String nm;
+
+	public X11KeyName(String nm) {
+	    this.nm = nm;
+	}
+
+	public String id() {return(("xkb:" + nm).intern());}
+	public String toString() {return("<" + nm + ">");}
+    }
+
     public static class X11Keysym implements Key.Sym {
 	public final XID sym;
 	public final String id, nm;
@@ -2369,7 +2392,8 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	public final int code;
 	public final XID[][] rawsyms;
 	public final Sym[] keysyms;
-	public final String id, nm;
+	public final String id;
+	public final Loc loc;
 
 	private X11Key(GLXToolkit tk, int code, int group) {
 	    this.code = code;
@@ -2395,10 +2419,14 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 		this.keysyms = new Sym[0];
 	    }
 	    this.id = ("x11:" + code).intern();
-	    this.nm = xkb.names().keys().get(code);
+	    this.loc = tk.getkeyloc(code);
 	}
 
 	public String id() {return(id);}
+
+	public Loc location() {
+	    return(loc);
+	}
 
 	public Sym primary() {
 	    return((keysyms.length > 0) ? keysyms[0] : null);
@@ -2413,7 +2441,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	}
 
 	public String toString() {
-	    return(String.format("#<x-key %d <%S> syms=%s>", code, nm, Arrays.deepToString(keysyms)));
+	    return(String.format("#<x-key %d %S syms=%s>", code, loc, Arrays.deepToString(keysyms)));
 	}
     }
 
@@ -2628,5 +2656,37 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	.put(XK_F16, F16)                  .put(XK_F17, F17)                .put(XK_F18, F18)
 	.put(XK_F19, F19)                  .put(XK_F20, F20)                .put(XK_F21, F21)
 	.put(XK_F22, F22)                  .put(XK_F23, F23)                .put(XK_F24, F24)
+	.map();
+
+    public static final Map<String, Key.Loc.Std> stdkeys = Utils.<String, Key.Loc.Std>map()
+	.put("ESC",  Key.Loc.Std.ESC ).put("FK01", Key.Loc.Std.FK01).put("FK02", Key.Loc.Std.FK02).put("FK03", Key.Loc.Std.FK03).put("FK04", Key.Loc.Std.FK04)
+	.put("FK05", Key.Loc.Std.FK05).put("FK06", Key.Loc.Std.FK06).put("FK07", Key.Loc.Std.FK07).put("FK08", Key.Loc.Std.FK08).put("FK09", Key.Loc.Std.FK09)
+	.put("FK10", Key.Loc.Std.FK10).put("FK11", Key.Loc.Std.FK11).put("FK12", Key.Loc.Std.FK12).put("PRSC", Key.Loc.Std.PRSC).put("SCLK", Key.Loc.Std.SCLK)
+	.put("PAUS", Key.Loc.Std.PAUS)
+
+	.put("TLDE", Key.Loc.Std.TLDE).put("AE01", Key.Loc.Std.AE01).put("AE02", Key.Loc.Std.AE02).put("AE03", Key.Loc.Std.AE03).put("AE04", Key.Loc.Std.AE04)
+	.put("AE05", Key.Loc.Std.AE05).put("AE06", Key.Loc.Std.AE06).put("AE07", Key.Loc.Std.AE07).put("AE08", Key.Loc.Std.AE08).put("AE09", Key.Loc.Std.AE09)
+	.put("AE10", Key.Loc.Std.AE10).put("AE11", Key.Loc.Std.AE11).put("AE12", Key.Loc.Std.AE12).put("BKSP", Key.Loc.Std.BKSP).put("INS",  Key.Loc.Std.INS)
+	.put("HOME", Key.Loc.Std.HOME).put("PGUP", Key.Loc.Std.PGUP).put("NMLK", Key.Loc.Std.NMLK).put("KPDV", Key.Loc.Std.KPDV).put("KPMU", Key.Loc.Std.KPMU)
+	.put("KPSU", Key.Loc.Std.KPSU)
+
+	.put("TAB",  Key.Loc.Std.TAB ).put("AD01", Key.Loc.Std.AD01).put("AD02", Key.Loc.Std.AD02).put("AD03", Key.Loc.Std.AD03).put("AD04", Key.Loc.Std.AD04)
+	.put("AD05", Key.Loc.Std.AD05).put("AD06", Key.Loc.Std.AD06).put("AD07", Key.Loc.Std.AD07).put("AD08", Key.Loc.Std.AD08).put("AD09", Key.Loc.Std.AD09)
+	.put("AD10", Key.Loc.Std.AD10).put("AD11", Key.Loc.Std.AD11).put("AD12", Key.Loc.Std.AD12).put("DELE", Key.Loc.Std.DEL ).put("END",  Key.Loc.Std.END)
+	.put("PGDN", Key.Loc.Std.PGDN).put("KP7",  Key.Loc.Std.KP7 ).put("KP8",  Key.Loc.Std.KP8 ).put("KP9",  Key.Loc.Std.KP9 ).put("KPAD", Key.Loc.Std.KPAD)
+
+	.put("CAPS", Key.Loc.Std.CAPS).put("AC01", Key.Loc.Std.AC01).put("AC02", Key.Loc.Std.AC02).put("AC03", Key.Loc.Std.AC03).put("AC04", Key.Loc.Std.AC04)
+	.put("AC05", Key.Loc.Std.AC05).put("AC06", Key.Loc.Std.AC06).put("AC07", Key.Loc.Std.AC07).put("AC08", Key.Loc.Std.AC08).put("AC09", Key.Loc.Std.AC09)
+	.put("AC10", Key.Loc.Std.AC10).put("AC11", Key.Loc.Std.AC11).put("BKSL", Key.Loc.Std.BKSL).put("RTRN", Key.Loc.Std.RTRN).put("KP4",  Key.Loc.Std.KP4)
+	.put("KP5",  Key.Loc.Std.KP5 ).put("KP6",  Key.Loc.Std.KP6 )
+
+	.put("LFSH", Key.Loc.Std.LFSH).put("LSGT", Key.Loc.Std.LSGT).put("AB01", Key.Loc.Std.AB01).put("AB02", Key.Loc.Std.AB02).put("AB03", Key.Loc.Std.AB03)
+	.put("AB04", Key.Loc.Std.AB04).put("AB05", Key.Loc.Std.AB05).put("AB06", Key.Loc.Std.AB06).put("AB07", Key.Loc.Std.AB07).put("AB08", Key.Loc.Std.AB08)
+	.put("AB09", Key.Loc.Std.AB09).put("AB10", Key.Loc.Std.AB10).put("RTSH", Key.Loc.Std.RTSH).put("UP",   Key.Loc.Std.UP  ).put("KP1" , Key.Loc.Std.KP1 )
+	.put("KP2",  Key.Loc.Std.KP2 ).put("PK3",  Key.Loc.Std.KP3 ).put("KPEN", Key.Loc.Std.KPEN)
+
+	.put("LCTL", Key.Loc.Std.LCTL).put("LWIN", Key.Loc.Std.LWIN).put("LALT", Key.Loc.Std.LALT).put("SPCE", Key.Loc.Std.SPCE).put("RALT", Key.Loc.Std.RALT)
+	.put("RWIN", Key.Loc.Std.RWIN).put("COMP", Key.Loc.Std.COMP).put("RCTL", Key.Loc.Std.RCTL).put("LEFT", Key.Loc.Std.LEFT).put("DOWN", Key.Loc.Std.DOWN)
+	.put("RGHT", Key.Loc.Std.RGHT).put("KP0",  Key.Loc.Std.KP0 ).put("KPDL", Key.Loc.Std.KPDL)
 	.map();
 }
