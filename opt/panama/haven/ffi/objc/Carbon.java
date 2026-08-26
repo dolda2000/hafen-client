@@ -158,13 +158,13 @@ public abstract class Carbon {
     public static final int kVK_DownArrow = 0x7D;
     public static final int kVK_UpArrow = 0x7E;
 
-    public static final int kVK_ISO_Section = 0x0;
+    public static final int kVK_ISO_Section = 0x0A;
 
     public static final int kVK_JIS_Yen = 0x5D;
     public static final int kVK_JIS_Underscore = 0x5E;
     public static final int kVK_JIS_KeypadComma = 0x5F;
     public static final int kVK_JIS_Eisu = 0x66;
-    public static final int kVK_JIS_Kana = 0x6;
+    public static final int kVK_JIS_Kana = 0x68;
 
     public static final int activeFlag = 1 <<  0;
     public static final int btnState   = 1 <<  7;
