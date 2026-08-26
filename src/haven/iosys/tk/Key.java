@@ -31,6 +31,7 @@ import java.util.*;
 
 public interface Key {
     public String id();
+    public Loc location();
     public Sym primary();
     public Sym primary(Collection<? extends Sym> of);
     public default boolean is(Sym sym) {

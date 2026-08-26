@@ -186,6 +186,17 @@ public class NEWTContext implements Providers.Factory<Toolkit> {
 	    public int hashCode() {return(code);}
 	}
 
+	public static class NEWTKeyCode implements Key.Loc {
+	    public final int code;
+
+	    public NEWTKeyCode(int code) {
+		this.code = code;
+	    }
+
+	    public String id() {return(("newt:" + code).intern());}
+	    public String toString() {return("<" + code + ">");}
+	}
+
 	public static class NEWTKey implements Key {
 	    public final int code, sym;
 	    public final char ch;
@@ -204,6 +215,8 @@ public class NEWTContext implements Providers.Factory<Toolkit> {
 	    public String id() {
 		return(("newt:" + code).intern());
 	    }
+
+	    public Loc location() {return(new NEWTKeyCode(code));}
 
 	    public Sym primary() {
 		if(sstd != null)
