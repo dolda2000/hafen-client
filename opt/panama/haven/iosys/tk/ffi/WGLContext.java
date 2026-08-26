@@ -1227,7 +1227,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	.put( 80, Key.Loc.Std.KP2 ).put( 81, Key.Loc.Std.KP3 ).put(528, Key.Loc.Std.KPEN)
 
 	.put( 29, Key.Loc.Std.LCTL).put(591, Key.Loc.Std.LWIN).put( 56, Key.Loc.Std.LALT).put( 57, Key.Loc.Std.SPCE).put(556, Key.Loc.Std.RALT)
-	.put(592, Key.Loc.Std.RWIN).put(593, Key.Loc.Std.COMP).put(529, Key.Loc.Std.RCTL).put(575, Key.Loc.Std.LEFT).put(580, Key.Loc.Std.DOWN)
+	.put(592, Key.Loc.Std.RWIN).put(593, Key.Loc.Std.MENU).put(529, Key.Loc.Std.RCTL).put(575, Key.Loc.Std.LEFT).put(580, Key.Loc.Std.DOWN)
 	.put(577, Key.Loc.Std.RGHT).put( 82, Key.Loc.Std.KP0 ).put( 83, Key.Loc.Std.KPDL)
 	.map();
 }

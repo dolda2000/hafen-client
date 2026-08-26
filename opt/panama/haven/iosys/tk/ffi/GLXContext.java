@@ -2694,7 +2694,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	.put("KP2",  Key.Loc.Std.KP2 ).put("PK3",  Key.Loc.Std.KP3 ).put("KPEN", Key.Loc.Std.KPEN)
 
 	.put("LCTL", Key.Loc.Std.LCTL).put("LWIN", Key.Loc.Std.LWIN).put("LALT", Key.Loc.Std.LALT).put("SPCE", Key.Loc.Std.SPCE).put("RALT", Key.Loc.Std.RALT)
-	.put("RWIN", Key.Loc.Std.RWIN).put("COMP", Key.Loc.Std.COMP).put("RCTL", Key.Loc.Std.RCTL).put("LEFT", Key.Loc.Std.LEFT).put("DOWN", Key.Loc.Std.DOWN)
+	.put("RWIN", Key.Loc.Std.RWIN).put("MENU", Key.Loc.Std.MENU).put("RCTL", Key.Loc.Std.RCTL).put("LEFT", Key.Loc.Std.LEFT).put("DOWN", Key.Loc.Std.DOWN)
 	.put("RGHT", Key.Loc.Std.RGHT).put("KP0",  Key.Loc.Std.KP0 ).put("KPDL", Key.Loc.Std.KPDL)
 	.map();
 }
