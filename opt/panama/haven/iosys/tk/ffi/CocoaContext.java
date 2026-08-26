@@ -409,7 +409,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    public String id() {return(("osx:" + code).intern());}
-	    public String tostring() {return("<" + code + ">");}
+	    public String toString() {return("<" + code + ">");}
 	}
 
 	public class CocoaKey implements Key {
