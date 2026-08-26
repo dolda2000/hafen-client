@@ -82,6 +82,11 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
     }
 
     public Toolkit open(String... args) {
+	try {
+	    javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
+	} catch(Exception e) {
+	    throw(new RuntimeException(e));
+	}
 	return(mainrun(CocoaToolkit::new));
     }
 
@@ -154,11 +159,6 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	public final NSCursor nocursor = ak.NSCursor(ak.NSImage(cg.CGSize(Coord.of(1, 1))), cg.CGPoint(Coord.z));
 
 	private CocoaToolkit() {
-	    try {
-		javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
-	    } catch(Exception e) {
-		throw(new RuntimeException(e));
-	    }
 	    kbdtype = carb.LMGetKbdType();
 	    for(Carbon.TISInputSource is : carb.TISCreateInputSourceList(false)) {
 		if(is.inputSourceType() == Carbon.kTISTypeKeyboardLayout)
