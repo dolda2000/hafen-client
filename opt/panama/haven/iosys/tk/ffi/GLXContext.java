@@ -810,17 +810,15 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 		    attrs.colormap(colormap);
 		    long evmask = XLib.StructureNotifyMask | XLib.FocusChangeMask | XLib.PropertyChangeMask;
 		    evmask |= XLib.VisibilityChangeMask | XLib.KeyPressMask | XLib.KeyReleaseMask;
-		    try(Aliveness _ = new Aliveness()) {
-			id = xrun(() -> xlib.XCreateWindow(dpy, screen.root(), 0, 0, 1, 1, 0, vis.depth(), XLib.InputOutput, vis.visual(), values, attrs));
-			register(this);
-		    }
+		    id = xlib.XCreateWindow(dpy, screen.root(), 0, 0, 1, 1, 0, vis.depth(), XLib.InputOutput, vis.visual(), values, attrs);
+		    register(this);
 		    if(im != null) {
-			ic = xrun(() -> xlib.XCreateIC(im, Utils.<String, Object>map()
-						       .put(XLib.XNInputStyle, imstyle)
-						       .put(XLib.XNClientWindow, id).map()));
+			ic = xlib.XCreateIC(im, Utils.<String, Object>map()
+					    .put(XLib.XNInputStyle, imstyle)
+					    .put(XLib.XNClientWindow, id).map());
 			if(ic != null) {
-			    evmask |= xrun(() -> ((Number)xlib.XGetICValues(ic, Arrays.asList(XLib.XNFilterEvents)).get(XLib.XNFilterEvents))).longValue();
-			    xrun(() -> xlib.XSetICFocus(ic));
+			    evmask |= ((Number)xlib.XGetICValues(ic, Arrays.asList(XLib.XNFilterEvents)).get(XLib.XNFilterEvents)).longValue();
+			    xlib.XSetICFocus(ic);
 			} else {
 			    Warning.warn(String.format("failed to create X11 input context"));
 			}
@@ -831,15 +829,12 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 		    {
 			XIEventMask mask = new XIEventMask(XInput.XIAllMasterDevices);
 			mask.set(XInput.XI_ButtonPress, XInput.XI_ButtonRelease, XInput.XI_Motion, XInput.XI_Enter);
-			xrun(() -> xi.XISelectEvents(dpy, id, Arrays.asList(mask)));
+			xi.XISelectEvents(dpy, id, Arrays.asList(mask));
 		    }
 
-		    xrun(() -> {
-			xlib.XChangeProperty(dpy, id, _NET_WM_PID.id, CARDINAL.id, XLib.PropModeReplace, new long[] {libc.getpid()});
-			xlib.XChangeProperty(dpy, id, WM_PROTOCOLS.id, ATOM.id, XLib.PropModeReplace, new Atom[] {WM_DELETE_WINDOW.id, _NET_WM_PING.id});
-		    });
-		    long barda = evmask;
-		    xrun(() -> xlib.XSelectInput(dpy, id, barda));
+		    xlib.XChangeProperty(dpy, id, _NET_WM_PID.id, CARDINAL.id, XLib.PropModeReplace, new long[] {libc.getpid()});
+		    xlib.XChangeProperty(dpy, id, WM_PROTOCOLS.id, ATOM.id, XLib.PropModeReplace, new Atom[] {WM_DELETE_WINDOW.id, _NET_WM_PING.id});
+		    xlib.XSelectInput(dpy, id, evmask);
 
 		    done = true;
 		} finally {
@@ -1826,7 +1821,9 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	}
 
 	public Windeye window() {
-	    return(new GLXWindow());
+	    try(Aliveness _ = new Aliveness()) {
+		return(xrun(GLXWindow::new));
+	    }
 	}
 
 	public class SelectionRequest implements EventWindow {
