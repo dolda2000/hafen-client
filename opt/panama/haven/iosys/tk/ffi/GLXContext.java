@@ -140,6 +140,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	public final XIM im;
 	public final long imstyle;
 	public final XkbDesc xkb;
+	public final Map<Integer, Key.Loc> keylocmap;
 	public final int mod_alt, mod_meta, mod_altgr, mod_super;
 	public final Map<Integer, Integer> rmodmap = new HashMap<>();
 	public final Map<Integer, XIPointerInfo> pointers = new HashMap<>();
@@ -319,6 +320,34 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	    return(ret);
 	}
 
+	public Map<Integer, Key.Loc> keylocmap(XkbDesc xkb) {
+	    Map<Integer, Key.Loc> map = new HashMap<>();
+	    Map<String, Integer> nonstd = new HashMap<>();
+	    List<String> keys = xkb.names().keys();
+	    for(int i = 0; i < keys.size(); i++) {
+		String nm = keys.get(i);
+		if((nm == null) || (nm.length() == 0))
+		    continue;
+		Key.Loc.Std std = stdkeys.get(nm);
+		if(std != null)
+		    map.put(i, std);
+		else
+		    nonstd.put(nm, i);
+	    }
+	    for(Pair<String, String> alias : xkb.names().key_aliases()) {
+		Key.Loc.Std std = stdkeys.get(alias.b);
+		if(std == null)
+		    continue;
+		Integer code = nonstd.remove(alias.a);
+		if(code == null)
+		    continue;
+		map.put(code, std);
+	    }
+	    for(Map.Entry<String, Integer> rem : nonstd.entrySet())
+		map.put(rem.getValue(), new X11KeyName(rem.getKey()));
+	    return(map);
+	}
+
 	public GLXToolkit(String display, int nscreen) {
 	    boolean done = false;
 	    try {
@@ -402,6 +431,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 				       XLib.XkbKeycodesNameMask | XLib.XkbSymbolsNameMask
 				     | XLib.XkbKeyNamesMask | XLib.XkbKeyAliasesMask,
 				     xkb);
+		    keylocmap = keylocmap(xkb);
 
 		    int[][] modmap = xlib.XGetModifierMapping(dpy).mapping();
 		    for(int i = 0; i < 8; i++) {
@@ -2095,15 +2125,10 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	}
 
 	private Key.Loc getkeyloc(int keycode) {
-	    if((keycode < xkb.min_key_code()) || (keycode > xkb.max_key_code()))
-		return(new X11KeyCode(keycode));
-	    String nm = xkb.names().keys().get(keycode);
-	    if((nm == null) || (nm.length() == 0))
-		return(new X11KeyCode(keycode));
-	    Key.Loc ret = stdkeys.get(nm);
-	    if(ret == null)
-		return(new X11KeyName(nm));
-	    return(ret);
+	    Key.Loc mapped = keylocmap.get(keycode);
+	    if(mapped != null)
+		return(mapped);
+	    return(new X11KeyCode(keycode));
 	}
 
 	public class DesktopPicker implements FilePicker.Factory {
