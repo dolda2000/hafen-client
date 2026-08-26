@@ -2099,10 +2099,10 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 
 	private Key.Loc getkeyloc(int keycode) {
 	    if((keycode < xkb.min_key_code()) || (keycode > xkb.max_key_code()))
-		return(null);
+		return(new X11KeyCode(keycode));
 	    String nm = xkb.names().keys().get(keycode);
 	    if((nm == null) || (nm.length() == 0))
-		return(null);
+		return(new X11KeyCode(keycode));
 	    Key.Loc ret = stdkeys.get(nm);
 	    if(ret == null)
 		return(new X11KeyName(nm));
@@ -2353,6 +2353,17 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	    }
 	}
 	return(ret);
+    }
+
+    public static class X11KeyCode implements Key.Loc {
+	public final int code;
+
+	public X11KeyCode(int code) {
+	    this.code = code;
+	}
+
+	public String id() {return(("x11:" + code).intern());}
+	public String toString() {return("<" + code + ">");}
     }
 
     public static class X11KeyName implements Key.Loc {
