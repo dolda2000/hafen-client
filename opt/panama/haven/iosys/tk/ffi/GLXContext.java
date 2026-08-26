@@ -400,7 +400,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 					 XLib.XkbUseCoreKbd);
 		    xlib.XkbGetNames(dpy,
 				       XLib.XkbKeycodesNameMask | XLib.XkbSymbolsNameMask
-				     | XLib.XkbKeyNamesMask | XLib.XkbVirtualModNamesMask,
+				     | XLib.XkbKeyNamesMask | XLib.XkbKeyAliasesMask,
 				     xkb);
 
 		    int[][] modmap = xlib.XGetModifierMapping(dpy).mapping();

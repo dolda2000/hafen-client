@@ -855,6 +855,7 @@ public abstract class XLib {
 
 	public abstract Atom[] vmods();
 	public abstract List<String> keys();
+	public abstract List<Pair<String, String>> key_aliases();
     }
 
     public static abstract class XkbDesc extends StructInstance {
@@ -3043,6 +3044,10 @@ public abstract class XLib {
 	public static final StructLayout _XkbKeyNameRec = struct(new MemoryLayout[] {
 	    MemoryLayout.sequenceLayout(XkbKeyNameLength, C_CHAR).withName("name"),
 	});
+	public static final StructLayout _XkbKeyAliasRec = struct(new MemoryLayout[] {
+	    MemoryLayout.sequenceLayout(XkbKeyNameLength, C_CHAR).withName("real"),
+	    MemoryLayout.sequenceLayout(XkbKeyNameLength, C_CHAR).withName("alias"),
+	});
 	public static final StructLayout _XkbNamesRec = struct(new MemoryLayout[] {
 	    C_Atom.withName("keycodes"),
 	    C_Atom.withName("geometry"),
@@ -3085,11 +3090,26 @@ public abstract class XLib {
 		return(new String(name, 0, l, Utils.ascii));
 	    }
 
+	    private static final long kar_real = _XkbKeyAliasRec.byteOffset(PathElement.groupElement("real"));
+	    private static final long kar_alias = _XkbKeyAliasRec.byteOffset(PathElement.groupElement("alias"));
+	    private static Pair<String, String> alias2pair(MemorySegment mem) {
+		return(Pair.of(name2str(mem.asSlice(kar_real,  _XkbKeyNameRec.byteSize())),
+			       name2str(mem.asSlice(kar_alias, _XkbKeyNameRec.byteSize()))));
+	    }
+
 	    private static final VarHandle keys = _XkbNamesRec.varHandle(PathElement.groupElement("keys"));
 	    private static final VarHandle num_keys = _XkbNamesRec.varHandle(PathElement.groupElement("num_keys"));
 	    public List<String> keys() {return(new MemArray<String>((MemorySegment)keys.get(mem, 0), _XkbKeyNameRec,
 								    (int)num_keys.get(mem, 0) & 0xff,
 								    XkbNames::name2str));}
+
+	    private static final VarHandle key_aliases = _XkbNamesRec.varHandle(PathElement.groupElement("key_aliases"));
+	    private static final VarHandle num_key_aliases = _XkbNamesRec.varHandle(PathElement.groupElement("num_key_aliases"));
+	    public List<Pair<String, String>> key_aliases() {
+		return(new MemArray<Pair<String, String>>((MemorySegment)key_aliases.get(mem, 0), _XkbKeyAliasRec,
+							  (int)num_key_aliases.get(mem, 0) & 0xff,
+							  XkbNames::alias2pair));
+	    }
 	}
 
 	public static final StructLayout _XkbDescRec = struct(new MemoryLayout[] {
