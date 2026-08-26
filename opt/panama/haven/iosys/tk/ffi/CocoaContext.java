@@ -401,10 +401,22 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    return(ret);
 	}
 
+	public static class CocoaKeyCode implements Key.Loc {
+	    public int code;
+
+	    public CocoaKeyCode(int code) {
+		this.code = code;
+	    }
+
+	    public String id() {return(("osx:" + code).intern());}
+	    public String tostring() {return("<" + code + ">");}
+	}
+
 	public class CocoaKey implements Key {
 	    public final String playout;
 	    public final int kc;
 	    public final Sym[] syms;
+	    public final Loc loc;
 
 	    public CocoaKey(int kc) {
 		this.kc = kc;
@@ -423,11 +435,15 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		}
 		this.syms = syms.toArray(new Sym[0]);
 		this.playout = playout;
+		Loc loc = stdkeys.get(kc);
+		this.loc = (loc == null) ? new CocoaKeyCode(kc) : loc;
 	    }
 
 	    public String id() {
 		return(("osx:" + kc).intern());
 	    }
+
+	    public Loc location() {return(loc);}
 
 	    public Sym primary() {
 		if(syms.length > 0)
@@ -448,7 +464,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    public boolean equals(Object x) {return((x instanceof CocoaKey) && equals((CocoaKey)x));}
 
 	    public String toString() {
-		return(String.format("#<osxkey kc=%x syms=%s>", kc, Arrays.deepToString(syms)));
+		return(String.format("#<osxkey kc=%x %s syms=%s>", kc, loc, Arrays.deepToString(syms)));
 	    }
 	}
 
@@ -979,4 +995,35 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
 	LEFTBRACKET, BACKSLASH, RIGHTBRACKET,
     });
+
+    public static final Map<Integer, Key.Loc.Std> stdkeys = Utils.<Integer, Key.Loc.Std>map()
+	.put(kVK_Escape,  Key.Loc.Std.ESC).put(kVK_F1, Key.Loc.Std.FK01).put(kVK_F2, Key.Loc.Std.FK02).put(kVK_F3, Key.Loc.Std.FK03).put(kVK_F4, Key.Loc.Std.FK04)
+	.put(kVK_F5, Key.Loc.Std.FK05).put(kVK_F6, Key.Loc.Std.FK06).put(kVK_F7, Key.Loc.Std.FK07).put(kVK_F8, Key.Loc.Std.FK08).put(kVK_F9, Key.Loc.Std.FK09)
+	.put(kVK_F10, Key.Loc.Std.FK10).put(kVK_F11, Key.Loc.Std.FK11).put(kVK_F12, Key.Loc.Std.FK12).put(kVK_F13, Key.Loc.Std.PRSC).put(kVK_F14, Key.Loc.Std.SCLK).put(kVK_F15, Key.Loc.Std.PAUS)
+
+	.put(kVK_ANSI_Grave, Key.Loc.Std.TLDE).put(kVK_ANSI_1, Key.Loc.Std.AE01).put(kVK_ANSI_2, Key.Loc.Std.AE02).put(kVK_ANSI_3, Key.Loc.Std.AE03).put(kVK_ANSI_4, Key.Loc.Std.AE04)
+	.put(kVK_ANSI_5, Key.Loc.Std.AE05).put(kVK_ANSI_6, Key.Loc.Std.AE06).put(kVK_ANSI_7, Key.Loc.Std.AE07).put(kVK_ANSI_8, Key.Loc.Std.AE08).put(kVK_ANSI_9, Key.Loc.Std.AE09)
+	.put(kVK_ANSI_0, Key.Loc.Std.AE10).put(kVK_ANSI_Minus, Key.Loc.Std.AE11).put(kVK_ANSI_Equal, Key.Loc.Std.AE12).put(kVK_Delete, Key.Loc.Std.BKSP).put(kVK_Help, Key.Loc.Std.INS)
+	.put(kVK_Home, Key.Loc.Std.HOME).put(kVK_PageUp, Key.Loc.Std.PGUP).put(kVK_ANSI_KeypadClear, Key.Loc.Std.NMLK).put(kVK_ANSI_KeypadEquals, Key.Loc.Std.KPDV).put(kVK_ANSI_KeypadDivide, Key.Loc.Std.KPMU)
+	.put(kVK_ANSI_KeypadMultiply, Key.Loc.Std.KPSU)
+
+	.put(kVK_Tab,  Key.Loc.Std.TAB).put(kVK_ANSI_Q, Key.Loc.Std.AD01).put(kVK_ANSI_W, Key.Loc.Std.AD02).put(kVK_ANSI_E, Key.Loc.Std.AD03).put(kVK_ANSI_R, Key.Loc.Std.AD04)
+	.put(kVK_ANSI_T, Key.Loc.Std.AD05).put(kVK_ANSI_Y, Key.Loc.Std.AD06).put(kVK_ANSI_U, Key.Loc.Std.AD07).put(kVK_ANSI_I, Key.Loc.Std.AD08).put(kVK_ANSI_O, Key.Loc.Std.AD09)
+	.put(kVK_ANSI_P, Key.Loc.Std.AD10).put(kVK_ANSI_LeftBracket, Key.Loc.Std.AD11).put(kVK_ANSI_RightBracket, Key.Loc.Std.AD12).put(kVK_ForwardDelete, Key.Loc.Std.DEL).put(kVK_End,  Key.Loc.Std.END)
+	.put(kVK_PageDown, Key.Loc.Std.PGDN).put(kVK_ANSI_Keypad7,  Key.Loc.Std.KP7).put(kVK_ANSI_Keypad8,  Key.Loc.Std.KP8).put(kVK_ANSI_Keypad9,  Key.Loc.Std.KP9).put(kVK_ANSI_Minus, Key.Loc.Std.KPAD)
+
+	.put(kVK_CapsLock, Key.Loc.Std.CAPS).put(kVK_ANSI_A, Key.Loc.Std.AC01).put(kVK_ANSI_S, Key.Loc.Std.AC02).put(kVK_ANSI_D, Key.Loc.Std.AC03).put(kVK_ANSI_F, Key.Loc.Std.AC04)
+	.put(kVK_ANSI_G, Key.Loc.Std.AC05).put(kVK_ANSI_H, Key.Loc.Std.AC06).put(kVK_ANSI_J, Key.Loc.Std.AC07).put(kVK_ANSI_K, Key.Loc.Std.AC08).put(kVK_ANSI_L, Key.Loc.Std.AC09)
+	.put(kVK_ANSI_Semicolon, Key.Loc.Std.AC10).put(kVK_ANSI_Quote, Key.Loc.Std.AC11).put(kVK_ANSI_Backslash, Key.Loc.Std.BKSL).put(kVK_Return, Key.Loc.Std.RTRN).put(kVK_ANSI_Keypad4,  Key.Loc.Std.KP4)
+	.put(kVK_ANSI_Keypad5,  Key.Loc.Std.KP5).put(kVK_ANSI_Keypad6,  Key.Loc.Std.KP6)
+
+	.put(kVK_Shift, Key.Loc.Std.LFSH).put(kVK_ISO_Section, Key.Loc.Std.LSGT).put(kVK_ANSI_Z, Key.Loc.Std.AB01).put(kVK_ANSI_X, Key.Loc.Std.AB02).put(kVK_ANSI_C, Key.Loc.Std.AB03)
+	.put(kVK_ANSI_V, Key.Loc.Std.AB04).put(kVK_ANSI_B, Key.Loc.Std.AB05).put(kVK_ANSI_N, Key.Loc.Std.AB06).put(kVK_ANSI_M, Key.Loc.Std.AB07).put(kVK_ANSI_Comma, Key.Loc.Std.AB08)
+	.put(kVK_ANSI_Period, Key.Loc.Std.AB09).put(kVK_ANSI_Slash, Key.Loc.Std.AB10).put(kVK_RightShift, Key.Loc.Std.RTSH).put(kVK_UpArrow, Key.Loc.Std.UP  ).put(kVK_ANSI_Keypad1 , Key.Loc.Std.KP1 )
+	.put(kVK_ANSI_Keypad2,  Key.Loc.Std.KP2 ).put(kVK_ANSI_Keypad3,  Key.Loc.Std.KP3 ).put(kVK_ANSI_KeypadEnter, Key.Loc.Std.KPEN)
+
+	.put(kVK_Control, Key.Loc.Std.LCTL).put(kVK_Option, Key.Loc.Std.LWIN).put(kVK_Command, Key.Loc.Std.LALT).put(kVK_Space, Key.Loc.Std.SPCE).put(kVK_RightOption, Key.Loc.Std.RALT)
+	.put(kVK_RightControl, Key.Loc.Std.RCTL).put(kVK_LeftArrow, Key.Loc.Std.LEFT).put(kVK_DownArrow, Key.Loc.Std.DOWN)
+	.put(kVK_RightArrow, Key.Loc.Std.RGHT).put(kVK_ANSI_Keypad0,  Key.Loc.Std.KP0 ).put(kVK_ANSI_KeypadDecimal, Key.Loc.Std.KPDL)
+	.map();
 }

@@ -108,7 +108,7 @@ public abstract class Carbon {
     public static final int kVK_ANSI_Keypad6 = 0x58;
     public static final int kVK_ANSI_Keypad7 = 0x59;
     public static final int kVK_ANSI_Keypad8 = 0x5B;
-    public static final int kVK_ANSI_Keypad9 = 0x5;
+    public static final int kVK_ANSI_Keypad9 = 0x5C;
 
     public static final int kVK_Return = 0x24;
     public static final int kVK_Tab = 0x30;
