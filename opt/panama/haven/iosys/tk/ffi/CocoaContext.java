@@ -1004,13 +1004,13 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	.put(kVK_ANSI_Grave, Key.Loc.Std.TLDE).put(kVK_ANSI_1, Key.Loc.Std.AE01).put(kVK_ANSI_2, Key.Loc.Std.AE02).put(kVK_ANSI_3, Key.Loc.Std.AE03).put(kVK_ANSI_4, Key.Loc.Std.AE04)
 	.put(kVK_ANSI_5, Key.Loc.Std.AE05).put(kVK_ANSI_6, Key.Loc.Std.AE06).put(kVK_ANSI_7, Key.Loc.Std.AE07).put(kVK_ANSI_8, Key.Loc.Std.AE08).put(kVK_ANSI_9, Key.Loc.Std.AE09)
 	.put(kVK_ANSI_0, Key.Loc.Std.AE10).put(kVK_ANSI_Minus, Key.Loc.Std.AE11).put(kVK_ANSI_Equal, Key.Loc.Std.AE12).put(kVK_Delete, Key.Loc.Std.BKSP).put(kVK_Help, Key.Loc.Std.INS)
-	.put(kVK_Home, Key.Loc.Std.HOME).put(kVK_PageUp, Key.Loc.Std.PGUP).put(kVK_ANSI_KeypadClear, Key.Loc.Std.NMLK).put(kVK_ANSI_KeypadEquals, Key.Loc.Std.KPDV).put(kVK_ANSI_KeypadDivide, Key.Loc.Std.KPMU)
-	.put(kVK_ANSI_KeypadMultiply, Key.Loc.Std.KPSU)
+	.put(kVK_Home, Key.Loc.Std.HOME).put(kVK_PageUp, Key.Loc.Std.PGUP).put(kVK_ANSI_KeypadClear, Key.Loc.Std.NMLK).put(kVK_ANSI_KeypadDivide, Key.Loc.Std.KPDV).put(kVK_ANSI_KeypadMultiply, Key.Loc.Std.KPMU)
+	.put(kVK_ANSI_KeypadMinus, Key.Loc.Std.KPSU)
 
 	.put(kVK_Tab,  Key.Loc.Std.TAB).put(kVK_ANSI_Q, Key.Loc.Std.AD01).put(kVK_ANSI_W, Key.Loc.Std.AD02).put(kVK_ANSI_E, Key.Loc.Std.AD03).put(kVK_ANSI_R, Key.Loc.Std.AD04)
 	.put(kVK_ANSI_T, Key.Loc.Std.AD05).put(kVK_ANSI_Y, Key.Loc.Std.AD06).put(kVK_ANSI_U, Key.Loc.Std.AD07).put(kVK_ANSI_I, Key.Loc.Std.AD08).put(kVK_ANSI_O, Key.Loc.Std.AD09)
 	.put(kVK_ANSI_P, Key.Loc.Std.AD10).put(kVK_ANSI_LeftBracket, Key.Loc.Std.AD11).put(kVK_ANSI_RightBracket, Key.Loc.Std.AD12).put(kVK_ForwardDelete, Key.Loc.Std.DEL).put(kVK_End,  Key.Loc.Std.END)
-	.put(kVK_PageDown, Key.Loc.Std.PGDN).put(kVK_ANSI_Keypad7,  Key.Loc.Std.KP7).put(kVK_ANSI_Keypad8,  Key.Loc.Std.KP8).put(kVK_ANSI_Keypad9,  Key.Loc.Std.KP9).put(kVK_ANSI_KeypadMinus, Key.Loc.Std.KPAD)
+	.put(kVK_PageDown, Key.Loc.Std.PGDN).put(kVK_ANSI_Keypad7,  Key.Loc.Std.KP7).put(kVK_ANSI_Keypad8,  Key.Loc.Std.KP8).put(kVK_ANSI_Keypad9,  Key.Loc.Std.KP9).put(kVK_ANSI_KeypadPlus, Key.Loc.Std.KPAD)
 
 	.put(kVK_CapsLock, Key.Loc.Std.CAPS).put(kVK_ANSI_A, Key.Loc.Std.AC01).put(kVK_ANSI_S, Key.Loc.Std.AC02).put(kVK_ANSI_D, Key.Loc.Std.AC03).put(kVK_ANSI_F, Key.Loc.Std.AC04)
 	.put(kVK_ANSI_G, Key.Loc.Std.AC05).put(kVK_ANSI_H, Key.Loc.Std.AC06).put(kVK_ANSI_J, Key.Loc.Std.AC07).put(kVK_ANSI_K, Key.Loc.Std.AC08).put(kVK_ANSI_L, Key.Loc.Std.AC09)
@@ -1023,7 +1023,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	.put(kVK_ANSI_Keypad2,  Key.Loc.Std.KP2 ).put(kVK_ANSI_Keypad3,  Key.Loc.Std.KP3 ).put(kVK_ANSI_KeypadEnter, Key.Loc.Std.KPEN)
 
 	.put(kVK_Control, Key.Loc.Std.LCTL).put(kVK_Option, Key.Loc.Std.LWIN).put(kVK_Command, Key.Loc.Std.LALT).put(kVK_Space, Key.Loc.Std.SPCE).put(kVK_RightOption, Key.Loc.Std.RALT)
-	.put(kVK_RightControl, Key.Loc.Std.RCTL).put(kVK_LeftArrow, Key.Loc.Std.LEFT).put(kVK_DownArrow, Key.Loc.Std.DOWN)
+	.put(0x6e, Key.Loc.Std.COMP).put(kVK_RightControl, Key.Loc.Std.RCTL).put(kVK_LeftArrow, Key.Loc.Std.LEFT).put(kVK_DownArrow, Key.Loc.Std.DOWN)
 	.put(kVK_RightArrow, Key.Loc.Std.RGHT).put(kVK_ANSI_Keypad0,  Key.Loc.Std.KP0 ).put(kVK_ANSI_KeypadDecimal, Key.Loc.Std.KPDL)
 	.map();
 }
