@@ -54,15 +54,11 @@ public class QuestWnd extends Widget {
 	public final int id;
 	public Indir<Resource> res;
 	public String title;
-	public int done;
+	public int done, ncond, ndcond;
 	public int mtime;
 
-	private Quest(int id, Indir<Resource> res, String title, int done, int mtime) {
+	private Quest(int id) {
 	    this.id = id;
-	    this.res = res;
-	    this.title = title;
-	    this.done = done;
-	    this.mtime = mtime;
 	}
 
 	public String title() {
@@ -524,7 +520,8 @@ public class QuestWnd extends Widget {
     }
 
     public class QuestList extends SListBox<Quest, Widget> {
-	public List<Quest> quests = new ArrayList<Quest>();
+	public final List<Quest> quests = new ArrayList<Quest>();
+	public final boolean showcond;
 	private boolean loading = false;
 	private final Comparator<Quest> comp = new Comparator<Quest>() {
 	    public int compare(Quest a, Quest b) {
@@ -532,8 +529,9 @@ public class QuestWnd extends Widget {
 	    }
 	};
 
-	public QuestList(Coord sz) {
+	public QuestList(Coord sz, boolean showcond) {
 	    super(sz, attrf.height() + UI.scale(2));
+	    this.showcond = showcond;
 	}
 
 	protected List<Quest> items() {return(quests);}
@@ -550,11 +548,29 @@ public class QuestWnd extends Widget {
 	public class Item extends Widget {
 	    public final Quest q;
 	    private final IconText nm;
+	    private final TextItem conds;
 	    private Object dres, dtit;
 
 	    public Item(Coord sz, Quest q) {
 		super(sz);
 		this.q = q;
+		if(showcond) {
+		    this.conds = new TextItem(UI.scale(30)) {
+			int sd = 01;
+
+			public String text() {
+			    return(String.format("%d/%d", sd = q.ndcond, q.ncond));
+			}
+
+			public boolean valid(String text) {
+			    return(sd == q.ndcond);
+			}
+		    };
+		    add(this.conds, sz.x - this.conds.sz.x, (sz.y - this.conds.sz.y) / 2);
+		    sz = Coord.of(this.conds.c.x, sz.y);
+		} else {
+		    conds = null;
+		}
 		this.nm = new IconText(sz) {
 			protected BufferedImage img() {return(q.res.get().flayer(Resource.imgc).img);}
 			protected String text() {return(q.title());}
@@ -653,12 +669,12 @@ public class QuestWnd extends Widget {
 	Tabs lists = new Tabs(prev.pos("bl").x(width + UI.scale(5)), Coord.z, this);
 	Tabs.Tab cqst = lists.add();
 	{
-	    this.cqst = cqst.add(new QuestList(Coord.of(attrw, height - Button.hs - UI.scale(5))), wbox.btloff());
+	    this.cqst = cqst.add(new QuestList(Coord.of(attrw, height - Button.hs - UI.scale(5)), true), wbox.btloff());
 	    Frame.around(cqst, Collections.singletonList(this.cqst));
 	}
 	Tabs.Tab dqst = lists.add();
 	{
-	    this.dqst = dqst.add(new QuestList(Coord.of(attrw, height - Button.hs - UI.scale(5))), wbox.btloff());
+	    this.dqst = dqst.add(new QuestList(Coord.of(attrw, height - Button.hs - UI.scale(5)), false), wbox.btloff());
 	    Frame.around(dqst, Collections.singletonList(this.dqst));
 	}
 	lists.pack();
@@ -681,42 +697,40 @@ public class QuestWnd extends Widget {
 
     public void uimsg(String nm, Object... args) {
 	if(nm == "quests") {
-	    for(int i = 0; i < args.length;) {
-		int id = INT.of(args[i++]);
-		Indir<Resource> res = ui.sess.getresv(args[i++]);
-		if(res != null) {
-		    int st = INT.of(args[i++]);
-		    int mtime = INT.of(args[i++]);
-		    String title = null;
-		    if((i < args.length) && STR.is(args[i]))
-			title = STR.of(args[i++]);
-		    QuestList cl = cqst;
-		    Quest q = cqst.get(id);
-		    if(q == null)
-			q = (cl = dqst).get(id);
-		    if(q == null) {
-			cl = null;
-			q = new Quest(id, res, title, st, mtime);
-		    } else {
-			int fst = q.done;
-			q.res = res;
-			q.done = st;
-			q.mtime = mtime;
-			if(((fst == Quest.QST_PEND) || (fst == Quest.QST_DISABLED)) &&
-			   !((st == Quest.QST_PEND) || (st == Quest.QST_DISABLED)))
-			    q.done(getparent(GameUI.class));
-		    }
-		    QuestList nl = ((q.done == Quest.QST_PEND) || (q.done == Quest.QST_DISABLED)) ? cqst : dqst;
-		    if(nl != cl) {
-			if(cl != null)
-			    cl.remove(q);
-			nl.add(q);
-		    }
-		    nl.loading = true;
-		} else {
+	    for(int i = 0; i < args.length; i++) {
+		Object[] qd = OBJS.of(args[i]);
+		int a = 0;
+		int id = INT.of(qd, a++);
+		if(qd.length == a) {
 		    cqst.remove(id);
 		    dqst.remove(id);
+		    continue;
 		}
+
+		QuestList cl = cqst;
+		Quest q = cqst.get(id);
+		if(q == null)
+		    q = (cl = dqst).get(id);
+		if(q == null) {
+		    cl = null;
+		    q = new Quest(id);
+		}
+
+		q.res = ui.sess.getresv(qd[a++]);
+		q.done = INT.of(qd, a++);
+		q.mtime = INT.of(qd, a++);
+		q.title = STR.is(qd, a) ? STR.of(qd, a++) : null;
+		q.ncond = INT.of(qd, a++);
+		q.ndcond = INT.of(qd, a++);
+		QuestList nl = ((q.done == Quest.QST_PEND) || (q.done == Quest.QST_DISABLED)) ? cqst : dqst;
+		if(nl != cl) {
+		    if(cl != null)
+			cl.remove(q);
+		    nl.add(q);
+		}
+		if((cl == cqst) && (nl == dqst))
+		    q.done(getparent(GameUI.class));
+		nl.loading = true;
 	    }
 	} else {
 	    super.uimsg(nm, args);
