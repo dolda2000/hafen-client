@@ -313,7 +313,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    public boolean equals(NamedSym that) {return(this.nm.equals(that.nm));}
 	    public boolean equals(Object x) {return((x instanceof NamedSym) && equals((NamedSym)x));}
 
-	    public String toString() {return(String.format("{" + nm + "}"));}
+	    public String toString() {return("{" + nm + "}");}
 	}
 
 	public class CodeSym implements Key.Sym {
@@ -1010,7 +1010,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	.put(kVK_Tab,  Key.Loc.Std.TAB).put(kVK_ANSI_Q, Key.Loc.Std.AD01).put(kVK_ANSI_W, Key.Loc.Std.AD02).put(kVK_ANSI_E, Key.Loc.Std.AD03).put(kVK_ANSI_R, Key.Loc.Std.AD04)
 	.put(kVK_ANSI_T, Key.Loc.Std.AD05).put(kVK_ANSI_Y, Key.Loc.Std.AD06).put(kVK_ANSI_U, Key.Loc.Std.AD07).put(kVK_ANSI_I, Key.Loc.Std.AD08).put(kVK_ANSI_O, Key.Loc.Std.AD09)
 	.put(kVK_ANSI_P, Key.Loc.Std.AD10).put(kVK_ANSI_LeftBracket, Key.Loc.Std.AD11).put(kVK_ANSI_RightBracket, Key.Loc.Std.AD12).put(kVK_ForwardDelete, Key.Loc.Std.DEL).put(kVK_End,  Key.Loc.Std.END)
-	.put(kVK_PageDown, Key.Loc.Std.PGDN).put(kVK_ANSI_Keypad7,  Key.Loc.Std.KP7).put(kVK_ANSI_Keypad8,  Key.Loc.Std.KP8).put(kVK_ANSI_Keypad9,  Key.Loc.Std.KP9).put(kVK_ANSI_Minus, Key.Loc.Std.KPAD)
+	.put(kVK_PageDown, Key.Loc.Std.PGDN).put(kVK_ANSI_Keypad7,  Key.Loc.Std.KP7).put(kVK_ANSI_Keypad8,  Key.Loc.Std.KP8).put(kVK_ANSI_Keypad9,  Key.Loc.Std.KP9).put(kVK_ANSI_KeypadMinus, Key.Loc.Std.KPAD)
 
 	.put(kVK_CapsLock, Key.Loc.Std.CAPS).put(kVK_ANSI_A, Key.Loc.Std.AC01).put(kVK_ANSI_S, Key.Loc.Std.AC02).put(kVK_ANSI_D, Key.Loc.Std.AC03).put(kVK_ANSI_F, Key.Loc.Std.AC04)
 	.put(kVK_ANSI_G, Key.Loc.Std.AC05).put(kVK_ANSI_H, Key.Loc.Std.AC06).put(kVK_ANSI_J, Key.Loc.Std.AC07).put(kVK_ANSI_K, Key.Loc.Std.AC08).put(kVK_ANSI_L, Key.Loc.Std.AC09)
