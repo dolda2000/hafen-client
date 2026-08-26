@@ -1203,12 +1203,12 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	.put(  1, Key.Loc.Std.ESC ).put( 59, Key.Loc.Std.FK01).put( 60, Key.Loc.Std.FK02).put( 61, Key.Loc.Std.FK03).put( 62, Key.Loc.Std.FK04)
 	.put( 63, Key.Loc.Std.FK05).put( 64, Key.Loc.Std.FK06).put( 65, Key.Loc.Std.FK07).put( 66, Key.Loc.Std.FK08).put( 67, Key.Loc.Std.FK09)
 	.put( 68, Key.Loc.Std.FK10).put( 87, Key.Loc.Std.FK11).put( 88, Key.Loc.Std.FK12).put( 84, Key.Loc.Std.PRSC).put( 70, Key.Loc.Std.SCLK)
-	.put(570, Key.Loc.Std.PAUS)
+	.put( 69, Key.Loc.Std.PAUS).put(570, Key.Loc.Std.PAUS)
 
 	.put( 41, Key.Loc.Std.TLDE).put(  2, Key.Loc.Std.AE01).put(  3, Key.Loc.Std.AE02).put(  4, Key.Loc.Std.AE03).put(  5, Key.Loc.Std.AE04)
 	.put(  6, Key.Loc.Std.AE05).put(  7, Key.Loc.Std.AE06).put(  8, Key.Loc.Std.AE07).put(  9, Key.Loc.Std.AE08).put( 10, Key.Loc.Std.AE09)
 	.put( 11, Key.Loc.Std.AE10).put( 12, Key.Loc.Std.AE11).put( 13, Key.Loc.Std.AE12).put( 14, Key.Loc.Std.BKSP).put(582, Key.Loc.Std.INS )
-	.put(571, Key.Loc.Std.HOME).put(573, Key.Loc.Std.PGUP).put( 69, Key.Loc.Std.NMLK).put(553, Key.Loc.Std.KPDV).put( 55, Key.Loc.Std.KPMU)
+	.put(571, Key.Loc.Std.HOME).put(573, Key.Loc.Std.PGUP).put(569, Key.Loc.Std.NMLK).put(553, Key.Loc.Std.KPDV).put( 55, Key.Loc.Std.KPMU)
 	.put( 74, Key.Loc.Std.KPSU)
 
 	.put( 15, Key.Loc.Std.TAB ).put( 16, Key.Loc.Std.AD01).put( 17, Key.Loc.Std.AD02).put( 18, Key.Loc.Std.AD03).put( 19, Key.Loc.Std.AD04)
