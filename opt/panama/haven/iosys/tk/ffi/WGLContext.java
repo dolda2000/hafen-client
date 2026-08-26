@@ -496,16 +496,30 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	    }
 	}
 
+	public static class W32ScanCode implements Key.Loc {
+	    public final int sc;
+
+	    public W32ScanCode(int sc) {
+		this.sc = sc;
+	    }
+
+	    public String id() {return(("32:" + sc).intern());}
+	    public String toString() {return("<" + sc + ">");}
+	}
+
 	public class W32Key implements Key {
 	    public final Handle pkl;
 	    public final int vk, sc;
 	    public final boolean ext;
+	    public final Loc loc;
 
 	    public W32Key(Handle pkl, int vk, int sc, boolean ext) {
 		this.pkl = pkl;
 		this.vk = vk;
 		this.sc = sc;
 		this.ext = ext;
+		Loc loc = stdkeys.get(sc + (ext ? 500 : 0));
+		this.loc = (loc != null) ? loc : new W32ScanCode(sc);
 	    }
 
 	    private Sym[] syms = null;
@@ -544,6 +558,8 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		return(("w32:" + sc).intern());
 	    }
 
+	    public Loc location() {return(loc);}
+
 	    public Sym primary() {
 		if(syms().length > 0)
 		    return(syms()[0]);
@@ -564,7 +580,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	    public boolean equals(Object x) {return((x instanceof W32Key) && equals((W32Key)x));}
 
 	    public String toString() {
-		return(String.format("#<winkey vk=%x sc=%x%s syms=%s>", vk, sc, ext ? "(ext)" : "", Arrays.deepToString(syms())));
+		return(String.format("#<winkey vk=%x sc=%x%s %s syms=%s>", vk, sc, ext ? "(ext)" : "", loc, Arrays.deepToString(syms())));
 	    }
 	}
 
@@ -1182,4 +1198,36 @@ public class WGLContext implements Providers.Factory<Toolkit> {
     }
 
     public static final Map<Character, Key.Std> stdcsyms = stdcsyms();
+
+    public static final Map<Integer, Key.Loc.Std> stdkeys = Utils.<Integer, Key.Loc.Std>map()
+	.put(  1, Key.Loc.Std.ESC ).put( 59, Key.Loc.Std.FK01).put( 60, Key.Loc.Std.FK02).put( 61, Key.Loc.Std.FK03).put( 62, Key.Loc.Std.FK04)
+	.put( 63, Key.Loc.Std.FK05).put( 64, Key.Loc.Std.FK06).put( 65, Key.Loc.Std.FK07).put( 66, Key.Loc.Std.FK08).put( 67, Key.Loc.Std.FK09)
+	.put( 68, Key.Loc.Std.FK10).put( 87, Key.Loc.Std.FK11).put( 88, Key.Loc.Std.FK12).put( 84, Key.Loc.Std.PRSC).put( 70, Key.Loc.Std.SCLK)
+	.put(570, Key.Loc.Std.PAUS)
+
+	.put( 41, Key.Loc.Std.TLDE).put(  2, Key.Loc.Std.AE01).put(  3, Key.Loc.Std.AE02).put(  4, Key.Loc.Std.AE03).put(  5, Key.Loc.Std.AE04)
+	.put(  6, Key.Loc.Std.AE05).put(  7, Key.Loc.Std.AE06).put(  8, Key.Loc.Std.AE07).put(  9, Key.Loc.Std.AE08).put( 10, Key.Loc.Std.AE09)
+	.put( 11, Key.Loc.Std.AE10).put( 12, Key.Loc.Std.AE11).put( 13, Key.Loc.Std.AE12).put( 14, Key.Loc.Std.BKSP).put(582, Key.Loc.Std.INS )
+	.put(571, Key.Loc.Std.HOME).put(573, Key.Loc.Std.PGUP).put( 69, Key.Loc.Std.NMLK).put(553, Key.Loc.Std.KPDV).put( 55, Key.Loc.Std.KPMU)
+	.put( 74, Key.Loc.Std.KPSU)
+
+	.put( 15, Key.Loc.Std.TAB ).put( 16, Key.Loc.Std.AD01).put( 17, Key.Loc.Std.AD02).put( 18, Key.Loc.Std.AD03).put( 19, Key.Loc.Std.AD04)
+	.put( 20, Key.Loc.Std.AD05).put( 21, Key.Loc.Std.AD06).put( 22, Key.Loc.Std.AD07).put( 23, Key.Loc.Std.AD08).put( 24, Key.Loc.Std.AD09)
+	.put( 25, Key.Loc.Std.AD10).put( 26, Key.Loc.Std.AD11).put( 27, Key.Loc.Std.AD12).put(583, Key.Loc.Std.DEL ).put(579, Key.Loc.Std.END )
+	.put(581, Key.Loc.Std.PGDN).put( 71, Key.Loc.Std.KP7 ).put( 72, Key.Loc.Std.KP8 ).put( 73, Key.Loc.Std.KP9 ).put( 78, Key.Loc.Std.KPAD)
+
+	.put( 58, Key.Loc.Std.CAPS).put( 30, Key.Loc.Std.AC01).put( 31, Key.Loc.Std.AC02).put( 32, Key.Loc.Std.AC03).put( 33, Key.Loc.Std.AC04)
+	.put( 34, Key.Loc.Std.AC05).put( 35, Key.Loc.Std.AC06).put( 36, Key.Loc.Std.AC07).put( 37, Key.Loc.Std.AC08).put( 38, Key.Loc.Std.AC09)
+	.put( 39, Key.Loc.Std.AC10).put( 40, Key.Loc.Std.AC11).put( 43, Key.Loc.Std.BKSL).put( 28, Key.Loc.Std.RTRN).put( 75, Key.Loc.Std.KP4 )
+	.put( 76, Key.Loc.Std.KP5 ).put( 77, Key.Loc.Std.KP6 )
+
+	.put( 42, Key.Loc.Std.LFSH).put( 86, Key.Loc.Std.LSGT).put( 44, Key.Loc.Std.AB01).put( 45, Key.Loc.Std.AB02).put( 46, Key.Loc.Std.AB03)
+	.put( 47, Key.Loc.Std.AB04).put( 48, Key.Loc.Std.AB05).put( 49, Key.Loc.Std.AB06).put( 50, Key.Loc.Std.AB07).put( 51, Key.Loc.Std.AB08)
+	.put( 52, Key.Loc.Std.AB09).put( 53, Key.Loc.Std.AB10).put( 54, Key.Loc.Std.RTSH).put(572, Key.Loc.Std.UP  ).put( 79, Key.Loc.Std.KP1 )
+	.put( 80, Key.Loc.Std.KP2 ).put( 81, Key.Loc.Std.KP3 ).put(528, Key.Loc.Std.KPEN)
+
+	.put( 29, Key.Loc.Std.LCTL).put(591, Key.Loc.Std.LWIN).put( 56, Key.Loc.Std.LALT).put( 57, Key.Loc.Std.SPCE).put(556, Key.Loc.Std.RALT)
+	.put(592, Key.Loc.Std.RWIN).put(593, Key.Loc.Std.COMP).put(529, Key.Loc.Std.RCTL).put(575, Key.Loc.Std.LEFT).put(580, Key.Loc.Std.DOWN)
+	.put(577, Key.Loc.Std.RGHT).put( 82, Key.Loc.Std.KP0 ).put( 83, Key.Loc.Std.KPDL)
+	.map();
 }
