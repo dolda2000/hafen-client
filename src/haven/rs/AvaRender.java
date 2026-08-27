@@ -114,8 +114,11 @@ public class AvaRender {
 		BufferedImage ava;
 		try {
 		    ava = render(sz.mul(4), desc, map, camnm);
+		} catch(OwnerContext.NoContext e) {
+		    new Warning(e, "bad context reference to " + e.requested).issue();
+		    return(new Object[] {"err", e.getMessage()});
 		} catch(Resource.BadResourceException e) {
-		    new Warning(e, "bad resource reference to " + e.name);
+		    new Warning(e, "bad resource reference to " + e.name).issue();
 		    return(new Object[] {"err", e.getMessage()});
 		}
 		ava = PUtils.convolvedown(ava, sz, new PUtils.Lanczos(2));
