@@ -169,7 +169,7 @@ public abstract class Runtime {
 	    return(null);
 	T ret = wrapper.apply(id);
 	if(retain)
-	    retain(ret);
+	    objc_msgSend_id(id, sel_retain.get());
 	if(release)
 	    gcrelease(ret);
 	return(ret);
