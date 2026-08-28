@@ -1186,7 +1186,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	.put(kVK_ANSI_Keypad2,  Key.Loc.Std.KP2 ).put(kVK_ANSI_Keypad3,  Key.Loc.Std.KP3 ).put(kVK_ANSI_KeypadEnter, Key.Loc.Std.KPEN)
 
 	.put(kVK_Control, Key.Loc.Std.LCTL).put(kVK_Option, Key.Loc.Std.LWIN).put(kVK_Command, Key.Loc.Std.LALT).put(kVK_Space, Key.Loc.Std.SPCE).put(kVK_RightOption, Key.Loc.Std.RALT)
-	.put(0x6e, Key.Loc.Std.COMP).put(kVK_RightControl, Key.Loc.Std.RCTL).put(kVK_LeftArrow, Key.Loc.Std.LEFT).put(kVK_DownArrow, Key.Loc.Std.DOWN)
+	.put(0x6e, Key.Loc.Std.MENU).put(kVK_RightControl, Key.Loc.Std.RCTL).put(kVK_LeftArrow, Key.Loc.Std.LEFT).put(kVK_DownArrow, Key.Loc.Std.DOWN)
 	.put(kVK_RightArrow, Key.Loc.Std.RGHT).put(kVK_ANSI_Keypad0,  Key.Loc.Std.KP0 ).put(kVK_ANSI_KeypadDecimal, Key.Loc.Std.KPDL)
 	.map();
 }

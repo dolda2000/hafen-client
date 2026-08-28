@@ -31,6 +31,7 @@ import java.util.*;
 
 public interface Key {
     public String id();
+    public Loc location();
     public Sym primary();
     public Sym primary(Collection<? extends Sym> of);
     public default boolean is(Sym sym) {
@@ -267,7 +268,7 @@ public interface Key {
 	    TAB,  AD01, AD02, AD03, AD04, AD05, AD06, AD07, AD08, AD09, AD10, AD11, AD12,         DEL,  END,  PGDN,   KP7,  KP8,  KP9,  KPAD,
 	    CAPS, AC01, AC02, AC03, AC04, AC05, AC06, AC07, AC08, AC09, AC10, AC11, BKSL, RTRN,                       KP4,  KP5,  KP6,
 	    LFSH, LSGT, AB01, AB02, AB03, AB04, AB05, AB06, AB07, AB08, AB09, AB10,       RTSH,         UP,           KP1,  KP2,  KP3,  KPEN,
-	    LCTL, LWIN, LALT,                   SPCE,                   RALT, RWIN, COMP, RCTL,   LEFT, DOWN, RGHT,   KP0,        KPDL;
+	    LCTL, LWIN, LALT,                   SPCE,                   RALT, RWIN, MENU, RCTL,   LEFT, DOWN, RGHT,   KP0,        KPDL;
 
 	    public String id() {return(("std:" + this.name()).intern());}
 	}

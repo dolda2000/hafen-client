@@ -140,6 +140,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	public final XIM im;
 	public final long imstyle;
 	public final XkbDesc xkb;
+	public final Map<Integer, Key.Loc> keylocmap;
 	public final int mod_alt, mod_meta, mod_altgr, mod_super;
 	public final Map<Integer, Integer> rmodmap = new HashMap<>();
 	public final Map<Integer, XIPointerInfo> pointers = new HashMap<>();
@@ -319,6 +320,34 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	    return(ret);
 	}
 
+	public Map<Integer, Key.Loc> keylocmap(XkbDesc xkb) {
+	    Map<Integer, Key.Loc> map = new HashMap<>();
+	    Map<String, Integer> nonstd = new HashMap<>();
+	    List<String> keys = xkb.names().keys();
+	    for(int i = 0; i < keys.size(); i++) {
+		String nm = keys.get(i);
+		if((nm == null) || (nm.length() == 0))
+		    continue;
+		Key.Loc.Std std = stdkeys.get(nm);
+		if(std != null)
+		    map.put(i, std);
+		else
+		    nonstd.put(nm, i);
+	    }
+	    for(Pair<String, String> alias : xkb.names().key_aliases()) {
+		Key.Loc.Std std = stdkeys.get(alias.b);
+		if(std == null)
+		    continue;
+		Integer code = nonstd.remove(alias.a);
+		if(code == null)
+		    continue;
+		map.put(code, std);
+	    }
+	    for(Map.Entry<String, Integer> rem : nonstd.entrySet())
+		map.put(rem.getValue(), new X11KeyName(rem.getKey()));
+	    return(map);
+	}
+
 	public GLXToolkit(String display, int nscreen) {
 	    boolean done = false;
 	    try {
@@ -400,8 +429,9 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 					 XLib.XkbUseCoreKbd);
 		    xlib.XkbGetNames(dpy,
 				       XLib.XkbKeycodesNameMask | XLib.XkbSymbolsNameMask
-				     | XLib.XkbKeyNamesMask | XLib.XkbVirtualModNamesMask,
+				     | XLib.XkbKeyNamesMask | XLib.XkbKeyAliasesMask,
 				     xkb);
+		    keylocmap = keylocmap(xkb);
 
 		    int[][] modmap = xlib.XGetModifierMapping(dpy).mapping();
 		    for(int i = 0; i < 8; i++) {
@@ -810,17 +840,15 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 		    attrs.colormap(colormap);
 		    long evmask = XLib.StructureNotifyMask | XLib.FocusChangeMask | XLib.PropertyChangeMask;
 		    evmask |= XLib.VisibilityChangeMask | XLib.KeyPressMask | XLib.KeyReleaseMask;
-		    try(Aliveness _ = new Aliveness()) {
-			id = xrun(() -> xlib.XCreateWindow(dpy, screen.root(), 0, 0, 1, 1, 0, vis.depth(), XLib.InputOutput, vis.visual(), values, attrs));
-			register(this);
-		    }
+		    id = xlib.XCreateWindow(dpy, screen.root(), 0, 0, 1, 1, 0, vis.depth(), XLib.InputOutput, vis.visual(), values, attrs);
+		    register(this);
 		    if(im != null) {
-			ic = xrun(() -> xlib.XCreateIC(im, Utils.<String, Object>map()
-						       .put(XLib.XNInputStyle, imstyle)
-						       .put(XLib.XNClientWindow, id).map()));
+			ic = xlib.XCreateIC(im, Utils.<String, Object>map()
+					    .put(XLib.XNInputStyle, imstyle)
+					    .put(XLib.XNClientWindow, id).map());
 			if(ic != null) {
-			    evmask |= xrun(() -> ((Number)xlib.XGetICValues(ic, Arrays.asList(XLib.XNFilterEvents)).get(XLib.XNFilterEvents))).longValue();
-			    xrun(() -> xlib.XSetICFocus(ic));
+			    evmask |= ((Number)xlib.XGetICValues(ic, Arrays.asList(XLib.XNFilterEvents)).get(XLib.XNFilterEvents)).longValue();
+			    xlib.XSetICFocus(ic);
 			} else {
 			    Warning.warn(String.format("failed to create X11 input context"));
 			}
@@ -831,15 +859,12 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 		    {
 			XIEventMask mask = new XIEventMask(XInput.XIAllMasterDevices);
 			mask.set(XInput.XI_ButtonPress, XInput.XI_ButtonRelease, XInput.XI_Motion, XInput.XI_Enter);
-			xrun(() -> xi.XISelectEvents(dpy, id, Arrays.asList(mask)));
+			xi.XISelectEvents(dpy, id, Arrays.asList(mask));
 		    }
 
-		    xrun(() -> {
-			xlib.XChangeProperty(dpy, id, _NET_WM_PID.id, CARDINAL.id, XLib.PropModeReplace, new long[] {libc.getpid()});
-			xlib.XChangeProperty(dpy, id, WM_PROTOCOLS.id, ATOM.id, XLib.PropModeReplace, new Atom[] {WM_DELETE_WINDOW.id, _NET_WM_PING.id});
-		    });
-		    long barda = evmask;
-		    xrun(() -> xlib.XSelectInput(dpy, id, barda));
+		    xlib.XChangeProperty(dpy, id, _NET_WM_PID.id, CARDINAL.id, XLib.PropModeReplace, new long[] {libc.getpid()});
+		    xlib.XChangeProperty(dpy, id, WM_PROTOCOLS.id, ATOM.id, XLib.PropModeReplace, new Atom[] {WM_DELETE_WINDOW.id, _NET_WM_PING.id});
+		    xlib.XSelectInput(dpy, id, evmask);
 
 		    done = true;
 		} finally {
@@ -1826,7 +1851,9 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	}
 
 	public Windeye window() {
-	    return(new GLXWindow());
+	    try(Aliveness _ = new Aliveness()) {
+		return(xrun(GLXWindow::new));
+	    }
 	}
 
 	public class SelectionRequest implements EventWindow {
@@ -2098,15 +2125,10 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	}
 
 	private Key.Loc getkeyloc(int keycode) {
-	    if((keycode < xkb.min_key_code()) || (keycode > xkb.max_key_code()))
-		return(null);
-	    String nm = xkb.names().keys().get(keycode);
-	    if((nm == null) || (nm.length() == 0))
-		return(null);
-	    Key.Loc ret = stdkeys.get(nm);
-	    if(ret == null)
-		return(new X11KeyName(nm));
-	    return(ret);
+	    Key.Loc mapped = keylocmap.get(keycode);
+	    if(mapped != null)
+		return(mapped);
+	    return(new X11KeyCode(keycode));
 	}
 
 	public class DesktopPicker implements FilePicker.Factory {
@@ -2353,6 +2375,17 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	    }
 	}
 	return(ret);
+    }
+
+    public static class X11KeyCode implements Key.Loc {
+	public final int code;
+
+	public X11KeyCode(int code) {
+	    this.code = code;
+	}
+
+	public String id() {return(("x11:" + code).intern());}
+	public String toString() {return("<" + code + ">");}
     }
 
     public static class X11KeyName implements Key.Loc {
@@ -2686,7 +2719,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	.put("KP2",  Key.Loc.Std.KP2 ).put("PK3",  Key.Loc.Std.KP3 ).put("KPEN", Key.Loc.Std.KPEN)
 
 	.put("LCTL", Key.Loc.Std.LCTL).put("LWIN", Key.Loc.Std.LWIN).put("LALT", Key.Loc.Std.LALT).put("SPCE", Key.Loc.Std.SPCE).put("RALT", Key.Loc.Std.RALT)
-	.put("RWIN", Key.Loc.Std.RWIN).put("COMP", Key.Loc.Std.COMP).put("RCTL", Key.Loc.Std.RCTL).put("LEFT", Key.Loc.Std.LEFT).put("DOWN", Key.Loc.Std.DOWN)
+	.put("RWIN", Key.Loc.Std.RWIN).put("MENU", Key.Loc.Std.MENU).put("RCTL", Key.Loc.Std.RCTL).put("LEFT", Key.Loc.Std.LEFT).put("DOWN", Key.Loc.Std.DOWN)
 	.put("RGHT", Key.Loc.Std.RGHT).put("KP0",  Key.Loc.Std.KP0 ).put("KPDL", Key.Loc.Std.KPDL)
 	.map();
 }
