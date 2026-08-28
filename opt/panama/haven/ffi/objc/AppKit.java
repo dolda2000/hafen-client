@@ -411,17 +411,15 @@ public abstract class AppKit {
 	class NSBitmapImageRep implements AppKit.NSBitmapImageRep {
 	    public final ID id;
 
-	    public NSBitmapImageRep(ID id, boolean release) {
+	    public NSBitmapImageRep(ID id) {
 		this.id = id;
-		if(release)
-		    rt.gcrelease(this, id);
 	    }
 
 	    public ID id() {return(id);}
 	}
 	private final SEL sel_initWithCGImage = rt.sel_registerName("initWithCGImage:");
 	public NSBitmapImageRep NSBitmapImageRep(CGImage image) {
-	    return(new NSBitmapImageRep(rt.objc_msgSend_id(rt.objc_msgSend_id(cls_NSBitmapImageRep.id(), sel_alloc), sel_initWithCGImage, image.ref()), true));
+	    return(rt.wrap(rt.objc_msgSend_id(rt.objc_msgSend_id(cls_NSBitmapImageRep.id(), sel_alloc), sel_initWithCGImage, image.ref()), NSBitmapImageRep::new, false, true));
 	}
 
 	private final Class cls_NSImage = rt.objc_getClass("NSImage");
@@ -432,10 +430,8 @@ public abstract class AppKit {
 	class NSImage implements AppKit.NSImage {
 	    public final ID id;
 
-	    public NSImage(ID id, boolean release) {
+	    public NSImage(ID id) {
 		this.id = id;
-		if(release)
-		    rt.gcrelease(this, id);
 	    }
 
 	    public ID id() {return(id);}
@@ -446,27 +442,25 @@ public abstract class AppKit {
 		rt.objc_msgSend_void(id, sel_addRepresentation, rep.id());
 	    }
 	    public NSData TIFFRepresentation() {
-		return(fnd.NSData(rt.objc_msgSend_id(id, sel_TIFFRepresentation), true));
+		return(fnd.NSData(rt.objc_msgSend_id(id, sel_TIFFRepresentation), true, true));
 	    }
 	}
 
 	private final SEL sel_initWithSize = rt.sel_registerName("initWithSize:");
 	public NSImage NSImage(CGSize size) {
-	    return(new NSImage(cg.objc_msgSend_id(rt.objc_msgSend_id(cls_NSImage.id(), sel_alloc), sel_initWithSize, size), true));
+	    return(rt.wrap(cg.objc_msgSend_id(rt.objc_msgSend_id(cls_NSImage.id(), sel_alloc), sel_initWithSize, size), NSImage::new, false, true));
 	}
 	private final SEL sel_initWithCGImage_size = rt.sel_registerName("initWithCGImage:size:");
 	public NSImage NSImage(CGImage image, CGSize size) {
-	    return(new NSImage(cg.objc_msgSend_id(rt.objc_msgSend_id(cls_NSImage.id(), sel_alloc), sel_initWithSize, image.ref(), size), true));
+	    return(rt.wrap(cg.objc_msgSend_id(rt.objc_msgSend_id(cls_NSImage.id(), sel_alloc), sel_initWithSize, image.ref(), size), NSImage::new, false, true));
 	}
 
 	private final Class cls_NSCursor = rt.objc_getClass("NSCursor");
 	class NSCursor implements AppKit.NSCursor {
 	    public final ID id;
 
-	    public NSCursor(ID id, boolean release) {
+	    public NSCursor(ID id) {
 		this.id = id;
-		if(release)
-		    rt.gcrelease(this, id);
 	    }
 
 	    public ID id() {return(id);}
@@ -474,7 +468,7 @@ public abstract class AppKit {
 
 	private final SEL sel_initWithImage_hotSpot = rt.sel_registerName("initWithImage:hotSpot:");
 	public NSCursor NSCursor(AppKit.NSImage image, CGPoint hotspot) {
-	    return(new NSCursor(cg.objc_msgSend_id(rt.objc_msgSend_id(cls_NSCursor.id(), sel_alloc), sel_initWithImage_hotSpot, image.id(), hotspot), true));
+	    return(rt.wrap(cg.objc_msgSend_id(rt.objc_msgSend_id(cls_NSCursor.id(), sel_alloc), sel_initWithImage_hotSpot, image.id(), hotspot), NSCursor::new, false, true));
 	}
 
 	private final SEL sel_arrowCursor = rt.sel_registerName("arrowCursor");
@@ -486,15 +480,15 @@ public abstract class AppKit {
 	private final SEL sel_resizeUpCursor = rt.sel_registerName("resizeUpCursor");
 	private final SEL sel_resizeRightCursor = rt.sel_registerName("resizeRightCursor");
 	private final SEL sel_resizeDownCursor = rt.sel_registerName("resizeDownCursor");
-	public NSCursor NSCursor_arrowCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_arrowCursor), false));}
-	public NSCursor NSCursor_IBeamCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_IBeamCursor), false));}
-	public NSCursor NSCursor_crosshairCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_crosshairCursor), false));}
-	public NSCursor NSCursor_closedHandCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_closedHandCursor), false));}
-	public NSCursor NSCursor_pointingHandCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_pointingHandCursor), false));}
-	public NSCursor NSCursor_resizeLeftCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_resizeLeftCursor), false));}
-	public NSCursor NSCursor_resizeUpCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_resizeUpCursor), false));}
-	public NSCursor NSCursor_resizeRightCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_resizeRightCursor), false));}
-	public NSCursor NSCursor_resizeDownCursor() {return(new NSCursor(rt.objc_msgSend_id(cls_NSCursor.id(), sel_resizeDownCursor), false));}
+	public NSCursor NSCursor_arrowCursor() {return(rt.wrap(rt.objc_msgSend_id(cls_NSCursor.id(), sel_arrowCursor), NSCursor::new, false, false));}
+	public NSCursor NSCursor_IBeamCursor() {return(rt.wrap(rt.objc_msgSend_id(cls_NSCursor.id(), sel_IBeamCursor), NSCursor::new, false, false));}
+	public NSCursor NSCursor_crosshairCursor() {return(rt.wrap(rt.objc_msgSend_id(cls_NSCursor.id(), sel_crosshairCursor), NSCursor::new, false, false));}
+	public NSCursor NSCursor_closedHandCursor() {return(rt.wrap(rt.objc_msgSend_id(cls_NSCursor.id(), sel_closedHandCursor), NSCursor::new, false, false));}
+	public NSCursor NSCursor_pointingHandCursor() {return(rt.wrap(rt.objc_msgSend_id(cls_NSCursor.id(), sel_pointingHandCursor), NSCursor::new, false, false));}
+	public NSCursor NSCursor_resizeLeftCursor() {return(rt.wrap(rt.objc_msgSend_id(cls_NSCursor.id(), sel_resizeLeftCursor), NSCursor::new, false, false));}
+	public NSCursor NSCursor_resizeUpCursor() {return(rt.wrap(rt.objc_msgSend_id(cls_NSCursor.id(), sel_resizeUpCursor), NSCursor::new, false, false));}
+	public NSCursor NSCursor_resizeRightCursor() {return(rt.wrap(rt.objc_msgSend_id(cls_NSCursor.id(), sel_resizeRightCursor), NSCursor::new, false, false));}
+	public NSCursor NSCursor_resizeDownCursor() {return(rt.wrap(rt.objc_msgSend_id(cls_NSCursor.id(), sel_resizeDownCursor), NSCursor::new, false, false));}
 
 	private final Class cls_NSEvent = rt.objc_getClass("NSEvent");
 	private final SEL sel_type = rt.sel_registerName("type");
@@ -604,16 +598,14 @@ public abstract class AppKit {
 	private final SEL sel_minimumRefreshInterval = rt.sel_registerName("minimumRefreshInterval");
 	private final SEL sel_maximumRefreshInterval = rt.sel_registerName("maximumRefreshInterval");
 	private final SEL sel_deviceDescription = rt.sel_registerName("deviceDescription");
-	private final NSString NSDeviceColorSpaceName = fnd.NSString(rt.id(dylib.find("NSDeviceColorSpaceName").get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0)));
-	private final NSString NSDeviceResolution = fnd.NSString(rt.id(dylib.find("NSDeviceResolution").get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0)));
-	private final NSString NSDeviceSize = fnd.NSString(rt.id(dylib.find("NSDeviceSize").get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0)));
+	private final NSString NSDeviceColorSpaceName = fnd.NSString(rt.id(dylib.find("NSDeviceColorSpaceName").get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0)), false, false);
+	private final NSString NSDeviceResolution = fnd.NSString(rt.id(dylib.find("NSDeviceResolution").get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0)), false, false);
+	private final NSString NSDeviceSize = fnd.NSString(rt.id(dylib.find("NSDeviceSize").get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0)), false, false);
 	class NSScreen implements AppKit.NSScreen {
 	    public final ID id;
 
-	    public NSScreen(ID id, boolean release) {
+	    public NSScreen(ID id) {
 		this.id = id;
-		if(release)
-		    rt.gcrelease(this, id);
 	    }
 
 	    public ID id() {return(id);}
@@ -637,28 +629,28 @@ public abstract class AppKit {
 	    public double maximumRefreshInterval() {return(rt.objc_msgSend_double(id, sel_maximumRefreshInterval));}
 
 	    public NSDictionary deviceDescription() {
-		return(fnd.NSDictionary(rt.objc_msgSend_id(id, sel_deviceDescription)));
+		return(fnd.NSDictionary(rt.objc_msgSend_id(id, sel_deviceDescription), true, true));
 	    }
 
 	    public String deviceColorSpaceName() {
 		return(fnd.fromNSString(deviceDescription().valueForKey(NSDeviceColorSpaceName)));
 	    }
 	    public CGSize deviceResolution() {
-		return(fnd.NSValue(deviceDescription().valueForKey(NSDeviceResolution)).sizeValue());
+		return(fnd.NSValue(deviceDescription().valueForKey(NSDeviceResolution), false, false).sizeValue());
 	    }
 	    public CGSize deviceSize() {
-		return(fnd.NSValue(deviceDescription().valueForKey(NSDeviceSize)).sizeValue());
+		return(fnd.NSValue(deviceDescription().valueForKey(NSDeviceSize), false, false).sizeValue());
 	    }
 	    public int screenNumber() {
-		return(fnd.NSNumber(deviceDescription().valueForKey("NSScreenNumber")).intValue());
+		return(fnd.NSNumber(deviceDescription().valueForKey("NSScreenNumber"), false, false).intValue());
 	    }
 	}
 
 	private final SEL sel_screens = rt.sel_registerName("screens");
 	public List<AppKit.NSScreen> NSScreen_screens() {
 	    List<AppKit.NSScreen> ret = new ArrayList<>();
-	    for(ID id : fnd.NSArray(rt.objc_msgSend_id(cls_NSScreen.id(), sel_screens)))
-		ret.add(rt.retain(new NSScreen(id, true)));
+	    for(ID id : fnd.NSArray(rt.objc_msgSend_id(cls_NSScreen.id(), sel_screens), false, false))
+		ret.add(rt.wrap(id, NSScreen::new, true, true));
 	    return(ret);
 	}
 

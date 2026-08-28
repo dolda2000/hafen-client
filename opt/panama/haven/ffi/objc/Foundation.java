@@ -43,7 +43,7 @@ public abstract class Foundation {
 	public String str();
     }
 
-    public abstract NSString NSString(ID id);
+    public abstract NSString NSString(ID id, boolean retain, boolean release);
     public abstract NSString NSString(String str);
     public abstract String fromNSString(ID id);
 
@@ -61,7 +61,7 @@ public abstract class Foundation {
 	}
     }
 
-    abstract NSArray NSArray(ID id);
+    abstract NSArray NSArray(ID id, boolean retain, boolean release);
     public abstract NSArray NSArray(NSObject... objects);
 
     public static interface NSDictionary extends Runtime.NSObject {
@@ -71,14 +71,14 @@ public abstract class Foundation {
 	public ID objectForKey(NSObject key);
     }
 
-    abstract NSDictionary NSDictionary(ID id);
+    abstract NSDictionary NSDictionary(ID id, boolean retain, boolean release);
 
     public static interface NSData extends Runtime.NSObject {
 	public ID id();
 	public byte[] data();
     }
 
-    abstract NSData NSData(ID id, boolean retain);
+    abstract NSData NSData(ID id, boolean retain, boolean release);
 
     public static interface NSValue extends Runtime.NSObject {
 	public ID id();
@@ -87,14 +87,14 @@ public abstract class Foundation {
 	public CoreGraphics.CGRect rectValue();
     }
 
-    abstract NSValue NSValue(ID id);
+    abstract NSValue NSValue(ID id, boolean retain, boolean release);
 
     public static interface NSNumber extends Runtime.NSObject {
 	public ID id();
 	public int intValue();
     }
 
-    abstract NSNumber NSNumber(ID id);
+    abstract NSNumber NSNumber(ID id, boolean retain, boolean release);
 
     public static interface NSProcessInfo {
 	public String operatingSystemVersionString();
@@ -117,18 +117,6 @@ public abstract class Foundation {
 		this.id = id;
 	    }
 
-	    static NSString unretained(VersionC fnd, ID id) {
-		return(fnd.new NSString(id));
-	    }
-	    static NSString retained(VersionC fnd, ID id) {
-		NSString ret = unretained(fnd, id);
-		fnd.rt.gcrelease(ret, id);
-		return(ret);
-	    }
-	    static NSString retain(VersionC fnd, ID id) {
-		return(retained(fnd, fnd.rt.objc_msgSend_id(id, fnd.sel_retain)));
-	    }
-
 	    public ID id() {return(id);}
 
 	    public String str() {
@@ -137,22 +125,18 @@ public abstract class Foundation {
 	    public String toString() {return(str());}
 	}
 
-	public NSString NSString(ID id) {
-	    if(id == null)
-		return(null);
-	    return(NSString.retain(this, id));
+	public NSString NSString(ID id, boolean retain, boolean release) {
+	    return(rt.wrap(id, NSString::new, retain, release));
 	}
 
 	public String fromNSString(ID id) {
-	    if(id == null)
-		return(null);
-	    return(NSString.unretained(this, id).str());
+	    return(rt.wrap(id, NSString::new, false, false).str());
 	}
 
 	private final SEL sel_initWithUTF8String = rt.sel_registerName("initWithUTF8String:");
 	public NSString NSString(String str) {
 	    try(Arena st = Arena.ofConfined()) {
-		return(NSString.retained(this, rt.objc_msgSend_id(rt.objc_msgSend_id(cls_NSString.id(), sel_alloc), sel_initWithUTF8String, st.allocateFrom(str, Utils.utf8))));
+		return(rt.wrap(rt.objc_msgSend_id(rt.objc_msgSend_id(cls_NSString.id(), sel_alloc), sel_initWithUTF8String, st.allocateFrom(str, Utils.utf8)), NSString::new, false, true));
 	    }
 	}
 
@@ -166,26 +150,14 @@ public abstract class Foundation {
 		this.id = id;
 	    }
 
-	    static NSArray unretained(VersionC fnd, ID id) {
-		return(fnd.new NSArray(id));
-	    }
-	    static NSArray retained(VersionC fnd, ID id) {
-		NSArray ret = unretained(fnd, id);
-		fnd.rt.gcrelease(ret, id);
-		return(ret);
-	    }
-	    static NSArray retain(VersionC fnd, ID id) {
-		return(retained(fnd, fnd.rt.objc_msgSend_id(id, fnd.sel_retain)));
-	    }
-
 	    public ID id() {return(id);}
 
 	    public int size() {return(rt.objc_msgSend_NSUInt(id, sel_count));}
 	    public ID get(int idx) {return(rt.objc_msgSend_id(id, sel_objectAtIndex, idx));}
 	}
 
-	NSArray NSArray(ID id) {
-	    return(NSArray.retained(this, id));
+	NSArray NSArray(ID id, boolean retain, boolean release) {
+	    return(rt.wrap(id, NSArray::new, retain, release));
 	}
 
 	private final SEL sel_initWithObjects_count = rt.sel_registerName("initWithObjects:count:");
@@ -194,7 +166,7 @@ public abstract class Foundation {
 		MemorySegment buf = st.allocate(ADDRESS, objects.length);
 		for(int i = 0; i < objects.length; i++)
 		    buf.setAtIndex(ADDRESS, i, objects[i].id().mem());
-		return(NSArray.retained(this, rt.objc_msgSend_id(rt.objc_msgSend_id(cls_NSArray.id(), sel_alloc), sel_initWithObjects_count, buf, objects.length)));
+		return(NSArray(rt.objc_msgSend_id(rt.objc_msgSend_id(cls_NSArray.id(), sel_alloc), sel_initWithObjects_count, buf, objects.length), false, true));
 	    }
 	}
 
@@ -205,18 +177,6 @@ public abstract class Foundation {
 
 	    NSDictionary(ID id) {
 		this.id = id;
-	    }
-
-	    static NSDictionary unretained(VersionC fnd, ID id) {
-		return(fnd.new NSDictionary(id));
-	    }
-	    static NSDictionary retained(VersionC fnd, ID id) {
-		NSDictionary ret = unretained(fnd, id);
-		fnd.rt.gcrelease(ret, id);
-		return(ret);
-	    }
-	    static NSDictionary retain(VersionC fnd, ID id) {
-		return(retained(fnd, fnd.rt.objc_msgSend_id(id, fnd.sel_retain)));
 	    }
 
 	    public ID id() {return(id);}
@@ -233,8 +193,8 @@ public abstract class Foundation {
 	    }
 	}
 
-	NSDictionary NSDictionary(ID id) {
-	    return(NSDictionary.retained(this, id));
+	NSDictionary NSDictionary(ID id, boolean retain, boolean release) {
+	    return(rt.wrap(id, NSDictionary::new, retain, release));
 	}
 
 	private final SEL sel_bytes = rt.sel_registerName("bytes");
@@ -246,18 +206,6 @@ public abstract class Foundation {
 		this.id = id;
 	    }
 
-	    static NSData unretained(VersionC fnd, ID id) {
-		return(fnd.new NSData(id));
-	    }
-	    static NSData retained(VersionC fnd, ID id) {
-		NSData ret = unretained(fnd, id);
-		fnd.rt.gcrelease(ret, id);
-		return(ret);
-	    }
-	    static NSData retain(VersionC fnd, ID id) {
-		return(retained(fnd, fnd.rt.objc_msgSend_id(id, fnd.sel_retain)));
-	    }
-
 	    public ID id() {return(id);}
 
 	    public byte[] data() {
@@ -265,12 +213,8 @@ public abstract class Foundation {
 	    }
 	}
 
-	NSData NSData(ID id, boolean retain) {
-	    if(id == null)
-		return(null);
-	    NSData rv = NSData.retained(this, id);
-	    if(retain) rt.retain(rv);
-	    return(rv);
+	NSData NSData(ID id, boolean retain, boolean release) {
+	    return(rt.wrap(id, NSData::new, retain, release));
 	}
 
 	private final SEL sel_pointValue = rt.sel_registerName("pointValue");
@@ -281,18 +225,6 @@ public abstract class Foundation {
 
 	    NSValue(ID id) {
 		this.id = id;
-	    }
-
-	    static NSValue unretained(VersionC fnd, ID id) {
-		return(fnd.new NSValue(id));
-	    }
-	    static NSValue retained(VersionC fnd, ID id) {
-		NSValue ret = unretained(fnd, id);
-		fnd.rt.gcrelease(ret, id);
-		return(ret);
-	    }
-	    static NSValue retain(VersionC fnd, ID id) {
-		return(retained(fnd, fnd.rt.objc_msgSend_id(id, fnd.sel_retain)));
 	    }
 
 	    public ID id() {return(id);}
@@ -308,8 +240,8 @@ public abstract class Foundation {
 	    }
 	}
 
-	NSValue NSValue(ID id) {
-	    return(NSValue.retained(this, id));
+	NSValue NSValue(ID id, boolean retain, boolean release) {
+	    return(rt.wrap(id, NSValue::new, retain, release));
 	}
 
 	private final SEL sel_intValue = rt.sel_registerName("intValue");
@@ -320,18 +252,6 @@ public abstract class Foundation {
 		this.id = id;
 	    }
 
-	    static NSNumber unretained(VersionC fnd, ID id) {
-		return(fnd.new NSNumber(id));
-	    }
-	    static NSNumber retained(VersionC fnd, ID id) {
-		NSNumber ret = unretained(fnd, id);
-		fnd.rt.gcrelease(ret, id);
-		return(ret);
-	    }
-	    static NSNumber retain(VersionC fnd, ID id) {
-		return(retained(fnd, fnd.rt.objc_msgSend_id(id, fnd.sel_retain)));
-	    }
-
 	    public ID id() {return(id);}
 
 	    public int intValue() {
@@ -339,8 +259,8 @@ public abstract class Foundation {
 	    }
 	}
 
-	NSNumber NSNumber(ID id) {
-	    return(NSNumber.retained(this, id));
+	NSNumber NSNumber(ID id, boolean retain, boolean release) {
+	    return(rt.wrap(id, NSNumber::new, retain, release));
 	}
 
 	private final Runtime.Class NSProcessInfo = rt.objc_getClass("NSProcessInfo");
@@ -355,7 +275,7 @@ public abstract class Foundation {
 	    public ID id() {return(id);}
 
 	    public String operatingSystemVersionString() {
-		return(NSString.retained(VersionC.this, rt.objc_msgSend_id(id, sel_operatingSystemVersionString)).str());
+		return(fromNSString(rt.objc_msgSend_id(id, sel_operatingSystemVersionString)));
 	    }
 	}
 

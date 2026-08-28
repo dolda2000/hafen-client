@@ -274,7 +274,7 @@ public abstract class Carbon {
 	    try {
 		rv = (MemorySegment)TISCreateInputSourceList.invoke(MemorySegment.NULL, all ? (byte)1 : (byte)0);
 	    } catch(Throwable e) {throw(new RuntimeException(e));}
-	    NSArray list = fnd.NSArray(rt.id(rv));
+	    NSArray list = fnd.NSArray(rt.id(rv), false, true);
 	    ArrayList<Carbon.TISInputSource> ret = new ArrayList<>();
 	    for(int i = 0; i < list.size(); i++)
 		ret.add(new TISInputSource(cf.CFRetain(list.get(i).mem()), true));

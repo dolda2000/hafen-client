@@ -164,6 +164,16 @@ public abstract class Runtime {
 	gcrelease(obj);
 	return(obj);
     }
+    public <T extends NSObject> T wrap(ID id, Function<ID, T> wrapper, boolean retain, boolean release) {
+	if(id == null)
+	    return(null);
+	T ret = wrapper.apply(id);
+	if(retain)
+	    retain(ret);
+	if(release)
+	    gcrelease(ret);
+	return(ret);
+    }
 
     static class objc4 extends Runtime {
 	static final MemoryLayout C_Class = ADDRESS;
