@@ -30,7 +30,9 @@ import java.util.*;
 import java.util.function.*;
 import java.awt.image.*;
 import java.io.*;
+import java.net.*;
 import java.nio.*;
+import java.nio.file.*;
 import haven.*;
 import haven.iosys.*;
 import haven.render.*;
@@ -144,6 +146,29 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	if(irq)
 	    Thread.currentThread().interrupt();
 	return(r.val);
+    }
+
+    <T> Supplier<T> lazymainrun(Supplier<T> task) {
+	return(new Supplier<T>() {
+	    private T result;
+	    private boolean has = false;
+
+	    public T get() {
+		if(has)
+		    return(result);
+		return(mainrun(() -> {
+		    if(!has) {
+			result = task.get();
+			has = true;
+		    }
+		    return(result);
+		}));
+	    }
+	});
+    }
+
+    <T> Promise<T> mtpromise(Supplier<T> task) {
+	return(Promise.deferred(task, this::mainrun));
     }
 
     public class CocoaToolkit implements Toolkit {
@@ -467,6 +492,138 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		return(String.format("#<osxkey kc=%x %s syms=%s>", kc, loc, Arrays.deepToString(syms)));
 	    }
 	}
+
+	public class Pasteboard implements Clipboard {
+	    public final NSPasteboard bk;
+
+	    public Pasteboard(NSPasteboard bk) {
+		this.bk = bk;
+	    }
+
+	    class PutContents {
+		final NSPasteboardItem first = ak.NSPasteboardItem();
+		final List<NSPasteboardItem> items = new ArrayList<>(Collections.singletonList(first));
+		int remaining = 0;
+
+		private void finish() {
+		    bk.clearContents();
+		    bk.writeObjects(items.toArray(new NSPasteboardItem[0]));
+		}
+
+		private Consumer<Object> checkput() {
+		    remaining++;
+		    return(_ -> {
+			if(--remaining == 0)
+			    finish();
+		    });
+		}
+
+		private void cvt_text(CharSequence val) {
+		    first.setData(fnd.NSData(Utils.utf8.encode(CharBuffer.wrap(val))), "public.utf8-plain-text");
+		}
+
+		private void cvt_image(BufferedImage img) {
+		    ByteArrayOutputStream buf = new ByteArrayOutputStream();
+		    try {
+			javax.imageio.ImageIO.write(img, "TIFF", buf);
+		    } catch(IOException e) {
+			throw(new RuntimeException(e));
+		    }
+		    first.setData(fnd.NSData(buf.toByteArray()), "public.tiff");
+		}
+
+		private void cvt_paths(Collection<Path> paths) {
+		    Iterator<Path> i = paths.iterator();
+		    Path f = i.next();
+		    first.setData(fnd.NSData(Utils.utf8.encode(CharBuffer.wrap(f.toUri().toString()))), "public.file-url");
+		    while(i.hasNext()) {
+			Path p = i.next();
+			NSPasteboardItem item = ak.NSPasteboardItem();
+			item.setData(fnd.NSData(Utils.utf8.encode(CharBuffer.wrap(p.toUri().toString()))), "public.file-url");
+		    }
+		}
+	    }
+
+	    public void put(Contents c, Runnable expire) {
+		mainrun(() -> {
+		    PutContents buf = new PutContents();
+		    for(Item<?> item : c.items) {
+			if(item.fmt == Format.TEXT) {
+			    item.check(Format.TEXT).get()
+				.then(val -> mtpromise(() -> {buf.cvt_text(val); return(null);}))
+				.map(buf.checkput());
+			} else if(item.fmt == Format.IMAGE) {
+			    item.check(Format.IMAGE).get()
+				.then(val -> mtpromise(() -> {buf.cvt_image(val); return(null);}))
+				.map(buf.checkput());
+			} else if(item.fmt == Format.PATHS) {
+			    item.check(Format.PATHS).get()
+				.then(val -> mtpromise(() -> {buf.cvt_paths(val); return(null);}))
+				.map(buf.checkput());
+			}
+		    }
+		});
+	    }
+
+	    private String mktext(List<NSPasteboardItem> cont) {
+		if(cont.size() == 1)
+		    return(cont.get(0).stringForType("public.utf8-plain-text"));
+		StringBuilder buf = new StringBuilder();
+		for(NSPasteboardItem item : cont) {
+		    if(item.types().contains("public.utf8-plain-text"))
+			buf.append(item.stringForType("public.utf8-plain-text"));
+		}
+		return(buf.toString());
+	    }
+
+	    private BufferedImage mkimage(List<NSPasteboardItem> cont) {
+		for(NSPasteboardItem item : cont) {
+		    if(item.types().contains("public.tiff"))
+			try {
+			    return(javax.imageio.ImageIO.read(new ByteArrayInputStream(item.dataForType("public.tiff").data())));
+			} catch(IOException e) {
+			    throw(new RuntimeException(e));
+			}
+		}
+		return(null);
+	    }
+
+	    private Collection<Path> mkfiles(List<NSPasteboardItem> cont) {
+		Collection<Path> ret = new ArrayList<>();
+		for(NSPasteboardItem item : cont) {
+		    if(item.types().contains("public.file-url")) {
+			URI uri = Utils.uri(item.stringForType("public.file-url"));
+			ret.add(Paths.get(uri));
+		    }
+		}
+		return(ret);
+	    }
+
+	    private <T> Item<T> mkitem(Format<T> fmt, List<NSPasteboardItem> cont, Function<List<NSPasteboardItem>, ? extends T> cvt) {
+		return(new Item<T>(fmt, () -> mtpromise(() -> cvt.apply(cont))));
+	    }
+
+	    Contents mkcontents() {
+		List<NSPasteboardItem> cont = bk.pasteboardItems();
+		if((cont == null) || cont.isEmpty())
+		    return(new Contents(Collections.emptyList()));
+		List<Item<?>> ret = new ArrayList<>();
+		NSPasteboardItem first = cont.get(0);
+		List<String> types = first.types();
+		if(types.contains("public.file-url"))
+		    ret.add(mkitem(Format.PATHS, cont, this::mkfiles));
+		if(types.contains("public.tiff"))
+		    ret.add(mkitem(Format.IMAGE, cont, this::mkimage));
+		if(types.contains("public.utf8-plain-text"))
+		    ret.add(mkitem(Format.TEXT, cont, this::mktext));
+		return(new Contents(ret));
+	    }
+
+	    public Promise<Contents> get() {
+		return(mtpromise(this::mkcontents));
+	    }
+	}
+	private final Supplier<Pasteboard> pb_general = lazymainrun(() -> new Pasteboard(ak.NSPasteboard_generalPasteboard()));
 
 	public class CocoaWindow implements Windeye {
 	    public final NSWindow nsw;
@@ -937,6 +1094,12 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		if(!(mode instanceof Boolean))
 		    throw(new IllegalArgumentException());
 		gbuf.submit(gl -> this.glswap(gl, ((Boolean)mode) ? 1 : 0));
+	    }
+
+	    public Clipboard clipboard(Object id) {
+		if(id == Clipboard.Std.CLIPBOARD)
+		    return(pb_general.get());
+		return(Clipboard.nil);
 	    }
 
 	    public void dispose() {

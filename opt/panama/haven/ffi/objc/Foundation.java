@@ -33,6 +33,7 @@ import java.lang.invoke.*;
 import java.lang.foreign.*;
 import java.lang.foreign.MemoryLayout.PathElement;
 import java.util.*;
+import java.nio.*;
 import static haven.ffi.ABI.*;
 import static haven.ffi.FUtils.*;
 import static java.lang.foreign.ValueLayout.ADDRESS;
@@ -79,6 +80,8 @@ public abstract class Foundation {
     }
 
     abstract NSData NSData(ID id, boolean retain, boolean release);
+    public abstract NSData NSData(byte[] data);
+    public abstract NSData NSData(ByteBuffer data);
 
     public static interface NSValue extends Runtime.NSObject {
 	public ID id();
@@ -197,8 +200,10 @@ public abstract class Foundation {
 	    return(rt.wrap(id, NSDictionary::new, retain, release));
 	}
 
+	private final Runtime.Class cls_NSData = rt.objc_getClass("NSData");
 	private final SEL sel_bytes = rt.sel_registerName("bytes");
 	private final SEL sel_length = rt.sel_registerName("length");
+	private final SEL sel_initWithBytes_length = rt.sel_registerName("initWithBytes:length:");
 	class NSData implements Foundation.NSData {
 	    public final ID id;
 
@@ -209,12 +214,28 @@ public abstract class Foundation {
 	    public ID id() {return(id);}
 
 	    public byte[] data() {
-		return(memcpy(rt.objc_msgSend_ptr(id, sel_bytes), 0, rt.objc_msgSend_NSUInt(id, sel_length)));
+		int len = rt.objc_msgSend_NSUInt(id, sel_length);
+		return(memcpy(rt.objc_msgSend_ptr(id, sel_bytes).reinterpret(len), 0, len));
 	    }
 	}
 
 	NSData NSData(ID id, boolean retain, boolean release) {
 	    return(rt.wrap(id, NSData::new, retain, release));
+	}
+	public NSData NSData(MemorySegment data) {
+	    try(Arena st = Arena.ofConfined()) {
+		MemorySegment buf = st.allocate(data.byteSize());
+		MemorySegment.copy(data, 0, buf, 0, data.byteSize());
+		return(rt.wrap(rt.objc_msgSend_id(rt.objc_msgSend_id(cls_NSData.id(), sel_alloc), sel_initWithBytes_length,
+						  buf, (int)data.byteSize()),
+			       NSData::new, false, true));
+	    }
+	}
+	public NSData NSData(byte[] data) {
+	    return(NSData(MemorySegment.ofArray(data)));
+	}
+	public NSData NSData(ByteBuffer data) {
+	    return(NSData(MemorySegment.ofBuffer(data)));
 	}
 
 	private final SEL sel_pointValue = rt.sel_registerName("pointValue");

@@ -243,6 +243,22 @@ public abstract class AppKit {
 	public void resetCursorRects() {}
     }
 
+    public interface NSPasteboardItem extends Runtime.NSObject {
+	public List<String> types();
+	public NSData dataForType(String type);
+	public String stringForType(String type);
+	public boolean setData(NSData data, String type);
+    }
+    public abstract NSPasteboardItem NSPasteboardItem();
+
+    public interface NSPasteboard extends Runtime.NSObject {
+	public int clearContents();
+	public boolean writeObjects(NSObject... objects);
+	public List<String> types();
+	public List<NSPasteboardItem> pasteboardItems();
+    }
+    public abstract NSPasteboard NSPasteboard_generalPasteboard();
+
     public abstract NSApplication NSApplication_sharedApplication();
     public abstract int NSEvent_pressedMouseButtons();
     public abstract List<AppKit.NSScreen> NSScreen_screens();
@@ -598,9 +614,9 @@ public abstract class AppKit {
 	private final SEL sel_minimumRefreshInterval = rt.sel_registerName("minimumRefreshInterval");
 	private final SEL sel_maximumRefreshInterval = rt.sel_registerName("maximumRefreshInterval");
 	private final SEL sel_deviceDescription = rt.sel_registerName("deviceDescription");
-	private final NSString NSDeviceColorSpaceName = fnd.NSString(rt.id(dylib.find("NSDeviceColorSpaceName").get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0)), false, false);
-	private final NSString NSDeviceResolution = fnd.NSString(rt.id(dylib.find("NSDeviceResolution").get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0)), false, false);
-	private final NSString NSDeviceSize = fnd.NSString(rt.id(dylib.find("NSDeviceSize").get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0)), false, false);
+	private final NSString NSDeviceColorSpaceName = fnd.NSString(rt.constobj(dylib, "NSDeviceColorSpaceName"), false, false);
+	private final NSString NSDeviceResolution = fnd.NSString(rt.constobj(dylib, "NSDeviceResolution"), false, false);
+	private final NSString NSDeviceSize = fnd.NSString(rt.constobj(dylib, "NSDeviceSize"), false, false);
 	class NSScreen implements AppKit.NSScreen {
 	    public final ID id;
 
@@ -1001,6 +1017,93 @@ public abstract class AppKit {
 		throw(new RuntimeException(t));
 	    }
 	    return(view);
+	}
+
+	private final Class cls_NSPasteboardItem = rt.objc_getClass("NSPasteboardItem");
+	private final SEL sel_types = rt.sel_registerName("types");
+	private final SEL sel_dataForType = rt.sel_registerName("dataForType:");
+	private final SEL sel_stringForType = rt.sel_registerName("stringForType:");
+	private final SEL sel_setData_forType = rt.sel_registerName("setData:forType:");
+	class NSPasteboardItem implements AppKit.NSPasteboardItem {
+	    public final ID id;
+
+	    NSPasteboardItem(ID id) {
+		this.id = id;
+	    }
+
+	    public ID id() {return(id);}
+
+	    public List<String> types() {
+		ID types = rt.objc_msgSend_id(id, sel_types);
+		if(types == null)
+		    return(null);
+		List<String> ret = new ArrayList<>();
+		for(ID typ : fnd.NSArray(types, false, false))
+		    ret.add(fnd.fromNSString(typ));
+		return(ret);
+	    }
+
+	    public NSData dataForType(String type) {
+		return(fnd.NSData(rt.objc_msgSend_id(id, sel_dataForType, fnd.NSString(type).id()), true, true));
+	    }
+
+	    public String stringForType(String type) {
+		return(fnd.fromNSString(rt.objc_msgSend_id(id, sel_stringForType, fnd.NSString(type).id())));
+	    }
+
+	    public boolean setData(NSData data, String type) {
+		return(rt.objc_msgSend_bool(id, sel_setData_forType, data.id(), fnd.NSString(type).id()));
+	    }
+	}
+	public NSPasteboardItem NSPasteboardItem() {
+	    return(rt.wrap(rt.objc_msgSend_id(rt.objc_msgSend_id(cls_NSPasteboardItem.id(), sel_alloc), sel_init), NSPasteboardItem::new, false, true));
+	}
+
+	private final Class cls_NSPasteboard = rt.objc_getClass("NSPasteboard");
+	private final SEL sel_clearContents = rt.sel_registerName("clearContents");
+	private final SEL sel_writeObjects = rt.sel_registerName("writeObjects:");
+	private final SEL sel_pasteboardItems = rt.sel_registerName("pasteboardItems");
+	class NSPasteboard implements AppKit.NSPasteboard {
+	    public final ID id;
+
+	    NSPasteboard(ID id) {
+		this.id = id;
+	    }
+
+	    public ID id() {return(id);}
+
+	    public int clearContents() {
+		return(rt.objc_msgSend_NSUInt(id, sel_clearContents));
+	    }
+
+	    public boolean writeObjects(NSObject... objects) {
+		return(rt.objc_msgSend_bool(id, sel_writeObjects, fnd.NSArray(objects).id()));
+	    }
+
+	    public List<String> types() {
+		ID types = rt.objc_msgSend_id(id, sel_types);
+		if(types == null)
+		    return(null);
+		List<String> ret = new ArrayList<>();
+		for(ID typ : fnd.NSArray(types, false, false))
+		    ret.add(fnd.fromNSString(typ));
+		return(ret);
+	    }
+
+	    public List<AppKit.NSPasteboardItem> pasteboardItems() {
+		ID items = rt.objc_msgSend_id(id, sel_pasteboardItems);
+		if(items == null)
+		    return(null);
+		List<AppKit.NSPasteboardItem> ret = new ArrayList<>();
+		for(ID item : fnd.NSArray(items, false, false))
+		    ret.add(rt.wrap(item, NSPasteboardItem::new, true, true));
+		return(ret);
+	    }
+	}
+
+	private final SEL sel_generalPasteboard = rt.sel_registerName("generalPasteboard");
+	public NSPasteboard NSPasteboard_generalPasteboard() {
+	    return(new NSPasteboard(rt.objc_msgSend_id(cls_NSPasteboard.id(), sel_generalPasteboard)));
 	}
     }
 

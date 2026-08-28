@@ -89,6 +89,8 @@ public abstract class Runtime {
     abstract MemorySegment objc_msgSend_ptr(ID self, SEL sel);
     public abstract boolean objc_msgSend_bool(ID self, SEL sel);
     public abstract boolean objc_msgSend_bool(ID self, SEL sel, int arg1);
+    public abstract boolean objc_msgSend_bool(ID self, SEL sel, ID arg1);
+    public abstract boolean objc_msgSend_bool(ID self, SEL sel, ID arg1, ID arg2);
     public abstract int objc_msgSend_int(ID self, SEL sel);
     public abstract int objc_msgSend_NSUInt(ID self, SEL sel);
     public abstract double objc_msgSend_double(ID self, SEL sel);
@@ -173,6 +175,10 @@ public abstract class Runtime {
 	if(release)
 	    gcrelease(ret);
 	return(ret);
+    }
+
+    ID constobj(SymbolLookup lib, String name) {
+	return(id(lib.find(name).get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0)));
     }
 
     static class objc4 extends Runtime {
@@ -562,6 +568,24 @@ public abstract class Runtime {
 	public boolean objc_msgSend_bool(Runtime.ID self, Runtime.SEL sel, int arg1) {
 	    try {
 		return((int)objc_msgSend_bool_int.invoke(self.mem(), sel.mem(), arg1) != 0);
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
+	private final MethodHandle objc_msgSend_bool_id = msgtype(OC_BOOL, C_ID);
+	public boolean objc_msgSend_bool(Runtime.ID self, Runtime.SEL sel, Runtime.ID arg1) {
+	    try {
+		return((int)objc_msgSend_bool_id.invoke(self.mem(), sel.mem(), arg1.mem()) != 0);
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
+	private final MethodHandle objc_msgSend_bool_id_id = msgtype(OC_BOOL, C_ID, C_ID);
+	public boolean objc_msgSend_bool(Runtime.ID self, Runtime.SEL sel, Runtime.ID arg1, Runtime.ID arg2) {
+	    try {
+		return((int)objc_msgSend_bool_id_id.invoke(self.mem(), sel.mem(), arg1.mem(), arg2.mem()) != 0);
 	    } catch(Throwable e) {
 		throw(new RuntimeException(e));
 	    }
