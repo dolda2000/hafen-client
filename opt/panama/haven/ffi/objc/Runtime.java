@@ -49,6 +49,10 @@ public abstract class Runtime {
 	public ID id();
     }
 
+    public static interface Protocol {
+	public ID id();
+    }
+
     public static interface Ivar {
     }
 
@@ -66,6 +70,9 @@ public abstract class Runtime {
 
     public abstract Class objc_getClass(String name);
     public abstract String object_getClassName(ID id);
+    public abstract Protocol objc_getProtocol(String name);
+    public abstract String protocol_getName(Protocol id);
+    public abstract boolean class_addProtocol(Class cls, Protocol protocol);
     public abstract Ivar class_getInstanceVariable(Runtime.Class cls, String name);
     public abstract String ivar_getName(Runtime.Ivar v);
     public abstract long ivar_getOffset(Runtime.Ivar v);
@@ -224,6 +231,7 @@ public abstract class Runtime {
 
     static class objc4 extends Runtime {
 	static final MemoryLayout C_Class = ADDRESS;
+	static final MemoryLayout C_Protocol = ADDRESS;
 	static final MemoryLayout C_SEL = ADDRESS;
 	static final MemoryLayout C_ID = ADDRESS;
 	static final MemoryLayout C_Ivar = ADDRESS;
@@ -264,6 +272,25 @@ public abstract class Runtime {
 
 	    public String toString() {
 		return(lib.object_getClassName(this));
+	    }
+	}
+
+	static class Protocol extends StructInstance implements Runtime.Protocol {
+	    public final objc4 lib;
+
+	    Protocol(objc4 lib, MemorySegment mem) {
+		super(mem);
+		this.lib = lib;
+	    }
+
+	    protected StructLayout $layout() {return(_ID);}
+	    MemorySegment mem() {return(mem);}
+
+	    private final ID id = new ID(mem);
+	    public ID id() {return(id);}
+
+	    public String toString() {
+		return(lib.protocol_getName(this));
 	    }
 	}
 
@@ -355,6 +382,41 @@ public abstract class Runtime {
 		throw(new RuntimeException(e));
 	    }
 	    return(nullp(rv) ? null : rv.reinterpret(Long.MAX_VALUE).getString(0, Utils.utf8));
+	}
+
+	private final MethodHandle objc_getProtocol = ld.downcallHandle(rt.find("objc_getProtocol").get(), FunctionDescriptor.of(C_Protocol, ADDRESS));
+	public Protocol objc_getProtocol(String name) {
+	    try(Arena st = Arena.ofConfined()) {
+		MemorySegment rv;
+		try {
+		    rv = (MemorySegment)objc_getProtocol.invoke(st.allocateFrom(name, Utils.utf8));
+		} catch(Throwable e) {
+		    throw(new RuntimeException(e));
+		}
+		return(nullp(rv) ? null : new Protocol(this, rv));
+	    }
+	}
+
+	private final MethodHandle protocol_getName = ld.downcallHandle(rt.find("protocol_getName").get(), FunctionDescriptor.of(ADDRESS, C_Protocol));
+	public String protocol_getName(Runtime.Protocol p) {
+	    MemorySegment rv;
+	    try {
+		rv = (MemorySegment)protocol_getName.invoke(((Protocol)p).mem());
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	    return(nullp(rv) ? null : rv.reinterpret(Long.MAX_VALUE).getString(0, Utils.utf8));
+	}
+
+	private final MethodHandle class_addProtocol = ld.downcallHandle(rt.find("class_addProtocol").get(), FunctionDescriptor.of(OC_BOOL, C_Class, C_Protocol));
+	public boolean class_addProtocol(Runtime.Class cls, Runtime.Protocol protocol) {
+	    int rv;
+	    try {
+		rv = (int)class_addProtocol.invoke(((Class)cls).mem(), ((Protocol)protocol).mem());
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	    return((rv == 0) ? false : true);
 	}
 
 	private final MethodHandle class_getInstanceVariable = ld.downcallHandle(rt.find("class_getInstanceVariable").get(), FunctionDescriptor.of(C_Ivar, C_Class, ADDRESS));

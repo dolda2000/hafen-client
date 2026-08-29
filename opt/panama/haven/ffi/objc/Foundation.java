@@ -51,6 +51,7 @@ public abstract class Foundation {
     public static interface NSURL extends Runtime.NSObject {
 	public ID id();
 	public String absoluteString();
+	public NSURL filePathURL();
     }
 
     abstract NSURL NSURL(ID id, boolean retain, boolean release);
@@ -153,6 +154,7 @@ public abstract class Foundation {
 
 	private final Runtime.Class cls_NSURL = rt.objc_getClass("NSURL");
 	private final SEL sel_absoluteString = rt.sel_registerName("absoluteString");
+	private final SEL sel_filePathURL = rt.sel_registerName("filePathURL");
 	class NSURL implements Foundation.NSURL {
 	    public final ID id;
 
@@ -164,6 +166,10 @@ public abstract class Foundation {
 
 	    public String absoluteString() {
 		return(fromNSString(rt.objc_msgSend_id(id, sel_absoluteString)));
+	    }
+
+	    public NSURL filePathURL() {
+		return(NSURL(rt.objc_msgSend_id(id, sel_filePathURL), true, true));
 	    }
 
 	    public String toString() {

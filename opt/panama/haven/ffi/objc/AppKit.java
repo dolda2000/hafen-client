@@ -81,6 +81,14 @@ public abstract class AppKit {
     public static final int NSModalResponseCancel = 0;
     public static final int NSModalResponseOK     = 1;
 
+    public static final int NSDragOperationNone    =  0;
+    public static final int NSDragOperationCopy    =  1;
+    public static final int NSDragOperationLink    =  2;
+    public static final int NSDragOperationGeneric =  4;
+    public static final int NSDragOperationPrivate =  8;
+    public static final int NSDragOperationMove    = 16;
+    public static final int NSDragOperationDelete  = 32;
+
     public interface NSApplication extends Runtime.NSObject {
 	public ID id();
 	public void run();
@@ -213,6 +221,13 @@ public abstract class AppKit {
 	public default void windowDidResignKey(NSNotification notification) {}
     }
 
+    public interface NSDraggingInfo extends Runtime.NSObject {
+	public NSPasteboard draggingPasteboard();
+	public int draggingSequenceNumber();
+	public int draggingSourceOperationMask();
+	public CGPoint draggingLocation();
+    }
+
     public interface NSView extends Runtime.NSObject {
 	public ID id();
 	public void interpretKeyEvents(NSArray events);
@@ -224,9 +239,11 @@ public abstract class AppKit {
 	public CGSize convertSizeFromBacking(CGSize size);
 	public CGPoint convertPointToBacking(CGPoint point);
 	public CGPoint convertPointFromBacking(CGPoint point);
+	public CGPoint convertPointFromView(CGPoint point, NSView view);
 	public void setWantsBestResolutionOpenGLSurface(boolean val);
 	public void addCursorRect(CGRect rect, NSCursor cursor);
 	public void discardCursorRects();
+	public void registerForDraggedTypes(String... types);
     }
 
     public static class NSViewDelegate {
@@ -249,6 +266,11 @@ public abstract class AppKit {
 	public void insertText(String string) {}
 	public void doCommandBySelector(SEL selector) {}
 	public void resetCursorRects() {}
+
+	public int draggingEntered(NSDraggingInfo sender) {return(NSDragOperationNone);}
+	public int draggingUpdated(NSDraggingInfo sender) {return(NSDragOperationNone);}
+	public boolean wantsPeriodicDraggingUpdates() {return(false);}
+	public boolean performDragOperation(NSDraggingInfo sender) {return(false);}
     }
 
     public interface NSPasteboardItem extends Runtime.NSObject {
@@ -846,9 +868,37 @@ public abstract class AppKit {
 	    return(new NSWindow(id));
 	}
 
+	private final SEL sel_draggingPasteboard = rt.sel_registerName("draggingPasteboard");
+	private final SEL sel_draggingSequenceNumber = rt.sel_registerName("draggingSequenceNumber");
+	private final SEL sel_draggingSourceOperationMask = rt.sel_registerName("draggingSourceOperationMask");
+	private final SEL sel_draggingLocation = rt.sel_registerName("draggingLocation");
+	class NSDraggingInfo implements AppKit.NSDraggingInfo {
+	    public final ID id;
+
+	    public NSDraggingInfo(ID id) {
+		this.id = id;
+	    }
+
+	    public ID id() {return(id);}
+
+	    public NSPasteboard draggingPasteboard() {
+		return(rt.wrap(rt.objc_msgSend_id(id, sel_draggingPasteboard), NSPasteboard::new, true, true));
+	    }
+	    public int draggingSequenceNumber() {
+		return(rt.objc_msgSend_NSUInt(id, sel_draggingSequenceNumber));
+	    }
+	    public int draggingSourceOperationMask() {
+		return(rt.objc_msgSend_NSUInt(id, sel_draggingSourceOperationMask));
+	    }
+	    public CGPoint draggingLocation() {
+		return(cg.objc_msgSend_CGPoint(id, sel_draggingLocation));
+	    }
+	}
+
 	private final Class IOSYSView;
 	{
 	    IOSYSView = rt.objc_allocateClassPair(rt.objc_getClass("NSView"), "IOSYSView", 0);
+	    rt.class_addProtocol(IOSYSView, rt.objc_getProtocol("NSDraggingDestination"));
 	    rt.class_addIvar(IOSYSView, "java", 4, 2, "i");
 	    rt.class_addMethod(IOSYSView, rt.sel_registerName("acceptsFirstResponder"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "acceptsFirstResponder", this,
@@ -907,6 +957,19 @@ public abstract class AppKit {
 	    rt.class_addMethod(IOSYSView, rt.sel_registerName("resetCursorRects"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "resetCursorRects", this,
 				       null, C_ID, C_SEL), "v@:");
+
+	    rt.class_addMethod(IOSYSView, rt.sel_registerName("draggingEntered:"),
+			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "draggingEntered", this,
+				       NSUInteger, C_ID, C_SEL, C_ID), "l@:@");
+	    rt.class_addMethod(IOSYSView, rt.sel_registerName("draggingUpdated:"),
+			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "draggingUpdated", this,
+				       NSUInteger, C_ID, C_SEL, C_ID), "l@:@");
+	    rt.class_addMethod(IOSYSView, rt.sel_registerName("wantsPeriodicDraggingUpdates"),
+			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "wantsPeriodicDraggingUpdates", this,
+				       OC_BOOL, C_ID, C_SEL), "b@:");
+	    rt.class_addMethod(IOSYSView, rt.sel_registerName("performDragOperation:"),
+			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "performDragOperation", this,
+				       OC_BOOL, C_ID, C_SEL, C_ID), "b@:@");
 	    rt.objc_registerClassPair(IOSYSView);
 	}
 	private final SEL sel_interpretKeyEvents = rt.sel_registerName("interpretKeyEvents:");
@@ -915,9 +978,11 @@ public abstract class AppKit {
 	private final SEL sel_convertSizeFromBacking = rt.sel_registerName("convertSizeFromBacking:");
 	private final SEL sel_convertPointToBacking = rt.sel_registerName("convertPointToBacking:");
 	private final SEL sel_convertPointFromBacking = rt.sel_registerName("convertPointFromBacking:");
+	private final SEL sel_convertPoint_fromView = rt.sel_registerName("convertPoint:fromView:");
 	private final SEL sel_setWantsBestResolutionOpenGLSurface = rt.sel_registerName("setWantsBestResolutionOpenGLSurface:");
 	private final SEL sel_addCursorRect_cursor = rt.sel_registerName("addCursorRect:cursor:");
 	private final SEL sel_discardCursorRects = rt.sel_registerName("discardCursorRects");
+	private final SEL sel_registerForDraggedTypes = rt.sel_registerName("registerForDraggedTypes:");
 	class IOSYSView implements NSView {
 	    private static final Map<Integer, IOSYSView> reg = new HashMap<>();
 	    private static int nextkey = 0;
@@ -956,6 +1021,7 @@ public abstract class AppKit {
 	    public CGSize convertSizeFromBacking(CGSize size) {return(cg.objc_msgSend_CGSize(id, sel_convertSizeFromBacking, size));}
 	    public CGPoint convertPointToBacking(CGPoint point) {return(cg.objc_msgSend_CGPoint(id, sel_convertPointToBacking, point));}
 	    public CGPoint convertPointFromBacking(CGPoint point) {return(cg.objc_msgSend_CGPoint(id, sel_convertPointFromBacking, point));}
+	    public CGPoint convertPointFromView(CGPoint point, NSView view) {return(cg.objc_msgSend_CGPoint(id, sel_convertPoint_fromView, point, (view == null) ? null : view.id()));}
 
 	    public void addCursorRect(CGRect rect, AppKit.NSCursor cursor) {
 		cg.objc_msgSend_void(id, sel_addCursorRect_cursor, rect, cursor.id());
@@ -966,6 +1032,14 @@ public abstract class AppKit {
 
 	    public void setWantsBestResolutionOpenGLSurface(boolean val) {
 		rt.objc_msgSend_void(id, sel_setWantsBestResolutionOpenGLSurface, val);
+	    }
+
+	    public void registerForDraggedTypes(String... types) {
+		NSString[] buf = new NSString[types.length];
+		for(int i = 0; i < types.length; i++)
+		    buf[i] = fnd.NSString(types[i]);
+		NSArray ary = fnd.NSArray(buf);
+		rt.objc_msgSend_void(id, sel_registerForDraggedTypes, ary.id());
 	    }
 
 	    private static <R> R callback(VersionC ak, MemorySegment objp, Function<IOSYSView, R> fun, R eret) {
@@ -1048,6 +1122,19 @@ public abstract class AppKit {
 	    }
 	    private static void resetCursorRects(VersionC ak, MemorySegment objp, MemorySegment sel) {
 		callback(ak, objp, view -> view.dg.resetCursorRects());
+	    }
+
+	    private static long draggingEntered(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment sender) {
+		return(callback(ak, objp, view -> view.dg.draggingEntered(ak.rt.wrap(ak.rt.id(sender), id -> ak.new NSDraggingInfo(id), true, true)), NSDragOperationNone));
+	    }
+	    private static long draggingUpdated(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment sender) {
+		return(callback(ak, objp, view -> view.dg.draggingUpdated(ak.rt.wrap(ak.rt.id(sender), id -> ak.new NSDraggingInfo(id), true, true)), NSDragOperationNone));
+	    }
+	    private static byte wantsPeriodicDraggingUpdates(VersionC ak, MemorySegment objp, MemorySegment sel) {
+		return((byte)callback(ak, objp, view -> (byte)(view.dg.wantsPeriodicDraggingUpdates() ? 1 : 0), 0));
+	    }
+	    private static byte performDragOperation(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment sender) {
+		return((byte)callback(ak, objp, view -> (byte)(view.dg.performDragOperation(ak.rt.wrap(ak.rt.id(sender), id -> ak.new NSDraggingInfo(id), true, true)) ? 1 : 0), 0));
 	    }
 	}
 

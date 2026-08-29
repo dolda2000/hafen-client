@@ -172,6 +172,7 @@ public abstract class CoreGraphics {
     public abstract ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, ID arg1, CGPoint arg2);
     public abstract CGPoint objc_msgSend_CGPoint(Runtime.ID self, Runtime.SEL sel);
     public abstract CGPoint objc_msgSend_CGPoint(Runtime.ID self, Runtime.SEL sel, CGPoint rect);
+    public abstract CGPoint objc_msgSend_CGPoint(Runtime.ID self, Runtime.SEL sel, CGPoint arg1, ID arg2);
     public abstract void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, CGSize rect);
     public abstract ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, CoreGraphics.CGSize rect);
     abstract ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, MemorySegment arg1, CoreGraphics.CGSize arg2);
@@ -189,6 +190,10 @@ public abstract class CoreGraphics {
 	private final SymbolLookup dylib = SymbolLookup.libraryLookup("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics", Arena.global());
 	private final Runtime rt = Runtime.get();
 	private final CoreFoundation cf = CoreFoundation.get();
+
+	private static MemorySegment nid(Runtime.ID id) {
+	    return((id == null) ? MemorySegment.NULL : id.mem());
+	}
 
 	static final StructLayout _CGPoint = struct(new MemoryLayout[] {
 		CGFloat.withName("x"),
@@ -455,6 +460,12 @@ public abstract class CoreGraphics {
 	public CGPoint objc_msgSend_CGPoint(Runtime.ID self, Runtime.SEL sel, CoreGraphics.CGPoint rect) {
 	    try {
 		return(CGPoint((MemorySegment)objc_msgSend_CGPoint_CGPoint.invoke(Arena.ofAuto(), self.mem(), sel.mem(), rect.mem())));
+	    } catch(Throwable e) {throw(new RuntimeException(e));}
+	}
+	private final MethodHandle objc_msgSend_CGPoint_CGPoint_id = rt.msgtype(_CGPoint, _CGPoint, rt.C_ID());
+	public CGPoint objc_msgSend_CGPoint(Runtime.ID self, Runtime.SEL sel, CoreGraphics.CGPoint arg1, ID arg2) {
+	    try {
+		return(CGPoint((MemorySegment)objc_msgSend_CGPoint_CGPoint_id.invoke(Arena.ofAuto(), self.mem(), sel.mem(), arg1.mem(), nid(arg2))));
 	    } catch(Throwable e) {throw(new RuntimeException(e));}
 	}
 

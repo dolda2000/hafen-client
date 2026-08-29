@@ -44,6 +44,7 @@ import haven.ffi.gl.*;
 import haven.ffi.objc.AppKit.*;
 import haven.ffi.objc.CGL.*;
 import haven.ffi.objc.CoreGraphics.*;
+import haven.ffi.objc.Foundation.*;
 import haven.ffi.objc.Runtime;
 import static haven.ffi.objc.Carbon.*;
 import static haven.iosys.tk.Key.Std.*;
@@ -601,7 +602,8 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		Collection<Path> ret = new ArrayList<>();
 		for(NSPasteboardItem item : cont) {
 		    if(item.types().contains("public.file-url")) {
-			URI uri = Utils.uri(item.stringForType("public.file-url"));
+			NSURL url = fnd.NSURL(item.stringForType("public.file-url"));
+			URI uri = Utils.uri(url.filePathURL().absoluteString());
 			ret.add(Paths.get(uri));
 		    }
 		}
@@ -644,6 +646,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    private CGLEnvironment renv;
 	    private Coord size = Coord.z;
 	    private NSCursor cursor = null;
+	    private DropHandler drophandler = null;
 
 	    public class CGLEnvironment extends FFIEnvironment {
 		private int qstate;
@@ -691,6 +694,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		nsw.setCollectionBehavior(AppKit.NSWindowCollectionBehaviorFullScreenPrimary);
 		view = ak.NSView(new ViewDelegate(), cg.CGRect(Area.sized(Coord.of(1, 1))));
 		view.setWantsBestResolutionOpenGLSurface(true);
+		view.registerForDraggedTypes("public.tiff", "public.file-url", "public.utf8-plain-text");
 		nsw.setContentView(view);
 	    }
 
@@ -797,6 +801,69 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 
 		public void resetCursorRects() {
 		    updatecursor();
+		}
+
+		public boolean wantsPeriodicDraggingUpdates() {return(true);}
+
+		class DragEvent implements DropHandler.DropHoverEvent {
+		    public static final BMap<DropHandler.Action, Integer> actmap =
+			new HashBMap<>(Utils.<DropHandler.Action, Integer>map()
+				       .put(DropHandler.Action.COPY, AppKit.NSDragOperationCopy)
+				       .put(DropHandler.Action.LINK, AppKit.NSDragOperationLink)
+				       .put(DropHandler.Action.MOVE, AppKit.NSDragOperationMove)
+				       .map());
+		    public final NSDraggingInfo drag;
+
+		    public DragEvent(NSDraggingInfo drag) {
+			this.drag = drag;
+		    }
+
+		    public Coord wndc() {
+			return(Coord.of(0, size.y).add(view.convertPointToBacking(view.convertPointFromView(drag.draggingLocation(), null)).c().mul(1, -1)));
+		    }
+
+		    public Set<DropHandler.Action> actions() {
+			Set<DropHandler.Action> ret = EnumSet.noneOf(DropHandler.Action.class);
+			int mask = drag.draggingSourceOperationMask();
+			for(Map.Entry<DropHandler.Action, Integer> act : actmap.entrySet()) {
+			    if((mask & act.getValue()) != 0)
+				ret.add(act.getKey());
+			}
+			return(ret);
+		    }
+
+		    private Clipboard.Contents cont = null;
+		    public Clipboard.Contents contents() {
+			if(cont == null)
+			    cont = new Pasteboard(drag.draggingPasteboard()).mkcontents();
+			return(cont);
+		    }
+		}
+
+		private int draghover(NSDraggingInfo drag) {
+		    DropHandler.Action act = (drophandler == null) ? null : drophandler.drophover(new DragEvent(drag));
+		    Integer ret = DragEvent.actmap.get(act);
+		    return((ret == null) ? AppKit.NSDragOperationNone : ret);
+		}
+
+		public int draggingEntered(NSDraggingInfo drag) {
+		    return(draghover(drag));
+		}
+		public int draggingUpdated(NSDraggingInfo drag) {
+		    return(draghover(drag));
+		}
+		public boolean performDragOperation(NSDraggingInfo drop) {
+		    class Event extends DragEvent implements DropHandler.DroppedEvent {
+			DropHandler.Action accepted = null;
+
+			Event() {super(drop);}
+
+			public void accept(DropHandler.Action act) {
+			    accepted = act;
+			}
+		    }
+		    Event ev = new Event();
+		    return((drophandler != null) && drophandler.dropped(new Event()) && (ev.accepted != null));
 		}
 	    }
 
@@ -1111,6 +1178,11 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		return(Clipboard.nil);
 	    }
 
+	    public CocoaWindow drophandler(DropHandler h) {
+		this.drophandler = h;
+		return(this);
+	    }
+
 	    public void dispose() {
 	    }
 	}
@@ -1120,7 +1192,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	}
 
 	public void browse(URI location) throws IOException {
-	    Foundation.NSURL url = fnd.NSURL(location.toString());
+	    NSURL url = fnd.NSURL(location.toString());
 	    if(url == null)
 		throw(new IOException("Invalid URL: " + location.toString()));
 	    boolean st = mainrun(() -> ak.NSWorkspace_sharedWorkspace().openURL(url));
