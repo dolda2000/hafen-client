@@ -48,6 +48,14 @@ public abstract class Foundation {
     public abstract NSString NSString(String str);
     public abstract String fromNSString(ID id);
 
+    public static interface NSURL extends Runtime.NSObject {
+	public ID id();
+	public String absoluteString();
+    }
+
+    abstract NSURL NSURL(ID id, boolean retain, boolean release);
+    public abstract NSURL NSURL(String str);
+
     public static interface NSArray extends Runtime.NSObject, Iterable<ID> {
 	public ID id();
 	public int size();
@@ -141,6 +149,35 @@ public abstract class Foundation {
 	    try(Arena st = Arena.ofConfined()) {
 		return(rt.wrap(rt.objc_msgSend_id(rt.objc_msgSend_id(cls_NSString.id(), sel_alloc), sel_initWithUTF8String, st.allocateFrom(str, Utils.utf8)), NSString::new, false, true));
 	    }
+	}
+
+	private final Runtime.Class cls_NSURL = rt.objc_getClass("NSURL");
+	private final SEL sel_absoluteString = rt.sel_registerName("absoluteString");
+	class NSURL implements Foundation.NSURL {
+	    public final ID id;
+
+	    NSURL(ID id) {
+		this.id = id;
+	    }
+
+	    public ID id() {return(id);}
+
+	    public String absoluteString() {
+		return(fromNSString(rt.objc_msgSend_id(id, sel_absoluteString)));
+	    }
+
+	    public String toString() {
+		return(absoluteString());
+	    }
+	}
+
+	NSURL NSURL(ID id, boolean retain, boolean release) {
+	    return(rt.wrap(id, NSURL::new, retain, release));
+	}
+
+	private final SEL sel_initWithString = rt.sel_registerName("initWithString:");
+	public NSURL NSURL(String str) {
+	    return(rt.wrap(rt.objc_msgSend_id(rt.objc_msgSend_id(cls_NSURL.id(), sel_alloc), sel_initWithString, NSString(str).id()), NSURL::new, false, true));
 	}
 
 	private final Runtime.Class cls_NSArray = rt.objc_getClass("NSArray");

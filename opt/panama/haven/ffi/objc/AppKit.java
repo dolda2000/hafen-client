@@ -86,6 +86,11 @@ public abstract class AppKit {
 	public boolean isActive();
     }
 
+    public interface NSWorkspace extends Runtime.NSObject {
+	public ID id();
+	public boolean openURL(NSURL url);
+    }
+
     public interface NSNotification extends Runtime.NSObject {
 	public ID id();
     }
@@ -260,6 +265,7 @@ public abstract class AppKit {
     public abstract NSPasteboard NSPasteboard_generalPasteboard();
 
     public abstract NSApplication NSApplication_sharedApplication();
+    public abstract NSWorkspace NSWorkspace_sharedWorkspace();
     public abstract int NSEvent_pressedMouseButtons();
     public abstract List<AppKit.NSScreen> NSScreen_screens();
     public abstract NSWindow NSWindow(CGRect contentRect, int style, int backingStoreType, boolean defer);
@@ -304,6 +310,27 @@ public abstract class AppKit {
 	private final SEL sel_sharedApplication = rt.sel_registerName("sharedApplication");
 	public NSApplication NSApplication_sharedApplication() {
 	    return(new NSApplication(rt.objc_msgSend_id(NSApplication.id(), sel_sharedApplication)));
+	}
+
+	private final Runtime.Class cls_NSWorkspace = rt.objc_getClass("NSWorkspace");
+	private final SEL sel_openURL = rt.sel_registerName("openURL:");
+	class NSWorkspace implements AppKit.NSWorkspace {
+	    public final ID id;
+
+	    public NSWorkspace(ID id) {
+		this.id = id;
+	    }
+
+	    public ID id() {return(id);}
+
+	    public boolean openURL(NSURL url) {
+		return(rt.objc_msgSend_bool(id, sel_openURL, url.id()));
+	    }
+	}
+
+	private final SEL sel_sharedWorkspace = rt.sel_registerName("sharedWorkspace");
+	public NSWorkspace NSWorkspace_sharedWorkspace() {
+	    return(new NSWorkspace(rt.objc_msgSend_id(cls_NSWorkspace.id(), sel_sharedWorkspace)));
 	}
 
 	private Class WindowDelegateAdapter = null;

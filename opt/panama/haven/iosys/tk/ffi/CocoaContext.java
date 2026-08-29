@@ -121,10 +121,17 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
     <T> T mainrun(Supplier<T> task) {
 	class Runner implements Runnable {
 	    T val;
+	    RuntimeException err;
 	    boolean done;
 
 	    public void run() {
-		val = task.get();
+		try {
+		    val = task.get();
+		} catch(RuntimeException e) {
+		    err = e;
+		} catch(Throwable t) {
+		    err = new RuntimeException(t);
+		}
 		synchronized(this) {
 		    done = true;
 		    notifyAll();
@@ -145,6 +152,8 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	}
 	if(irq)
 	    Thread.currentThread().interrupt();
+	if(r.err != null)
+	    throw(r.err);
 	return(r.val);
     }
 
@@ -1108,6 +1117,15 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 
 	public Windeye window() {
 	    return(mainrun(CocoaWindow::new));
+	}
+
+	public void browse(URI location) throws IOException {
+	    Foundation.NSURL url = fnd.NSURL(location.toString());
+	    if(url == null)
+		throw(new IOException("Invalid URL: " + location.toString()));
+	    boolean st = mainrun(() -> ak.NSWorkspace_sharedWorkspace().openURL(url));
+	    if(!st)
+		throw(new IOException("Could not open URL: " + location.toString()));
 	}
 
 	public String description() {
