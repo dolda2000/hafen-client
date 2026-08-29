@@ -85,11 +85,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
     }
 
     public Toolkit open(String... args) {
-	try {
-	    javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
-	} catch(Exception e) {
-	    throw(new RuntimeException(e));
-	}
+	AWTToolkit.initawt2();
 	return(mainrun(CocoaToolkit::new));
     }
 
