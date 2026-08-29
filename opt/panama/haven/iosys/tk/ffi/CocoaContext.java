@@ -1057,6 +1057,10 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    public CocoaWindow icon(BufferedImage img) {
+		/* XXX? Debatable behavior, but what else? Some global
+		 * "application" interface for the Toolkit as a whole
+		 * that is only used by Cocoa...? */
+		app.setApplicationIconImage(ak.NSImage(img, view.convertSizeFromBacking(cg.CGSize(Coord.of(img.getWidth(), img.getHeight())))));
 		return(this);
 	    }
 

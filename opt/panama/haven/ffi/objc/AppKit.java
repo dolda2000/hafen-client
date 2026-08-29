@@ -95,6 +95,7 @@ public abstract class AppKit {
 	public void finishLaunching();
 	public void setActivationPolicy(int policy);
 	public boolean isActive();
+	public void setApplicationIconImage(NSImage img);
     }
 
     public interface NSWorkspace extends Runtime.NSObject {
@@ -328,6 +329,7 @@ public abstract class AppKit {
 	private final SEL sel_finishLaunching = rt.sel_registerName("finishLaunching");
 	private final SEL sel_setActivationPolicy = rt.sel_registerName("setActivationPolicy:");
 	private final SEL sel_isActive = rt.sel_registerName("isActive");
+	private final SEL sel_setApplicationIconImage = rt.sel_registerName("setApplicationIconImage:");
 	class NSApplication implements AppKit.NSApplication {
 	    public final ID id;
 
@@ -343,6 +345,10 @@ public abstract class AppKit {
 	    }
 	    public boolean isActive() {
 		return(rt.objc_msgSend_bool(id, sel_isActive));
+	    }
+
+	    public void setApplicationIconImage(AppKit.NSImage img) {
+		rt.objc_msgSend_void(id, sel_setApplicationIconImage, (img == null) ? null : img.id());
 	    }
 	}
 
