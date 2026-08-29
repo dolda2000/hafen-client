@@ -78,6 +78,9 @@ public abstract class AppKit {
     public static final int NSHelpKeyMask       = 1 << 22;
     public static final int NSFunctionKeyMask   = 1 << 23;
 
+    public static final int NSModalResponseCancel = 0;
+    public static final int NSModalResponseOK     = 1;
+
     public interface NSApplication extends Runtime.NSObject {
 	public ID id();
 	public void run();
@@ -264,6 +267,19 @@ public abstract class AppKit {
     }
     public abstract NSPasteboard NSPasteboard_generalPasteboard();
 
+    public interface NSSavePanel extends Runtime.NSObject {
+	public NSURL URL();
+	public void beginSheetModal(NSWindow window, Consumer<Integer> handler);
+	public void begin(Consumer<Integer> handler);
+	public void setAllowedFileTypes(String... types);
+	public void setAllowsOtherFileTypes(boolean allowed);
+    }
+    public abstract NSSavePanel NSSavePanel();
+
+    public interface NSOpenPanel extends NSSavePanel {
+    }
+    public abstract NSOpenPanel NSOpenPanel();
+
     public abstract NSApplication NSApplication_sharedApplication();
     public abstract NSWorkspace NSWorkspace_sharedWorkspace();
     public abstract int NSEvent_pressedMouseButtons();
@@ -276,6 +292,7 @@ public abstract class AppKit {
 	private static final MemoryLayout C_SEL = Runtime.objc4.C_SEL;
 	private static final MemoryLayout OC_BOOL = Runtime.objc4.OC_BOOL;
 	private static final MemoryLayout NSUInteger = Runtime.objc4.NSUInteger;
+	private static final MemoryLayout NSInteger = Runtime.objc4.NSInteger;
 	private final SymbolLookup dylib = SymbolLookup.libraryLookup("/System/Library/Frameworks/AppKit.framework/AppKit", Arena.global());
 	private final Arena localarena = Arena.ofAuto();
 	final Runtime rt = Runtime.get();
@@ -1131,6 +1148,84 @@ public abstract class AppKit {
 	private final SEL sel_generalPasteboard = rt.sel_registerName("generalPasteboard");
 	public NSPasteboard NSPasteboard_generalPasteboard() {
 	    return(new NSPasteboard(rt.objc_msgSend_id(cls_NSPasteboard.id(), sel_generalPasteboard)));
+	}
+
+	private static void handlecompletion(Consumer<Integer> handler, MemorySegment blk, long result) {
+	    Runtime.Block.wrap(() -> handler.accept((int)result));
+	}
+	private final BlockDescriptor blk_handlecompletion = rt.blockdesc(slookup(MethodHandles.lookup(), VersionC.class, "handlecompletion",
+										  Void.TYPE, Consumer.class, MemorySegment.class, Long.TYPE),
+									  FunctionDescriptor.ofVoid(ADDRESS, NSInteger),
+									  "vl");
+
+	private final Class cls_NSSavePanel = rt.objc_getClass("NSSavePanel");
+	private final SEL sel_beginSheetModalForWindow_completionHandler = rt.sel_registerName("beginSheetModalForWindow:completionHandler:");
+	private final SEL sel_beginWithCompletionHandler = rt.sel_registerName("beginWithCompletionHandler:");
+	private final SEL sel_URL = rt.sel_registerName("URL");
+	private final SEL sel_setAllowedFileTypes = rt.sel_registerName("setAllowedFileTypes:");
+	private final SEL sel_setAllowsOtherFileTypes = rt.sel_registerName("setAllowsOtherFileTypes:");
+	class NSSavePanel implements AppKit.NSSavePanel {
+	    private static Collection<Block> active = new HashSet<>();
+	    public final ID id;
+
+	    NSSavePanel(ID id) {
+		this.id = id;
+	    }
+
+	    public ID id() {return(id);}
+
+	    public NSURL URL() {
+		return(fnd.NSURL(rt.objc_msgSend_id(id, sel_URL), true, true));
+	    }
+
+	    public void beginSheetModal(AppKit.NSWindow window, Consumer<Integer> handler) {
+		Block[] blk = {null};
+		blk[0] = rt.block(blk_handlecompletion, (Consumer<Integer>)val -> {
+		    active.remove(blk[0]);
+		    handler.accept(val);
+		});
+		rt.objc_msgSend_void(id, sel_beginSheetModalForWindow_completionHandler, window.id(), blk[0].id());
+		active.add(blk[0]);
+	    }
+
+	    public void begin(Consumer<Integer> handler) {
+		Block[] blk = {null};
+		blk[0] = rt.block(blk_handlecompletion, (Consumer<Integer>)val -> {
+		    active.remove(blk[0]);
+		    handler.accept(val);
+		});
+		rt.objc_msgSend_void(id, sel_beginWithCompletionHandler, blk[0].id());
+		active.add(blk[0]);
+	    }
+
+	    public void setAllowedFileTypes(String... types) {
+		NSString[] buf = new NSString[types.length];
+		for(int i = 0; i < types.length; i++)
+		    buf[i] = fnd.NSString(types[i]);
+		NSArray arg = fnd.NSArray(buf);
+		rt.objc_msgSend_void(id, sel_setAllowedFileTypes, arg.id());
+	    }
+
+	    public void setAllowsOtherFileTypes(boolean allow) {
+		rt.objc_msgSend_void(id, sel_setAllowsOtherFileTypes, allow);
+	    }
+	}
+
+	private final SEL sel_savePanel = rt.sel_registerName("savePanel");
+	public NSSavePanel NSSavePanel() {
+	    return(rt.wrap(rt.objc_msgSend_id(cls_NSSavePanel.id(), sel_savePanel), NSSavePanel::new, true, true));
+	}
+
+	private final Class cls_NSOpenPanel = rt.objc_getClass("NSOpenPanel");
+	class NSOpenPanel extends NSSavePanel implements AppKit.NSOpenPanel {
+	    NSOpenPanel(ID id) {
+		super(id);
+	    }
+	}
+
+	private final SEL sel_openPanel = rt.sel_registerName("openPanel");
+	public NSOpenPanel NSOpenPanel() {
+	    return(rt.wrap(rt.objc_msgSend_id(cls_NSOpenPanel.id(), sel_openPanel), NSOpenPanel::new, true, true));
 	}
     }
 

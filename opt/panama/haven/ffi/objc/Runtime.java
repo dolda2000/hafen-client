@@ -38,6 +38,13 @@ import static haven.ffi.FUtils.*;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 
 public abstract class Runtime {
+    public static final int BLOCK_IS_NOESCAPE      = 1 << 23;
+    public static final int BLOCK_HAS_COPY_DISPOSE = 1 << 25;
+    public static final int BLOCK_HAS_CTOR         = 1 << 26;
+    public static final int BLOCK_IS_GLOBAL        = 1 << 28;
+    public static final int BLOCK_HAS_STRET        = 1 << 29;
+    public static final int BLOCK_HAS_SIGNATURE    = 1 << 30;
+
     public static interface Class {
 	public ID id();
     }
@@ -79,6 +86,7 @@ public abstract class Runtime {
     public abstract void objc_msgSend_void(ID self, SEL sel, MemorySegment arg1, int arg2);
     public abstract void objc_msgSend_void(ID self, SEL sel, ID arg1);
     public abstract void objc_msgSend_void(ID self, SEL sel, ID arg1, boolean arg2);
+    public abstract void objc_msgSend_void(ID self, SEL sel, ID arg1, ID arg2);
     public abstract void objc_msgSend_void(ID self, SEL sel, SEL arg1, ID arg2, boolean arg3);
     public abstract ID objc_msgSend_id(ID self, SEL sel);
     public abstract ID objc_msgSend_id(ID self, SEL sel, int arg1);
@@ -107,6 +115,39 @@ public abstract class Runtime {
     private final Arena localarena = Arena.ofAuto();
     private int maintaskid = 0;
     private Class runnable = null;
+
+    public static interface Block extends NSObject {
+	public static <T> T wrap(Supplier<T> task, T eret) {
+	    try {
+		return(task.get());
+	    } catch(Throwable t) {
+		Thread.UncaughtExceptionHandler h = Thread.currentThread().getUncaughtExceptionHandler();
+		if(h == null)
+		    new Warning(t, "Uncaught exception in block invocation").issue();
+		else
+		    h.uncaughtException(Thread.currentThread(), t);
+		return(eret);
+	    }
+	}
+
+	public static void wrap(Runnable task) {
+	    try {
+		task.run();
+	    } catch(Throwable t) {
+		Thread.UncaughtExceptionHandler h = Thread.currentThread().getUncaughtExceptionHandler();
+		if(h == null)
+		    new Warning(t, "Uncaught exception in block invocation").issue();
+		else
+		    h.uncaughtException(Thread.currentThread(), t);
+	    }
+	}
+    }
+
+    public static interface BlockDescriptor {
+    }
+
+    public abstract Block block(BlockDescriptor desc, Object arg1);
+    public abstract BlockDescriptor blockdesc(MethodHandle invoke, FunctionDescriptor sig, String objcsig);
 
     private static void mainrun_handle(Runtime rt, MemorySegment objp, MemorySegment sel) {
 	try {
@@ -483,6 +524,15 @@ public abstract class Runtime {
 	    }
 	}
 
+	private final MethodHandle objc_msgSend_void_id_id = msgtype(null, C_ID, C_ID);
+	public void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, Runtime.ID arg1, Runtime.ID arg2) {
+	    try {
+		objc_msgSend_void_id_id.invoke(self.mem(), sel.mem(), nid(arg1), nid(arg2));
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
 	private final MethodHandle objc_msgSend_void_SEL_id_bool = msgtype(null, C_SEL, C_ID, OC_BOOL);
 	public void objc_msgSend_void(Runtime.ID self, Runtime.SEL sel, Runtime.SEL arg1, Runtime.ID arg2, boolean arg3) {
 	    try {
@@ -616,6 +666,70 @@ public abstract class Runtime {
 	    } catch(Throwable e) {
 		throw(new RuntimeException(e));
 	    }
+	}
+
+	static final StructLayout _block_literal = struct(new MemoryLayout[] {
+	    ADDRESS.withName("isa"),
+	    C_INT.withName("flags"),
+	    C_INT.withName("reserved"),
+	    ADDRESS.withName("invoke"),
+	    ADDRESS.withName("descriptor"),
+	});
+	static final StructLayout _block_descriptor = struct(new MemoryLayout[] {
+	    C_LONG.withName("reserved"),
+	    C_LONG.withName("size"),
+	    ADDRESS.withName("copy_helper"),
+	    ADDRESS.withName("dispose_helper"),
+	    ADDRESS.withName("signature"),
+	});
+
+	private final Class cls_NSConcreteGlobalBlock = new Class(this, rt.find("_NSConcreteGlobalBlock").get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0));
+	class BlockDescriptor implements Runtime.BlockDescriptor {
+	    final MethodHandle invoke;
+	    final FunctionDescriptor sig;
+	    final MemorySegment mem;
+
+	    private final VarHandle size = _block_descriptor.varHandle(PathElement.groupElement("size"));
+	    private final VarHandle signature = _block_descriptor.varHandle(PathElement.groupElement("signature"));
+	    BlockDescriptor(MethodHandle invoke, FunctionDescriptor sig, String objcsig) {
+		Arena alloc = Arena.ofAuto();
+		this.invoke = invoke;
+		this.sig = sig;
+		this.mem = alloc.allocate(_block_descriptor);
+		size.set(this.mem, 0, _block_literal.byteSize());
+		signature.set(this.mem, 0, alloc.allocateFrom(objcsig, Utils.ascii));
+	    }
+	}
+
+	class Block implements Runtime.Block {
+	    final ID id;
+
+	    private static final VarHandle isa = _block_literal.varHandle(PathElement.groupElement("isa"));
+	    private static final VarHandle flags = _block_literal.varHandle(PathElement.groupElement("flags"));
+	    private static final VarHandle invoke = _block_literal.varHandle(PathElement.groupElement("invoke"));
+	    private static final VarHandle descriptor = _block_literal.varHandle(PathElement.groupElement("descriptor"));
+	    public Block(Arena alloc, MemorySegment fun, BlockDescriptor desc) {
+		MemorySegment mem = alloc.allocate(_block_literal);
+		this.id = objc4.this.id(mem);
+		isa.set(mem, 0, cls_NSConcreteGlobalBlock.mem());
+		flags.set(mem, 0, BLOCK_IS_GLOBAL | BLOCK_HAS_SIGNATURE);
+		invoke.set(mem, 0, fun);
+		descriptor.set(mem, 0, desc.mem);
+	    }
+
+	    public ID id() {return(id);}
+	}
+
+	public BlockDescriptor blockdesc(MethodHandle invoke, FunctionDescriptor sig, String objcsig) {
+	    return(new BlockDescriptor(invoke, sig, objcsig));
+	}
+
+	public Block block(Runtime.BlockDescriptor gdesc, Object arg1) {
+	    Arena alloc = Arena.ofAuto();
+	    BlockDescriptor desc = (BlockDescriptor)gdesc;
+	    MemorySegment fun = ld.upcallStub(MethodHandles.insertArguments(desc.invoke, 0, arg1),
+					      desc.sig, alloc);
+	    return(new Block(alloc, fun, desc));
 	}
     }
 

@@ -1128,6 +1128,49 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		throw(new IOException("Could not open URL: " + location.toString()));
 	}
 
+	public class PanelPicker implements FilePicker.Factory {
+	    public class Panel implements FilePicker {
+		public final NSSavePanel panel;
+		public final CocoaWindow parent;
+
+		public Panel(Mode mode, CocoaWindow parent) {
+		    this.panel = (mode == Mode.OPEN) ? ak.NSOpenPanel() : ak.NSSavePanel();
+		    this.parent = parent;
+		}
+
+		public void filter(String desc, String... exts) {
+		    mainrun(() -> {
+			panel.setAllowedFileTypes(exts);
+			panel.setAllowsOtherFileTypes(true);
+		    });
+		}
+
+		public Promise<Path> show() {
+		    Promise<Path> ret = new Promise<>();
+		    Consumer<Integer> handler = result -> {
+			if(result == AppKit.NSModalResponseOK) {
+			    ret.resolve(Paths.get(Utils.uri(panel.URL().absoluteString())));
+			} else {
+			    ret.resolve(null);
+			}
+		    };
+		    if(parent == null)
+			mainrun(() -> panel.begin(handler));
+		    else
+			mainrun(() -> panel.beginSheetModal(parent.nsw, handler));
+		    return(ret);
+		}
+	    }
+
+	    public FilePicker make(FilePicker.Mode mode, Windeye parent) {
+		return(mainrun(() -> new Panel(mode, (CocoaWindow)parent)));
+	    }
+	}
+
+	public FilePicker.Factory picker() {
+	    return(new PanelPicker());
+	}
+
 	public String description() {
 	    return("Cocoa/CGL, OSX " + fnd.processInfo().operatingSystemVersionString());
 	}
