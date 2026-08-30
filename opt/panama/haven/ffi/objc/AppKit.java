@@ -378,78 +378,52 @@ public abstract class AppKit {
 	    return(new NSWorkspace(rt.objc_msgSend_id(cls_NSWorkspace.id(), sel_sharedWorkspace)));
 	}
 
-	private Class WindowDelegateAdapter = null;
-	class WindowDelegateAdapter {
-	    private static final Map<Integer, WindowDelegateAdapter> reg = new HashMap<>();
-	    private static int nextkey = 0;
+	private final Class cls_WindowDelegateAdapter;
+	{
+	    cls_WindowDelegateAdapter = rt.objc_allocateClassPair(rt.objc_getClass("NSObject"), "IOSYSWindowDelegateAdapter", 0);
+	    rt.class_addIvar(cls_WindowDelegateAdapter, "java", 4, 2, "i");
+	    rt.class_addMethod(cls_WindowDelegateAdapter, rt.sel_registerName("windowShouldClose:"),
+			       supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowShouldClose", VersionC.this,
+				       OC_BOOL, C_ID, C_SEL, C_ID), "B@:@");
+	    rt.class_addMethod(cls_WindowDelegateAdapter, rt.sel_registerName("windowWillClose:"),
+			       supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowWillClose", VersionC.this,
+				       null, C_ID, C_SEL, C_ID), "B@:@");
+	    rt.class_addMethod(cls_WindowDelegateAdapter, rt.sel_registerName("windowDidResize:"),
+			       supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidResize", VersionC.this,
+				       null, C_ID, C_SEL, C_ID), "B@:@");
+	    rt.class_addMethod(cls_WindowDelegateAdapter, rt.sel_registerName("windowDidMiniaturize:"),
+			       supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidMiniaturize", VersionC.this,
+				       null, C_ID, C_SEL, C_ID), "B@:@");
+	    rt.class_addMethod(cls_WindowDelegateAdapter, rt.sel_registerName("windowDidDeminiaturize:"),
+			       supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidDeminiaturize", VersionC.this,
+				       null, C_ID, C_SEL, C_ID), "B@:@");
+	    rt.class_addMethod(cls_WindowDelegateAdapter, rt.sel_registerName("windowDidBecomeKey:"),
+			       supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidBecomeKey", VersionC.this,
+				       null, C_ID, C_SEL, C_ID), "B@:@");
+	    rt.class_addMethod(cls_WindowDelegateAdapter, rt.sel_registerName("windowDidResignKey:"),
+			       supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidResignKey", VersionC.this,
+				       null, C_ID, C_SEL, C_ID), "B@:@");
+	    rt.objc_registerClassPair(cls_WindowDelegateAdapter);
+	}
+	private final ObjectTracker<WindowDelegateAdapter> cur_WindowDelegateAdapter = new ObjectTracker<>(cls_WindowDelegateAdapter);
+	class WindowDelegateAdapter implements NSObject {
 	    public final ID id;
 	    public final WindowDelegate callback;
 
 	    public WindowDelegateAdapter(WindowDelegate callback) {
-		synchronized(WindowDelegateAdapter.class) {
-		    if(WindowDelegateAdapter == null) {
-			WindowDelegateAdapter = rt.objc_allocateClassPair(rt.objc_getClass("NSObject"), "IOSYSWindowDelegateAdapter", 0);
-			rt.class_addIvar(WindowDelegateAdapter, "java", 4, 2, "i");
-			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowShouldClose:"),
-					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowShouldClose", VersionC.this,
-						   OC_BOOL, C_ID, C_SEL, C_ID), "B@:@");
-			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowWillClose:"),
-					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowWillClose", VersionC.this,
-						   null, C_ID, C_SEL, C_ID), "B@:@");
-			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowDidResize:"),
-					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidResize", VersionC.this,
-						   null, C_ID, C_SEL, C_ID), "B@:@");
-			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowDidMiniaturize:"),
-					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidMiniaturize", VersionC.this,
-						   null, C_ID, C_SEL, C_ID), "B@:@");
-			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowDidDeminiaturize:"),
-					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidDeminiaturize", VersionC.this,
-						   null, C_ID, C_SEL, C_ID), "B@:@");
-			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowDidBecomeKey:"),
-					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidBecomeKey", VersionC.this,
-						   null, C_ID, C_SEL, C_ID), "B@:@");
-			rt.class_addMethod(WindowDelegateAdapter, rt.sel_registerName("windowDidResignKey:"),
-					   supcall(localarena, MethodHandles.lookup(), WindowDelegateAdapter.class, "windowDidResignKey", VersionC.this,
-						   null, C_ID, C_SEL, C_ID), "B@:@");
-			rt.objc_registerClassPair(WindowDelegateAdapter);
-		    }
-		    int key = nextkey++;
-		    ID id = this.id = rt.objc_msgSend_id(rt.objc_msgSend_id(WindowDelegateAdapter.id(), sel_alloc), sel_init);
-		    rt.object_getIvar(id, WindowDelegateAdapter, "java", ValueLayout.JAVA_INT).set(ValueLayout.JAVA_INT, 0, key);
-		    this.callback = callback;
-		    reg.put(key, this);
-		    Runtime rt = VersionC.this.rt;
-		    Finalizer.finalize(this, () -> {
-			synchronized(reg) {
-			    reg.remove(key);
-			    rt.release(id);
-			}
-		    });
-		}
+		this.callback = callback;
+		this.id = rt.objc_msgSend_id(rt.objc_msgSend_id(cls_WindowDelegateAdapter.id(), sel_alloc), sel_init);
+		cur_WindowDelegateAdapter.reg(this);
 	    }
 
+	    public ID id() {return(id);}
+
 	    private static <R> R callback(VersionC ak, MemorySegment objp, Function<WindowDelegate, R> fun, R eret) {
-		try {
-		    Runtime rt = ak.rt;
-		    ID obj = rt.id(objp);
-		    int key = rt.object_getIvar(obj, ak.WindowDelegateAdapter, "java", ValueLayout.JAVA_INT).get(ValueLayout.JAVA_INT, 0);
-		    WindowDelegateAdapter java;
-		    synchronized(reg) {
-			java = reg.get(key);
-		    }
-		    return(fun.apply(java.callback));
-		} catch(Throwable t) {
-		    Thread.UncaughtExceptionHandler h = Thread.currentThread().getUncaughtExceptionHandler();
-		    if(h == null)
-			new Warning(t, "Uncaught exception in window delegate").issue();
-		    else
-			h.uncaughtException(Thread.currentThread(), t);
-		    return(eret);
-		}
+		return(ak.cur_WindowDelegateAdapter.<R>wrap(objp, a -> fun.apply(a.callback), eret));
 	    }
 
 	    private static void callback(VersionC ak, MemorySegment objp, Consumer<WindowDelegate> fun) {
-		callback(ak, objp, dlg -> {fun.accept(dlg); return(null);}, null);
+		ak.cur_WindowDelegateAdapter.wrap(objp, a -> fun.accept(a.callback));
 	    }
 
 	    private static byte windowShouldClose(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment sender) {
@@ -901,83 +875,84 @@ public abstract class AppKit {
 	    }
 	}
 
-	private final Class IOSYSView;
+	private final Class cls_IOSYSView;
 	{
-	    IOSYSView = rt.objc_allocateClassPair(rt.objc_getClass("NSView"), "IOSYSView", 0);
-	    rt.class_addProtocol(IOSYSView, rt.objc_getProtocol("NSDraggingDestination"));
-	    rt.class_addIvar(IOSYSView, "java", 4, 2, "i");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("acceptsFirstResponder"),
+	    cls_IOSYSView = rt.objc_allocateClassPair(rt.objc_getClass("NSView"), "IOSYSView", 0);
+	    rt.class_addProtocol(cls_IOSYSView, rt.objc_getProtocol("NSDraggingDestination"));
+	    rt.class_addIvar(cls_IOSYSView, "java", 4, 2, "i");
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("acceptsFirstResponder"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "acceptsFirstResponder", this,
 				       OC_BOOL, C_ID, C_SEL), "B@:");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("mouseDown:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("mouseDown:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "mouseDown", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("mouseDragged:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("mouseDragged:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "mouseDragged", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("mouseUp:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("mouseUp:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "mouseUp", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("rightMouseDown:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("rightMouseDown:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "rightMouseDown", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("rightMouseDragged:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("rightMouseDragged:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "rightMouseDragged", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("rightMouseUp:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("rightMouseUp:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "rightMouseUp", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("otherMouseDown:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("otherMouseDown:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "otherMouseDown", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("otherMouseDragged:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("otherMouseDragged:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "otherMouseDragged", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("otherMouseUp:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("otherMouseUp:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "otherMouseUp", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("scrollWheel:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("scrollWheel:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "scrollWheel", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("mouseMoved:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("mouseMoved:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "mouseMoved", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("mouseEntered:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("mouseEntered:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "mouseEntered", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("mouseExited:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("mouseExited:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "mouseExited", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("keyDown:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("keyDown:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "keyDown", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("keyUp:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("keyUp:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "keyUp", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("insertText:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("insertText:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "insertText", this,
 				       null, C_ID, C_SEL, C_ID), "v@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("doCommandBySelector:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("doCommandBySelector:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "doCommandBySelector", this,
 				       null, C_ID, C_SEL, C_SEL), "v@::");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("resetCursorRects"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("resetCursorRects"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "resetCursorRects", this,
 				       null, C_ID, C_SEL), "v@:");
 
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("draggingEntered:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("draggingEntered:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "draggingEntered", this,
 				       NSUInteger, C_ID, C_SEL, C_ID), "l@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("draggingUpdated:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("draggingUpdated:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "draggingUpdated", this,
 				       NSUInteger, C_ID, C_SEL, C_ID), "l@:@");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("wantsPeriodicDraggingUpdates"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("wantsPeriodicDraggingUpdates"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "wantsPeriodicDraggingUpdates", this,
 				       OC_BOOL, C_ID, C_SEL), "b@:");
-	    rt.class_addMethod(IOSYSView, rt.sel_registerName("performDragOperation:"),
+	    rt.class_addMethod(cls_IOSYSView, rt.sel_registerName("performDragOperation:"),
 			       supcall(localarena, MethodHandles.lookup(), IOSYSView.class, "performDragOperation", this,
 				       OC_BOOL, C_ID, C_SEL, C_ID), "b@:@");
-	    rt.objc_registerClassPair(IOSYSView);
+	    rt.objc_registerClassPair(cls_IOSYSView);
 	}
+	private final ObjectTracker<IOSYSView> cur_IOSYSView = new ObjectTracker<>(cls_IOSYSView);
 	private final SEL sel_interpretKeyEvents = rt.sel_registerName("interpretKeyEvents:");
 	private final SEL sel_bounds = rt.sel_registerName("bounds");
 	private final SEL sel_convertSizeToBacking = rt.sel_registerName("convertSizeToBacking:");
@@ -990,25 +965,13 @@ public abstract class AppKit {
 	private final SEL sel_discardCursorRects = rt.sel_registerName("discardCursorRects");
 	private final SEL sel_registerForDraggedTypes = rt.sel_registerName("registerForDraggedTypes:");
 	class IOSYSView implements NSView {
-	    private static final Map<Integer, IOSYSView> reg = new HashMap<>();
-	    private static int nextkey = 0;
 	    private final ID id;
 	    private final NSViewDelegate dg;
 
 	    IOSYSView(NSViewDelegate dg) {
-		synchronized(IOSYSView.class) {
-		    this.dg = dg;
-		    int key = nextkey++;
-		    ID id = this.id = rt.objc_msgSend_id(IOSYSView.id(), sel_alloc);
-		    reg.put(key, this);
-		    Runtime rt = VersionC.this.rt;
-		    Finalizer.finalize(this, () -> {
-			    synchronized(reg) {
-				reg.remove(key);
-				rt.release(id);
-			    }
-			});
-		}
+		this.dg = dg;
+		this.id = rt.objc_msgSend_id(cls_IOSYSView.id(), sel_alloc);
+		cur_IOSYSView.reg(this);
 	    }
 
 	    public ID id() {
@@ -1049,27 +1012,11 @@ public abstract class AppKit {
 	    }
 
 	    private static <R> R callback(VersionC ak, MemorySegment objp, Function<IOSYSView, R> fun, R eret) {
-		try {
-		    Runtime rt = ak.rt;
-		    ID obj = rt.id(objp);
-		    int key = rt.object_getIvar(obj, ak.IOSYSView, "java", ValueLayout.JAVA_INT).get(ValueLayout.JAVA_INT, 0);
-		    IOSYSView java;
-		    synchronized(reg) {
-			java = reg.get(key);
-		    }
-		    return(fun.apply(java));
-		} catch(Throwable t) {
-		    Thread.UncaughtExceptionHandler h = Thread.currentThread().getUncaughtExceptionHandler();
-		    if(h == null)
-			new Warning(t, "Uncaught exception in window delegate").issue();
-		    else
-			h.uncaughtException(Thread.currentThread(), t);
-		    return(eret);
-		}
+		return(ak.cur_IOSYSView.wrap(objp, fun, eret));
 	    }
 
 	    private static void callback(VersionC ak, MemorySegment objp, Consumer<IOSYSView> fun) {
-		callback(ak, objp, view -> {fun.accept(view); return(null);}, null);
+		ak.cur_IOSYSView.wrap(objp, fun);
 	    }
 
 	    private static byte acceptsFirstResponder(VersionC ak, MemorySegment objp, MemorySegment sel) {

@@ -127,6 +127,31 @@ public class FUtils {
 	    return(ABI.ld.upcallStub(h, FunctionDescriptor.of(rtype, ptypes), alloc));
     }
 
+    public static <T> T upcallwrap(Supplier<T> task, T eret) {
+	try {
+	    return(task.get());
+	} catch(Throwable t) {
+	    Thread.UncaughtExceptionHandler h = Thread.currentThread().getUncaughtExceptionHandler();
+	    if(h == null)
+		new Warning(t, "Uncaught exception in upcall").issue();
+	    else
+		h.uncaughtException(Thread.currentThread(), t);
+	    return(eret);
+	}
+    }
+
+    public static void upcallwrap(Runnable task) {
+	try {
+	    task.run();
+	} catch(Throwable t) {
+	    Thread.UncaughtExceptionHandler h = Thread.currentThread().getUncaughtExceptionHandler();
+	    if(h == null)
+		new Warning(t, "Uncaught exception in upcall").issue();
+	    else
+		h.uncaughtException(Thread.currentThread(), t);
+	}
+    }
+
     public static String fmtstruct(String name, MemorySegment mem, StructLayout desc) {
 	StringBuilder buf = new StringBuilder();
 	buf.append("(" + name + ") {");
