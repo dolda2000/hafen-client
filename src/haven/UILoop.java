@@ -66,15 +66,14 @@ public abstract class UILoop implements Console.Directory {
 	this.env = env;
 	if(ui != null)
 	    ui.env = env;
-	haven.error.ErrorHandler errh = haven.error.ErrorHandler.find();
-	if(errh != null) {
-	    Environment.Caps caps = env.caps();
-	    errh.lsetprop("tk.desc", wnd.toolkit().description());
-	    errh.lsetprop("gl.vendor", caps.vendor());
-	    errh.lsetprop("gl.version", caps.driver());
-	    errh.lsetprop("gl.renderer", caps.device());
-	    errh.lsetprop("render.caps", caps);
-	}
+
+	Environment.Caps caps = env.caps();
+	Utils.useragent.put("tk.desc", wnd.toolkit().description());
+	Utils.useragent.put("tk.name", wnd.toolkit().getClass().getSimpleName());
+	Utils.useragent.put("render.vendor", caps.vendor());
+	Utils.useragent.put("render.driver", caps.driver());
+	Utils.useragent.put("render.device", caps.device());
+	Utils.useragent.put("render.caps", caps);
     }
 
     private Audio.Root audio = null;

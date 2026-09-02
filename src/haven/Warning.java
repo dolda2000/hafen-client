@@ -85,11 +85,8 @@ public class Warning extends Throwable {
 	    }
 	}
 	synchronized(Warning.class) {
-	    if(log == null) {
-		ErrorHandler errh = ErrorHandler.find();
-		if(errh != null)
-		    errh.lsetprop("warnings", log = new LinkedList<>());
-	    }
+	    if(log == null)
+		ErrorHandler.setprop("warnings", log = new LinkedList<>());
 	    if(log != null) {
 		log.add(this);
 		while(log.size() > LOGSIZE)

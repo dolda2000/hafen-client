@@ -373,7 +373,7 @@ public class Client implements Console.Directory {
     private static void main2(String[] args) {
 	Utils.initlocale();
 	Config.cmdline(args);
-	haven.error.ErrorHandler.setprop("jar.config", Config.confid);
+	haven.error.ErrorHandler.addiprops(Utils.useragent);
 	setupres();
 	Client cl = new Client(Toolkit.instance());
 	try {

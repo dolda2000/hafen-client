@@ -2644,4 +2644,31 @@ public class Utils {
 	    }
 	}
     };
+
+    public static final Map<String, Object> useragent = new HashMap<>();
+    static {
+	useragent.put("java.version", getprop("java.version", null));
+	useragent.put("java.vendor", getprop("java.vendor", null));
+	useragent.put("java.vm", getprop("java.vm.name", null));
+	useragent.put("os.name", getprop("os.name", null));
+	useragent.put("os.arch", getprop("os.arch", null));
+	useragent.put("os.version", getprop("os.version", null));
+	useragent.put("mem.heap", String.valueOf(Runtime.getRuntime().maxMemory()));
+	useragent.put("cpu.num", String.valueOf(Runtime.getRuntime().availableProcessors()));
+	try {
+	    InputStream in = Utils.class.getResourceAsStream("/buildinfo");
+	    if(in != null) {
+		try {
+		    Properties info = new Properties();
+		    info.load(in);
+		    for(Map.Entry<Object, Object> e : info.entrySet())
+			useragent.put("jar." + e.getKey(), e.getValue());
+		} finally {
+		    in.close();
+		}
+	    }
+	} catch(IOException e) {
+	    throw(new Error(e));
+	}
+    }
 }

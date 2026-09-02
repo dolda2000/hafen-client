@@ -33,15 +33,9 @@ import dolda.coe.*;
 
 public class ErrorHandler extends ThreadGroup {
     private final URL errordest;
-    private static final String[] sysprops = {
-	"java.version",
-	"java.vendor",
-	"os.name",
-	"os.arch",
-	"os.version",
-    };
     private final ThreadGroup initial;
     private Map<String, Object> props = new HashMap<String, Object>();
+    private Collection<Map<String, Object>> iprops = new ArrayList<>();
     private Reporter reporter;
 	
     public static ErrorHandler find() {
@@ -60,6 +54,12 @@ public class ErrorHandler extends ThreadGroup {
     
     public void lsetprop(String key, Object val) {
 	props.put(key, val);
+    }
+
+    public static void addiprops(Map<String, Object> ip) {
+	ErrorHandler tg = find();
+	if(tg != null)
+	    tg.iprops.add(ip);
     }
 
     private class Reporter extends Thread {
@@ -127,6 +127,8 @@ public class ErrorHandler extends ThreadGroup {
 	public void report(Thread th, Throwable t) {
 	    Report r = new Report(t);
 	    r.props.putAll(props);
+	    for(Map<String, Object> ip : iprops)
+		r.props.putAll(ip);
 	    r.props.put("thnm", th.getName());
 	    r.props.put("thcl", th.getClass().getName());
 	    synchronized(errors) {
@@ -139,35 +141,12 @@ public class ErrorHandler extends ThreadGroup {
 	}
     }
 
-    private void defprops() {
-	for(String p : sysprops)
-	    props.put(p, System.getProperty(p));
-	Runtime rt = Runtime.getRuntime();
-	props.put("cpus", rt.availableProcessors());
-	InputStream in = ErrorHandler.class.getResourceAsStream("/buildinfo");
-	try {
-	    try {
-		if(in != null) {
-		    Properties info = new Properties();
-		    info.load(in);
-		    for(Map.Entry<Object, Object> e : info.entrySet())
-			props.put("jar." + (String)e.getKey(), e.getValue());
-		}
-	    } finally {
-		in.close();
-	    }
-	} catch(IOException e) {
-	    throw(new Error(e));
-	}
-    }
-
     public ErrorHandler(ErrorStatus ui, URL errordest) {
 	super("Haven client");
 	this.errordest = errordest;
 	initial = Thread.currentThread().getThreadGroup();
 	reporter = new Reporter(ui);
 	reporter.start();
-	defprops();
     }
     
     public ErrorHandler(URL errordest) {
