@@ -214,7 +214,24 @@ public abstract class XInput {
 	public abstract int effective();
     }
 
-    public abstract static class XIDeviceEvent extends StructInstance {
+    public static interface XIGenericEvent {
+	public int evtype();
+	public int deviceid();
+	public int sourceid();
+	public int detail();
+	public XID root();
+	public XID event();
+	public XID child();
+	public double root_x();
+	public double root_y();
+	public double event_x();
+	public double event_y();
+	public Collection<? extends Integer> buttons();
+	public XIModifierState mods();
+	public XIModifierState group();
+    }
+
+    public abstract static class XIDeviceEvent extends StructInstance implements XIGenericEvent {
 	protected XIDeviceEvent(MemorySegment mem) {
 	    super(mem);
 	}
@@ -239,7 +256,7 @@ public abstract class XInput {
 	public abstract XIModifierState group();
     }
 
-    public abstract static class XIFocusEvent extends StructInstance {
+    public abstract static class XIFocusEvent extends StructInstance implements XIGenericEvent {
 	protected XIFocusEvent(MemorySegment mem) {
 	    super(mem);
 	}
@@ -261,6 +278,8 @@ public abstract class XInput {
 	public abstract boolean focus();
 	public abstract boolean same_screen();
 	public abstract Collection<? extends Integer> buttons();
+	public abstract XIModifierState mods();
+	public abstract XIModifierState group();
     }
 
     public abstract int XIQueryVersion(Display dpy, int[] version);
@@ -778,6 +797,10 @@ public abstract class XInput {
 	    public Collection<? extends Integer> buttons() {
 		return(new XIButtonState(mem.asSlice(buttons, 0)).buttons());
 	    }
+	    private static final long mods = _XIFocusEvent.byteOffset(PathElement.groupElement("mods"));
+	    public XIModifierState mods() {return(new XIModifierState(mem.asSlice(mods, 0)));}
+	    private static final long group = _XIFocusEvent.byteOffset(PathElement.groupElement("group"));
+	    public XIModifierState group() {return(new XIModifierState(mem.asSlice(group, 0)));}
 	}
 
 	public XIFocusEvent XIFocusEvent(XGenericEvent xev) {
