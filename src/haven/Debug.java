@@ -31,10 +31,10 @@ import java.util.function.*;
 import java.io.*;
 import java.nio.file.*;
 import java.awt.image.*;
-import java.awt.event.KeyEvent;
+import haven.iosys.tk.*;
 
 public class Debug {
-    public static final int FRAME_DEBUG_KEY = java.awt.event.KeyEvent.VK_PAUSE;
+    public static final Key.Sym FRAME_DEBUG_KEY = Key.Std.PAUSE;
     public static boolean kf1, kf2, kf3, kf4;
     public static boolean pk1, pk2, pk3, pk4;
     public static boolean fdk, ff;
@@ -53,8 +53,8 @@ public class Debug {
 	}
     }
 
-    public static void keyevent(KeyEvent ke) {
-	if((ke.getID() == KeyEvent.KEY_PRESSED)  && (ke.getKeyCode() == FRAME_DEBUG_KEY))
+    public static void keyevent(Toolkit.KeyEvent ke) {
+	if((ke instanceof Toolkit.KeyDownEvent) && (((Toolkit.KeyDownEvent)ke).sym() == FRAME_DEBUG_KEY))
 	    fdk = true;
     }
 
