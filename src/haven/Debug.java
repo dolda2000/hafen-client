@@ -31,7 +31,6 @@ import java.util.function.*;
 import java.io.*;
 import java.nio.file.*;
 import java.awt.image.*;
-import com.jogamp.opengl.*;
 import java.awt.event.KeyEvent;
 
 public class Debug {
@@ -203,30 +202,6 @@ public class Debug {
 	    Thread.sleep((int)(t * 1000));
 	} catch(InterruptedException e) {
 	    Thread.currentThread().interrupt();
-	}
-    }
-
-    public static class DumpGL extends TraceGL4bc {
-	public final ByteArrayOutputStream buf;
-
-	private DumpGL(GL4bc bk, ByteArrayOutputStream buf) {
-	    super(bk, new PrintStream(buf));
-	    this.buf = buf;
-	}
-	public DumpGL(GL4bc bk) {
-	    this(bk, new ByteArrayOutputStream());
-	}
-
-	public void reset() {
-	    buf.reset();
-	}
-
-	public void dump(String fn) {
-	    try(OutputStream out = Files.newOutputStream(Utils.path(fn))) {
-		out.write(buf.toByteArray());
-	    } catch(IOException e) {
-		throw(new RuntimeException(e));
-	    }
 	}
     }
 
