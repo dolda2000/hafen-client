@@ -1394,6 +1394,10 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    public void event(XIFocusEvent ev) {
+		XIPointerInfo ptr;
+		synchronized(pointers) {
+		    ptr = pointers.get(ev.deviceid());
+		}
 		switch(ev.evtype()) {
 		case XInput.XI_Enter:
 		    xrun(() -> {
@@ -1404,6 +1408,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 			synchronized(pointers) {
 			    pointers.put(dev.deviceid(), new XIPointerInfo(dev, devs));
 			}
+			callback(new GLXMouseMoveEvent(this, ptr, ev));
 		    });
 		    break;
 		default:
@@ -2573,7 +2578,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	public final Set<MouseBtn> held;
 	public final Set<Key.Mod> mods;
 
-	public GLXMouseEvent(GLXToolkit.GLXWindow wnd, GLXToolkit.XIPointerInfo ptr, XIDeviceEvent ev) {
+	public GLXMouseEvent(GLXToolkit.GLXWindow wnd, GLXToolkit.XIPointerInfo ptr, XIGenericEvent ev) {
 	    this.wnd = wnd;
 	    this.ptr = ptr;
 	    this.wndc = Coord.of((int)ev.event_x(), (int)ev.event_y());
@@ -2594,7 +2599,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
     public static abstract class GLXMouseButtonEvent extends GLXMouseEvent {
 	public final MouseBtn button;
 
-	public GLXMouseButtonEvent(GLXToolkit.GLXWindow wnd, GLXToolkit.XIPointerInfo ptr, XIDeviceEvent ev, boolean include) {
+	public GLXMouseButtonEvent(GLXToolkit.GLXWindow wnd, GLXToolkit.XIPointerInfo ptr, XIGenericEvent ev, boolean include) {
 	    super(wnd, ptr, ev);
 	    this.button = buttonid(ptr, ev.detail());
 	    if(include)
@@ -2610,26 +2615,26 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	}
     }
     public static class GLXMouseDownEvent extends GLXMouseButtonEvent implements Toolkit.MouseDownEvent {
-	GLXMouseDownEvent(GLXToolkit.GLXWindow wnd, GLXToolkit.XIPointerInfo ptr, XIDeviceEvent ev) {super(wnd, ptr, ev, true);}
+	GLXMouseDownEvent(GLXToolkit.GLXWindow wnd, GLXToolkit.XIPointerInfo ptr, XIGenericEvent ev) {super(wnd, ptr, ev, true);}
     }
     public static class GLXMouseUpEvent extends GLXMouseButtonEvent implements Toolkit.MouseUpEvent {
-	GLXMouseUpEvent(GLXToolkit.GLXWindow wnd, GLXToolkit.XIPointerInfo ptr, XIDeviceEvent ev) {super(wnd, ptr, ev, false);}
+	GLXMouseUpEvent(GLXToolkit.GLXWindow wnd, GLXToolkit.XIPointerInfo ptr, XIGenericEvent ev) {super(wnd, ptr, ev, false);}
     }
     public static class GLXMouseMoveEvent extends GLXMouseEvent implements Toolkit.MouseMoveEvent {
-	GLXMouseMoveEvent(GLXToolkit.GLXWindow wnd, GLXToolkit.XIPointerInfo ptr, XIDeviceEvent ev) {super(wnd, ptr, ev);}
+	GLXMouseMoveEvent(GLXToolkit.GLXWindow wnd, GLXToolkit.XIPointerInfo ptr, XIGenericEvent ev) {super(wnd, ptr, ev);}
     }
     public static class GLXMouseWheelEvent extends GLXMouseEvent implements Toolkit.MouseWheelEvent {
 	public final Axis axis;
 	public final int amount;
 	public final double sub;
 
-	GLXMouseWheelEvent(GLXToolkit.GLXWindow wnd, GLXToolkit.XIPointerInfo ptr, XIDeviceEvent ev, Axis axis, int amount, double sub) {
+	GLXMouseWheelEvent(GLXToolkit.GLXWindow wnd, GLXToolkit.XIPointerInfo ptr, XIGenericEvent ev, Axis axis, int amount, double sub) {
 	    super(wnd, ptr, ev);
 	    this.axis = axis;
 	    this.amount = amount;
 	    this.sub = sub;
 	}
-	GLXMouseWheelEvent(GLXToolkit.GLXWindow wnd, GLXToolkit.XIPointerInfo ptr, XIDeviceEvent ev, Axis axis, int amount) {
+	GLXMouseWheelEvent(GLXToolkit.GLXWindow wnd, GLXToolkit.XIPointerInfo ptr, XIGenericEvent ev, Axis axis, int amount) {
 	    this(wnd, ptr, ev, axis, amount, amount);
 	}
 
