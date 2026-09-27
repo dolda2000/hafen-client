@@ -2611,7 +2611,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	public MouseBtn button() {return(button);}
 
 	public String toString() {
-	    return(String.format("#<%s wnd=%s root=%s btn=%d held=%s mods=%s>", getClass().getSimpleName(), wndc, rootc, button, held, mods));
+	    return(String.format("#<%s wnd=%s root=%s btn=%s held=%s mods=%s>", getClass().getSimpleName(), wndc, rootc, button, held, mods));
 	}
     }
     public static class GLXMouseDownEvent extends GLXMouseButtonEvent implements Toolkit.MouseDownEvent {
@@ -2641,6 +2641,10 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 	public Axis axis() {return(axis);}
 	public int amount() {return(amount);}
 	public double subamount() {return(sub);}
+
+	public String toString() {
+	    return(String.format("#<%s wnd=%s root=%s wheel=%s/%d(%.3f) held=%s mods=%s>", getClass().getSimpleName(), wndc, rootc, axis, amount, sub, held, mods));
+	}
     }
 
     public static final Map<XID, Key.Std> stdsyms = Utils.<XID, Key.Std>map()
