@@ -137,14 +137,15 @@ public abstract class AWTToolkit implements Toolkit {
     }
 
     public static class AWTKeyCode implements Key.Loc {
-	public final int code;
+	public final int code, loc;
 
-	public AWTKeyCode(int code) {
+	public AWTKeyCode(int code, int loc) {
 	    this.code = code;
+	    this.loc = loc;
 	}
 
-	public String id() {return(("awt:" + code).intern());}
-	public String toString() {return("<" + code + ">");}
+	public String id() {return(("awt:" + loc + ":" + code).intern());}
+	public String toString() {return("<" + code + ":" + loc + ">");}
     }
 
     public static class AWTKey implements Key {
@@ -168,7 +169,7 @@ public abstract class AWTToolkit implements Toolkit {
 	    if(key == null)
 		key = stdkeys.get(pc);
 	    if(key == null)
-		key = new AWTKeyCode(ec);
+		key = new AWTKeyCode(pc, loc);
 	    this.loc = key;
 	}
 
