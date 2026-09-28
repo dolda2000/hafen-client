@@ -1406,6 +1406,19 @@ public class Utils {
 	return(ol);
     }
 
+    public static int  ifloor(float  x) {return((int)Math.floor(x));}
+    public static int  iceil (float  x) {return((int)Math.ceil(x));}
+    public static int  iround(float  x) {return((int)Math.round(x));}
+    public static int  ifloor(double x) {return((int)Math.floor(x));}
+    public static int  iceil (double x) {return((int)Math.ceil(x));}
+    public static int  iround(double x) {return((int)Math.round(x));}
+    public static long lfloor(float  x) {return((long)Math.floor(x));}
+    public static long lceil (float  x) {return((long)Math.ceil(x));}
+    public static long lround(float  x) {return((long)Math.round(x));}
+    public static long lfloor(double x) {return((long)Math.floor(x));}
+    public static long lceil (double x) {return((long)Math.ceil(x));}
+    public static long lround(double x) {return((long)Math.round(x));}
+
     public static int floordiv(int a, int b) {
 	if(a < 0)
 	    return(((a + 1) / b) - 1);

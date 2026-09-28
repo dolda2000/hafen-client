@@ -159,7 +159,12 @@ public class Profdisp extends Widget {
     public boolean mousedown(MouseDownEvent ev) {
 	for(int m : mark) {
 	    if(Area.sized(Coord.of(m - (markimg.ssz.x / 2), h), markimg.ssz).contains(ev.c)) {
-		prof.hist[m].dump(System.err);
+		Window wnd = Profchart.wndfor(prof.hist[m]);
+		Widget p = getparent(Window.class).parent;
+		if(c.y + (sz.y / 2) < parent.sz.y)
+		    p.adda(wnd, this.pos("bl").adds(0, 10), 0, 0);
+		else
+		    p.adda(wnd, this.pos("ul").subs(0, 10), 0, 1);
 		return(true);
 	    }
 	}

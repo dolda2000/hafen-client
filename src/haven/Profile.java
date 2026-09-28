@@ -34,6 +34,16 @@ public class Profile {
     public final Part[] hist;
     protected int i = 0;
 
+    private static final String[] units = {"s", "ms", "\u00b5s", "ns"};
+    public static String timefmt(double d) {
+	int i = 0;
+	for(; i < units.length - 1; i++, d *= 1e3) {
+	    if(d > 1)
+		break;
+	}
+	return(String.format("%.2f %s\n", d, units[i]));
+    }
+
     public static abstract class Part {
 	public final Object nm;
 	private List<Part> ch = null;
@@ -59,19 +69,12 @@ public class Profile {
 	    return((ch != null) ? ch : Collections.emptyList());
 	}
 
-	private static final String[] units = {"s", "ms", "\u00b5s", "ns"};
 	private void dump(PrintStream out, int indent) {
 	    for(int i = 0; i < indent; i++)
 		out.print("    ");
 	    if(nm != null)
 		out.print(nm + ": ");
-	    double d = d();
-	    for(int i = 0; i < units.length; i++, d *= 1e3) {
-		if((d > 1) || (i == units.length - 1)) {
-		    out.print(String.format("%.2f %s\n", d, units[i]));
-		    break;
-		}
-	    }
+	    out.print(timefmt(d()));
 	    List<Part> bytime = new ArrayList<>(sub());
 	    Collections.sort(bytime, Comparator.comparing(Part::d).reversed());
 	    for(Part p : bytime)
