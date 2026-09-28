@@ -425,7 +425,7 @@ public abstract class UILoop implements Console.Directory {
 
 	protected void tick() {
 	    synchronized(ui) {
-		CPUProfile.phase(prof, "dwait");
+		CPUProfile.phase(prof, "dsp");
 		if(rprofc != null) rprofc.new Part("tick", out);
 		if(gprof  != null) gprof.part(out, "tick");
 		loop.dispatch(ui);
