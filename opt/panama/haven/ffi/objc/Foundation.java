@@ -108,6 +108,18 @@ public abstract class Foundation {
 
     abstract NSNumber NSNumber(ID id, boolean retain, boolean release);
 
+    public static interface NSInvocation extends Runtime.NSObject {
+	public SEL selector();
+	public void invokeWithTarget(ID target);
+    }
+
+    abstract NSInvocation NSInvocation(ID id, boolean retain, boolean release);
+
+    public static interface NSMethodSignature extends Runtime.NSObject {
+    }
+
+    abstract NSMethodSignature NSMethodSignature(ID id, boolean retain, boolean release);
+
     public static interface NSProcessInfo {
 	public String operatingSystemVersionString();
     }
@@ -325,6 +337,46 @@ public abstract class Foundation {
 
 	NSNumber NSNumber(ID id, boolean retain, boolean release) {
 	    return(rt.wrap(id, NSNumber::new, retain, release));
+	}
+
+	private final SEL sel_selector = rt.sel_registerName("selector");
+	private final SEL sel_invokeWithTarget = rt.sel_registerName("invokeWithTarget:");
+	class NSInvocation implements Foundation.NSInvocation {
+	    public final ID id;
+
+	    NSInvocation(ID id) {
+		this.id = id;
+	    }
+
+	    public ID id() {return(id);}
+
+	    public SEL selector() {
+		return(rt.objc_msgSend_sel(id, sel_selector));
+	    }
+	    public void invokeWithTarget(ID target) {
+		rt.objc_msgSend_void(id, sel_invokeWithTarget, target);
+	    }
+	}
+
+	NSInvocation NSInvocation(ID id, boolean retain, boolean release) {
+	    return(rt.wrap(id, NSInvocation::new, retain, release));
+	}
+	class NSMethodSignature implements Foundation.NSMethodSignature {
+	    public final ID id;
+
+	    NSMethodSignature(ID id) {
+		this.id = id;
+	    }
+
+	    public ID id() {return(id);}
+
+	    public void invokeWithTarget(ID target) {
+		rt.objc_msgSend_void(id, sel_invokeWithTarget, target);
+	    }
+	}
+
+	NSMethodSignature NSMethodSignature(ID id, boolean retain, boolean release) {
+	    return(rt.wrap(id, NSMethodSignature::new, retain, release));
 	}
 
 	private final Runtime.Class NSProcessInfo = rt.objc_getClass("NSProcessInfo");
