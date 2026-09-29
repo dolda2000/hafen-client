@@ -68,21 +68,21 @@ public class Profchart extends Widget {
 	return(left ? l - 1 : l);
     }
 
-    private void drawlevel(GOut g, List<Part> parts, int y) {
+    private void drawlevel(GOut g, List<Part> parts, int y, int co) {
 	double d = t - f, id = 1.0 / d;
 	int fi = bisect(parts, f, false), li = bisect(parts, t, true);
 	for(int i = fi; i <= li; i++) {
 	    Part p = parts.get(i);
-	    g.chcolor(Utils.vgapal[i % 16]);
+	    g.chcolor(Utils.vgapal[(i + co) % 16]);
 	    g.frect2(Coord.of(Utils.ifloor((p.f() - f) * id * sz.x), y),
 		     Coord.of(Utils.iceil ((p.t() - f) * id * sz.x), y + h));
 	    if(!p.sub().isEmpty())
-		drawlevel(g, p.sub(), y + h + marg);
+		drawlevel(g, p.sub(), y + h + marg, co + i);
 	}
     }
 
     public void draw(GOut g) {
-	drawlevel(g, root.sub(), 0);
+	drawlevel(g, root.sub(), 0, 0);
     }
 
     private Part partat(Coord c) {
