@@ -69,6 +69,10 @@ public abstract class AppKit {
     public static final int NSApplicationActivationPolicyAccessory  = 1;
     public static final int NSApplicationActivationPolicyProhibited = 2;
 
+    public static final int NSTerminateCancel = 0;
+    public static final int NSTerminateNow    = 1;
+    public static final int NSTerminateLater  = 2;
+
     public static final int NSAlphaShiftKeyMask = 1 << 16;
     public static final int NSShiftKeyMask      = 1 << 17;
     public static final int NSControlKeyMask    = 1 << 18;
@@ -91,11 +95,18 @@ public abstract class AppKit {
 
     public interface NSApplication extends Runtime.NSObject {
 	public ID id();
+	public NSObject delegate();
+	public void setDelegate(NSObject delegate);
+	public void setDelegate(NSApplicationDelegate delegate);
 	public void run();
 	public void finishLaunching();
 	public void setActivationPolicy(int policy);
 	public boolean isActive();
 	public void setApplicationIconImage(NSImage img);
+    }
+
+    public interface NSApplicationDelegate {
+	public default int applicationShouldTerminate(NSApplication sender) {return(NSTerminateNow);}
     }
 
     public interface NSWorkspace extends Runtime.NSObject {
@@ -306,6 +317,7 @@ public abstract class AppKit {
     public abstract NSOpenPanel NSOpenPanel();
 
     public abstract NSApplication NSApplication_sharedApplication();
+    public abstract NSObject NSApplicationDelegate(NSApplicationDelegate delegate);
     public abstract NSWorkspace NSWorkspace_sharedWorkspace();
     public abstract int NSEvent_pressedMouseButtons();
     public abstract List<AppKit.NSScreen> NSScreen_screens();
@@ -326,7 +338,47 @@ public abstract class AppKit {
 	private final SEL sel_alloc = rt.sel_registerName("alloc");
 	private final SEL sel_init = rt.sel_registerName("init");
 
-	private final Runtime.Class NSApplication = rt.objc_getClass("NSApplication");
+	private final Class cls_ApplicationDelegateAdapter;
+	{
+	    cls_ApplicationDelegateAdapter = rt.objc_allocateClassPair(rt.objc_getClass("NSObject"), "IOSYSApplicationDelegateAdapter", 0);
+	    rt.class_addIvar(cls_ApplicationDelegateAdapter, "java", 4, 2, "i");
+	    rt.class_addMethod(cls_ApplicationDelegateAdapter, rt.sel_registerName("applicationShouldTerminate:"),
+			       supcall(localarena, MethodHandles.lookup(), ApplicationDelegateAdapter.class, "applicationShouldTerminate", VersionC.this,
+				       C_ENUM, C_ID, C_SEL, C_ID), "i@:@");
+	    rt.objc_registerClassPair(cls_ApplicationDelegateAdapter);
+	}
+	private final ObjectTracker<ApplicationDelegateAdapter> cur_ApplicationDelegateAdapter = new ObjectTracker<>(cls_ApplicationDelegateAdapter);
+	class ApplicationDelegateAdapter implements NSObject {
+	    public final ID id;
+	    public final NSApplicationDelegate callback;
+
+	    public ApplicationDelegateAdapter(NSApplicationDelegate callback) {
+		this.callback = callback;
+		this.id = rt.objc_msgSend_id(rt.objc_msgSend_id(cls_ApplicationDelegateAdapter.id(), sel_alloc), sel_init);
+		cur_ApplicationDelegateAdapter.reg(this);
+	    }
+
+	    public ID id() {return(id);}
+
+	    private static <R> R callback(VersionC ak, MemorySegment objp, Function<NSApplicationDelegate, R> fun, R eret) {
+		return(ak.cur_ApplicationDelegateAdapter.<R>wrap(objp, a -> fun.apply(a.callback), eret));
+	    }
+
+	    private static void callback(VersionC ak, MemorySegment objp, Consumer<NSApplicationDelegate> fun) {
+		ak.cur_ApplicationDelegateAdapter.wrap(objp, a -> fun.accept(a.callback));
+	    }
+
+	    private static int applicationShouldTerminate(VersionC ak, MemorySegment objp, MemorySegment sel, MemorySegment sender) {
+		return((int)callback(ak, objp, dg -> (dg.applicationShouldTerminate(NSApplication.unretained(ak, ak.rt.id(sender)))), 0));
+	    }
+	}
+	public NSObject NSApplicationDelegate(NSApplicationDelegate delegate) {
+	    return(new ApplicationDelegateAdapter(delegate));
+	}
+
+	private final Runtime.Class cls_NSApplication = rt.objc_getClass("NSApplication");
+	private final SEL sel_delegate = rt.sel_registerName("delegate");
+	private final SEL sel_setDelegate = rt.sel_registerName("setDelegate:");
 	private final SEL sel_run = rt.sel_registerName("run");
 	private final SEL sel_finishLaunching = rt.sel_registerName("finishLaunching");
 	private final SEL sel_setActivationPolicy = rt.sel_registerName("setActivationPolicy:");
@@ -339,7 +391,26 @@ public abstract class AppKit {
 		this.id = id;
 	    }
 
+	    public static NSApplication unretained(VersionC ak, ID id) {
+		return(ak.new NSApplication(id));
+	    }
+
 	    public ID id() {return(id);}
+
+	    public NSObject delegate() {
+		return(rt.wrap(rt.objc_msgSend_id(this.id, sel_delegate), true, true));
+	    }
+
+	    private NSObject delegate = null;
+	    public void setDelegate(NSObject delegate) {
+		this.delegate = delegate;
+		rt.objc_msgSend_void(id, sel_setDelegate, this.delegate.id());
+	    }
+
+	    public void setDelegate(NSApplicationDelegate delegate) {
+		setDelegate(NSApplicationDelegate(delegate));
+	    }
+
 	    public void run() {rt.objc_msgSend_void(id, sel_run);}
 	    public void finishLaunching() {rt.objc_msgSend_void(id, sel_finishLaunching);}
 	    public void setActivationPolicy(int policy) {
@@ -356,7 +427,7 @@ public abstract class AppKit {
 
 	private final SEL sel_sharedApplication = rt.sel_registerName("sharedApplication");
 	public NSApplication NSApplication_sharedApplication() {
-	    return(new NSApplication(rt.objc_msgSend_id(NSApplication.id(), sel_sharedApplication)));
+	    return(new NSApplication(rt.objc_msgSend_id(cls_NSApplication.id(), sel_sharedApplication)));
 	}
 
 	private final Runtime.Class cls_NSWorkspace = rt.objc_getClass("NSWorkspace");
@@ -719,7 +790,6 @@ public abstract class AppKit {
 	}
 
 	private final Runtime.Class cls_NSWindow = rt.objc_getClass("NSWindow");
-	private final SEL sel_setDelegate = rt.sel_registerName("setDelegate:");
 	private final SEL sel_setAcceptsMouseMovedEvents = rt.sel_registerName("setAcceptsMouseMovedEvents:");
 	private final SEL sel_styleMask = rt.sel_registerName("styleMask");
 	private final SEL sel_setStyleMask = rt.sel_registerName("setStyleMask:");

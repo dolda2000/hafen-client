@@ -82,6 +82,7 @@ public abstract class Runtime {
     public abstract void class_addIvar(Runtime.Class cls, String name, long size, int alignment, String types);
     public abstract SEL sel_registerName(String name);
 
+    abstract MemoryLayout OC_BOOL();
     abstract MemoryLayout C_ID();
     abstract MemoryLayout C_SEL();
     abstract ID id(MemorySegment mem);
@@ -96,19 +97,25 @@ public abstract class Runtime {
     public abstract void objc_msgSend_void(ID self, SEL sel, ID arg1, ID arg2);
     public abstract void objc_msgSend_void(ID self, SEL sel, SEL arg1, ID arg2, boolean arg3);
     public abstract ID objc_msgSend_id(ID self, SEL sel);
+    public abstract ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, Runtime.SEL arg1);
     public abstract ID objc_msgSend_id(ID self, SEL sel, int arg1);
     public abstract ID objc_msgSend_id(ID self, SEL sel, MemorySegment arg1);
     public abstract ID objc_msgSend_id(ID self, SEL sel, MemorySegment arg1, int arg2);
     public abstract ID objc_msgSend_id(ID self, SEL sel, ID arg1);
     public abstract ID objc_msgSend_id(ID self, SEL sel, ID arg1, ID arg2);
+    public abstract SEL objc_msgSend_sel(ID self, SEL sel);
     abstract MemorySegment objc_msgSend_ptr(ID self, SEL sel);
     public abstract boolean objc_msgSend_bool(ID self, SEL sel);
     public abstract boolean objc_msgSend_bool(ID self, SEL sel, int arg1);
+    public abstract boolean objc_msgSend_bool(ID self, SEL sel, SEL arg1);
     public abstract boolean objc_msgSend_bool(ID self, SEL sel, ID arg1);
     public abstract boolean objc_msgSend_bool(ID self, SEL sel, ID arg1, ID arg2);
     public abstract int objc_msgSend_int(ID self, SEL sel);
     public abstract int objc_msgSend_NSUInt(ID self, SEL sel);
     public abstract double objc_msgSend_double(ID self, SEL sel);
+
+    public abstract void objc_msgSendSuper_void(Runtime.ID self, Runtime.Class sup, Runtime.SEL sel);
+    public abstract void objc_msgSendSuper_void(Runtime.ID self, Runtime.Class sup, Runtime.SEL sel, Runtime.ID arg1);
 
 
     public String object_getClassName(Class cls) {return(object_getClassName(cls.id()));}
@@ -225,6 +232,30 @@ public abstract class Runtime {
 	return(ret);
     }
 
+    static class NSObjectWrapper implements NSObject {
+	final ID id;
+
+	NSObjectWrapper(ID id) {
+	    this.id = id;
+	}
+
+	public ID id() {return(id);}
+    }
+
+    public NSObject wrap(ID id, boolean retain, boolean release) {
+	return(wrap(id, NSObjectWrapper::new, retain, release));
+    }
+
+    private final Supplier<SEL> sel_respondsToSelector = Utils.cache(() -> sel_registerName("respondsToSelector:"));
+    public boolean respondsToSelector(ID id, SEL sel) {
+	return(objc_msgSend_bool(id, sel_respondsToSelector.get(), sel));
+    }
+
+    private final Supplier<SEL> sel_methodSignatureForSelector = Utils.cache(() -> sel_registerName("methodSignatureForSelector:"));
+    public Foundation.NSMethodSignature methodSignatureForSelector(ID id, SEL sel) {
+	return(Foundation.get().NSMethodSignature(objc_msgSend_id(id, sel_methodSignatureForSelector.get(), sel), true, true));
+    }
+
     ID constobj(SymbolLookup lib, String name) {
 	return(id(lib.find(name).get().reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0)));
     }
@@ -246,6 +277,7 @@ public abstract class Runtime {
 		throw(new RuntimeException("This ObjC runtime is only implemented for AArch64"));
 	}
 
+	MemoryLayout OC_BOOL() {return(OC_BOOL);}
 	MemoryLayout C_ID() {return(C_ID);}
 	MemoryLayout C_SEL() {return(C_SEL);}
 
@@ -613,6 +645,15 @@ public abstract class Runtime {
 	    }
 	}
 
+	private final MethodHandle objc_msgSend_id_sel = msgtype(C_ID, C_SEL);
+	public ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, Runtime.SEL arg1) {
+	    try {
+		return(id((MemorySegment)objc_msgSend_id_sel.invoke(self.mem(), sel.mem(), arg1.mem())));
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	}
+
 	private final MethodHandle objc_msgSend_id_NSUInt = msgtype(C_ID, NSUInteger);
 	public ID objc_msgSend_id(Runtime.ID self, Runtime.SEL sel, int arg1) {
 	    try {
@@ -658,6 +699,15 @@ public abstract class Runtime {
 	    }
 	}
 
+	private final MethodHandle objc_msgSend_sel = msgtype(C_SEL);
+	public SEL objc_msgSend_sel(Runtime.ID self, Runtime.SEL sel) {
+	    try {
+		return(sel((MemorySegment)objc_msgSend_sel.invoke(self.mem(), sel.mem())));
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	}
+
 	private final MethodHandle objc_msgSend_ptr = msgtype(ADDRESS);
 	MemorySegment objc_msgSend_ptr(Runtime.ID self, Runtime.SEL sel) {
 	    try {
@@ -671,6 +721,15 @@ public abstract class Runtime {
 	public boolean objc_msgSend_bool(Runtime.ID self, Runtime.SEL sel) {
 	    try {
 		return((int)objc_msgSend_bool.invoke(self.mem(), sel.mem()) != 0);
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	}
+
+	private final MethodHandle objc_msgSend_bool_sel = msgtype(OC_BOOL, C_SEL);
+	public boolean objc_msgSend_bool(Runtime.ID self, Runtime.SEL sel, Runtime.SEL arg1) {
+	    try {
+		return((int)objc_msgSend_bool_sel.invoke(self.mem(), sel.mem(), arg1.mem()) != 0);
 	    } catch(Throwable e) {
 		throw(new InvocationException(e));
 	    }
@@ -729,6 +788,49 @@ public abstract class Runtime {
 		throw(new InvocationException(e));
 	    }
 	}
+
+	private final MemorySegment objc_msgSendSuper = rt.find("objc_msgSendSuper").get();
+
+	MethodHandle supermsgtype(MemoryLayout rtype, MemoryLayout... args) {
+	    MemoryLayout[] fargs = new MemoryLayout[args.length + 2];
+	    fargs[0] = ADDRESS;
+	    fargs[1] = C_SEL;
+	    System.arraycopy(args, 0, fargs, 2, args.length);
+	    FunctionDescriptor desc = (rtype == null) ? FunctionDescriptor.ofVoid(fargs) : FunctionDescriptor.of(rtype, fargs);
+	    return(ld.downcallHandle(objc_msgSendSuper, desc));
+	}
+
+	static final StructLayout _objc_super = struct(new MemoryLayout[] {
+	    C_ID.withName("receiver"),
+	    C_Class.withName("super_class"),
+	});
+	VarHandle _objc_super_receiver = _objc_super.varHandle(PathElement.groupElement("receiver"));
+	VarHandle _objc_super_super_class = _objc_super.varHandle(PathElement.groupElement("super_class"));
+	MemorySegment objc_super(Arena alloc, Runtime.ID self, Runtime.Class sup) {
+	    MemorySegment ret = alloc.allocate(_objc_super);
+	    _objc_super_receiver.set(ret, 0, self.mem());
+	    _objc_super_super_class.set(ret, 0, sup.id().mem());
+	    return(ret);
+	}
+
+	private final MethodHandle objc_msgSendSuper_void = supermsgtype(null);
+	public void objc_msgSendSuper_void(Runtime.ID self, Runtime.Class sup, Runtime.SEL sel) {
+	    try(Arena st = Arena.ofConfined()) {
+		objc_msgSendSuper_void.invoke(objc_super(st, self, sup), sel.mem());
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
+	private final MethodHandle objc_msgSendSuper_void_id = supermsgtype(null);
+	public void objc_msgSendSuper_void(Runtime.ID self, Runtime.Class sup, Runtime.SEL sel, Runtime.ID arg1) {
+	    try(Arena st = Arena.ofConfined()) {
+		objc_msgSendSuper_void_id.invoke(objc_super(st, self, sup), sel.mem(), nid(arg1));
+	    } catch(Throwable e) {
+		throw(new RuntimeException(e));
+	    }
+	}
+
 
 	static final StructLayout _block_literal = struct(new MemoryLayout[] {
 	    ADDRESS.withName("isa"),
