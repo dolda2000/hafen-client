@@ -708,9 +708,17 @@ public class Connection implements Transport {
 			PMessage msg;
 			while((msg = recv()) != null) {
 			    if(crypt != null) {
-				if(msg.type != Session.MSG_CRYPT)
+				if(msg.type == Session.MSG_CRYPT) {
+				    msg = crypt.decrypt(msg);
+				} else if(msg.type == Session.MSG_CLOSE) {
+				    /* Let through anyway. This may be somewhat controversial, but there are several
+				     * CLOSE messages that can't realistically be encrypted, like when the original one
+				     * was lost in transmission and the server has cleared the session, or when a
+				     * timed-out session regains connectivity. And if an attacker can manipulate traffic
+				     * anyway, CLOSE messages are probably the least of our worries... */
+				} else {
 				    continue;
-				msg = crypt.decrypt(msg);
+				}
 			    }
 			    if(msg.type == Session.MSG_CLOSE)
 				return(new Close(true));

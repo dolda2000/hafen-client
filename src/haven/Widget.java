@@ -26,11 +26,11 @@
 
 package haven;
 
+import haven.iosys.tk.*;
 import java.util.*;
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 public class Widget {
@@ -1138,12 +1138,14 @@ public class Widget {
     public static final KeyMatch key_esc = KeyMatch.forcode(KeyEvent.VK_ESCAPE, 0);
     public static final KeyMatch key_tab = KeyMatch.forcode(KeyEvent.VK_TAB, 0);
     public static abstract class KbdEvent extends Event {
+	public final Toolkit.KeyEvent tkev;
 	public final KeyEvent awt;
 	public final int code, mods;
 	public final char c;
 
-	public KbdEvent(KeyEvent awt) {
-	    this.awt = awt;
+	public KbdEvent(Toolkit.KeyEvent tkev) {
+	    this.tkev = tkev;
+	    this.awt = AWTCompat.mkawt(tkev);
 	    this.code = awt.getKeyCode();
 	    mods = UI.modflags(awt);
 	    char c = awt.getKeyChar();
@@ -1167,8 +1169,8 @@ public class Widget {
     }
 
     public static abstract class FocusedKeyEvent extends KbdEvent {
-	public FocusedKeyEvent(KeyEvent awt) {
-	    super(awt);
+	public FocusedKeyEvent(Toolkit.KeyEvent tkev) {
+	    super(tkev);
 	}
 
 	protected boolean propagation(Widget from) {
@@ -1189,7 +1191,7 @@ public class Widget {
     }
 
     public static class KeyDownEvent extends FocusedKeyEvent {
-	public KeyDownEvent(KeyEvent awt) {super(awt);}
+	public KeyDownEvent(Toolkit.KeyDownEvent tkev) {super(tkev);}
 
 	protected boolean shandle(Widget w) {
 	    if(w.keydown(this))
@@ -1199,7 +1201,7 @@ public class Widget {
     }
 
     public static class KeyUpEvent extends FocusedKeyEvent {
-	public KeyUpEvent(KeyEvent awt) {super(awt);}
+	public KeyUpEvent(Toolkit.KeyUpEvent tkev) {super(tkev);}
 
 	public boolean shandle(Widget w) {
 	    if(w.keyup(this))
@@ -1209,7 +1211,7 @@ public class Widget {
     }
 
     public static class GlobKeyEvent extends KbdEvent {
-	public GlobKeyEvent(KeyEvent awt) {super(awt);}
+	public GlobKeyEvent(Toolkit.KeyDownEvent tkev) {super(tkev);}
 
 	protected boolean propagation(Widget from) {
 	    for(Widget wdg = from.lchild; wdg != null; wdg = wdg.prev) {

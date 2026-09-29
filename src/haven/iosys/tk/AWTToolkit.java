@@ -137,14 +137,15 @@ public abstract class AWTToolkit implements Toolkit {
     }
 
     public static class AWTKeyCode implements Key.Loc {
-	public final int code;
+	public final int code, loc;
 
-	public AWTKeyCode(int code) {
+	public AWTKeyCode(int code, int loc) {
 	    this.code = code;
+	    this.loc = loc;
 	}
 
-	public String id() {return(("awt:" + code).intern());}
-	public String toString() {return("<" + code + ">");}
+	public String id() {return(("awt:" + loc + ":" + code).intern());}
+	public String toString() {return("<" + code + ":" + loc + ">");}
     }
 
     public static class AWTKey implements Key {
@@ -152,20 +153,31 @@ public abstract class AWTToolkit implements Toolkit {
 	public final char ch;
 	public final Key.Std stdsym;
 	public final AWTSym extsym;
+	public final Key.Loc loc;
 
-	public AWTKey(int pc, int ec, char ch) {
+	public AWTKey(int pc, int ec, char ch, int loc) {
 	    this.pc = pc;
 	    this.ec = ec;
 	    this.ch = ch;
 	    this.stdsym = stdsyms.get(pc);
 	    this.extsym = extended();
+	    Key.Loc key = null;
+	    if((key == null) && (loc == KEY_LOCATION_NUMPAD))
+		key = numkeys.get(pc);
+	    if((key == null) && (loc == KEY_LOCATION_RIGHT))
+		key = rightkeys.get(pc);
+	    if(key == null)
+		key = stdkeys.get(pc);
+	    if(key == null)
+		key = new AWTKeyCode(pc, loc);
+	    this.loc = key;
 	}
 
 	public String id() {
 	    return(String.format("awt:%x", ec).intern());
 	}
 
-	public Loc location() {return(new AWTKeyCode(ec));}
+	public Loc location() {return(loc);}
 
 	private AWTSym extended() {
 	    if(ec == java.awt.event.KeyEvent.VK_UNDEFINED)
@@ -193,7 +205,7 @@ public abstract class AWTToolkit implements Toolkit {
 	}
 
 	public String toString() {
-	    return(String.format("#<awt-key pc=%x ec=%x std=%s ext=%s>", pc, ec, stdsym, extsym));
+	    return(String.format("#<awt-key pc=%x ec=%x %s std=%s ext=%s>", pc, ec, loc, stdsym, extsym));
 	}
     }
 
@@ -204,7 +216,7 @@ public abstract class AWTToolkit implements Toolkit {
 
 	public AWTKeyEvent(java.awt.event.KeyEvent awt) {
 	    this.awt = awt;
-	    this.key = new AWTKey(awt.getKeyCode(), awt.getExtendedKeyCode(), awt.getKeyChar());
+	    this.key = new AWTKey(awt.getKeyCode(), awt.getExtendedKeyCode(), awt.getKeyChar(), awt.getKeyLocation());
 	    mods = awtmods(awt.getModifiersEx());
 	}
 
@@ -921,7 +933,6 @@ public abstract class AWTToolkit implements Toolkit {
 	g.dispose();
 	return(new AWTCursor(tk.createCustomCursor(buf, new java.awt.Point(hs.x, hs.y), "")));
     }
-
     public static final Map<Integer, Key.Std> stdsyms = Utils.<Integer, Key.Std>map()
 	.put(VK_ENTER, Key.Std.ENTER)
 	.put(VK_BACK_SPACE, Key.Std.BACKSPACE)
@@ -1112,6 +1123,51 @@ public abstract class AWTToolkit implements Toolkit {
 	.put(VK_KP_DOWN, Key.Std.NP_DOWN)
 	.put(VK_KP_LEFT, Key.Std.NP_LEFT)
 	.put(VK_KP_RIGHT, Key.Std.NP_RIGHT)
+	.map();
+
+    /* These are, of course, not correct between layouts and whatnot,
+     * but I don't think there is any way, under AWT, to make them
+     * correct. */
+    public static final Map<Integer, Key.Loc.Std> stdkeys = Utils.<Integer, Key.Loc.Std>map()
+	.put(VK_ESCAPE, Key.Loc.Std.ESC).put(VK_F1,           Key.Loc.Std.FK01).put(VK_F2,          Key.Loc.Std.FK02).put(VK_F3,    Key.Loc.Std.FK03)
+	.put(VK_F4,     Key.Loc.Std.FK04).put(VK_F5,          Key.Loc.Std.FK05).put(VK_F6,          Key.Loc.Std.FK06).put(VK_F7,    Key.Loc.Std.FK07)
+	.put(VK_F8,     Key.Loc.Std.FK08).put(VK_F9,          Key.Loc.Std.FK09).put(VK_F10,         Key.Loc.Std.FK10).put(VK_F11,   Key.Loc.Std.FK11)
+	.put(VK_F12,    Key.Loc.Std.FK12).put(VK_PRINTSCREEN, Key.Loc.Std.PRSC).put(VK_SCROLL_LOCK, Key.Loc.Std.SCLK).put(VK_PAUSE, Key.Loc.Std.PAUS)
+
+	.put(VK_BACK_QUOTE, Key.Loc.Std.TLDE).put(VK_1,          Key.Loc.Std.AE01).put(VK_2,      Key.Loc.Std.AE02).put(VK_3,        Key.Loc.Std.AE03)
+	.put(VK_4,          Key.Loc.Std.AE04).put(VK_5,          Key.Loc.Std.AE05).put(VK_6,      Key.Loc.Std.AE06).put(VK_7,        Key.Loc.Std.AE07)
+	.put(VK_8,          Key.Loc.Std.AE08).put(VK_9,          Key.Loc.Std.AE09).put(VK_0,      Key.Loc.Std.AE10).put(VK_MINUS,    Key.Loc.Std.AE11)
+	.put(VK_EQUALS,     Key.Loc.Std.AE12).put(VK_BACK_SPACE, Key.Loc.Std.BKSP).put(VK_INSERT, Key.Loc.Std.INS ).put(VK_HOME,     Key.Loc.Std.HOME)
+	.put(VK_PAGE_UP,    Key.Loc.Std.PGUP).put(VK_NUM_LOCK,   Key.Loc.Std.NMLK).put(VK_DIVIDE, Key.Loc.Std.KPDV).put(VK_MULTIPLY, Key.Loc.Std.KPMU)
+	.put(VK_SUBTRACT,   Key.Loc.Std.KPSU)
+
+	.put(VK_TAB,           Key.Loc.Std.TAB ).put(VK_Q,       Key.Loc.Std.AD01).put(VK_W,       Key.Loc.Std.AD02).put(VK_E,            Key.Loc.Std.AD03)
+	.put(VK_R,             Key.Loc.Std.AD04).put(VK_T,       Key.Loc.Std.AD05).put(VK_Y,       Key.Loc.Std.AD06).put(VK_U,            Key.Loc.Std.AD07)
+	.put(VK_I,             Key.Loc.Std.AD08).put(VK_O,       Key.Loc.Std.AD09).put(VK_P,       Key.Loc.Std.AD10).put(VK_OPEN_BRACKET, Key.Loc.Std.AD11)
+	.put(VK_CLOSE_BRACKET, Key.Loc.Std.AD12).put(VK_DELETE,  Key.Loc.Std.DEL ).put(VK_END,     Key.Loc.Std.END ).put(VK_PAGE_DOWN,    Key.Loc.Std.PGDN)
+	.put(VK_NUMPAD7,       Key.Loc.Std.KP7 ).put(VK_NUMPAD8, Key.Loc.Std.KP8 ).put(VK_NUMPAD9, Key.Loc.Std.KP9 ).put(VK_ADD,          Key.Loc.Std.KPAD)
+
+	.put(VK_CAPS_LOCK,  Key.Loc.Std.CAPS).put(VK_A,     Key.Loc.Std.AC01).put(VK_S,         Key.Loc.Std.AC02).put(VK_D,       Key.Loc.Std.AC03)
+	.put(VK_F,          Key.Loc.Std.AC04).put(VK_G,     Key.Loc.Std.AC05).put(VK_H,         Key.Loc.Std.AC06).put(VK_J,       Key.Loc.Std.AC07)
+	.put(VK_K,          Key.Loc.Std.AC08).put(VK_L,     Key.Loc.Std.AC09).put(VK_SEMICOLON, Key.Loc.Std.AC10).put(VK_QUOTE,   Key.Loc.Std.AC11)
+	.put(VK_BACK_SLASH, Key.Loc.Std.BKSL).put(VK_ENTER, Key.Loc.Std.RTRN).put(VK_NUMPAD4,   Key.Loc.Std.KP4 ).put(VK_NUMPAD5, Key.Loc.Std.KP5 )
+	.put(VK_NUMPAD6,    Key.Loc.Std.KP6 )
+
+	.put(VK_SHIFT,   Key.Loc.Std.LFSH).put(VK_LESS,    Key.Loc.Std.LSGT).put(VK_Z,       Key.Loc.Std.AB01).put(VK_X,       Key.Loc.Std.AB02)
+	.put(VK_C,       Key.Loc.Std.AB03).put(VK_V,       Key.Loc.Std.AB04).put(VK_B,       Key.Loc.Std.AB05).put(VK_N,       Key.Loc.Std.AB06)
+	.put(VK_M,       Key.Loc.Std.AB07).put(VK_COMMA,   Key.Loc.Std.AB08).put(VK_PERIOD,  Key.Loc.Std.AB09).put(VK_SLASH,   Key.Loc.Std.AB10)
+	.put(VK_UP,      Key.Loc.Std.UP  ).put(VK_NUMPAD1, Key.Loc.Std.KP1 ).put(VK_NUMPAD2, Key.Loc.Std.KP2 ).put(VK_NUMPAD3, Key.Loc.Std.KP3 )
+
+	.put(VK_CONTROL,      Key.Loc.Std.LCTL).put(VK_WINDOWS,      Key.Loc.Std.LWIN).put(VK_ALT,       Key.Loc.Std.LALT).put(VK_META,    Key.Loc.Std.LALT)
+	.put(VK_SPACE,        Key.Loc.Std.SPCE).put(VK_CONTEXT_MENU, Key.Loc.Std.MENU).put(VK_LEFT,      Key.Loc.Std.LEFT).put(VK_DOWN,    Key.Loc.Std.DOWN)
+	.put(VK_RIGHT,        Key.Loc.Std.RGHT).put(VK_NUMPAD0,      Key.Loc.Std.KP0 ).put(VK_SEPARATOR, Key.Loc.Std.KPDL).put(VK_DECIMAL, Key.Loc.Std.KPDL)
+	.map();
+    public static final Map<Integer, Key.Loc.Std> rightkeys = Utils.<Integer, Key.Loc.Std>map()
+	.put(VK_ALT,   Key.Loc.Std.RALT).put(VK_META, Key.Loc.Std.RALT).put(VK_WINDOWS, Key.Loc.Std.RWIN).put(VK_CONTROL, Key.Loc.Std.RCTL)
+	.put(VK_SHIFT, Key.Loc.Std.RTSH)
+	.map();
+    public static final Map<Integer, Key.Loc.Std> numkeys = Utils.<Integer, Key.Loc.Std>map()
+	.put(VK_ENTER, Key.Loc.Std.KPEN)
 	.map();
 }
 

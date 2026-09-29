@@ -31,11 +31,10 @@ import java.util.function.*;
 import java.io.*;
 import java.nio.file.*;
 import java.awt.image.*;
-import com.jogamp.opengl.*;
-import java.awt.event.KeyEvent;
+import haven.iosys.tk.*;
 
 public class Debug {
-    public static final int FRAME_DEBUG_KEY = java.awt.event.KeyEvent.VK_PAUSE;
+    public static final Key.Sym FRAME_DEBUG_KEY = Key.Std.PAUSE;
     public static boolean kf1, kf2, kf3, kf4;
     public static boolean pk1, pk2, pk3, pk4;
     public static boolean fdk, ff;
@@ -54,8 +53,8 @@ public class Debug {
 	}
     }
 
-    public static void keyevent(KeyEvent ke) {
-	if((ke.getID() == KeyEvent.KEY_PRESSED)  && (ke.getKeyCode() == FRAME_DEBUG_KEY))
+    public static void keyevent(Toolkit.KeyEvent ke) {
+	if((ke instanceof Toolkit.KeyDownEvent) && (((Toolkit.KeyDownEvent)ke).sym() == FRAME_DEBUG_KEY))
 	    fdk = true;
     }
 
@@ -203,30 +202,6 @@ public class Debug {
 	    Thread.sleep((int)(t * 1000));
 	} catch(InterruptedException e) {
 	    Thread.currentThread().interrupt();
-	}
-    }
-
-    public static class DumpGL extends TraceGL4bc {
-	public final ByteArrayOutputStream buf;
-
-	private DumpGL(GL4bc bk, ByteArrayOutputStream buf) {
-	    super(bk, new PrintStream(buf));
-	    this.buf = buf;
-	}
-	public DumpGL(GL4bc bk) {
-	    this(bk, new ByteArrayOutputStream());
-	}
-
-	public void reset() {
-	    buf.reset();
-	}
-
-	public void dump(String fn) {
-	    try(OutputStream out = Files.newOutputStream(Utils.path(fn))) {
-		out.write(buf.toByteArray());
-	    } catch(IOException e) {
-		throw(new RuntimeException(e));
-	    }
 	}
     }
 

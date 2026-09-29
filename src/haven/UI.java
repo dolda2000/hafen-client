@@ -832,55 +832,63 @@ public class UI {
 	msg(new InfoMessage(msg));
     }
 
-    private void setmods(InputEvent ev) {
-	int mod = ev.getModifiersEx();
-	modshift = (mod & InputEvent.SHIFT_DOWN_MASK) != 0;
-	modctrl = (mod & InputEvent.CTRL_DOWN_MASK) != 0;
-	modmeta = (mod & (InputEvent.META_DOWN_MASK | InputEvent.ALT_DOWN_MASK)) != 0;
-	/*
-	modsuper = (mod & InputEvent.SUPER_DOWN_MASK) != 0;
-	*/
+    private void setmods(Set<Key.Mod> mods) {
+	modshift = mods.contains(Key.Mod.SHIFT);
+	modctrl = mods.contains(Key.Mod.CONTROL);
+	modmeta = mods.contains(Key.Mod.ALT) || mods.contains(Key.Mod.META);
+	modsuper = mods.contains(Key.Mod.SUPER);
     }
 
     private Grab[] c(Collection<Grab> g) {return(g.toArray(new Grab[0]));}
 
-    public void keydown(KeyEvent ev) {
-	setmods(ev);
+    public void keydown(Toolkit.KeyDownEvent ev) {
+	setmods(ev.mods());
 	if(!dispatch(root, new KeyDownEvent(ev)))
 	    dispatch(root, new GlobKeyEvent(ev));
     }
 	
-    public void keyup(KeyEvent ev) {
-	setmods(ev);
+    public void keyup(Toolkit.KeyUpEvent ev) {
+	setmods(ev.mods());
 	dispatch(root, new KeyUpEvent(ev));
     }
 
-    public void mousedown(MouseEvent ev, Coord c, int button) {
-	setmods(ev);
-	lcc = mc = c;
-	dispatch(root, new Widget.MouseDownEvent(c, button));
+    private static int buttonid(MouseBtn btn) {
+	if(btn == MouseBtn.Std.LEFT)
+	    return(1);
+	else if(btn == MouseBtn.Std.MIDDLE)
+	    return(2);
+	else if(btn == MouseBtn.Std.RIGHT)
+	    return(3);
+	return(0);
+    }
+
+    public void mousedown(Toolkit.MouseDownEvent ev) {
+	setmods(ev.mods());
+	int button = buttonid(ev.button());
+	if(button > 0)
+	    dispatch(root, new Widget.MouseDownEvent(lcc = mc = ev.wndc(), button));
     }
 	
-    public void mouseup(MouseEvent ev, Coord c, int button) {
-	setmods(ev);
-	mc = c;
-	dispatch(root, new Widget.MouseUpEvent(c, button));
+    public void mouseup(Toolkit.MouseUpEvent ev) {
+	setmods(ev.mods());
+	int button = buttonid(ev.button());
+	if(button > 0)
+	    dispatch(root, new Widget.MouseUpEvent(mc = ev.wndc(), button));
     }
 	
-    public void mousemove(MouseEvent ev, Coord c) {
-	setmods(ev);
-	mc = c;
-	dispatch(root, new Widget.MouseMoveEvent(c));
+    public void mousemove(Toolkit.MouseMoveEvent ev) {
+	setmods(ev.mods());
+	dispatch(root, new Widget.MouseMoveEvent(mc = ev.wndc()));
     }
 
     public void mousehover(Coord c) {
 	dispatch(root, new Widget.MouseHoverEvent(c));
     }
 	
-    public void mousewheel(MouseEvent ev, Coord c, int ia, double sa) {
-	setmods(ev);
-	mc = c;
-	dispatch(root, new Widget.MouseWheelEvent(c, ia, sa));
+    public void mousewheel(Toolkit.MouseWheelEvent ev) {
+	setmods(ev.mods());
+	if(ev.axis() == Toolkit.MouseWheelEvent.Axis.VERT)
+	    dispatch(root, new Widget.MouseWheelEvent(mc = ev.wndc(), ev.amount(), ev.subamount()));
     }
 
     public static enum Cursor {
