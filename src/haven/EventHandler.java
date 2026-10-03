@@ -26,7 +26,9 @@
 
 package haven;
 
+import java.util.*;
 import java.util.function.*;
+import java.util.concurrent.*;
 
 public interface EventHandler<E> {
     public boolean handle(E ev);
@@ -58,6 +60,23 @@ public interface EventHandler<E> {
 	    if(sel.test(ev))
 		return(bk.handle(ev));
 	    return(false);
+	}
+    }
+
+    public static class Source<E> {
+	public final Collection<EventHandler<? super E>> listening = new CopyOnWriteArrayList<>();
+
+	public void add(EventHandler<? super E> handler) {
+	    listening.add(handler);
+	}
+
+	public boolean remove(EventHandler<? super E> handler) {
+	    return(listening.remove(handler));
+	}
+
+	public void submit(E ev) {
+	    for(EventHandler<? super E> h : listening)
+		h.handle(ev);
 	}
     }
 }
