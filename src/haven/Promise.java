@@ -265,6 +265,31 @@ public class Promise<T> {
     }
 
     @SuppressWarnings("unchecked")
+    public T waitforint() throws InterruptedException {
+	Object[] buf = {null, null};
+	callback(val -> {
+	    synchronized(buf) {
+		buf[0] = val;
+		buf[1] = true;
+		buf.notifyAll();
+	    }
+	}, err -> {
+	    synchronized(buf) {
+		buf[0] = null;
+		buf[1] = err;
+		buf.notifyAll();
+	    }
+	}, null);
+	synchronized(buf) {
+	    while(buf[1] == null)
+		buf.wait();
+	    if(buf[1] instanceof Throwable)
+		throw(new Future.PastException((Throwable)buf[1]));
+	    return((T)buf[0]);
+	}
+    }
+
+    @SuppressWarnings("unchecked")
     public T waitfor() {
 	Object[] buf = {null, null};
 	callback(val -> {
