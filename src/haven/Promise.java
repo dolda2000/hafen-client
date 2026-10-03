@@ -32,11 +32,12 @@ public class Promise<T> {
     private final Checker<T> check = new Checker<>(this);
     private T value;
     private Throwable error;
+    private Runnable cancel = null;
 
     private static class Checker<T> implements Finalizer.Cleaner {
 	private static final boolean DEBUG = true;
 	final Throwable created = DEBUG ? new Throwable("created at") : null;
-	boolean settled = false;
+	boolean settled = false, cancelled = false;
 	Callback<T> callback = null;
 
 	Checker(Promise<T> p) {
@@ -45,7 +46,7 @@ public class Promise<T> {
 
 	public void clean() {
 	    try {
-		if(!settled) {
+		if(!settled && !cancelled) {
 		    if(callback != null) {
 			callback.callback(null, new RuntimeException("promise never settled", created));
 		    }  else {
@@ -99,6 +100,8 @@ public class Promise<T> {
 	synchronized(this) {
 	    if(check.settled)
 		throw(new IllegalStateException());
+	    if(check.cancelled)
+		return;
 	    this.value = value;
 	    this.error = error;
 	    check.settled = true;
@@ -127,6 +130,27 @@ public class Promise<T> {
 	    return(new Promise<T>().reject(t));
 	}
 	return(new Promise<T>().resolve(val));
+    }
+
+    public void cancellable(Runnable cancel) {
+	synchronized(this) {
+	    this.cancel = cancel;
+	}
+    }
+
+    public void cancel() {
+	Runnable cancel;
+	synchronized(this) {
+	    cancel = this.cancel;
+	    if(cancel == null)
+		throw(new UnsupportedOperationException("not cancellable"));
+	    if(check.cancelled)
+		throw(new IllegalStateException());
+	    if(check.settled)
+		return;
+	    check.cancelled = true;
+	}
+	cancel.run();
     }
 
     public void callback(Callback<T> callback) {
@@ -265,32 +289,7 @@ public class Promise<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public T waitforint() throws InterruptedException {
-	Object[] buf = {null, null};
-	callback(val -> {
-	    synchronized(buf) {
-		buf[0] = val;
-		buf[1] = true;
-		buf.notifyAll();
-	    }
-	}, err -> {
-	    synchronized(buf) {
-		buf[0] = null;
-		buf[1] = err;
-		buf.notifyAll();
-	    }
-	}, null);
-	synchronized(buf) {
-	    while(buf[1] == null)
-		buf.wait();
-	    if(buf[1] instanceof Throwable)
-		throw(new Future.PastException((Throwable)buf[1]));
-	    return((T)buf[0]);
-	}
-    }
-
-    @SuppressWarnings("unchecked")
-    public T waitfor() {
+    public T waitfor(boolean interruptible, boolean cancel) throws InterruptedException {
 	Object[] buf = {null, null};
 	callback(val -> {
 	    synchronized(buf) {
@@ -311,14 +310,26 @@ public class Promise<T> {
 		try {
 		    buf.wait();
 		} catch(InterruptedException e) {
-		    irq = true;
+		    if(interruptible) {
+			if(cancel && (this.cancel != null))
+			    cancel();
+			throw(e);
+		    } else {
+			irq = true;
+		    }
 		}
 	    }
-	    if(irq)
-		Thread.currentThread().interrupt();
 	    if(buf[1] instanceof Throwable)
 		throw(new Future.PastException((Throwable)buf[1]));
 	    return((T)buf[0]);
+	}
+    }
+
+    public T waitfor() {
+	try {
+	    return(waitfor(false, false));
+	} catch(InterruptedException e) {
+	    throw(new AssertionError(e));
 	}
     }
 
