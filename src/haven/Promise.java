@@ -280,6 +280,10 @@ public class Promise<T> {
 	return(map(val -> {res.accept(val); return(null);}));
     }
 
+    public Promise<?> tee(Consumer<? super T> res) {
+	return(map(val -> {res.accept(val); return(val);}));
+    }
+
     public Promise<T> except(Function<? super Throwable, ? extends T> rej) {
 	return(map(val -> val, rej));
     }
