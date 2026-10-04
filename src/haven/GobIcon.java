@@ -844,7 +844,7 @@ public class GobIcon extends GAttrib {
 		private void selectwav(NotificationSetting prev) {
 		    FilePicker dialog = ui.wnd.toolkit().picker().make(FilePicker.Mode.OPEN, ui.wnd);
 		    dialog.filter("PCM wave file", "wav");
-		    dialog.show().map(path -> {
+		    dialog.show().consume(path -> {
 			Debug.dump(path, prev.name);
 			if(path == null) {
 			    super.change(prev);
