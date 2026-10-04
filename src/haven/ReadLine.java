@@ -314,7 +314,7 @@ public interface ReadLine {
 		mark = s ? (mark < 0) ? point : mark : -1;
 		point = length;
 	    } else if((c == 'v') && (mod == C)) {
-		cliptext().map(this::paste).report(owner.ui(), "Clipboard error");
+		cliptext().consume(this::paste).report(owner.ui(), "Clipboard error");
 	    } else if((c == 'c') && (mod == C)) {
 		if(mark >= 0)
 		    clipset(owner.ui().wnd.clipboard(Clipboard.Std.CLIPBOARD));

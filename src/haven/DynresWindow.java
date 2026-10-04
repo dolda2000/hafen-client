@@ -268,7 +268,7 @@ public class DynresWindow extends Window {
 	private void open() {
 	    FilePicker dialog = ui.wnd.toolkit().picker().make(FilePicker.Mode.OPEN, ui.wnd);
 	    dialog.filter("Image file", "png", "jpg", "jpeg", "bmp");
-	    dialog.show().map(Promise.cnonnull(this::open)).report(ui);
+	    dialog.show().consume(Promise.cnonnull(this::open)).report(ui);
 	}
 
 	private void paste(Clipboard c) {
@@ -277,7 +277,7 @@ public class DynresWindow extends Window {
 		if(item == null)
 		    throw(new RuntimeException("The clipboard contains no image."));
 		return(item.get());
-	    }).map(img -> {
+	    }).consume(img -> {
 		create(() -> img);
 	    }).report(ui);
 	}
@@ -327,12 +327,12 @@ public class DynresWindow extends Window {
 		Clipboard.Contents cc = ((SystemDrop)thing).contents(DropHandler.Action.COPY);
 		boolean rv = false;
 		if(cc.find(Clipboard.Format.IMAGE) != null) {
-		    cc.find(Clipboard.Format.IMAGE).get().map(img -> {
+		    cc.find(Clipboard.Format.IMAGE).get().consume(img -> {
 			create(() -> img);
 		    }).report(ui, "Clipboard error");
 		    return(true);
 		} else if(cc.find(Clipboard.Format.PATHS) != null) {
-		    cc.find(Clipboard.Format.PATHS).get().map(files -> {
+		    cc.find(Clipboard.Format.PATHS).get().consume(files -> {
 			for(Path p : files)
 			    open(p);
 		    }).report(ui, "Clipboard error");

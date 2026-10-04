@@ -252,7 +252,7 @@ public class Promise<T> {
 	return(map(res, null));
     }
 
-    public Promise<?> map(Consumer<? super T> res) {
+    public Promise<?> consume(Consumer<? super T> res) {
 	return(map(val -> {res.accept(val); return(null);}));
     }
 

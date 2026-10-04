@@ -601,15 +601,15 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 			if(item.fmt == Format.TEXT) {
 			    item.check(Format.TEXT).get()
 				.then(val -> mtpromise(() -> {buf.cvt_text(val); return(null);}))
-				.map(buf.checkput());
+				.consume(buf.checkput());
 			} else if(item.fmt == Format.IMAGE) {
 			    item.check(Format.IMAGE).get()
 				.then(val -> mtpromise(() -> {buf.cvt_image(val); return(null);}))
-				.map(buf.checkput());
+				.consume(buf.checkput());
 			} else if(item.fmt == Format.PATHS) {
 			    item.check(Format.PATHS).get()
 				.then(val -> mtpromise(() -> {buf.cvt_paths(val); return(null);}))
-				.map(buf.checkput());
+				.consume(buf.checkput());
 			}
 		    }
 		});
