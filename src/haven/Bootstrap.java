@@ -338,6 +338,8 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		ret.resolve(c.connect(ui));
 	    } catch(InterruptedException e) {
 		ret.resolve(null);
+	    } catch(Throwable e) {
+		ret.reject(e);
 	    }
 	}, "Session connector");
 	th.start();
