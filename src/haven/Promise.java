@@ -144,8 +144,6 @@ public class Promise<T> {
 	    cancel = this.cancel;
 	    if(cancel == null)
 		throw(new UnsupportedOperationException("not cancellable"));
-	    if(check.cancelled)
-		throw(new IllegalStateException());
 	    if(check.settled)
 		return;
 	    check.cancelled = true;
