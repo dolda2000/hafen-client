@@ -137,26 +137,28 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	rottokens(user, confname, token != null, true);
     }
 
-    private Promise<Message> fmessage(Predicate<Message> filter) {
-	Promise<Message> ret = new Promise<>();
-	msgsrc.add(new EventHandler<Message>() {
-	    {ret.cancellable(this::remove);}
-
-	    public boolean handle(Message msg) {
-		if(filter.test(msg)) {
-		    remove();
-		    msgsrc.remove(this);
-		    ret.resolve(msg);
-		    return(true);
+    private Message getmsg(Predicate<Message> filter) throws InterruptedException {
+	Message[] ret = {null};
+	EventHandler<Message> h = msg -> {
+	    if(filter.test(msg)) {
+		synchronized(ret) {
+		    ret[0] = msg;
+		    ret.notifyAll();
 		}
-		return(false);
+		return(true);
 	    }
-
-	    private void remove() {
-		msgsrc.remove(this);
+	    return(false);
+	};
+	msgsrc.add(h);
+	try {
+	    synchronized(ret) {
+		while(ret[0] == null)
+		    ret.wait();
+		return(ret[0]);
 	    }
-	});
-	return(ret);
+	} finally {
+	    msgsrc.remove(h);
+	}
     }
 
     public static void preferhost(List<InetSocketAddress> hosts, SocketAddress prev) {
@@ -352,10 +354,11 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	};
 	msgsrc.add(mh);
 	try {
-	    return(ret.waitfor(true, true));
+	    return(ret.waitfor(true));
 	} catch(Future.PastException e) {
 	    throw((RuntimeException)e.getCause());
 	} finally {
+	    th.interrupt();
 	    msgsrc.remove(mh);
 	}
     }
@@ -371,7 +374,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		c = initmech();
 	    if(c == null) {
 		ui.uimsg(1, "login");
-		Message msg = fmessage(m -> ((m.id == 1) && (m.name == "login"))).waitfor(true, true);
+		Message msg = getmsg(m -> ((m.id == 1) && (m.name == "login")));
 		AuthClient.Credentials creds = (AuthClient.Credentials)msg.args[0];
 		logincreds = creds;
 		c = credauth(creds, (Boolean)msg.args[1]);

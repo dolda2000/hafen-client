@@ -32,12 +32,11 @@ public class Promise<T> {
     private final Checker<T> check = new Checker<>(this);
     private T value;
     private Throwable error;
-    private Runnable cancel = null;
 
     private static class Checker<T> implements Finalizer.Cleaner {
 	private static final boolean DEBUG = true;
 	final Throwable created = DEBUG ? new Throwable("created at") : null;
-	boolean settled = false, cancelled = false;
+	boolean settled = false;
 	Callback<T> callback = null;
 
 	Checker(Promise<T> p) {
@@ -46,7 +45,7 @@ public class Promise<T> {
 
 	public void clean() {
 	    try {
-		if(!settled && !cancelled) {
+		if(!settled) {
 		    if(callback != null) {
 			callback.callback(null, new RuntimeException("promise never settled", created));
 		    }  else {
@@ -100,8 +99,6 @@ public class Promise<T> {
 	synchronized(this) {
 	    if(check.settled)
 		throw(new IllegalStateException());
-	    if(check.cancelled)
-		return;
 	    this.value = value;
 	    this.error = error;
 	    check.settled = true;
@@ -130,25 +127,6 @@ public class Promise<T> {
 	    return(new Promise<T>().reject(t));
 	}
 	return(new Promise<T>().resolve(val));
-    }
-
-    public void cancellable(Runnable cancel) {
-	synchronized(this) {
-	    this.cancel = cancel;
-	}
-    }
-
-    public void cancel() {
-	Runnable cancel;
-	synchronized(this) {
-	    cancel = this.cancel;
-	    if(cancel == null)
-		throw(new UnsupportedOperationException("not cancellable"));
-	    if(check.settled)
-		return;
-	    check.cancelled = true;
-	}
-	cancel.run();
     }
 
     public void callback(Callback<T> callback) {
@@ -291,7 +269,7 @@ public class Promise<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public T waitfor(boolean interruptible, boolean cancel) throws InterruptedException {
+    public T waitfor(boolean interruptible) throws InterruptedException {
 	Object[] buf = {null, null};
 	callback(val -> {
 	    synchronized(buf) {
@@ -312,15 +290,14 @@ public class Promise<T> {
 		try {
 		    buf.wait();
 		} catch(InterruptedException e) {
-		    if(interruptible) {
-			if(cancel && (this.cancel != null))
-			    cancel();
+		    if(interruptible)
 			throw(e);
-		    } else {
+		    else
 			irq = true;
-		    }
 		}
 	    }
+	    if(irq)
+		Thread.currentThread().interrupt();
 	    if(buf[1] instanceof Throwable)
 		throw(new Future.PastException((Throwable)buf[1]));
 	    return((T)buf[0]);
@@ -329,7 +306,7 @@ public class Promise<T> {
 
     public T waitfor() {
 	try {
-	    return(waitfor(false, false));
+	    return(waitfor(false));
 	} catch(InterruptedException e) {
 	    throw(new AssertionError(e));
 	}
