@@ -323,7 +323,7 @@ public class AuthClient implements Closeable {
     }
     
     public static abstract class Credentials {
-	public abstract Session.User tryauth(AuthClient cl) throws IOException;
+	public abstract Session.User tryauth(AuthClient cl) throws IOException, InterruptedException;
 	public abstract String authname();
 	public void discard() {}
 	
@@ -431,7 +431,7 @@ public class AuthClient implements Closeable {
 	    return(authname);
 	}
 
-	public static byte[] prehash(byte[] pw, Object[] spec) {
+	public static byte[] prehash(byte[] pw, Object[] spec) throws InterruptedException {
 	    if(Utils.eq(spec[0], "sha256")) {
 		return(Digest.hash(Digest.SHA256, pw));
 	    } else if(Utils.eq(spec[0], "pbkdf2")) {
@@ -445,7 +445,7 @@ public class AuthClient implements Closeable {
 	    }
 	}
 	
-	private byte[] hashpw(AuthClient cl) throws IOException {
+	private byte[] hashpw(AuthClient cl) throws IOException, InterruptedException  {
 	    Message rpl = cl.cmd("pwdata", "user", username);
 	    String stat = rpl.string();
 	    if(stat.equals("no"))
@@ -468,7 +468,7 @@ public class AuthClient implements Closeable {
 	    }
 	}
 
-	public Session.User tryauth(AuthClient cl) throws IOException {
+	public Session.User tryauth(AuthClient cl) throws IOException, InterruptedException {
 	    Message rpl = cl.cmd("pw", "user", username, "phash", hashpw(cl));
 	    String stat = rpl.string();
 	    if(stat.equals("ok")) {

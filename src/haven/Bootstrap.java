@@ -187,7 +187,7 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
     }
 
     public static interface AuthMech {
-	public Auth authenticate(AuthClient auth) throws IOException;
+	public Auth authenticate(AuthClient auth) throws IOException, InterruptedException;
     }
 
     public static class ConnectError extends RuntimeException {
