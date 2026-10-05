@@ -360,14 +360,14 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	Session sess;
 	while(true) {
 	    Connector c = initauth();
-	    String loginname = null;
+	    AuthClient.Credentials logincreds = null;
 	    if(c == null)
 		c = initmech();
 	    if(c == null) {
 		ui.uimsg(1, "login");
 		Message msg = fmessage(m -> ((m.id == 1) && (m.name == "login"))).waitfor(true, true);
 		AuthClient.Credentials creds = (AuthClient.Credentials)msg.args[0];
-		loginname = creds.authname();
+		logincreds = creds;
 		c = credauth(creds, (Boolean)msg.args[1]);
 	    }
 	    try {
@@ -381,9 +381,9 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		ui.uimsg(1, "error", String.format("Unexpected error: %s: %s", e.getClass().getSimpleName(), e.getMessage()));
 		continue;
 	    }
-	    if(loginname != null) {
-		setpref("loginname", loginname);
-		rottokens(loginname, confname, false, false);
+	    if(logincreds != null) {
+		setpref("loginname", logincreds.authname());
+		rottokens(logincreds.authname(), confname, false, false);
 	    }
 	    break;
 	}
