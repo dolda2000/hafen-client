@@ -343,14 +343,20 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	    }
 	}, "Session connector");
 	th.start();
-	Promise<Message> fmsg = fmessage(m -> ((m.id == 1) && (m.name == "cancel")));
+	EventHandler<Message> mh = msg -> {
+	    if((msg.id == 1) && (msg.name == "cancel")) {
+		th.interrupt();
+		return(true);
+	    }
+	    return(false);
+	};
+	msgsrc.add(mh);
 	try {
-	    fmsg.consume(msg -> th.interrupt());
 	    return(ret.waitfor(true, true));
 	} catch(Future.PastException e) {
 	    throw((RuntimeException)e.getCause());
 	} finally {
-	    fmsg.cancel();
+	    msgsrc.remove(mh);
 	}
     }
 
