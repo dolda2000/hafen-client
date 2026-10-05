@@ -44,15 +44,15 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
     public static boolean useinitauth = true;
     public final NamedSocketAddress server;
     public final String confname;
-    Queue<Message> msgs = new LinkedList<Message>();
+    private final EventHandler.Source<Message> msgsrc = new EventHandler.Source<>();
     String inituser = null;
     byte[] initcookie = null;
     byte[] inittoken = null;
 
     public static class Message {
-	int id;
-	String name;
-	Object[] args;
+	public final int id;
+	public final String name;
+	public final Object[] args;
 
 	public Message(int id, String name, Object... args) {
 	    this.id = id;
@@ -137,13 +137,26 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	rottokens(user, confname, token != null, true);
     }
 
-    private Message getmsg() throws InterruptedException {
-	Message msg;
-	synchronized(msgs) {
-	    while((msg = msgs.poll()) == null)
-		msgs.wait();
-	    return(msg);
-	}
+    private Promise<Message> fmessage(Predicate<Message> filter) {
+	Promise<Message> ret = new Promise<>();
+	msgsrc.add(new EventHandler<Message>() {
+	    {ret.cancellable(this::remove);}
+
+	    public boolean handle(Message msg) {
+		if(filter.test(msg)) {
+		    remove();
+		    msgsrc.remove(this);
+		    ret.resolve(msg);
+		    return(true);
+		}
+		return(false);
+	    }
+
+	    private void remove() {
+		msgsrc.remove(this);
+	    }
+	});
+	return(ret);
     }
 
     public static void preferhost(List<InetSocketAddress> hosts, SocketAddress prev) {
@@ -318,6 +331,27 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	}));
     }
 
+    private Session connect(Connector c, UI ui) throws InterruptedException {
+	Promise<Session> ret = new Promise<>();
+	Thread th = new HackThread(() -> {
+	    try {
+		ret.resolve(c.connect(ui));
+	    } catch(InterruptedException e) {
+		ret.resolve(null);
+	    }
+	}, "Session connector");
+	th.start();
+	Promise<Message> fmsg = fmessage(m -> ((m.id == 1) && (m.name == "cancel")));
+	try {
+	    fmsg.consume(msg -> th.interrupt());
+	    return(ret.waitfor(true, true));
+	} catch(Future.PastException e) {
+	    throw((RuntimeException)e.getCause());
+	} finally {
+	    fmsg.cancel();
+	}
+    }
+
     public UI.Runner run(UI ui) throws InterruptedException {
 	ui.setreceiver(this);
 	ui.newwidgetp(1, ($1, $2) -> new LoginScreen(confname), 0, new Object[] {Coord.z});
@@ -329,20 +363,14 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		c = initmech();
 	    if(c == null) {
 		ui.uimsg(1, "login");
-		while(true) {
-		    Message msg = getmsg();
-		    if(msg.id == 1) {
-			if(msg.name == "login") {
-			    AuthClient.Credentials creds = (AuthClient.Credentials)msg.args[0];
-			    loginname = creds.authname();
-			    c = credauth(creds, (Boolean)msg.args[1]);
-			    break;
-			}
-		    }
-		}
+		Message msg = fmessage(m -> ((m.id == 1) && (m.name == "login"))).waitfor(true, true);
+		AuthClient.Credentials creds = (AuthClient.Credentials)msg.args[0];
+		loginname = creds.authname();
+		c = credauth(creds, (Boolean)msg.args[1]);
 	    }
 	    try {
-		sess = c.connect(ui);
+		if((sess = connect(c, ui)) == null)
+		    continue;
 	    } catch(ConnectError e) {
 		ui.uimsg(1, "error", e.getMessage());
 		continue;
@@ -350,8 +378,6 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		new Warning(e, "unexpected connector error").issue();
 		ui.uimsg(1, "error", String.format("Unexpected error: %s: %s", e.getClass().getSimpleName(), e.getMessage()));
 		continue;
-	    } catch(InterruptedException e) {
-		throw(e);
 	    }
 	    if(loginname != null) {
 		setpref("loginname", loginname);
@@ -365,9 +391,6 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
     }
 
     public void rcvmsg(int widget, String msg, Object... args) {
-	synchronized(msgs) {
-	    msgs.add(new Message(widget, msg, args));
-	    msgs.notifyAll();
-	}
+	msgsrc.submit(new Message(widget, msg, args));
     }
 }
