@@ -226,6 +226,22 @@ public class FUtils {
 	return(memcpy(new byte[len], src, 0, soff, len));
     }
 
+    public static short[] memcpys(short[] dst, MemorySegment src, int doff, long soff, int num) {
+	MemorySegment.copy(src, soff, MemorySegment.ofArray(dst), doff * 2, num * 2);
+	return(dst);
+    }
+    public static short[] memcpys(MemorySegment src, long soff, int len) {
+	return(memcpys(new short[len], src, 0, soff, len));
+    }
+
+    public static int[] memcpyi(int[] dst, MemorySegment src, int doff, long soff, int num) {
+	MemorySegment.copy(src, soff, MemorySegment.ofArray(dst), doff * 4, num * 4);
+	return(dst);
+    }
+    public static int[] memcpyi(MemorySegment src, long soff, int len) {
+	return(memcpyi(new int[len], src, 0, soff, len));
+    }
+
     public static MemorySegment memcpya(MemorySegment src, long soff, int len) {
 	MemorySegment buf = MemorySegment.ofArray(new long[(len + 7) >> 3]);
 	MemorySegment.copy(src, soff, buf, 0, len);

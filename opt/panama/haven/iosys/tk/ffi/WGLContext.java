@@ -28,9 +28,12 @@ package haven.iosys.tk.ffi;
 
 import java.util.*;
 import java.util.function.*;
+import java.lang.foreign.*;
+import java.awt.color.*;
 import java.awt.image.*;
 import java.io.*;
 import java.nio.*;
+import java.nio.charset.*;
 import haven.*;
 import haven.iosys.*;
 import haven.render.*;
@@ -587,6 +590,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	public class WGLWindow implements Windeye {
 	    public final Handle hwnd;
 	    private final Collection<EventListener> callbacks = new java.util.concurrent.CopyOnWriteArrayList<>();
+	    private final W32Clipboard clipboard = new W32Clipboard();
 	    private Coord size = Coord.z;
 	    private boolean showing = false;
 	    private State curstate = State.NORMAL;
@@ -929,9 +933,206 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		gbuf.submit(gl -> this.glswap(gl, ((Boolean)mode) ? 1 : 0));
 	    }
 
+	    public Clipboard clipboard(Object id) {
+		if(id == Clipboard.Std.CLIPBOARD)
+		    return(clipboard);
+		return(Clipboard.nil);
+	    }
+
 	    public void dispose() {
 		unregister(this);
 		msgrun(() -> win.DestroyWindow(hwnd));
+	    }
+
+	    public class W32Clipboard implements Clipboard {
+		public static final Supplier<Integer> CF_PNG = Utils.cache(() -> Win32.get().RegisterClipboardFormat("PNG"));
+
+		public void put(Contents c, Runnable expire) {
+		}
+
+		private static final double[] retries = {0.0, 0.01, 0.02, 0.05, 0.10, 0.25};
+		private void tryopen(Promise<Object> res, int count) {
+		    try {
+			win.OpenClipboard(hwnd);
+		    } catch(StdError err) {
+			if(err.code != Win32.ERROR_ACCESS_DENIED) {
+			    res.reject(err);
+			    return;
+			}
+			if(count < retries.length) {
+			    Timeout.later(Utils.rtime() + retries[0], () -> msgrun(() -> tryopen(res, count + 1)), null);
+			} else {
+			    res.reject(err);
+			}
+			return;
+		    }
+		    res.resolve(null);
+		}
+
+		private void mktext(List<Item<?>> buf, Handle hmem, Charset charset) {
+		    MemorySegment mem = win.GlobalLock(hmem);
+		    try {
+			buf.add(new Item<CharSequence>(Format.TEXT, mem.getString(0, charset)));
+		    } finally {
+			win.GlobalUnlock(hmem);
+		    }
+		}
+
+		private int colorbyte(int rgb, int boff, int size) {
+		    if(size == 8)
+			return((rgb >>> boff) & 0xff);
+		    int raw = (rgb >>> boff) & ((1 << size) - 1);
+		    return((raw << (8 - size)) | (raw >>> (size - (8 - size))));
+		}
+
+		private BufferedImage paldibtoimg(Coord sz, ByteBuffer pixels, int off, int rstride, int pstride, int bits, int[] palette) {
+		    WritableRaster buf = PUtils.imgraster(sz);
+		    for(int y = 0, roff = off; y < sz.y; y++, roff += rstride) {
+			for(int x = 0, poff = roff * 8; x < sz.x; x++, poff += pstride) {
+			    int idx = (pixels.get(poff >> 3) & 0xff) >>> (poff & 7);
+			    buf.setSample(x, y, 0, (palette[idx] >>> 16) & 0xff);
+			    buf.setSample(x, y, 1, (palette[idx] >>>  8) & 0xff);
+			    buf.setSample(x, y, 2, (palette[idx] >>>  0) & 0xff);
+			    buf.setSample(x, y, 3, 0xff);
+			}
+		    }
+		    return(PUtils.rasterimg(buf));
+		}
+
+		private BufferedImage rgbdibtoimg(Coord sz, ByteBuffer pixels, int off, int rstride, int pstride, int[] sizes, int[] boffs) {
+		    WritableRaster buf = PUtils.imgraster(sz);
+		    for(int y = 0, roff = off; y < sz.y; y++, roff += rstride) {
+			for(int x = 0, poff = roff; x < sz.x; x++, poff += pstride) {
+			    int rgb = pixels.getInt(poff);
+			    for(int b = 0; b < sizes.length; b++)
+				buf.setSample(x, y, b, colorbyte(rgb, boffs[b], sizes[b]));
+			    if(sizes.length < 4)
+				buf.setSample(x, y, 3, 0xff);
+			}
+		    }
+		    return(PUtils.rasterimg(buf));
+		}
+
+		private void mkdib(List<Item<?>> buf, Handle hmem) {
+		    MemorySegment mem = win.GlobalLock(hmem);
+		    try {
+			Supplier<BufferedImage> ifun;
+			BITMAPV5HEADER bmp = win.BITMAPV5HEADER(mem);
+			if(bmp.bV5Size() == bmp.sizeof()) {
+			    Coord sz; boolean inv;
+			    if(bmp.bV5Height() < 0) {
+				sz = Coord.of(bmp.bV5Width(), -bmp.bV5Height());
+				inv = false;
+			    } else {
+				sz = Coord.of(bmp.bV5Width(), bmp.bV5Height());
+				inv = true;
+			    }
+			    int comp = bmp.bV5Compression();
+			    int bits = bmp.bV5BitCount();
+			    int palsize = bmp.bV5ClrUsed();
+			    if(palsize == 0) {
+				if(bits <= 8)
+				    palsize = 1 << bits;
+			    }
+			    int off = bmp.bV5Size() + (palsize * 4);
+			    int size = (int)(mem.byteSize() - off);
+			    int[] palette = FUtils.memcpyi(mem, bmp.bV5Size(), palsize);
+			    ByteBuffer pixels = ByteBuffer.allocate(size);
+			    pixels.order(ByteOrder.nativeOrder());
+			    MemorySegment.copy(mem, off, MemorySegment.ofBuffer(pixels), 0, size);
+			    int rowsz = (((sz.x * bits) >> 3) + 3) & ~3;
+			    switch(comp) {
+			    case Win32.BI_RGB:
+				switch(bits) {
+				case 1:
+				    if(inv)
+					ifun = () -> paldibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 1, 1, palette);
+				    else
+					ifun = () -> paldibtoimg(sz, pixels, 0, rowsz, 1, 1, palette);
+				    break;
+				case 4:
+				    if(inv)
+					ifun = () -> paldibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 4, 4, palette);
+				    else
+					ifun = () -> paldibtoimg(sz, pixels, 0, rowsz, 4, 4, palette);
+				    break;
+				case 8:
+				    if(inv)
+					ifun = () -> paldibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 8, 8, palette);
+				    else
+					ifun = () -> paldibtoimg(sz, pixels, 0, rowsz, 8, 8, palette);
+				    break;
+				case 16:
+				    if(inv)
+					ifun = () -> rgbdibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 2, new int[] {5, 5, 5}, new int[] {10, 5, 0});
+				    else
+					ifun = () -> rgbdibtoimg(sz, pixels, 0, rowsz, 2, new int[] {5, 5, 5}, new int[] {10, 5, 0});
+				    break;
+				case 24:
+				    if(inv)
+					ifun = () -> rgbdibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 3, new int[] {8, 8, 8}, new int[] {16, 8, 0});
+				    else
+					ifun = () -> rgbdibtoimg(sz, pixels, 0, rowsz, 3, new int[] {8, 8, 8}, new int[] {16, 8, 0});
+				    break;
+				case 32:
+				    if(inv)
+					ifun = () -> rgbdibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 4, new int[] {8, 8, 8}, new int[] {16, 8, 0});
+				    else
+					ifun = () -> rgbdibtoimg(sz, pixels, 0, rowsz, 4, new int[] {8, 8, 8}, new int[] {16, 8, 0});
+				    break;
+				default:
+				    ifun = () -> {throw(new RuntimeException("unexpected RGB DIB bit-count: " + bits));};
+				}
+				break;
+			    case Win32.BI_BITFIELDS: {
+				int[] masks = new int[] {bmp.bV5RedMask(), bmp.bV5GreenMask(), bmp.bV5BlueMask(), bmp.bV5AlphaMask()};
+				if(masks[3] == 0)
+				    masks = Arrays.copyOf(masks, 3);
+				int[] sizes = new int[masks.length], boffs = new int[masks.length];
+				for(int i = 0; i < masks.length; i++) {
+				    boffs[i] = Integer.numberOfTrailingZeros(masks[i]);
+				    sizes[i] = Integer.bitCount(masks[i]);
+				}
+				if(inv)
+				    ifun = () -> rgbdibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, bits >> 3, sizes, boffs);
+				else
+				    ifun = () -> rgbdibtoimg(sz, pixels, 0, rowsz, bits >> 3, sizes, boffs);
+				break;
+			    }
+			    default:
+				ifun = () -> {throw(new RuntimeException("unexpected DIB compression type: " + comp));};
+			    }
+			} else {
+			    ifun = () -> {throw(new RuntimeException("unexpected DIB header size: " + bmp.bV5Size()));};
+			}
+			buf.add(new Item<BufferedImage>(Format.IMAGE, () -> Promise.deferred(ifun, t -> Defer.later(t, null))));
+		    } finally {
+			win.GlobalUnlock(hmem);
+		    }
+		}
+
+		private Contents mkcontents() {
+		    try {
+			List<Item<?>> ret = new ArrayList<>();
+			if(win.IsClipboardFormatAvailable(Win32.CF_UNICODETEXT))
+			    mktext(ret, win.GetClipboardData(Win32.CF_UNICODETEXT), win.C_WCHARSET());
+			if(win.IsClipboardFormatAvailable(Win32.CF_DIBV5))
+			    mkdib(ret, win.GetClipboardData(Win32.CF_DIBV5));
+			return(new Contents(ret));
+		    } finally {
+			win.CloseClipboard();
+		    }
+		}
+
+		public Promise<Object> openclipboard() {
+		    Promise<Object> ret = new Promise<>();
+		    msgrun(() -> tryopen(ret, 0));
+		    return(ret);
+		}
+
+		public Promise<Contents> get() {
+		    return(openclipboard().then(_ -> Promise.deferred(this::mkcontents, WGLToolkit.this::msgrun)));
+		}
 	    }
 
 	    public class W32KeyEvent {

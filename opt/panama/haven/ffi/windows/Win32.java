@@ -44,7 +44,12 @@ public abstract class Win32 {
 
     public static final int ERROR_SUCCESS = 0;
     public static final int ERROR_FILE_NOT_FOUND = 2;
+    public static final int ERROR_ACCESS_DENIED = 5;
     public static final int ERROR_MORE_DATA = 234;
+
+    public static final int GMEM_FIXED    = 0x0000;
+    public static final int GMEM_MOVEABLE = 0x0002;
+    public static final int GMEM_ZEROINIT = 0x0040;
 
     public static final int WS_OVERLAPPED = 0x00000000;
     public static final int WS_MAXIMIZEBOX = 0x00010000;
@@ -205,10 +210,26 @@ public abstract class Win32 {
     public static final int SM_CXCURSOR = 13;
     public static final int SM_CYCURSOR = 14;
 
-    public static final int BI_BITFIELDS = 3;
-    public static final int DIB_RGB_COLORS = 0;
-    public static final int DIB_PAL_COLORS = 1;
+    public static final int BI_RGB       =  0;
+    public static final int BI_RLE8      =  1;
+    public static final int BI_RLE4      =  2;
+    public static final int BI_BITFIELDS =  3;
+    public static final int BI_JPEG      =  4;
+    public static final int BI_PNG       =  5;
+    public static final int BI_CMYK      = 11;
+    public static final int BI_CMYKRLE8  = 12;
+    public static final int BI_CMYKRLE4  = 13;
+    public static final int DIB_RGB_COLORS  = 0;
+    public static final int DIB_PAL_COLORS  = 1;
     public static final int DIB_PAL_INDICES = 2;
+
+    public static final int CF_TEXT = 1;
+    public static final int CF_BITMAP = 2;
+    public static final int CF_TIFF = 6;
+    public static final int CF_DIB = 8;
+    public static final int CF_UNICODETEXT = 13;
+    public static final int CF_HDROP = 15;
+    public static final int CF_DIBV5 = 17;
 
     public static final Handle HKEY_CLASSES_ROOT = Handle.of(0x80000000);
     public static final Handle HKEY_CURRENT_USER = Handle.of(0x80000001);
@@ -312,21 +333,34 @@ public abstract class Win32 {
 
 	MemorySegment mem() {return(mem);}
 
+	public abstract long sizeof();
+
+	public abstract int bV5Size();
 	public abstract int bV5Width();
 	public abstract int bV5Height();
 	public abstract int bV5BitCount();
+	public abstract int bV5Compression();
+	public abstract int bV5SizeImage();
+	public abstract int bV5ClrUsed();
+	public abstract int bV5RedMask();
+	public abstract int bV5GreenMask();
+	public abstract int bV5BlueMask();
+	public abstract int bV5AlphaMask();
 
 	public abstract BITMAPV5HEADER bV5Width(int v);
 	public abstract BITMAPV5HEADER bV5Height(int v);
 	public abstract BITMAPV5HEADER bV5Planes(int v);
 	public abstract BITMAPV5HEADER bV5BitCount(int v);
 	public abstract BITMAPV5HEADER bV5Compression(int v);
+	public abstract BITMAPV5HEADER bV5SizeImage(int v);
+	public abstract BITMAPV5HEADER bV5ClrUsed(int v);
 	public abstract BITMAPV5HEADER bV5RedMask(int v);
 	public abstract BITMAPV5HEADER bV5GreenMask(int v);
 	public abstract BITMAPV5HEADER bV5BlueMask(int v);
 	public abstract BITMAPV5HEADER bV5AlphaMask(int v);
     }
     public abstract BITMAPV5HEADER BITMAPV5HEADER();
+    public abstract BITMAPV5HEADER BITMAPV5HEADER(MemorySegment mem);
 
     public static abstract class ICONINFO extends StructInstance {
 	protected ICONINFO(MemorySegment mem) {
@@ -378,9 +412,16 @@ public abstract class Win32 {
     }
     public abstract PIXELFORMATDESCRIPTOR PIXELFORMATDESCRIPTOR();
 
+    public abstract Charset C_WCHARSET();
+
     public abstract int GetLastError();
     public abstract int GetCurrentThreadId();
     public abstract Handle GetModuleHandle(String lpModuleName);
+    public abstract Handle GlobalAlloc(int flags, int bytes);
+    public abstract void GlobalFree(Handle mem);
+    public abstract long GlobalSize(Handle mem);
+    public abstract MemorySegment GlobalLock(Handle mem);
+    public abstract boolean GlobalUnlock(Handle mem);
     public abstract int RegisterClassEx(WndClassEx cls);
     public abstract void UnregisterClass(String lpClassName, Handle hInstance);
     public abstract Handle CreateWindowEx(int dwExStyle, String lpClassName, String lpWindowName, int dwStyle, Coord pos, Coord size, Handle hWndParent, Handle hMenu, Handle hInstance);
@@ -421,6 +462,13 @@ public abstract class Win32 {
     public abstract Handle SetCursor(Handle hCursor);
     public abstract Handle LoadCursor(Handle hInstance, int cursor);
     public abstract void DestroyIcon(Handle ho);
+    public abstract int RegisterClipboardFormat(String format);
+    public abstract void OpenClipboard(Handle newowner);
+    public abstract void CloseClipboard();
+    public abstract boolean IsClipboardFormatAvailable(int format);
+    public abstract Handle GetClipboardData(int format);
+    public abstract void EmptyClipboard();
+    public abstract void SetClipboardData(int format, Handle mem);
     public abstract Object RegGetValue(Handle hKey, String lpSubKey, String lpValue, int dwFlags);
     public abstract void DeleteObject(Handle ho);
     public abstract void ShellExecuteEx(Win32.SHELLEXECUTEINFO pExecInfo);
@@ -464,6 +512,7 @@ public abstract class Win32 {
 	static final MemoryLayout HCURSOR = HANDLE;
 	static final MemoryLayout HDC = HANDLE;
 	static final MemoryLayout HGDIOBJ = HANDLE;
+	static final MemoryLayout HGLOBAL = HANDLE;
 	static final MemoryLayout HICON = HANDLE;
 	static final MemoryLayout HINSTANCE = HANDLE;
 	static final MemoryLayout HKEY = HANDLE;
@@ -485,6 +534,8 @@ public abstract class Win32 {
 	private final SymbolLookup gdi32 = loadlib("GDI32.DLL", Arena.global());
 	private final SymbolLookup shell32 = loadlib("SHELL32.DLL", Arena.global());
 	private final SymbolLookup advapi32 = loadlib("ADVAPI32.DLL", Arena.global());
+
+	public Charset C_WCHARSET() {return(C_WCHARSET);}
 
 	static MemorySegment wstr(Arena st, String str) {
 	    if(str == null)
@@ -523,6 +574,70 @@ public abstract class Win32 {
 		    throw(lasterror());
 		return(Handle.of(rv));
 	    }
+	}
+
+	private final MethodHandle GlobalAlloc = ld.downcallHandle(kernel32.find("GlobalAlloc").get(), FunctionDescriptor.of(HGLOBAL, UINT, SIZE_T));
+	public Handle GlobalAlloc(int flags, int bytes) {
+	    MemorySegment rv;
+	    try {
+		rv = (MemorySegment)GlobalAlloc.invoke(flags, bytes);
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	    if(nullp(rv))
+		throw(lasterror());
+	    return(Handle.of(rv));
+	}
+
+	private final MethodHandle GlobalFree = ld.downcallHandle(kernel32.find("GlobalFree").get(), FunctionDescriptor.of(HGLOBAL, HGLOBAL));
+	public void GlobalFree(Handle mem) {
+	    MemorySegment rv;
+	    try {
+		rv = (MemorySegment)GlobalFree.invoke(mem.bits);
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	    if(!nullp(rv))
+		throw(lasterror());
+	}
+
+	private final MethodHandle GlobalSize = ld.downcallHandle(kernel32.find("GlobalSize").get(), FunctionDescriptor.of(SIZE_T, HGLOBAL));
+	public long GlobalSize(Handle mem) {
+	    try {
+		return((long)GlobalSize.invoke(mem.bits));
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	}
+
+	private final MethodHandle GlobalLock = ld.downcallHandle(kernel32.find("GlobalLock").get(), FunctionDescriptor.of(ADDRESS, HGLOBAL));
+	public MemorySegment GlobalLock(Handle mem) {
+	    long size = GlobalSize(mem);
+	    MemorySegment rv;
+	    try {
+		rv = (MemorySegment)GlobalLock.invoke(mem.bits);
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	    if(nullp(rv))
+		throw(lasterror());
+	    return(rv.reinterpret(size));
+	}
+
+	private final MethodHandle GlobalUnlock = ld.downcallHandle(kernel32.find("GlobalUnlock").get(), FunctionDescriptor.of(BOOL, HGLOBAL));
+	public boolean GlobalUnlock(Handle mem) {
+	    int rv;
+	    try {
+		rv = (int)GlobalUnlock.invoke(mem.bits);
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	    if(rv != 0)
+		return(true);
+	    int err = GetLastError();
+	    if(err != ERROR_SUCCESS)
+		throw(new StdError(err));
+	    return(false);
 	}
 
 	static final StructLayout _WndClassExW = struct(new MemoryLayout[] {
@@ -1190,8 +1305,11 @@ public abstract class Win32 {
 		DWORD.withName("bV5Reserved"),
 	    });
 	public static class BITMAPV5HEADER extends Win32.BITMAPV5HEADER {
+	    private BITMAPV5HEADER(MemorySegment mem) {
+		super(mem);
+	    }
 	    private BITMAPV5HEADER(Arena alloc) {
-		super(alloc.allocate(_BITMAPV5HEADER.byteSize()));
+		this(alloc.allocate(_BITMAPV5HEADER.byteSize()));
 		bV5Size.set(mem, 0, (int)_BITMAPV5HEADER.byteSize());
 	    }
 	    protected BITMAPV5HEADER() {
@@ -1199,8 +1317,10 @@ public abstract class Win32 {
 	    }
 
 	    protected StructLayout $layout() {return(_BITMAPV5HEADER);}
+	    public long sizeof() {return($layout().byteSize());}
 
 	    private static final VarHandle bV5Size = _BITMAPV5HEADER.varHandle(PathElement.groupElement("bV5Size"));
+	    public int bV5Size() {return((int)bV5Size.get(mem, 0));}
 	    private static final VarHandle bV5Width = _BITMAPV5HEADER.varHandle(PathElement.groupElement("bV5Width"));
 	    public BITMAPV5HEADER bV5Width(int v) {bV5Width.set(mem, 0, v); return(this);}
 	    public int bV5Width() {return((int)bV5Width.get(mem, 0));}
@@ -1214,16 +1334,28 @@ public abstract class Win32 {
 	    public int bV5BitCount() {return((short)bV5BitCount.get(mem, 0));}
 	    private static final VarHandle bV5Compression = _BITMAPV5HEADER.varHandle(PathElement.groupElement("bV5Compression"));
 	    public BITMAPV5HEADER bV5Compression(int v) {bV5Compression.set(mem, 0, v); return(this);}
+	    public int bV5Compression() {return((int)bV5Compression.get(mem, 0));}
+	    private static final VarHandle bV5SizeImage = _BITMAPV5HEADER.varHandle(PathElement.groupElement("bV5SizeImage"));
+	    public BITMAPV5HEADER bV5SizeImage(int v) {bV5SizeImage.set(mem, 0, v); return(this);}
+	    public int bV5SizeImage() {return((int)bV5SizeImage.get(mem, 0));}
+	    private static final VarHandle bV5ClrUsed = _BITMAPV5HEADER.varHandle(PathElement.groupElement("bV5ClrUsed"));
+	    public BITMAPV5HEADER bV5ClrUsed(int v) {bV5ClrUsed.set(mem, 0, v); return(this);}
+	    public int bV5ClrUsed() {return((int)bV5ClrUsed.get(mem, 0));}
 	    private static final VarHandle bV5RedMask = _BITMAPV5HEADER.varHandle(PathElement.groupElement("bV5RedMask"));
 	    public BITMAPV5HEADER bV5RedMask(int v) {bV5RedMask.set(mem, 0, v); return(this);}
+	    public int bV5RedMask() {return((int)bV5RedMask.get(mem, 0));}
 	    private static final VarHandle bV5GreenMask = _BITMAPV5HEADER.varHandle(PathElement.groupElement("bV5GreenMask"));
 	    public BITMAPV5HEADER bV5GreenMask(int v) {bV5GreenMask.set(mem, 0, v); return(this);}
+	    public int bV5GreenMask() {return((int)bV5GreenMask.get(mem, 0));}
 	    private static final VarHandle bV5BlueMask = _BITMAPV5HEADER.varHandle(PathElement.groupElement("bV5BlueMask"));
 	    public BITMAPV5HEADER bV5BlueMask(int v) {bV5BlueMask.set(mem, 0, v); return(this);}
+	    public int bV5BlueMask() {return((int)bV5BlueMask.get(mem, 0));}
 	    private static final VarHandle bV5AlphaMask = _BITMAPV5HEADER.varHandle(PathElement.groupElement("bV5AlphaMask"));
 	    public BITMAPV5HEADER bV5AlphaMask(int v) {bV5AlphaMask.set(mem, 0, v); return(this);}
+	    public int bV5AlphaMask() {return((int)bV5AlphaMask.get(mem, 0));}
 	}
 	public BITMAPV5HEADER BITMAPV5HEADER() {return(new BITMAPV5HEADER());}
+	public BITMAPV5HEADER BITMAPV5HEADER(MemorySegment mem) {return(new BITMAPV5HEADER(mem));}
 
 	static final StructLayout _ICONINFO = struct(new MemoryLayout[] {
 		BOOL.withName("fIcon"),
@@ -1335,6 +1467,89 @@ public abstract class Win32 {
 		throw(new InvocationException(e));
 	    }
 	    if(rv == 0)
+		throw(lasterror());
+	}
+
+	private final MethodHandle RegisterClipboardFormatW = ld.downcallHandle(user32.find("RegisterClipboardFormatW").get(), FunctionDescriptor.of(UINT, ADDRESS));
+	public int RegisterClipboardFormat(String format) {
+	    int rv;
+	    try(Arena st = Arena.ofConfined()) {
+		rv = (int)RegisterClipboardFormatW.invoke(st.allocateFrom(format, C_WCHARSET));
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	    if(rv == 0)
+		throw(lasterror());
+	    return(rv);
+	}
+
+	private final MethodHandle OpenClipboard = ld.downcallHandle(user32.find("OpenClipboard").get(), FunctionDescriptor.of(BOOL, HWND));
+	public void OpenClipboard(Handle newowner) {
+	    int rv;
+	    try {
+		rv = (int)OpenClipboard.invoke(newowner.bits);
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	    if(rv == 0)
+		throw(lasterror());
+	}
+
+	private final MethodHandle CloseClipboard = ld.downcallHandle(user32.find("CloseClipboard").get(), FunctionDescriptor.of(BOOL));
+	public void CloseClipboard() {
+	    int rv;
+	    try {
+		rv = (int)CloseClipboard.invoke();
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	    if(rv == 0)
+		throw(lasterror());
+	}
+
+	private final MethodHandle IsClipboardFormatAvailable = ld.downcallHandle(user32.find("IsClipboardFormatAvailable").get(), FunctionDescriptor.of(BOOL, UINT));
+	public boolean IsClipboardFormatAvailable(int format) {
+	    try {
+		return((int)IsClipboardFormatAvailable.invoke(format) != 0);
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	}
+
+	private final MethodHandle GetClipboardData = ld.downcallHandle(user32.find("GetClipboardData").get(), FunctionDescriptor.of(HANDLE, UINT));
+	public Handle GetClipboardData(int format) {
+	    MemorySegment rv;
+	    try {
+		rv = (MemorySegment)GetClipboardData.invoke(format);
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	    if(nullp(rv))
+		throw(lasterror());
+	    return(Handle.of(rv));
+	}
+
+	private final MethodHandle EmptyClipboard = ld.downcallHandle(user32.find("EmptyClipboard").get(), FunctionDescriptor.of(BOOL));
+	public void EmptyClipboard() {
+	    int rv;
+	    try {
+		rv = (int)EmptyClipboard.invoke();
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	    if(rv == 0)
+		throw(lasterror());
+	}
+
+	private final MethodHandle SetClipboardData = ld.downcallHandle(user32.find("SetClipboardData").get(), FunctionDescriptor.of(HANDLE, UINT, HANDLE));
+	public void SetClipboardData(int format, Handle mem) {
+	    MemorySegment rv;
+	    try {
+		rv = (MemorySegment)SetClipboardData.invoke(format, mem.bits);
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	    if(nullp(rv))
 		throw(lasterror());
 	}
 
