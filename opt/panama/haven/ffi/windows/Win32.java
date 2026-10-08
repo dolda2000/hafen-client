@@ -40,6 +40,8 @@ import static haven.ffi.FUtils.*;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 
 public abstract class Win32 {
+    public static final Charset latin1 = Charset.forName("ISO-8859-1");
+
     public static final int S_OK = 0;
 
     public static final int ERROR_SUCCESS = 0;
@@ -362,6 +364,28 @@ public abstract class Win32 {
     public abstract BITMAPV5HEADER BITMAPV5HEADER();
     public abstract BITMAPV5HEADER BITMAPV5HEADER(MemorySegment mem);
 
+    public static abstract class DROPFILES extends StructInstance {
+	protected DROPFILES(MemorySegment mem) {
+	    super(mem);
+	}
+
+	MemorySegment mem() {return(mem);}
+
+	public abstract long sizeof();
+
+	public abstract int pFiles();
+	public abstract Coord pt();
+	public abstract boolean fNC();
+	public abstract boolean fWide();
+
+	public abstract DROPFILES pFiles(int v);
+	public abstract DROPFILES pt(Coord v);
+	public abstract DROPFILES fNC(boolean v);
+	public abstract DROPFILES fWide(boolean v);
+    }
+    public abstract DROPFILES DROPFILES(int extra);
+    public abstract DROPFILES DROPFILES(MemorySegment mem);
+
     public static abstract class ICONINFO extends StructInstance {
 	protected ICONINFO(MemorySegment mem) {
 	    super(mem);
@@ -417,6 +441,7 @@ public abstract class Win32 {
     public abstract int GetLastError();
     public abstract int GetCurrentThreadId();
     public abstract Handle GetModuleHandle(String lpModuleName);
+    public abstract int GetACP();
     public abstract Handle GlobalAlloc(int flags, int bytes);
     public abstract void GlobalFree(Handle mem);
     public abstract long GlobalSize(Handle mem);
@@ -487,6 +512,35 @@ public abstract class Win32 {
 	if(h == null)
 	    return(MemorySegment.NULL);
 	return(h.bits);
+    }
+
+    private static final Map<Integer, Charset> codepages = new HashMap<>();
+    public Charset codepage(int id, Charset def) {
+	switch(id) {
+	case 65001: return(Utils.utf8);
+	case 25891: return(latin1);
+	}
+	Charset ret;
+	synchronized(codepages) {
+	    if(!codepages.containsKey(id)) {
+		String name;
+		switch(id) {
+		case 932: name = "Shift_JIS"; break;
+		case 936: name = "GBK";       break;
+		case 949: name = "EUC-KR";    break;
+		case 950: name = "Big5";      break;
+		default:  name = "cp" + id;   break;
+		}
+		try {
+		    ret = Charset.forName(name);
+		} catch(IllegalArgumentException e) {
+		    ret = null;
+		}
+		codepages.put(id, ret);
+	    }
+	    ret = codepages.get(id);
+	}
+	return((ret == null) ? def : ret);
     }
 
     static class Win64Unicode extends Win32 {
@@ -573,6 +627,15 @@ public abstract class Win32 {
 		if(nullp(rv))
 		    throw(lasterror());
 		return(Handle.of(rv));
+	    }
+	}
+
+	private final MethodHandle GetACP = ld.downcallHandle(kernel32.find("GetACP").get(), FunctionDescriptor.of(UINT));
+	public int GetACP() {
+	    try {
+		return((int)GetACP.invoke());
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
 	    }
 	}
 
@@ -1356,6 +1419,44 @@ public abstract class Win32 {
 	}
 	public BITMAPV5HEADER BITMAPV5HEADER() {return(new BITMAPV5HEADER());}
 	public BITMAPV5HEADER BITMAPV5HEADER(MemorySegment mem) {return(new BITMAPV5HEADER(mem));}
+
+	static final StructLayout _DROPFILES = struct(new MemoryLayout[] {
+		DWORD.withName("pFiles"),
+		POINT.withName("pt"),
+		BOOL.withName("fNC"),
+		BOOL.withName("fWide"),
+	    });
+	public static class DROPFILES extends Win32.DROPFILES {
+	    private DROPFILES(MemorySegment mem) {
+		super(mem);
+	    }
+	    private DROPFILES(Arena alloc, int extra) {
+		this(alloc.allocate(_DROPFILES.byteSize() + extra));
+		pFiles.set(mem, 0, (int)_DROPFILES.byteSize());
+	    }
+	    protected DROPFILES(int extra) {
+		this(Arena.ofAuto(), extra);
+	    }
+
+	    protected StructLayout $layout() {return(_DROPFILES);}
+	    public long sizeof() {return($layout().byteSize());}
+
+	    private static final VarHandle pFiles = _DROPFILES.varHandle(PathElement.groupElement("pFiles"));
+	    public DROPFILES pFiles(int v) {pFiles.set(mem, 0, v); return(this);}
+	    public int pFiles() {return((int)pFiles.get(mem, 0));}
+	    private static final VarHandle pt_x = _DROPFILES.varHandle(PathElement.groupElement("pt"), PathElement.groupElement("x"));
+	    private static final VarHandle pt_y = _DROPFILES.varHandle(PathElement.groupElement("pt"), PathElement.groupElement("y"));
+	    public DROPFILES pt(Coord v) {pt_x.set(mem, 0, v.x); pt_y.set(mem, 0, v.y); return(this);}
+	    public Coord pt() {return(Coord.of((int)pt_x.get(mem, 0), (int)pt_y.get(mem, 0)));}
+	    private static final VarHandle fNC = _DROPFILES.varHandle(PathElement.groupElement("fNC"));
+	    public DROPFILES fNC(boolean v) {fNC.set(mem, 0, v ? 1 : 0); return(this);}
+	    public boolean fNC() {return(((int)fNC.get(mem, 0)) != 0);}
+	    private static final VarHandle fWide = _DROPFILES.varHandle(PathElement.groupElement("fWide"));
+	    public DROPFILES fWide(boolean v) {fWide.set(mem, 0, v ? 1 : 0); return(this);}
+	    public boolean fWide() {return(((int)fWide.get(mem, 0)) != 0);}
+	}
+	public DROPFILES DROPFILES(int extra) {return(new DROPFILES(extra));}
+	public DROPFILES DROPFILES(MemorySegment mem) {return(new DROPFILES(mem));}
 
 	static final StructLayout _ICONINFO = struct(new MemoryLayout[] {
 		BOOL.withName("fIcon"),

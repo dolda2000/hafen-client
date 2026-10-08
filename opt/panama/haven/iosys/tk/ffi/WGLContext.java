@@ -34,6 +34,7 @@ import java.awt.image.*;
 import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
+import java.nio.file.*;
 import haven.*;
 import haven.iosys.*;
 import haven.render.*;
@@ -1038,7 +1039,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 			    int size = (int)(mem.byteSize() - off);
 			    int[] palette = FUtils.memcpyi(mem, bmp.bV5Size(), palsize);
 			    ByteBuffer pixels = ByteBuffer.allocate(size);
-			    pixels.order(ByteOrder.nativeOrder());
+			    pixels.order(ByteOrder.LITTLE_ENDIAN);
 			    MemorySegment.copy(mem, off, MemorySegment.ofBuffer(pixels), 0, size);
 			    int rowsz = (((sz.x * bits) >> 3) + 3) & ~3;
 			    switch(comp) {
@@ -1111,6 +1112,45 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		    }
 		}
 
+		private void mkfiles(List<Item<?>> buf, Handle hmem) {
+		    MemorySegment mem = win.GlobalLock(hmem);
+		    try {
+			DROPFILES head = win.DROPFILES(mem);
+			int off = head.pFiles();
+			boolean wide = head.fWide();
+			ByteBuffer raw = ByteBuffer.wrap(FUtils.memcpy(mem, off, (int)(mem.byteSize() - off)));
+			Supplier<Collection<Path>> pfun = () -> {
+			    Collection<String> names = new ArrayList<>();
+			    if(head.fWide()) {
+				for(int p = 0, o = 0; o < raw.capacity(); o += 2) {
+				    if(raw.getShort(o) == 0) {
+					if(o == p)
+					    break;
+					names.add(win.C_WCHARSET().decode(raw.duplicate().position(p).limit(o)).toString());
+					p = o + 2;
+				    }
+				}
+			    } else {
+				Charset charset = win.codepage(win.GetACP(), Win32.latin1);
+				for(int p = 0, o = 0; o < raw.capacity(); o++) {
+				    if(raw.get(o) == 0) {
+					if(o == p)
+					    break;
+					names.add(charset.decode(raw.duplicate().position(p).limit(o)).toString());
+					p = o + 1;
+				    }
+				}
+			    }
+			    Collection<Path> paths = new ArrayList<>();
+			    names.forEach(nm -> paths.add(Paths.get(nm)));
+			    return(paths);
+			};
+			buf.add(new Item<Collection<Path>>(Format.PATHS, () -> Promise.of(pfun)));
+		    } finally {
+			win.GlobalUnlock(hmem);
+		    }
+		}
+
 		private Contents mkcontents() {
 		    try {
 			List<Item<?>> ret = new ArrayList<>();
@@ -1118,6 +1158,8 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 			    mktext(ret, win.GetClipboardData(Win32.CF_UNICODETEXT), win.C_WCHARSET());
 			if(win.IsClipboardFormatAvailable(Win32.CF_DIBV5))
 			    mkdib(ret, win.GetClipboardData(Win32.CF_DIBV5));
+			if(win.IsClipboardFormatAvailable(Win32.CF_HDROP))
+			    mkfiles(ret, win.GetClipboardData(Win32.CF_HDROP));
 			return(new Contents(ret));
 		    } finally {
 			win.CloseClipboard();
