@@ -26,6 +26,7 @@
 
 package haven;
 
+import java.util.*;
 import java.util.function.*;
 
 public class Promise<T> {
@@ -340,6 +341,29 @@ public class Promise<T> {
 	    }
 	    ret.resolve(val);
 	});
+	return(ret);
+    }
+
+    public static <T> Promise<List<T>> collect(List<Promise<? extends T>> parts) {
+	int n = parts.size();
+	List<T> buf = new ArrayList<>();
+	int[] remaining = {n};
+	Promise<List<T>> ret = new Promise<>();
+	for(int i : Utils.range(n)) {
+	    buf.add(null);
+	    parts.get(i).callback(val -> {
+		buf.set(i, val);
+		synchronized(remaining) {
+		    if(--remaining[0] == 0)
+			ret.resolve(buf);
+		}
+	    }, err -> {
+		synchronized(remaining) {
+		    remaining[0] = -1;
+		}
+		ret.reject(err);
+	    }, null);
+	}
 	return(ret);
     }
 }

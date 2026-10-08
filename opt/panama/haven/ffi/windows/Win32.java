@@ -109,31 +109,32 @@ public abstract class Win32 {
     public static final int SWP_DEFERERASE     = 0x2000;
     public static final int SWP_ASYNCWINDOWPOS = 0x4000;
 
-    public static final int WM_SIZE          = 0x0005;
-    public static final int WM_SETFOCUS      = 0x0007;
-    public static final int WM_KILLFOCUS     = 0x0008;
-    public static final int WM_CLOSE         = 0x0010;
-    public static final int WM_SHOWWINDOW    = 0x0018;
-    public static final int WM_SETCURSOR     = 0x0020;
-    public static final int WM_GETMINMAXINFO = 0x0024;
-    public static final int WM_SETICON       = 0x0080;
-    public static final int WM_KEYDOWN       = 0x0100;
-    public static final int WM_KEYUP         = 0x0101;
-    public static final int WM_SYSKEYDOWN    = 0x0104;
-    public static final int WM_SYSKEYUP      = 0x0105;
-    public static final int WM_SYSCOMMAND    = 0x0112;
-    public static final int WM_MOUSEMOVE     = 0x0200;
-    public static final int WM_LBUTTONDOWN   = 0x0201;
-    public static final int WM_LBUTTONUP     = 0x0202;
-    public static final int WM_RBUTTONDOWN   = 0x0204;
-    public static final int WM_RBUTTONUP     = 0x0205;
-    public static final int WM_MBUTTONDOWN   = 0x0207;
-    public static final int WM_MBUTTONUP     = 0x0208;
-    public static final int WM_MOUSEWHEEL    = 0x020a;
-    public static final int WM_XBUTTONDOWN   = 0x020b;
-    public static final int WM_XBUTTONUP     = 0x020c;
-    public static final int WM_HMOUSEWHEEL   = 0x020e;
-    public static final int WM_USER          = 0x0400;
+    public static final int WM_SIZE             = 0x0005;
+    public static final int WM_SETFOCUS         = 0x0007;
+    public static final int WM_KILLFOCUS        = 0x0008;
+    public static final int WM_CLOSE            = 0x0010;
+    public static final int WM_SHOWWINDOW       = 0x0018;
+    public static final int WM_SETCURSOR        = 0x0020;
+    public static final int WM_GETMINMAXINFO    = 0x0024;
+    public static final int WM_SETICON          = 0x0080;
+    public static final int WM_KEYDOWN          = 0x0100;
+    public static final int WM_KEYUP            = 0x0101;
+    public static final int WM_SYSKEYDOWN       = 0x0104;
+    public static final int WM_SYSKEYUP         = 0x0105;
+    public static final int WM_SYSCOMMAND       = 0x0112;
+    public static final int WM_MOUSEMOVE        = 0x0200;
+    public static final int WM_LBUTTONDOWN      = 0x0201;
+    public static final int WM_LBUTTONUP        = 0x0202;
+    public static final int WM_RBUTTONDOWN      = 0x0204;
+    public static final int WM_RBUTTONUP        = 0x0205;
+    public static final int WM_MBUTTONDOWN      = 0x0207;
+    public static final int WM_MBUTTONUP        = 0x0208;
+    public static final int WM_MOUSEWHEEL       = 0x020a;
+    public static final int WM_XBUTTONDOWN      = 0x020b;
+    public static final int WM_XBUTTONUP        = 0x020c;
+    public static final int WM_HMOUSEWHEEL      = 0x020e;
+    public static final int WM_DESTROYCLIPBOARD = 0x0307;
+    public static final int WM_USER             = 0x0400;
 
     public static final int SC_KEYMENU = 0xf100;
     public static final int ICON_SMALL = 0;
@@ -349,6 +350,7 @@ public abstract class Win32 {
 	public abstract int bV5BlueMask();
 	public abstract int bV5AlphaMask();
 
+	public abstract BITMAPV5HEADER bV5Size(int v);
 	public abstract BITMAPV5HEADER bV5Width(int v);
 	public abstract BITMAPV5HEADER bV5Height(int v);
 	public abstract BITMAPV5HEADER bV5Planes(int v);
@@ -361,6 +363,7 @@ public abstract class Win32 {
 	public abstract BITMAPV5HEADER bV5BlueMask(int v);
 	public abstract BITMAPV5HEADER bV5AlphaMask(int v);
     }
+    public abstract int sizeof_BITMAPV5HEADER();
     public abstract BITMAPV5HEADER BITMAPV5HEADER();
     public abstract BITMAPV5HEADER BITMAPV5HEADER(MemorySegment mem);
 
@@ -383,6 +386,7 @@ public abstract class Win32 {
 	public abstract DROPFILES fNC(boolean v);
 	public abstract DROPFILES fWide(boolean v);
     }
+    public abstract int sizeof_DROPFILES();
     public abstract DROPFILES DROPFILES(int extra);
     public abstract DROPFILES DROPFILES(MemorySegment mem);
 
@@ -1383,6 +1387,7 @@ public abstract class Win32 {
 	    public long sizeof() {return($layout().byteSize());}
 
 	    private static final VarHandle bV5Size = _BITMAPV5HEADER.varHandle(PathElement.groupElement("bV5Size"));
+	    public BITMAPV5HEADER bV5Size(int v) {bV5Size.set(mem, 0, v); return(this);}
 	    public int bV5Size() {return((int)bV5Size.get(mem, 0));}
 	    private static final VarHandle bV5Width = _BITMAPV5HEADER.varHandle(PathElement.groupElement("bV5Width"));
 	    public BITMAPV5HEADER bV5Width(int v) {bV5Width.set(mem, 0, v); return(this);}
@@ -1417,6 +1422,7 @@ public abstract class Win32 {
 	    public BITMAPV5HEADER bV5AlphaMask(int v) {bV5AlphaMask.set(mem, 0, v); return(this);}
 	    public int bV5AlphaMask() {return((int)bV5AlphaMask.get(mem, 0));}
 	}
+	public int sizeof_BITMAPV5HEADER() {return((int)_BITMAPV5HEADER.byteSize());}
 	public BITMAPV5HEADER BITMAPV5HEADER() {return(new BITMAPV5HEADER());}
 	public BITMAPV5HEADER BITMAPV5HEADER(MemorySegment mem) {return(new BITMAPV5HEADER(mem));}
 
@@ -1455,6 +1461,7 @@ public abstract class Win32 {
 	    public DROPFILES fWide(boolean v) {fWide.set(mem, 0, v ? 1 : 0); return(this);}
 	    public boolean fWide() {return(((int)fWide.get(mem, 0)) != 0);}
 	}
+	public int sizeof_DROPFILES() {return((int)_DROPFILES.byteSize());}
 	public DROPFILES DROPFILES(int extra) {return(new DROPFILES(extra));}
 	public DROPFILES DROPFILES(MemorySegment mem) {return(new DROPFILES(mem));}
 

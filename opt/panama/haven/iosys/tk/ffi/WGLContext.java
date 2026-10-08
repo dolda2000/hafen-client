@@ -779,6 +779,10 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		    callback(new W32MouseWheelEvent(MouseWheelEvent.Axis.HORIZ, amount, raw / 120.0, wparam, lparam));
 		    return(0);
 		}
+		case Win32.WM_DESTROYCLIPBOARD: {
+		    clipboard.lost();
+		    return(0);
+		}
 		default:
 		    return(win.DefWindowProc(hwnd, umsg, wparam, lparam));
 		}
@@ -947,9 +951,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 
 	    public class W32Clipboard implements Clipboard {
 		public static final Supplier<Integer> CF_PNG = Utils.cache(() -> Win32.get().RegisterClipboardFormat("PNG"));
-
-		public void put(Contents c, Runnable expire) {
-		}
+		private Runnable expire = null;
 
 		private static final double[] retries = {0.0, 0.01, 0.02, 0.05, 0.10, 0.25};
 		private void tryopen(Promise<Object> res, int count) {
@@ -968,6 +970,134 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 			return;
 		    }
 		    res.resolve(null);
+		}
+
+		public Promise<Object> openclipboard() {
+		    Promise<Object> ret = new Promise<>();
+		    msgrun(() -> tryopen(ret, 0));
+		    return(ret);
+		}
+
+		public static class ClipboardData extends HGlobal {
+		    public final int format;
+
+		    public ClipboardData(int format, int bytes) {
+			super(bytes);
+			this.format = format;
+		    }
+		}
+
+		private ClipboardData cvt_text(CharSequence t) {
+		    ByteBuffer enc = win.C_WCHARSET().encode(CharBuffer.wrap(t));
+		    ClipboardData ret = new ClipboardData(Win32.CF_UNICODETEXT, enc.remaining() + 2);
+		    MemorySegment mem = win.GlobalLock(ret.hmem());
+		    try {
+			FUtils.memcpy(mem, enc, 0, enc.position(), enc.remaining());
+		    } finally {
+			win.GlobalUnlock(ret.hmem());
+		    }
+		    return(ret);
+		}
+
+		private ClipboardData cvt_dib(BufferedImage img) {
+		    img = PUtils.coercergba(img, false);
+		    Coord sz = PUtils.imgsz(img);
+		    ClipboardData ret = new ClipboardData(Win32.CF_DIBV5, win.sizeof_BITMAPV5HEADER() + (4 * sz.x * sz.y));
+		    MemorySegment mem = win.GlobalLock(ret.hmem());
+		    try {
+			BITMAPV5HEADER head = win.BITMAPV5HEADER(mem);
+			head.bV5Size((int)head.sizeof());
+			head.bV5Width(sz.x).bV5Height(sz.y);
+			head.bV5Planes(1).bV5BitCount(32);
+			head.bV5Compression(Win32.BI_BITFIELDS).bV5SizeImage(4 * sz.x * sz.y);
+			head.bV5RedMask (0x00ff0000).bV5GreenMask(0x0000ff00);
+			head.bV5BlueMask(0x000000ff).bV5AlphaMask(0xff000000);
+			int off = (int)head.sizeof();
+			Raster r = img.getRaster();
+			for(int y = sz.y - 1; y >= 0; y--) {
+			    for(int x = 0; x < sz.x; x++) {
+				mem.set(ValueLayout.JAVA_BYTE, off++, (byte)r.getSample(x, y, 2));
+				mem.set(ValueLayout.JAVA_BYTE, off++, (byte)r.getSample(x, y, 1));
+				mem.set(ValueLayout.JAVA_BYTE, off++, (byte)r.getSample(x, y, 0));
+				mem.set(ValueLayout.JAVA_BYTE, off++, (byte)r.getSample(x, y, 3));
+			    }
+			}
+		    } finally {
+			win.GlobalUnlock(ret.hmem());
+		    }
+		    return(ret);
+		}
+
+		private ClipboardData cvt_png(BufferedImage img) {
+		    ByteArrayOutputStream buf = new ByteArrayOutputStream();
+		    try {
+			javax.imageio.ImageIO.write(img, "PNG", buf);
+		    } catch(IOException e) {
+			throw(new RuntimeException(e));
+		    }
+		    byte[] data = buf.toByteArray();
+		    ClipboardData ret = new ClipboardData(CF_PNG.get(), data.length);
+		    MemorySegment mem = win.GlobalLock(ret.hmem());
+		    try {
+			FUtils.memcpy(mem, data);
+		    } finally {
+			win.GlobalUnlock(ret.hmem());
+		    }
+		    return(ret);
+		}
+
+		private ClipboardData cvt_paths(Collection<Path> paths) {
+		    StringBuilder buf = new StringBuilder();
+		    for(Path p : paths) {
+			buf.append(p.toString());
+			buf.append('\0');
+		    }
+		    buf.append('\0');
+		    ByteBuffer enc = win.C_WCHARSET().encode(CharBuffer.wrap(buf));
+		    ClipboardData ret = new ClipboardData(Win32.CF_HDROP, win.sizeof_DROPFILES() + enc.remaining());
+		    MemorySegment mem = win.GlobalLock(ret.hmem());
+		    try {
+			DROPFILES head = win.DROPFILES(mem);
+			head.pFiles((int)head.sizeof()).fWide(true);
+			FUtils.memcpy(mem, enc, head.sizeof(), enc.position(), enc.remaining());
+		    } finally {
+			win.GlobalUnlock(ret.hmem());
+		    }
+		    return(ret);
+		}
+
+		public void put(Contents c, Runnable expire) {
+		    List<Promise<? extends ClipboardData>> items = new ArrayList<>();
+		    for(Item<?> item : c.items) {
+			if(item.fmt == Format.TEXT) {
+			    items.add(item.check(Format.TEXT).get().then(val -> Promise.deferred(() -> cvt_text(val), t -> Defer.later(t, null))));
+			} else if(item.fmt == Format.IMAGE) {
+			    items.add(item.check(Format.IMAGE).get().then(val -> Promise.deferred(() -> cvt_dib(val), t -> Defer.later(t, null))));
+			    items.add(item.check(Format.IMAGE).get().then(val -> Promise.deferred(() -> cvt_png(val), t -> Defer.later(t, null))));
+			} else if(item.fmt == Format.PATHS) {
+			    items.add(item.check(Format.PATHS).get().then(val -> Promise.deferred(() -> cvt_paths(val), t -> Defer.later(t, null))));
+			}
+		    }
+		    Promise.collect(items).then(data -> openclipboard().then(_ -> Promise.deferred(() -> {
+			try {
+			    win.EmptyClipboard();
+			    for(ClipboardData datum : data) {
+				win.SetClipboardData(datum.format, datum.hmem());
+				datum.relinquish();
+			    }
+			} finally {
+			    win.CloseClipboard();
+			}
+			this.expire = expire;
+			return(null);
+		    }, WGLToolkit.this::msgrun)));
+		}
+
+		void lost() {
+		    if(expire != null) {
+			expire.run();
+			expire = null;
+		    }
 		}
 
 		private void mktext(List<Item<?>> buf, Handle hmem, Charset charset) {
@@ -1164,12 +1294,6 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		    } finally {
 			win.CloseClipboard();
 		    }
-		}
-
-		public Promise<Object> openclipboard() {
-		    Promise<Object> ret = new Promise<>();
-		    msgrun(() -> tryopen(ret, 0));
-		    return(ret);
 		}
 
 		public Promise<Contents> get() {
