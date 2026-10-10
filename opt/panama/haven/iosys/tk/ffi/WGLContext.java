@@ -51,11 +51,13 @@ public class WGLContext implements Providers.Factory<Toolkit> {
     private final Win32 win;
     private final WGL wgl;
     private final SHCore shcore;
+    private final COM com;
 
     private WGLContext() {
 	try {
 	    win = Win32.get();
 	    wgl = WGL.get();
+	    com = COM.get();
 	} catch(RuntimeException e) {
 	    throw(new Unavailable("Win32 environment not available", e));
 	}
@@ -1432,6 +1434,76 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 
 	public Windeye window() {
 	    return(new WGLWindow());
+	}
+
+	public class ShellPicker implements FilePicker.Factory {
+	    public class Picker implements FilePicker {
+		private Mode mode;
+		private Handle parent;
+		private String[][] filter = {
+		    {"All files", "*.*"}
+		};
+
+		public Picker(Mode mode, WGLWindow parent) {
+		    this.mode = mode;
+		    this.parent = (parent == null) ? Handle.nil : parent.hwnd;
+		}
+
+		public void filter(String desc, String... exts) {
+		    StringBuilder spec = new StringBuilder();
+		    for(String ext : exts) {
+			if(spec.length() > 0)
+			    spec.append(';');
+			spec.append("*." + ext);
+		    }
+		    filter = new String[][] {
+			{desc, spec.toString()},
+			{"All files", "*.*"}
+		    };
+		}
+
+		public Promise<Path> show() {
+		    Promise<Path> ret = new Promise<>();
+		    Thread th = new HackThread(() -> {
+			com.CoInitializeEx(COM.COINIT_APARTMENTTHREADED | COM.COINIT_DISABLE_OLE1DDE);
+			boolean done = false;
+			try {
+			    IFileDialog dlg = com.CoCreateInstance(((mode == Mode.OPEN) ?
+								    IFileDialog.CLSID_FileOpenDialog :
+								    IFileDialog.CLSID_FileSaveDialog),
+								   null, COM.CLSCTX_INPROC_SERVER, IFileDialog.IID);
+			    dlg.SetFileTypes(filter);
+			    try {
+				dlg.Show(parent);
+				ret.resolve(Paths.get(dlg.GetResult().GetDisplayName(IShellItem.SIGDN_FILESYSPATH)));
+				done = true;
+			    } catch(HResultError e) {
+				if(e.hresult == HResultError.ERROR_CANCELLED)
+				    ret.resolve(null);
+				else
+				    ret.reject(e);
+				done = true;
+			    }
+			} catch(Throwable t) {
+			    if(!done)
+				ret.reject(t);
+			} finally {
+			    com.CoUninitialize();
+			}
+		    }, "File picker thread");
+		    th.setDaemon(true);
+		    th.start();
+		    return(ret);
+		}
+	    }
+
+	    public FilePicker make(FilePicker.Mode mode, Windeye parent) {
+		return(new Picker(mode, (WGLWindow)parent));
+	    }
+	}
+
+	public FilePicker.Factory picker() {
+	    return(new ShellPicker());
 	}
 
 	private Handle makeicon(BufferedImage img, Coord hotspot) {
