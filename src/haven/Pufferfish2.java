@@ -155,7 +155,7 @@ public class Pufferfish2 {
 	    S = new long[SBOX_N][sbox_sz];
 	}
 
-	public byte[] hash(byte[] key_r, byte[] salt_r) {
+	public byte[] hash(byte[] key_r, byte[] salt_r) throws InterruptedException {
 	    byte[] salt = HMAC(new byte[0], salt_r);
 	    byte[] key = HMAC(salt, key_r);
 	    salt_u64 = b2l(salt);
@@ -176,17 +176,18 @@ public class Pufferfish2 {
 		L = R = 0;
 		key = HASH_SBOX(key);
 		REKEY(key);
+		Utils.checkirq();
 	    }
 	    key = HASH_SBOX(key);
 	    return(key);
 	}
     }
 
-    public static byte[] hash(byte[] key, byte[] salt, int t, int m) {
+    public static byte[] hash(byte[] key, byte[] salt, int t, int m) throws InterruptedException  {
 	return(new Instance(t, m).hash(key, salt));
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 	int m, t;
 	byte[] salt, key;
 	if(args.length == 2) {

@@ -270,7 +270,7 @@ public class Promise<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public T waitfor() {
+    public T waitfor(boolean interruptible) throws InterruptedException {
 	Object[] buf = {null, null};
 	callback(val -> {
 	    synchronized(buf) {
@@ -291,7 +291,10 @@ public class Promise<T> {
 		try {
 		    buf.wait();
 		} catch(InterruptedException e) {
-		    irq = true;
+		    if(interruptible)
+			throw(e);
+		    else
+			irq = true;
 		}
 	    }
 	    if(irq)
@@ -299,6 +302,14 @@ public class Promise<T> {
 	    if(buf[1] instanceof Throwable)
 		throw(new Future.PastException((Throwable)buf[1]));
 	    return((T)buf[0]);
+	}
+    }
+
+    public T waitfor() {
+	try {
+	    return(waitfor(false));
+	} catch(InterruptedException e) {
+	    throw(new AssertionError(e));
 	}
     }
 

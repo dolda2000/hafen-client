@@ -29,6 +29,8 @@ package haven;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.function.*;
+import java.nio.channels.ClosedByInterruptException;
 
 public class Bootstrap implements UI.Receiver, UI.Runner {
     public static final Config.Variable<String> authuser = Config.Variable.prop("haven.authuser", null);
@@ -42,15 +44,15 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
     public static boolean useinitauth = true;
     public final NamedSocketAddress server;
     public final String confname;
-    Queue<Message> msgs = new LinkedList<Message>();
+    private final EventHandler.Source<Message> msgsrc = new EventHandler.Source<>();
     String inituser = null;
     byte[] initcookie = null;
     byte[] inittoken = null;
 
     public static class Message {
-	int id;
-	String name;
-	Object[] args;
+	public final int id;
+	public final String name;
+	public final Object[] args;
 
 	public Message(int id, String name, Object... args) {
 	    this.id = id;
@@ -135,12 +137,27 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	rottokens(user, confname, token != null, true);
     }
 
-    private Message getmsg() throws InterruptedException {
-	Message msg;
-	synchronized(msgs) {
-	    while((msg = msgs.poll()) == null)
-		msgs.wait();
-	    return(msg);
+    private Message getmsg(Predicate<Message> filter) throws InterruptedException {
+	Message[] ret = {null};
+	EventHandler<Message> h = msg -> {
+	    if(filter.test(msg)) {
+		synchronized(ret) {
+		    ret[0] = msg;
+		    ret.notifyAll();
+		}
+		return(true);
+	    }
+	    return(false);
+	};
+	msgsrc.add(h);
+	try {
+	    synchronized(ret) {
+		while(ret[0] == null)
+		    ret.wait();
+		return(ret[0]);
+	    }
+	} finally {
+	    msgsrc.remove(h);
 	}
     }
 
@@ -161,106 +178,59 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 	    });
     }
 
-    public UI.Runner run(UI ui) throws InterruptedException {
-	ui.setreceiver(this);
-	ui.newwidgetp(1, ($1, $2) -> new LoginScreen(confname), 0, new Object[] {Coord.z});
-	String loginname = null;
-	boolean savepw = false;
-	NamedSocketAddress defserv = new NamedSocketAddress(server.host, gameport.get());
-	Session sess;
-	retry: do {
-	    byte[] cookie, token;
-	    Session.User acct;
-	    SocketAddress authaddr = null;
-	    List<NamedSocketAddress> hosts = Collections.emptyList();
-	    if(initcookie != null) {
-		acct = new Session.User(inituser);
-		cookie = initcookie;
-		initcookie = null;
-	    } else if((inituser != null) && (inittoken != null)) {
+    public static class Auth {
+	public final Session.User acct;
+	public final byte[] cookie;
+
+	public Auth(Session.User acct, byte[] cookie) {
+	    this.acct = acct;
+	    this.cookie = cookie;
+	}
+    }
+
+    public static interface AuthMech {
+	public Auth authenticate(AuthClient auth) throws IOException, InterruptedException;
+    }
+
+    public static class ConnectError extends RuntimeException {
+	public ConnectError(String msg, Throwable cause) {super(msg, cause);}
+	public ConnectError(String msg) {this(msg, null);}
+	public ConnectError(Throwable cause) {this(cause.getMessage(), cause);}
+    }
+
+    public class Connector {
+	public AuthMech authmech = null;
+	public SocketAddress authaddr = null;
+	public Auth auth = null;
+	List<NamedSocketAddress> hosts = Collections.emptyList();
+
+	public Connector(Auth auth) {
+	    this.auth = auth;
+	}
+
+	public Connector(AuthMech authmech) {
+	    this.authmech = authmech;
+	}
+
+	public Session connect(UI ui) throws InterruptedException {
+	    if(auth == null) {
 		ui.uimsg(1, "prg", "Authenticating...");
-		byte[] inittoken = this.inittoken;
-		this.inittoken = null;
-		authed: try(AuthClient auth = new AuthClient(server)) {
-		    authaddr = auth.address();
-		    if(!Arrays.equals(inittoken, getprefb("lasttoken-" + mangleuser(inituser), confname, null, false))) {
-			AuthClient.Credentials creds = new AuthClient.TokenCred(inituser, inittoken);
-			Session.User authed = null;
-			try {
-			    authed = creds.tryauth(auth);
-			} catch(AuthClient.Credentials.AuthException e) {
-			}
-			setpref("lasttoken-" + mangleuser(inituser), Utils.hex.enc(inittoken));
-			if(authed != null) {
-			    acct = authed;
-			    cookie = auth.getcookie();
-			    if(Connection.encrypt.get())
-				acct.alias(auth.getalias());
-			    hosts = auth.gethosts(defserv);
-			    settoken(creds.authname(), confname, auth.gettoken());
-			    break authed;
-			}
-		    }
-		    if((token = gettoken(inituser, confname)) != null) {
-			AuthClient.Credentials creds = new AuthClient.TokenCred(inituser, token);
-			try {
-			    acct = creds.tryauth(auth);
-			    cookie = auth.getcookie();
-			    if(Connection.encrypt.get())
-				acct.alias(auth.getalias());
-			    hosts = auth.gethosts(defserv);
-			    break authed;
-			} catch(AuthClient.Credentials.AuthException e) {
-			    settoken(creds.authname(), confname, null);
-			}
-		    }
-		    ui.uimsg(1, "error", "Launcher login expired");
-		    continue retry;
-		} catch(IOException e) {
-		    ui.uimsg(1, "error", e.getMessage());
-		    continue retry;
-		}
-	    } else {
-		AuthClient.Credentials creds;
-		ui.uimsg(1, "login");
-		while(true) {
-		    Message msg = getmsg();
-		    if(msg.id == 1) {
-			if(msg.name == "login") {
-			    creds = (AuthClient.Credentials)msg.args[0];
-			    savepw = (Boolean)msg.args[1];
-			    break;
-			}
-		    }
-		}
-		ui.uimsg(1, "prg", "Authenticating...");
-		try(AuthClient auth = new AuthClient(server)) {
-		    authaddr = auth.address();
-		    try {
-			acct = creds.tryauth(auth);
-		    } catch(AuthClient.Credentials.AuthException e) {
-			settoken(creds.authname(), confname, null);
-			ui.uimsg(1, "error", e.getMessage());
-			continue retry;
-		    }
-		    cookie = auth.getcookie();
+		try(AuthClient cl = new AuthClient(server)) {
+		    auth = authmech.authenticate(cl);
 		    if(Connection.encrypt.get())
-			acct.alias(auth.getalias());
-		    loginname = creds.authname();
-		    if(savepw) {
-			byte[] ntoken = (creds instanceof AuthClient.TokenCred) ? ((AuthClient.TokenCred)creds).token : auth.gettoken();
-			settoken(creds.authname(), confname, ntoken);
-		    }
-		    hosts = auth.gethosts(defserv);
+			auth.acct.alias(cl.getalias());
+		    hosts = cl.gethosts(new NamedSocketAddress(server.host, gameport.get()));
+		    authaddr = cl.address();
+		} catch(ClosedByInterruptException e) {
+		    throw(new InterruptedException());
 		} catch(UnknownHostException e) {
-		    ui.uimsg(1, "error", "Could not locate server");
-		    continue retry;
+		    throw(new ConnectError("Could not locate server"));
+		} catch(ConnectException e) {
+		    throw(new ConnectError("Could not connect to server"));
 		} catch(IOException e) {
-		    ui.uimsg(1, "error", e.getMessage());
-		    continue retry;
+		    throw(new RuntimeException(e));
 		}
 	    }
-	    ui.uimsg(1, "prg", "Connecting...");
 	    try {
 		List<InetSocketAddress> addrs = new ArrayList<>();
 		NamedSocketAddress ea = gameserv.get();
@@ -271,8 +241,8 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 			throw(new UnknownHostException(ea.host));
 		} else {
 		    if(hosts.isEmpty()) {
-			for(InetAddress addr : InetAddress.getAllByName(defserv.host))
-			    addrs.add(new InetSocketAddress(addr, defserv.port));
+			for(InetAddress addr : InetAddress.getAllByName(server.host))
+			    addrs.add(new InetSocketAddress(addr, gameport.get()));
 			if(addrs.isEmpty())
 			    throw(new UnknownHostException(ea.host));
 		    } else {
@@ -285,41 +255,153 @@ public class Bootstrap implements UI.Receiver, UI.Runner {
 		    }
 		}
 		preferhost(addrs, authaddr);
-		connect: {
-		    for(int i = 0; i < addrs.size(); i++) {
-			if(i > 0)
-			    ui.uimsg(1, "prg", String.format("Connecting (address %d/%d)...", i + 1, addrs.size()));
-			try {
-			    sess = Session.connect(addrs.get(i), acct, Connection.encrypt.get(), cookie);
-			    break connect;
-			} catch(Connection.SessionConnError err) {
-			} catch(Connection.SessionError err) {
-			    ui.uimsg(1, "error", err.getMessage());
-			    continue retry;
-			}
+		for(int i = 0; i < addrs.size(); i++) {
+		    if(i > 0)
+			ui.uimsg(1, "prg", String.format("Connecting (address %d/%d)...", i + 1, addrs.size()));
+		    else
+			ui.uimsg(1, "prg", "Connecting...");
+		    try {
+			return(Session.connect(addrs.get(i), auth.acct, Connection.encrypt.get(), auth.cookie));
+		    } catch(Connection.SessionConnError err) {
+		    } catch(Connection.SessionError err) {
+			throw(new ConnectError(err));
 		    }
-		    ui.uimsg(1, "error", "Could not connect to server");
-		    continue retry;
 		}
+		throw(new ConnectError("Could not connect to server"));
 	    } catch(UnknownHostException e) {
-		ui.uimsg(1, "error", "Could not locate server");
-		continue retry;
+		throw(new ConnectError("Could not locate server"));
 	    }
-	    if(loginname != null) {
-		setpref("loginname", loginname);
-		rottokens(loginname, confname, false, false);
+	}
+    }
+
+    public Connector initauth() {
+	if(initcookie != null) {
+	    Auth auth = new Auth(new Session.User(inituser), initcookie);
+	    initcookie = null;
+	    return(new Connector(auth));
+	}
+	return(null);
+    }
+
+    public Connector initmech() {
+	if((this.inituser == null) || (this.inittoken == null))
+	    return(null);
+	byte[] inittoken = this.inittoken;
+	this.inittoken = null;
+	return(new Connector(auth -> {
+	    if(!Arrays.equals(inittoken, getprefb("lasttoken-" + mangleuser(inituser), confname, null, false))) {
+		AuthClient.Credentials creds = new AuthClient.TokenCred(inituser, inittoken);
+		Session.User acct = null;
+		try {
+		    acct = creds.tryauth(auth);
+		} catch(AuthClient.Credentials.AuthException e) {
+		}
+		setpref("lasttoken-" + mangleuser(inituser), Utils.hex.enc(inittoken));
+		if(acct != null) {
+		    settoken(creds.authname(), confname, auth.gettoken());
+		    return(new Auth(acct, auth.getcookie()));
+		}
 	    }
-	    break retry;
-	} while(true);
+	    byte[] token = gettoken(inituser, confname);
+	    if(token != null) {
+		AuthClient.Credentials creds = new AuthClient.TokenCred(inituser, token);
+		try {
+		    Session.User acct = creds.tryauth(auth);
+		    return(new Auth(acct, auth.getcookie()));
+		} catch(AuthClient.Credentials.AuthException e) {
+		    settoken(creds.authname(), confname, null);
+		}
+	    }
+	    throw(new ConnectError("Launcher login expired"));
+	}));
+    }
+
+    public Connector credauth(AuthClient.Credentials creds, boolean savetoken) {
+	return(new Connector(auth -> {
+	    Session.User acct;
+	    try {
+		acct = creds.tryauth(auth);
+	    } catch(AuthClient.Credentials.AuthException e) {
+		settoken(creds.authname(), confname, null);
+		throw(new ConnectError(e));
+	    }
+	    if(savetoken) {
+		byte[] ntoken = (creds instanceof AuthClient.TokenCred) ? ((AuthClient.TokenCred)creds).token : auth.gettoken();
+		settoken(creds.authname(), confname, ntoken);
+	    }
+	    return(new Auth(acct, auth.getcookie()));
+	}));
+    }
+
+    private Session connect(Connector c, UI ui) throws InterruptedException {
+	Promise<Session> ret = new Promise<>();
+	Thread th = new HackThread(() -> {
+	    try {
+		ret.resolve(c.connect(ui));
+	    } catch(InterruptedException e) {
+		ret.resolve(null);
+	    } catch(Throwable e) {
+		ret.reject(e);
+	    }
+	}, "Session connector");
+	th.start();
+	EventHandler<Message> mh = msg -> {
+	    if((msg.id == 1) && (msg.name == "cancel")) {
+		th.interrupt();
+		return(true);
+	    }
+	    return(false);
+	};
+	msgsrc.add(mh);
+	try {
+	    return(ret.waitfor(true));
+	} catch(Future.PastException e) {
+	    throw((RuntimeException)e.getCause());
+	} finally {
+	    th.interrupt();
+	    msgsrc.remove(mh);
+	}
+    }
+
+    public UI.Runner run(UI ui) throws InterruptedException {
+	ui.setreceiver(this);
+	ui.newwidgetp(1, ($1, $2) -> new LoginScreen(confname), 0, new Object[] {Coord.z});
+	Session sess;
+	while(true) {
+	    Connector c = initauth();
+	    AuthClient.Credentials logincreds = null;
+	    if(c == null)
+		c = initmech();
+	    if(c == null) {
+		ui.uimsg(1, "login");
+		Message msg = getmsg(m -> ((m.id == 1) && (m.name == "login")));
+		AuthClient.Credentials creds = (AuthClient.Credentials)msg.args[0];
+		logincreds = creds;
+		c = credauth(creds, (Boolean)msg.args[1]);
+	    }
+	    try {
+		if((sess = connect(c, ui)) == null)
+		    continue;
+	    } catch(ConnectError e) {
+		ui.uimsg(1, "error", e.getMessage());
+		continue;
+	    } catch(RuntimeException e) {
+		new Warning(e, "unexpected connector error").issue();
+		ui.uimsg(1, "error", String.format("Unexpected error: %s: %s", e.getClass().getSimpleName(), e.getMessage()));
+		continue;
+	    }
+	    if(logincreds != null) {
+		setpref("loginname", logincreds.authname());
+		rottokens(logincreds.authname(), confname, false, false);
+	    }
+	    break;
+	}
 	ui.destroy(1);
 	haven.error.ErrorHandler.setprop("usr", sess.user.name);
 	return(new RemoteUI(sess));
     }
 
     public void rcvmsg(int widget, String msg, Object... args) {
-	synchronized(msgs) {
-	    msgs.add(new Message(widget, msg, args));
-	    msgs.notifyAll();
-	}
+	msgsrc.submit(new Message(widget, msg, args));
     }
 }

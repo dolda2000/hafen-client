@@ -171,7 +171,7 @@ public interface Digest {
 	return(out);
     }
 
-    public static byte[] pbkdf2(Algorithm prf, byte[] salt, int rounds, int len) {
+    public static byte[] pbkdf2(Algorithm prf, byte[] salt, int rounds, int len) throws InterruptedException {
 	if(rounds < 1)
 	    throw(new IllegalArgumentException(String.valueOf(rounds)));
 	int bl = prf.diglen();
@@ -191,6 +191,7 @@ public interface Digest {
 		for(int i = 0; i < n.length; i++)
 		    blk[i] ^= n[i];
 		p = n;
+		Utils.checkirq();
 	    }
 	    System.arraycopy(blk, 0, ret, bc * bl, Math.min(bl, len - (bc * bl)));
 	}

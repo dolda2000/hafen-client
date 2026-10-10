@@ -308,15 +308,16 @@ public class Argon2 {
 	    return(ret);
 	}
 
-	private void fill_memory_blocks() {
+	private void fill_memory_blocks() throws InterruptedException {
 	    for(int r : Utils.range(passes)) {
+		Utils.checkirq();
 		for(int s : Utils.range(SYNC_POINTS)) {
 		    Utils.range(lanes).parallelStream().forEach(l -> fill_segment(r, s, l));
 		}
 	    }
 	}
 
-	public byte[] hash(byte[] key, byte[] salt) {
+	public byte[] hash(byte[] key, byte[] salt) throws InterruptedException {
 	    byte[] blockhash = initial_hash(key, salt);
 	    fill_first_blocks(blockhash);
 	    fill_memory_blocks();
@@ -324,11 +325,11 @@ public class Argon2 {
 	}
     }
 
-    public byte[] hash(byte[] key, byte[] salt, int len) {
+    public byte[] hash(byte[] key, byte[] salt, int len) throws InterruptedException {
 	return(new Instance(len).hash(key, salt));
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 	Argon2 par = new Argon2(Type.ID, Integer.parseInt(args[0]), Integer.parseInt(args[1]), Integer.parseInt(args[2]));
 	byte[] salt = Utils.hex.dec(args[3]);
 	byte[] pw = args[4].getBytes(Utils.utf8);
