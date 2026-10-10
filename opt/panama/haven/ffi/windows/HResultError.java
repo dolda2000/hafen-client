@@ -26,7 +26,13 @@
 
 package haven.ffi.windows;
 
+import haven.ffi.*;
+
 public class HResultError extends RuntimeException {
+    public static final int E_FAIL              = 0x80004005;
+    public static final int E_NOINTERFACE       = 0x80004002;
+    public static final int REGDB_E_CLASSNOTDEF = 0x80040154;
+    public static final int ERROR_CANCELLED     = 0x800704c7;
     public final int hresult;
 
     public HResultError(int hresult) {
@@ -34,6 +40,6 @@ public class HResultError extends RuntimeException {
     }
 
     public String getMessage() {
-	return(String.valueOf(hresult));
+	return(FUtils.constname(HResultError.class, hresult));
     }
 }

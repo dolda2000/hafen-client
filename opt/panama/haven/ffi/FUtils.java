@@ -312,11 +312,11 @@ public class FUtils {
 		long v;
 		try {
 		    if(f.getType() == Byte.TYPE)
-			v = f.getByte(null);
+			v = f.getByte(null) & 0xffl;
 		    else if(f.getType() == Short.TYPE)
-			v = f.getShort(null);
+			v = f.getShort(null) & 0xffffl;
 		    else if(f.getType() == Integer.TYPE)
-			v = f.getInt(null);
+			v = f.getInt(null) & 0xffffffffl;
 		    else if(f.getType() == Long.TYPE)
 			v = f.getLong(null);
 		    else
@@ -335,6 +335,10 @@ public class FUtils {
 	if(ret == null)
 	    return(Long.toUnsignedString(val, 16));
 	return(ret);
+    }
+
+    public static String constname(Class<?> cl, int val) {
+	return(constname(cl, val & 0xffffffffl));
     }
 
     public static SymbolLookup loadlib(Path name, Arena arena) {
