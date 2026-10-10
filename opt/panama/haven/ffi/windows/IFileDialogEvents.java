@@ -34,6 +34,8 @@ import static haven.ffi.ABI.*;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 
 public interface IFileDialogEvents extends IUnknown {
+    public static final IID<IFileDialogEvents> IID = new IID<>(IFileDialogEvents.class, 0x973510db_7d7f_452bl, 0x8975_74a85828d354l);
+
     public static final int FDESVR_DEFAULT = 0;
     public static final int FDESVR_ACCEPT  = 1;
     public static final int FDESVR_REFUSE  = 2;
@@ -41,8 +43,6 @@ public interface IFileDialogEvents extends IUnknown {
     public static final int FDEOR_DEFAULT = 0;
     public static final int FDEOR_ACCEPT  = 1;
     public static final int FDEOR_REFUSE  = 2;
-
-    public static final IID<IFileDialogEvents> IID = new IID<>(IFileDialogEvents.class, 0x973510db_7d7f_452bl, 0x8975_74a85828d354l);
 
     public static final Descriptor sig_OnFileOk = new Descriptor(3, FunctionDescriptor.of(com.HRESULT(), ADDRESS, ADDRESS));
     public default void OnFileOk(IFileDialog fd) {}

@@ -272,6 +272,27 @@ public abstract class Win32 {
     }
     public abstract WndClassEx WndClassEx();
 
+    public static abstract class POINT extends StructInstance {
+	protected POINT(MemorySegment mem) {
+	    super(mem);
+	}
+
+	MemorySegment mem() {return(mem);}
+
+	public abstract POINT x(int value);
+	public abstract int x();
+	public abstract POINT y(int value);
+	public abstract int y();
+
+	public Coord c() {return(Coord.of(x(), y()));}
+	public POINT c(Coord c) {x(c.x); y(c.y); return(this);}
+    }
+    public abstract MemoryLayout C_POINT();
+    public abstract POINT POINT(MemorySegment mem);
+    public abstract POINT POINT(SegmentAllocator alloc);
+    public abstract POINT POINT();
+    public POINT POINT(Coord c) {return(POINT().c(c));}
+
     public static abstract class MSG extends StructInstance {
 	protected MSG(MemorySegment mem) {
 	    super(mem);
@@ -835,23 +856,55 @@ public abstract class Win32 {
 	    return(rv);
 	}
 
-	static final StructLayout POINT = struct(new MemoryLayout[] {
+	static final StructLayout _POINT = struct(new MemoryLayout[] {
 		LONG.withName("x"),
 		LONG.withName("y"),
 	    });
-	static final StructLayout RECT = struct(new MemoryLayout[] {
+	public static class POINT extends Win32.POINT {
+	    private POINT(MemorySegment mem) {
+		super(mem);
+	    }
+	    private POINT(SegmentAllocator alloc) {
+		this(alloc.allocate(_POINT));
+	    }
+	    protected POINT() {
+		this(Arena.ofAuto());
+	    }
+
+	    protected StructLayout $layout() {return(_POINT);}
+
+	    private static final VarHandle x = _POINT.varHandle(PathElement.groupElement("x"));
+	    public POINT x(int value) {x.set(mem, 0, value); return(this);}
+	    public int x() {return((int)x.get(mem, 0));}
+	    private static final VarHandle y = _POINT.varHandle(PathElement.groupElement("y"));
+	    public POINT y(int value) {y.set(mem, 0, value); return(this);}
+	    public int y() {return((int)y.get(mem, 0));}
+	}
+	public MemoryLayout C_POINT() {return(_POINT);}
+	public POINT POINT(MemorySegment mem) {
+	    return(new POINT(mem));
+	}
+	public POINT POINT(SegmentAllocator alloc) {
+	    return(new POINT(alloc));
+	}
+	public POINT POINT() {
+	    return(new POINT());
+	}
+
+	static final StructLayout _RECT = struct(new MemoryLayout[] {
 		LONG.withName("left"),
 		LONG.withName("top"),
 		LONG.withName("right"),
 		LONG.withName("bottom"),
 	    });
+
 	static final StructLayout _MSG = struct(new MemoryLayout[] {
 		HWND.withName("hwnd"),
 		UINT.withName("message"),
 		WPARAM.withName("wparam"),
 		LPARAM.withName("lparam"),
 		DWORD.withName("time"),
-		POINT.withName("pt"),
+		_POINT.withName("pt"),
 		DWORD.withName("lPrivate"),
 	    });
 	public static class MSG extends Win32.MSG {
@@ -870,11 +923,11 @@ public abstract class Win32 {
 	}
 
 	static final StructLayout _MINMAXINFO = struct(new MemoryLayout[] {
-		POINT.withName("ptReserved"),
-		POINT.withName("ptMaxSize"),
-		POINT.withName("ptMaxPosition"),
-		POINT.withName("ptMinTrackSize"),
-		POINT.withName("ptMaxTrackSize"),
+		_POINT.withName("ptReserved"),
+		_POINT.withName("ptMaxSize"),
+		_POINT.withName("ptMaxPosition"),
+		_POINT.withName("ptMinTrackSize"),
+		_POINT.withName("ptMaxTrackSize"),
 	    });
 	public static class MINMAXINFO extends Win32.MINMAXINFO {
 	    private MINMAXINFO(MemorySegment mem) {
@@ -1133,8 +1186,8 @@ public abstract class Win32 {
 
 	static final StructLayout _MONITORINFO = struct(new MemoryLayout[] {
 		DWORD.withName("cbSize"),
-		RECT.withName("rcMonitor"),
-		RECT.withName("rcWork"),
+		_RECT.withName("rcMonitor"),
+		_RECT.withName("rcWork"),
 		DWORD.withName("dwFlags"),
 	    });
 	public static class MONITORINFO extends Win32.MONITORINFO {
@@ -1428,7 +1481,7 @@ public abstract class Win32 {
 
 	static final StructLayout _DROPFILES = struct(new MemoryLayout[] {
 		DWORD.withName("pFiles"),
-		POINT.withName("pt"),
+		_POINT.withName("pt"),
 		BOOL.withName("fNC"),
 		BOOL.withName("fWide"),
 	    });

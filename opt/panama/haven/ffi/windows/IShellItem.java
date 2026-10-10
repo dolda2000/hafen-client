@@ -34,6 +34,8 @@ import static haven.ffi.ABI.*;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 
 public interface IShellItem extends IUnknown {
+    public static final IID<IShellItem> IID = new IID<>(IShellItem.class, 0x43826d1e_e718_42eel, 0xbc55_a1e261c37bfel);
+
     public static final int SIGDN_NORMALDISPLAY = 0;
     public static final int SIGDN_PARENTRELATIVEPARSING = 0x80010001;
     public static final int SIGDN_DESKTOPABSOLUTEPARSING = 0x80028000;
@@ -44,8 +46,6 @@ public interface IShellItem extends IUnknown {
     public static final int SIGDN_PARENTRELATIVEFORADDRESSBAR = 0x8007c001;
     public static final int SIGDN_PARENTRELATIVE = 0x80080001;
     public static final int SIGDN_PARENTRELATIVEFORUI = 0x80094001;
-
-    public static final IID<IShellItem> IID = new IID<>(IShellItem.class, 0x43826d1e_e718_42eel, 0xbc55_a1e261c37bfel);
 
     public static final Descriptor sig_GetParent = new Descriptor(4, FunctionDescriptor.of(com.HRESULT(), ADDRESS, ADDRESS), ADDRESS);
     public IShellItem GetParent();

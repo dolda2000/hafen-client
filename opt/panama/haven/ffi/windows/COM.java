@@ -58,9 +58,13 @@ public abstract class COM {
 
     public abstract void CoUninitialize();
     public abstract void CoInitializeEx(int init);
+    public abstract void OleUninitialize();
+    public abstract void OleInitialize();
     public abstract <I extends IUnknown> I CoCreateInstance(CLSID clsid, IUnknown outer, int context, IID<I> iid);
     abstract MemorySegment CoTaskMemAlloc(int bytes);
     abstract void CoTaskMemFree(MemorySegment mem);
+    public abstract void RegisterDragDrop(Handle hwnd, IDropTarget droptarget);
+    public abstract void RevokeDragDrop(Handle hwnd);
 
     public static boolean SUCCEEDED(int hr) {return(hr >= 0);}
 
@@ -150,6 +154,35 @@ public abstract class COM {
 	};
     }
 
+    public static class ValueConversion {
+	public final MemoryLayout arg;
+	public final Class<?> par;
+	public final DowncallAdapter.Arg darg;
+	public final Function<MemorySegment, Object> dret;
+	public final Function<Object, Object> uarg;
+	public final BiConsumer<Object, MemorySegment> uret;
+
+	public ValueConversion(MemoryLayout arg, Class<?> par, DowncallAdapter.Arg darg, Function<MemorySegment, Object> dret, Function<Object, Object> uarg, BiConsumer<Object, MemorySegment> uret) {
+	    this.arg = arg;
+	    this.par = par;
+	    this.darg = darg;
+	    this.dret = dret;
+	    this.uarg = uarg;
+	    this.uret = uret;
+	}
+    }
+    private static Map<Pair<MemoryLayout, Class<?>>, ValueConversion> valxfs = new HashMap<>();
+    public static ValueConversion valxf(MemoryLayout arg, Class<?> par) {
+	synchronized(valxfs) {
+	    return(valxfs.get(new Pair<>(arg, par)));
+	}
+    }
+    public static void valxf(ValueConversion xf) {
+	synchronized(valxfs) {
+	    valxfs.put(new Pair<>(xf.arg, xf.par), xf);
+	}
+    }
+
     public class StandardDowncall implements DowncallAdapter {
 	private final int vindex;
 	private final MethodHandle fun;
@@ -170,7 +203,10 @@ public abstract class COM {
 	    for(int i = 0; i < pars.length; i++) {
 		Class<?> p = pars[i]; MemoryLayout a = args[i + 1];
 		Arg xf;
-		if(a == ValueLayout.JAVA_BYTE) {
+		ValueConversion valxf = valxf(a, p);
+		if((valxf != null) && (valxf.darg != null)) {
+		    xf = valxf.darg;
+		} else if(a == ValueLayout.JAVA_BYTE) {
 		    if(p == Byte.TYPE) {
 			xf = null;
 		    } else if(p == Boolean.TYPE) {
@@ -227,7 +263,10 @@ public abstract class COM {
 		outxf = null;
 	    } else {
 		Class<?> rtype = mth.getReturnType();
-		if(rtype == Integer.TYPE) {
+		ValueConversion valxf = valxf(outtype, rtype);
+		if((valxf != null) && (valxf.dret != null)) {
+		    outxf = valxf.dret;
+		} else if(rtype == Integer.TYPE) {
 		    if((outtype == ValueLayout.JAVA_INT) || (outtype == ValueLayout.JAVA_SHORT) || (outtype == ValueLayout.JAVA_INT)) {
 			outxf = buf -> (int)getint(buf, 0, outtype, true);
 		    } else {
@@ -324,7 +363,10 @@ public abstract class COM {
 	    for(int i = 0; i < pars.length; i++) {
 		Class<?> p = pars[i]; MemoryLayout a = args[i + 1];
 		Function<Object, Object> xf;
-		if((a == ValueLayout.JAVA_BYTE) || (a == ValueLayout.JAVA_SHORT) ||
+		ValueConversion valxf = valxf(a, p);
+		if((valxf != null) && (valxf.uarg != null)) {
+		    xf = valxf.uarg;
+		} else if((a == ValueLayout.JAVA_BYTE) || (a == ValueLayout.JAVA_SHORT) ||
 		   (a == ValueLayout.JAVA_INT)  || (a == ValueLayout.JAVA_LONG)) {
 		    if(p == Byte.TYPE)
 			xf = v -> ((Number)v).byteValue();
@@ -359,7 +401,10 @@ public abstract class COM {
 		    throw(new IllegalArgumentException(rtype + " -> void"));
 		outxf = null;
 	    } else {
-		if(outtype == ValueLayout.JAVA_BYTE) {
+		ValueConversion valxf = valxf(outtype, rtype);
+		if((valxf != null) && (valxf.uret != null)) {
+		    outxf = valxf.uret;
+		} else if(outtype == ValueLayout.JAVA_BYTE) {
 		    outxf = (v, buf) -> buf.set(ValueLayout.JAVA_BYTE, 0, ((Number)v).byteValue());
 		} else if(outtype == ValueLayout.JAVA_SHORT) {
 		    outxf = (v, buf) -> buf.set(ValueLayout.JAVA_SHORT, 0, ((Number)v).shortValue());
@@ -399,7 +444,7 @@ public abstract class COM {
 		    pars[i] = (argxf[i] == null) ? args[i] : (argxf[i].apply(args[i]));
 		Object rv = Utils.invoke(method, stub.obj, pars);
 		if(outtype != null)
-		    outxf.accept(rv, (MemorySegment)args[args.length - 1]);
+		    outxf.accept(rv, ((MemorySegment)args[args.length - 1]).reinterpret(outtype.byteSize()));
 		return(0);
 	    } catch(HResultError e) {
 		return(e.hresult);
@@ -481,6 +526,8 @@ public abstract class COM {
 		else if(type == ValueLayout.JAVA_LONG)
 		    return(Long.TYPE);
 		else if(type == ADDRESS)
+		    return(MemorySegment.class);
+		else if(type instanceof StructLayout)
 		    return(MemorySegment.class);
 		throw(new IllegalArgumentException(String.valueOf(type)));
 	    }
@@ -760,13 +807,35 @@ public abstract class COM {
 		throw(new HResultError(rv));
 	}
 
+	private final MethodHandle OleUninitialize = ld.downcallHandle(ole32.find("OleUninitialize").get(), FunctionDescriptor.ofVoid());
+	public void OleUninitialize() {
+	    try {
+		OleUninitialize.invoke();
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	}
+
+	private final MethodHandle OleInitialize = ld.downcallHandle(ole32.find("OleInitialize").get(), FunctionDescriptor.of(HRESULT, LPVOID));
+	public void OleInitialize() {
+	    int rv;
+	    try {
+		rv = (int)OleInitialize.invoke(MemorySegment.NULL);
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	    if(!SUCCEEDED(rv))
+		throw(new HResultError(rv));
+	}
+
 	private final MethodHandle CoCreateInstance = ld.downcallHandle(ole32.find("CoCreateInstance").get(), FunctionDescriptor.of(HRESULT, REFCLSID, ADDRESS, DWORD, REFIID, LPVOID));
 	public <I extends IUnknown> I CoCreateInstance(CLSID clsid, IUnknown outer, int context, IID<I> iid) {
 	    try(Arena st = Arena.ofConfined()) {
 		MemorySegment buf = st.allocate(LPVOID);
+		MemorySegment outerp = (outer == null) ? MemorySegment.NULL : reg.addrforobj(outer, IUnknown.IID);
 		int rv;
 		try {
-		    rv = (int)CoCreateInstance.invoke(clsid.mem, (outer == null) ? MemorySegment.NULL : reg.addrforobj(outer, IUnknown.IID), context, iid.mem, buf);
+		    rv = (int)CoCreateInstance.invoke(clsid.mem, outerp, context, iid.mem, buf);
 		} catch(Throwable e) {
 		    throw(new InvocationException(e));
 		}
@@ -794,6 +863,40 @@ public abstract class COM {
 	    } catch(Throwable e) {
 		throw(new InvocationException(e));
 	    }
+	}
+
+	private final MethodHandle RegisterDragDrop = ld.downcallHandle(ole32.find("RegisterDragDrop").get(), FunctionDescriptor.of(HRESULT, HWND, ADDRESS));
+	public void RegisterDragDrop(Handle hwnd, IDropTarget droptarget) {
+	    MemorySegment dt = reg.addrforobj(droptarget, IDropTarget.IID);
+	    int rv;
+	    try {
+		rv = (int)RegisterDragDrop.invoke(hwnd.bits, dt);
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	    if(!SUCCEEDED(rv))
+		throw(new HResultError(rv));
+	}
+
+	private final MethodHandle RevokeDragDrop = ld.downcallHandle(ole32.find("RevokeDragDrop").get(), FunctionDescriptor.of(HRESULT, HWND));
+	public void RevokeDragDrop(Handle hwnd) {
+	    int rv;
+	    try {
+		rv = (int)RevokeDragDrop.invoke(hwnd.bits);
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	    if(!SUCCEEDED(rv))
+		throw(new HResultError(rv));
+	}
+
+	{
+	    Win32 win = Win32.get();
+	    valxf(new ValueConversion(Win32.Win64Unicode._POINT, Coord.class,
+				      (st, v) -> win.POINT(st).c((Coord)v),
+				      null,
+				      v -> win.POINT((MemorySegment)v).c(),
+				      null));
 	}
     }
 
