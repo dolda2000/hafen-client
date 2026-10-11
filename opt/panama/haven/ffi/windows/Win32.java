@@ -513,6 +513,7 @@ public abstract class Win32 {
     public abstract Handle LoadCursor(Handle hInstance, int cursor);
     public abstract void DestroyIcon(Handle ho);
     public abstract int RegisterClipboardFormat(String format);
+    public abstract String GetClipboardFormatName(int format);
     public abstract void OpenClipboard(Handle newowner);
     public abstract void CloseClipboard();
     public abstract boolean IsClipboardFormatAvailable(int format);
@@ -1643,6 +1644,23 @@ public abstract class Win32 {
 	    if(rv == 0)
 		throw(lasterror());
 	    return(rv);
+	}
+
+	private final MethodHandle GetClipboardFormatNameW = ld.downcallHandle(user32.find("GetClipboardFormatNameW").get(), FunctionDescriptor.of(C_INT, UINT, ADDRESS, C_INT));
+	public String GetClipboardFormatName(int format) {
+	    try(Arena st = Arena.ofConfined()) {
+		int max = 256;
+		MemorySegment buf = st.allocate(C_SHORT, max);
+		int rv;
+		try {
+		    rv = (int)GetClipboardFormatNameW.invoke(format, buf, max);
+		} catch(Throwable e) {
+		    throw(new InvocationException(e));
+		}
+		if(rv == 0)
+		    throw(lasterror());
+		return(C_WCHARSET.decode(buf.asSlice(0, rv * 2).asByteBuffer()).toString());
+	    }
 	}
 
 	private final MethodHandle OpenClipboard = ld.downcallHandle(user32.find("OpenClipboard").get(), FunctionDescriptor.of(BOOL, HWND));
