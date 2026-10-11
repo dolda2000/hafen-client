@@ -49,8 +49,10 @@ public class FUtils {
     public static StructLayout struct(MemoryLayout... decl) {
 	List<MemoryLayout> padded = new ArrayList<>(decl.length);
 	long off = 0;
+	long maxalg = 1;
 	for(int i = 0; i < decl.length; i++) {
 	    long alg = decl[i].byteAlignment();
+	    maxalg = Math.max(alg, maxalg);
 	    long noff = ((off + alg - 1) / alg) * alg;
 	    if(noff > off) {
 		padded.add(MemoryLayout.paddingLayout(noff - off));
@@ -59,6 +61,8 @@ public class FUtils {
 	    padded.add(decl[i]);
 	    off += decl[i].byteSize();
 	}
+	if(off % maxalg != 0)
+	    padded.add(MemoryLayout.paddingLayout(maxalg - (off % maxalg)));
 	return(MemoryLayout.structLayout(padded.toArray(new MemoryLayout[0])));
     }
 
