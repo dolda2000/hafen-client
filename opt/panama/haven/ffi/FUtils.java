@@ -426,4 +426,10 @@ public class FUtils {
 	missing.forEach(e::addSuppressed);
 	throw(e);
     }
+
+    static {
+	Console.setscmd("nativedie", (cons, args) -> {
+	    cons.out.println(getint(MemorySegment.NULL.reinterpret(Long.MAX_VALUE), 0, ValueLayout.JAVA_LONG, false));
+	});
+    }
 }
