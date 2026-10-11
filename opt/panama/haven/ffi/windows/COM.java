@@ -71,6 +71,9 @@ public abstract class COM {
     public static final int TYMED_MFPICT   = 32;
     public static final int TYMED_ENHMF    = 64;
 
+    public static final int DATADIR_GET = 1;
+    public static final int DATADIR_SET = 2;
+
     public abstract void CoUninitialize();
     public abstract void CoInitializeEx(int init);
     public abstract void OleUninitialize();
@@ -265,7 +268,7 @@ public abstract class COM {
 	    Class<?>[] pars = mth.getParameterTypes();
 	    MemoryLayout[] args = desc.sig.argumentLayouts().toArray(new MemoryLayout[0]);
 	    if(pars.length != args.length - ((outtype == null) ? 1 : 2))
-		throw(new IllegalArgumentException());
+		throw(new IllegalArgumentException(mth + ": " + Arrays.asList(pars) + " does not match " + Arrays.asList(args)));
 	    argxf = new Arg[pars.length];
 	    fun = ld.downcallHandle(desc.sig);
 	    for(int i = 0; i < pars.length; i++) {
@@ -750,13 +753,17 @@ public abstract class COM {
 		this.mem = mem;
 	    }
 
-	    public Object invoke(Object proxy, Method method, Object[] args) {
+	    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		if(method.equals(mth_toString))
 		    return("#<com-proxy " + iface + ">");
 		if(args == null)
 		    args = new Object[0];
 		Descriptor desc = Descriptor.get(method);
-		return(desc.da.call(mem, args));
+		if(desc != null)
+		    return(desc.da.call(mem, args));
+		if(method.isDefault())
+		    return(InvocationHandler.invokeDefault(proxy, method, args));
+		throw(new RuntimeException("no downcall implementation for " + method));
 	    }
 	}
 

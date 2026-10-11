@@ -35,9 +35,12 @@ import static java.lang.foreign.ValueLayout.ADDRESS;
 
 public interface IDataObject extends IUnknown {
     public static final IID<IDataObject> IID = new IID<>(IDataObject.class, 0x0000010e_0000_0000l, 0xc000_000000000046l);
+    static final COM com = COM.get();
 
     public static final Descriptor sig_GetData = new Descriptor(3, FunctionDescriptor.of(com.HRESULT(), ADDRESS, ADDRESS, ADDRESS), com.C_STGMEDIUM());
     public COM.STGMEDIUM GetData(COM.FORMATETC format);
     public static final Descriptor sig_QueryGetData = new Descriptor(5, FunctionDescriptor.of(com.HRESULT(), ADDRESS, ADDRESS));
     public int QueryGetData(COM.FORMATETC format);
+    public static final Descriptor sig_EnumFormatEtc = new Descriptor(8, FunctionDescriptor.of(com.HRESULT(), ADDRESS, com.DWORD(), ADDRESS), ADDRESS);
+    public IEnumFORMATETC EnumFormatEtc(int direction);
 }
