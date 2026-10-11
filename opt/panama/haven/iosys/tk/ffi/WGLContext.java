@@ -593,9 +593,15 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	}
 
 	public class WGLWindow implements Windeye {
+	    private static final Coord2d[] visgrid = {
+		Coord2d.of(0.1, 0.1), Coord2d.of(0.5, 0.1), Coord2d.of(0.9, 0.1),
+		Coord2d.of(0.1, 0.5), Coord2d.of(0.5, 0.5), Coord2d.of(0.9, 0.5),
+		Coord2d.of(0.1, 0.9), Coord2d.of(0.5, 0.9), Coord2d.of(0.9, 0.9),
+	    };
 	    public final Handle hwnd;
 	    private final Collection<EventListener> callbacks = new java.util.concurrent.CopyOnWriteArrayList<>();
 	    private final W32Clipboard clipboard = new W32Clipboard();
+	    private final boolean[] visible = new boolean[visgrid.length];
 	    private Coord size = Coord.z;
 	    private boolean showing = false;
 	    private State curstate = State.NORMAL;
@@ -609,6 +615,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	    private boolean focused;
 
 	    private WGLWindow() {
+		Arrays.fill(visible, true);
 		hwnd = msgrun(() -> win.CreateWindowEx(0, wclassname, null, STYLE_NORMAL,
 						       null, null, null, null, hInstance));
 		register(this);
@@ -688,6 +695,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		    showing = wparam != 0;
 		    return(0);
 		case Win32.WM_SETFOCUS:
+		    Arrays.fill(visible, true);
 		    focused = true;
 		    return(0);
 		case Win32.WM_KILLFOCUS:
@@ -921,6 +929,23 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		return(renv);
 	    }
 
+	    public Visibility visible() {
+		boolean any = false, all = true;
+		for(boolean v : visible) {
+		    any |= v;
+		    all &= v;
+		}
+		return(all ? Visibility.FULL : any ? Visibility.PARTIAL : Visibility.NONE);
+	    }
+
+	    private int vispoint = 0;
+	    private void checkvisibility() {
+		int i = vispoint;
+		vispoint = (vispoint + 1) % visgrid.length;
+		Coord c = win.ClientToScreen(hwnd, visgrid[i].mul(size.x, size.y).round());
+		visible[i] = win.WindowFromPoint(c).equals(hwnd);
+	    }
+
 	    private static final Pipe.Op glfb = Pipe.Op.compose(new FragColor<>(FragColor.defcolor),
 								new DepthBuffer<>(DepthBuffer.defdepth));
 	    public Pipe.Op fbstate() {
@@ -936,6 +961,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    public void swapbuffers(Render g, Object mode) {
+		checkvisibility();
 		GLRender gbuf = (GLRender)g;
 		if(((WGLEnvironment)gbuf.env).wnd() != this)
 		    throw(new IllegalArgumentException());

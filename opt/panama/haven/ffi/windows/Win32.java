@@ -491,6 +491,8 @@ public abstract class Win32 {
     public abstract Area AdjustWindowRectEx(Area rect, int dwStyle, boolean bMenu, int dwExStyle);
     public abstract void SetWindowText(Handle hWnd, String lpString);
     public abstract Coord ScreenToClient(Handle hWnd, Coord point);
+    public abstract Coord ClientToScreen(Handle hWnd, Coord point);
+    public abstract Handle WindowFromPoint(Coord point);
     public abstract List<Handle> EnumDisplayMonitors();
     public abstract Handle MonitorFromWindow(Handle hWnd, int dwFlags);
     public abstract void GetMonitorInfo(Handle hMonitor, MONITORINFO lpmi);
@@ -1147,6 +1149,42 @@ public abstract class Win32 {
 		    throw(lasterror());
 		return(Coord.of((int)getint(buf, LONG.byteSize() * 0, LONG, true),
 				(int)getint(buf, LONG.byteSize() * 1, LONG, true)));
+	    }
+	}
+
+	private final MethodHandle ClientToScreen = ld.downcallHandle(user32.find("ClientToScreen").get(), FunctionDescriptor.of(BOOL, HWND, ADDRESS));
+	public Coord ClientToScreen(Handle hWnd, Coord point) {
+	    int rv;
+	    try(Arena st = Arena.ofConfined()) {
+		MemorySegment buf = st.allocate(LONG, 2);
+		setint(buf, LONG.byteSize() * 0, LONG, point.x);
+		setint(buf, LONG.byteSize() * 1, LONG, point.y);
+		try {
+		    rv = (int)ClientToScreen.invoke(hWnd.bits, buf);
+		} catch(Throwable e) {
+		    throw(new InvocationException(e));
+		}
+		if(rv == 0)
+		    throw(lasterror());
+		return(Coord.of((int)getint(buf, LONG.byteSize() * 0, LONG, true),
+				(int)getint(buf, LONG.byteSize() * 1, LONG, true)));
+	    }
+	}
+
+	private final MethodHandle WindowFromPoint = ld.downcallHandle(user32.find("WindowFromPoint").get(), FunctionDescriptor.of(HANDLE, _POINT));
+	public Handle WindowFromPoint(Coord point) {
+	    try(Arena st = Arena.ofConfined()) {
+		POINT buf = new POINT(st);
+		buf.c(point);
+		MemorySegment rv;
+		try {
+		    rv = (MemorySegment)WindowFromPoint.invoke(buf.mem());
+		} catch(Throwable e) {
+		    throw(new InvocationException(e));
+		}
+		if(nullp(rv))
+		    throw(lasterror());
+		return(Handle.of(rv));
 	    }
 	}
 
