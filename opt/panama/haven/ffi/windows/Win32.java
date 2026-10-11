@@ -608,6 +608,7 @@ public abstract class Win32 {
 	static final MemoryLayout LSTATUS = LONG;
 	static final MemoryLayout WPARAM = UINT_PTR;
 	static final MemoryLayout LPARAM = LONG_PTR;
+	static final MemoryLayout CLIPFORMAT = WORD;
 	private final SymbolLookup kernel32 = loadlib("KERNEL32.DLL", Arena.global());
 	private final SymbolLookup user32 = loadlib("USER32.DLL", Arena.global());
 	private final SymbolLookup gdi32 = loadlib("GDI32.DLL", Arena.global());

@@ -43,4 +43,8 @@ public abstract class StructInstance {
     public String toString() {
 	return(FUtils.fmtstruct($name(), mem, $layout()));
     }
+
+    public static MemorySegment extract(StructInstance inst) {
+	return(inst.mem);
+    }
 }

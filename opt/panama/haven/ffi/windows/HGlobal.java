@@ -38,8 +38,8 @@ public class HGlobal {
 	final Handle hmem;
 	boolean relinquished = false;
 
-	Holder(int bytes) {
-	    hmem = win.GlobalAlloc(Win32.GMEM_MOVEABLE | Win32.GMEM_ZEROINIT, bytes);
+	Holder(Handle hmem) {
+	    this.hmem = hmem;
 	}
 
 	public void clean() {
@@ -48,9 +48,14 @@ public class HGlobal {
 	}
     }
 
-    public HGlobal(int bytes) {
-	this.h = new Holder(bytes);
+    public HGlobal(Handle hmem, boolean borrowed) {
+	this.h = new Holder(hmem);
 	c = Finalizer.finalize(this, h);
+	h.relinquished = borrowed;
+    }
+
+    public HGlobal(int bytes) {
+	this(win.GlobalAlloc(Win32.GMEM_MOVEABLE | Win32.GMEM_ZEROINIT, bytes), false);
     }
 
     public Handle hmem() {

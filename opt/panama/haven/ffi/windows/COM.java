@@ -38,6 +38,7 @@ import java.lang.foreign.*;
 import java.lang.ref.*;
 import java.lang.reflect.*;
 import java.lang.annotation.*;
+import java.lang.foreign.MemoryLayout.PathElement;
 import static haven.ffi.ABI.*;
 import static haven.ffi.FUtils.*;
 import static haven.ffi.windows.Win32.*;
@@ -56,6 +57,20 @@ public abstract class COM {
     public static final int CLSCTX_REMOTE_SERVER    = 0x10;
     public static final int CLSCTX_INPROC_HANDLER16 = 0x20;
 
+    public static final int DVASPECT_CONTENT   = 1;
+    public static final int DVASPECT_THUMBNAIL = 2;
+    public static final int DVASPECT_ICON      = 4;
+    public static final int DVASPECT_DOCPRINT  = 8;
+
+    public static final int TYMED_NULL     =  0;
+    public static final int TYMED_HGLOBAL  =  1;
+    public static final int TYMED_FILE     =  2;
+    public static final int TYMED_ISTREAM  =  4;
+    public static final int TYMED_ISTORAGE =  8;
+    public static final int TYMED_GDI      = 16;
+    public static final int TYMED_MFPICT   = 32;
+    public static final int TYMED_ENHMF    = 64;
+
     public abstract void CoUninitialize();
     public abstract void CoInitializeEx(int init);
     public abstract void OleUninitialize();
@@ -67,6 +82,59 @@ public abstract class COM {
     public abstract void RevokeDragDrop(Handle hwnd);
 
     public static boolean SUCCEEDED(int hr) {return(hr >= 0);}
+
+    public static abstract class FORMATETC extends StructInstance {
+	protected FORMATETC(MemorySegment mem) {
+	    super(mem);
+	}
+
+	public static FORMATETC fromcom(MemorySegment mem) {
+	    return(COM.get().FORMATETC_fromcom(mem));
+	}
+
+	MemorySegment mem() {return(mem);}
+
+	public abstract FORMATETC cfFormat(int value);
+	public abstract int cfFormat();
+	public abstract FORMATETC dwAspect(int value);
+	public abstract int dwAspect();
+	public abstract FORMATETC lindex(int value);
+	public abstract int lindex();
+	public abstract FORMATETC tymed(int value);
+	public abstract int tymed();
+    }
+    public abstract MemoryLayout C_FORMATETC();
+    public abstract FORMATETC FORMATETC();
+    abstract FORMATETC FORMATETC_fromcom(MemorySegment mem);
+
+    public static abstract class STGMEDIUM extends StructInstance {
+	protected STGMEDIUM(MemorySegment mem) {
+	    super(mem);
+	}
+
+	MemorySegment mem() {return(mem);}
+
+	public abstract STGMEDIUM tymed(int value);
+	public abstract int tymed();
+	public abstract STGMEDIUM handle(Handle value);
+	public abstract Handle handle();
+	abstract STGMEDIUM address(MemorySegment value);
+	abstract MemorySegment address();
+
+	public Object get() {
+	    int t = tymed();
+	    switch(t) {
+	    case TYMED_HGLOBAL:
+		return(new HGlobal(handle(), true));
+	    case TYMED_FILE:
+		return(address().getString(0, Win32.get().C_WCHARSET()));
+	    default:
+		throw(new ClassCastException("unexpected medium-type: " + t));
+	    }
+	}
+    }
+    public abstract MemoryLayout C_STGMEDIUM();
+    public abstract STGMEDIUM STGMEDIUM();
 
     static MemorySegment memguid(UUID uuid) {
 	MemorySegment ret = Arena.ofAuto().allocate(16);
@@ -251,6 +319,8 @@ public abstract class COM {
 			xf = (st, v) -> (v == null) ? MemorySegment.NULL : st.allocateFrom((String)v, win.C_WCHARSET());
 		    } else if(IUnknown.class.isAssignableFrom(p)) {
 			xf = (st, v) -> reg.addrforobj((IUnknown)v, IID.get(p.asSubclass(IUnknown.class)));
+		    } else if(StructInstance.class.isAssignableFrom(p)) {
+			xf = (st, v) -> StructInstance.extract((StructInstance)v);
 		    } else {
 			throw(new IllegalArgumentException(p + " -> " + a));
 		    }
@@ -320,7 +390,7 @@ public abstract class COM {
 		if(!SUCCEEDED(rv))
 		    throw(new HResultError(rv));
 		if(outtype == null)
-		    return(null);
+		    return(rv);
 		return(outxf.apply(outbuf));
 	    }
 	}
@@ -349,6 +419,7 @@ public abstract class COM {
 	private final BiConsumer<Object, MemorySegment> outxf;
 	private final Method method;
 	private final MemoryLayout outtype;
+	private final boolean resret;
 
 	@SuppressWarnings("unchecked")
 	public StandardUpcall(Descriptor desc, Method mth) {
@@ -387,6 +458,15 @@ public abstract class COM {
 			xf = v -> Handle.of((MemorySegment)v);
 		    } else if(IUnknown.class.isAssignableFrom(p)) {
 			xf = v -> reg.objforaddr((MemorySegment)v, p.asSubclass(IUnknown.class), true);
+		    } else if(StructInstance.class.isAssignableFrom(p)) {
+			try {
+			    Method cons = p.getDeclaredMethod("fromcom", MemorySegment.class);
+			    if(!Modifier.isStatic(cons.getModifiers()))
+				throw(new IllegalArgumentException("not statuc " + cons));
+			    xf = v -> p.cast(Utils.invoke(cons, null, v));
+			} catch(NoSuchMethodException e) {
+			    throw(new IllegalArgumentException("cannot construct " + p));
+			}
 		    } else {
 			throw(new IllegalArgumentException(a + " -> " + p));
 		    }
@@ -397,10 +477,15 @@ public abstract class COM {
 	    }
 	    Class<?> rtype = mth.getReturnType();
 	    if(outtype == null) {
-		if(rtype != Void.TYPE)
+		if(rtype == Integer.TYPE)
+		    resret = true;
+		else if(rtype == Void.TYPE)
+		    resret = false;
+		else
 		    throw(new IllegalArgumentException(rtype + " -> void"));
 		outxf = null;
 	    } else {
+		resret = false;
 		ValueConversion valxf = valxf(outtype, rtype);
 		if((valxf != null) && (valxf.uret != null)) {
 		    outxf = valxf.uret;
@@ -445,6 +530,8 @@ public abstract class COM {
 		Object rv = Utils.invoke(method, stub.obj, pars);
 		if(outtype != null)
 		    outxf.accept(rv, ((MemorySegment)args[args.length - 1]).reinterpret(outtype.byteSize()));
+		if(resret)
+		    return(((Number)rv).intValue());
 		return(0);
 	    } catch(HResultError e) {
 		return(e.hresult);
@@ -768,14 +855,21 @@ public abstract class COM {
     public abstract MemoryLayout HWND();
 
     static class Win64Unicode extends COM {
-	private static final MemoryLayout HRESULT  = Win32.Win64Unicode.HRESULT;
-	private static final MemoryLayout DWORD    = Win32.Win64Unicode.DWORD;
-	private static final MemoryLayout LPVOID   = Win32.Win64Unicode.LPVOID;
-	private static final MemoryLayout UINT     = Win32.Win64Unicode.UINT;
-	private static final MemoryLayout ULONG    = Win32.Win64Unicode.ULONG;
-	private static final MemoryLayout HWND     = Win32.Win64Unicode.HWND;
-	private static final MemoryLayout REFCLSID = ADDRESS;
-	private static final MemoryLayout REFIID   = ADDRESS;
+	private static final MemoryLayout HRESULT    = Win32.Win64Unicode.HRESULT;
+	private static final MemoryLayout DWORD      = Win32.Win64Unicode.DWORD;
+	private static final MemoryLayout WORD       = Win32.Win64Unicode.WORD;
+	private static final MemoryLayout LPVOID     = Win32.Win64Unicode.LPVOID;
+	private static final MemoryLayout UINT       = Win32.Win64Unicode.UINT;
+	private static final MemoryLayout LONG       = Win32.Win64Unicode.LONG;
+	private static final MemoryLayout ULONG      = Win32.Win64Unicode.ULONG;
+	private static final MemoryLayout CLIPFORMAT = Win32.Win64Unicode.CLIPFORMAT;
+	private static final MemoryLayout HANDLE     = Win32.Win64Unicode.HANDLE;
+	private static final MemoryLayout HBITMAP    = Win32.Win64Unicode.HBITMAP;
+	private static final MemoryLayout HGLOBAL    = Win32.Win64Unicode.HGLOBAL;
+	private static final MemoryLayout HWND       = Win32.Win64Unicode.HWND;
+	private static final MemoryLayout LPOLESTR   = ADDRESS;
+	private static final MemoryLayout REFCLSID   = ADDRESS;
+	private static final MemoryLayout REFIID     = ADDRESS;
 	private final SymbolLookup ole32 = loadlib("OLE32.DLL", Arena.global());
 
 	public MemoryLayout DWORD()   {return(DWORD);}
@@ -890,6 +984,86 @@ public abstract class COM {
 		throw(new HResultError(rv));
 	}
 
+	static final StructLayout _FORMATETC = struct(new MemoryLayout[] {
+		CLIPFORMAT.withName("cfFormat"),
+		ADDRESS.withName("ptd"),
+		DWORD.withName("dwAspect"),
+		LONG.withName("lindex"),
+		DWORD.withName("tymed"),
+	    });
+	public static class FORMATETC extends COM.FORMATETC {
+	    private FORMATETC(MemorySegment mem) {
+		super(mem);
+	    }
+	    private FORMATETC(Arena alloc) {
+		this(alloc.allocate(_FORMATETC.byteSize()));
+	    }
+	    private FORMATETC() {
+		this(Arena.ofAuto());
+	    }
+
+	    protected StructLayout $layout() {return(_FORMATETC);}
+
+	    private static final VarHandle cfFormat = _FORMATETC.varHandle(PathElement.groupElement("cfFormat"));
+	    public FORMATETC cfFormat(int value) {cfFormat.set(mem, 0, (short)value); return(this);}
+	    public int cfFormat() {return((int)cfFormat.get(mem, 0));}
+	    private static final VarHandle dwAspect = _FORMATETC.varHandle(PathElement.groupElement("dwAspect"));
+	    public FORMATETC dwAspect(int value) {dwAspect.set(mem, 0, value); return(this);}
+	    public int dwAspect() {return((int)dwAspect.get(mem, 0));}
+	    private static final VarHandle lindex = _FORMATETC.varHandle(PathElement.groupElement("lindex"));
+	    public FORMATETC lindex(int value) {lindex.set(mem, 0, value); return(this);}
+	    public int lindex() {return((int)lindex.get(mem, 0));}
+	    private static final VarHandle tymed = _FORMATETC.varHandle(PathElement.groupElement("tymed"));
+	    public FORMATETC tymed(int value) {tymed.set(mem, 0, value); return(this);}
+	    public int tymed() {return((int)tymed.get(mem, 0));}
+	}
+	public MemoryLayout C_FORMATETC() {return(_FORMATETC);}
+	public FORMATETC FORMATETC() {return(new FORMATETC());}
+	FORMATETC FORMATETC_fromcom(MemorySegment mem) {return(new FORMATETC(mem.reinterpret(_FORMATETC.byteSize())));}
+
+	static final StructLayout _STGMEDIUM = struct(new MemoryLayout[] {
+		DWORD.withName("tymed"),
+		MemoryLayout.unionLayout(new MemoryLayout[] {
+		    HANDLE.withName("handle"),
+		    ADDRESS.withName("address"),
+		}).withName("data"),
+		ADDRESS.withName("pUnkForRelease"),
+	    });
+	public static class STGMEDIUM extends COM.STGMEDIUM {
+	    private STGMEDIUM(MemorySegment mem) {
+		super(mem);
+	    }
+	    private STGMEDIUM(Arena alloc) {
+		this(alloc.allocate(_STGMEDIUM.byteSize()));
+	    }
+	    private STGMEDIUM() {
+		this(Arena.ofAuto());
+	    }
+
+	    protected StructLayout $layout() {return(_STGMEDIUM);}
+
+	    private static final VarHandle tymed = _STGMEDIUM.varHandle(PathElement.groupElement("tymed"));
+	    public STGMEDIUM tymed(int value) {tymed.set(mem, 0, value); return(this);}
+	    public int tymed() {return((int)tymed.get(mem, 0));}
+	    private static final VarHandle handle = _STGMEDIUM.varHandle(PathElement.groupElement("data"), PathElement.groupElement("handle"));
+	    public STGMEDIUM handle(Handle value) {handle.set(mem, 0, (value == null) ? MemorySegment.NULL : value.bits); return(this);}
+	    public Handle handle() {return(Handle.of((MemorySegment)handle.get(mem, 0)));}
+	    private static final VarHandle address = _STGMEDIUM.varHandle(PathElement.groupElement("data"), PathElement.groupElement("address"));
+	    STGMEDIUM address(MemorySegment value) {address.set(mem, 0, (value == null) ? MemorySegment.NULL : value); return(this);}
+	    MemorySegment address() {return((MemorySegment)handle.get(mem, 0));}
+	}
+	public MemoryLayout C_STGMEDIUM() {return(_STGMEDIUM);}
+	public STGMEDIUM STGMEDIUM() {return(new STGMEDIUM());}
+
+	private final MethodHandle ReleaseStgMedium = ld.downcallHandle(ole32.find("ReleaseStgMedium").get(), FunctionDescriptor.ofVoid(ADDRESS));
+	void ReleaseStgMedium(MemorySegment sm) {
+	    try {
+		RevokeDragDrop.invoke(sm);
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	}
+
 	{
 	    Win32 win = Win32.get();
 	    valxf(new ValueConversion(Win32.Win64Unicode._POINT, Coord.class,
@@ -897,6 +1071,19 @@ public abstract class COM {
 				      null,
 				      v -> win.POINT((MemorySegment)v).c(),
 				      null));
+	    valxf(new ValueConversion(_STGMEDIUM, COM.STGMEDIUM.class,
+				      null,
+				      buf -> {
+					  STGMEDIUM ret = STGMEDIUM();
+					  MemorySegment mem = ret.mem();
+					  MemorySegment.copy(buf, 0, mem, 0, ret.$layout().byteSize());
+					  Finalizer.finalize(ret, () -> ReleaseStgMedium(mem));
+					  return(ret);
+				      },
+				      null,
+				      (v, buf) -> {
+					  MemorySegment.copy(((STGMEDIUM)v).mem(), 0, buf, 0, _STGMEDIUM.byteSize());
+				      }));
 	}
     }
 
@@ -909,5 +1096,34 @@ public abstract class COM {
 	    }
 	}
 	return(instance);
+    }
+
+    public static void main(String[] args) throws Exception {
+	COM com = COM.get();
+	com.CoInitializeEx(COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	IFileDialog fd = com.CoCreateInstance(IFileDialog.CLSID_FileOpenDialog, null, CLSCTX_INPROC_SERVER, IFileDialog.IID);
+	fd.SetFileTypes(new String[][] {{"All files", "*.*"}});
+	int cookie = fd.Advise(new IFileDialogEvents() {
+	    public void OnFolderChanging(IFileDialog fd, IShellItem folder) {
+		Debug.dump(fd, folder.GetDisplayName(IShellItem.SIGDN_FILESYSPATH));
+	    }
+	});
+	fd.Show(null);
+	IShellItem ret = fd.GetResult();
+	Debug.dump(ret.GetDisplayName(IShellItem.SIGDN_NORMALDISPLAY));
+	Debug.dump(ret.GetDisplayName(IShellItem.SIGDN_PARENTRELATIVEPARSING));
+	Debug.dump(ret.GetDisplayName(IShellItem.SIGDN_DESKTOPABSOLUTEPARSING));
+	Debug.dump(ret.GetDisplayName(IShellItem.SIGDN_PARENTRELATIVEEDITING));
+	Debug.dump(ret.GetDisplayName(IShellItem.SIGDN_DESKTOPABSOLUTEEDITING));
+	Debug.dump(ret.GetDisplayName(IShellItem.SIGDN_FILESYSPATH));
+	Debug.dump(ret.GetDisplayName(IShellItem.SIGDN_URL));
+	Debug.dump(ret.GetDisplayName(IShellItem.SIGDN_PARENTRELATIVEFORADDRESSBAR));
+	Debug.dump(ret.GetDisplayName(IShellItem.SIGDN_PARENTRELATIVE));
+	Debug.dump(ret.GetDisplayName(IShellItem.SIGDN_PARENTRELATIVEFORUI));
+	fd = null;
+	for(int i = 0; i < 100; i++) {
+	    System.gc();
+	    Thread.sleep(100);
+	}
     }
 }

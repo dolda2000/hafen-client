@@ -29,6 +29,7 @@ package haven.ffi.windows;
 import haven.ffi.*;
 
 public class HResultError extends RuntimeException {
+    public static final int DRAGDROP_S_CANCEL   = 0x00040101;
     public static final int E_NOTIMPL           = 0x80004001;
     public static final int E_NOINTERFACE       = 0x80004002;
     public static final int E_FAIL              = 0x80004005;

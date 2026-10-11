@@ -282,6 +282,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	private final Queue<Runnable> mtasks = new LinkedList<>();
 	private void handlemsgs() {
 	    try {
+		com.OleInitialize();
 		MSG msg = win.MSG();
 		win.PeekMessage(msg, null, 0, 0, Win32.PM_NOREMOVE);
 		synchronized(mtmon) {
@@ -311,6 +312,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		    if(msgthread == Thread.currentThread())
 			msgthread = null;
 		}
+		com.OleUninitialize();
 	    }
 	}
 
@@ -1102,13 +1104,17 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		    }
 		}
 
-		private void mktext(List<Item<?>> buf, Handle hmem, Charset charset) {
+		private CharSequence mktext(Handle hmem, Charset charset) {
 		    MemorySegment mem = win.GlobalLock(hmem);
 		    try {
-			buf.add(new Item<CharSequence>(Format.TEXT, mem.getString(0, charset)));
+			return(mem.getString(0, charset));
 		    } finally {
 			win.GlobalUnlock(hmem);
 		    }
+		}
+
+		private void mktext(List<Item<?>> buf, Handle hmem, Charset charset) {
+		    buf.add(new Item<CharSequence>(Format.TEXT, mktext(hmem, charset)));
 		}
 
 		private int colorbyte(int rgb, int boff, int size) {
@@ -1146,10 +1152,9 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		    return(PUtils.rasterimg(buf));
 		}
 
-		private void mkdib(List<Item<?>> buf, Handle hmem) {
+		private Supplier<BufferedImage> mkdib(Handle hmem) {
 		    MemorySegment mem = win.GlobalLock(hmem);
 		    try {
-			Supplier<BufferedImage> ifun;
 			BITMAPV5HEADER bmp = win.BITMAPV5HEADER(mem);
 			if(bmp.bV5Size() == bmp.sizeof()) {
 			    Coord sz; boolean inv;
@@ -1179,44 +1184,37 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 				switch(bits) {
 				case 1:
 				    if(inv)
-					ifun = () -> paldibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 1, 1, palette);
+					return(() -> paldibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 1, 1, palette));
 				    else
-					ifun = () -> paldibtoimg(sz, pixels, 0, rowsz, 1, 1, palette);
-				    break;
+					return(() -> paldibtoimg(sz, pixels, 0, rowsz, 1, 1, palette));
 				case 4:
 				    if(inv)
-					ifun = () -> paldibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 4, 4, palette);
+					return(() -> paldibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 4, 4, palette));
 				    else
-					ifun = () -> paldibtoimg(sz, pixels, 0, rowsz, 4, 4, palette);
-				    break;
+					return(() -> paldibtoimg(sz, pixels, 0, rowsz, 4, 4, palette));
 				case 8:
 				    if(inv)
-					ifun = () -> paldibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 8, 8, palette);
+					return(() -> paldibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 8, 8, palette));
 				    else
-					ifun = () -> paldibtoimg(sz, pixels, 0, rowsz, 8, 8, palette);
-				    break;
+					return(() -> paldibtoimg(sz, pixels, 0, rowsz, 8, 8, palette));
 				case 16:
 				    if(inv)
-					ifun = () -> rgbdibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 2, new int[] {5, 5, 5}, new int[] {10, 5, 0});
+					return(() -> rgbdibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 2, new int[] {5, 5, 5}, new int[] {10, 5, 0}));
 				    else
-					ifun = () -> rgbdibtoimg(sz, pixels, 0, rowsz, 2, new int[] {5, 5, 5}, new int[] {10, 5, 0});
-				    break;
+					return(() -> rgbdibtoimg(sz, pixels, 0, rowsz, 2, new int[] {5, 5, 5}, new int[] {10, 5, 0}));
 				case 24:
 				    if(inv)
-					ifun = () -> rgbdibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 3, new int[] {8, 8, 8}, new int[] {16, 8, 0});
+					return(() -> rgbdibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 3, new int[] {8, 8, 8}, new int[] {16, 8, 0}));
 				    else
-					ifun = () -> rgbdibtoimg(sz, pixels, 0, rowsz, 3, new int[] {8, 8, 8}, new int[] {16, 8, 0});
-				    break;
+					return(() -> rgbdibtoimg(sz, pixels, 0, rowsz, 3, new int[] {8, 8, 8}, new int[] {16, 8, 0}));
 				case 32:
 				    if(inv)
-					ifun = () -> rgbdibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 4, new int[] {8, 8, 8}, new int[] {16, 8, 0});
+					return(() -> rgbdibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, 4, new int[] {8, 8, 8}, new int[] {16, 8, 0}));
 				    else
-					ifun = () -> rgbdibtoimg(sz, pixels, 0, rowsz, 4, new int[] {8, 8, 8}, new int[] {16, 8, 0});
-				    break;
+					return(() -> rgbdibtoimg(sz, pixels, 0, rowsz, 4, new int[] {8, 8, 8}, new int[] {16, 8, 0}));
 				default:
-				    ifun = () -> {throw(new RuntimeException("unexpected RGB DIB bit-count: " + bits));};
+				    return(() -> {throw(new RuntimeException("unexpected RGB DIB bit-count: " + bits));});
 				}
-				break;
 			    case Win32.BI_BITFIELDS: {
 				int[] masks = new int[] {bmp.bV5RedMask(), bmp.bV5GreenMask(), bmp.bV5BlueMask(), bmp.bV5AlphaMask()};
 				if(masks[3] == 0)
@@ -1227,60 +1225,63 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 				    sizes[i] = Integer.bitCount(masks[i]);
 				}
 				if(inv)
-				    ifun = () -> rgbdibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, bits >> 3, sizes, boffs);
+				    return(() -> rgbdibtoimg(sz, pixels, rowsz * (sz.y - 1), -rowsz, bits >> 3, sizes, boffs));
 				else
-				    ifun = () -> rgbdibtoimg(sz, pixels, 0, rowsz, bits >> 3, sizes, boffs);
-				break;
+				    return(() -> rgbdibtoimg(sz, pixels, 0, rowsz, bits >> 3, sizes, boffs));
 			    }
 			    default:
-				ifun = () -> {throw(new RuntimeException("unexpected DIB compression type: " + comp));};
+				return(() -> {throw(new RuntimeException("unexpected DIB compression type: " + comp));});
 			    }
 			} else {
-			    ifun = () -> {throw(new RuntimeException("unexpected DIB header size: " + bmp.bV5Size()));};
+			    return(() -> {throw(new RuntimeException("unexpected DIB header size: " + bmp.bV5Size()));});
 			}
-			buf.add(new Item<BufferedImage>(Format.IMAGE, () -> Promise.deferred(ifun, t -> Defer.later(t, null))));
 		    } finally {
 			win.GlobalUnlock(hmem);
 		    }
 		}
 
-		private void mkfiles(List<Item<?>> buf, Handle hmem) {
+		private void mkdib(List<Item<?>> buf, Handle hmem) {
+		    buf.add(new Item<BufferedImage>(Format.IMAGE, () -> Promise.deferred(mkdib(hmem), t -> Defer.later(t, null))));
+		}
+
+		private Collection<Path> mkfiles(Handle hmem) {
 		    MemorySegment mem = win.GlobalLock(hmem);
 		    try {
 			DROPFILES head = win.DROPFILES(mem);
 			int off = head.pFiles();
 			boolean wide = head.fWide();
 			ByteBuffer raw = ByteBuffer.wrap(FUtils.memcpy(mem, off, (int)(mem.byteSize() - off)));
-			Supplier<Collection<Path>> pfun = () -> {
-			    Collection<String> names = new ArrayList<>();
-			    if(head.fWide()) {
-				for(int p = 0, o = 0; o < raw.capacity(); o += 2) {
-				    if(raw.getShort(o) == 0) {
-					if(o == p)
-					    break;
-					names.add(win.C_WCHARSET().decode(raw.duplicate().position(p).limit(o)).toString());
-					p = o + 2;
-				    }
-				}
-			    } else {
-				Charset charset = win.codepage(win.GetACP(), Win32.latin1);
-				for(int p = 0, o = 0; o < raw.capacity(); o++) {
-				    if(raw.get(o) == 0) {
-					if(o == p)
-					    break;
-					names.add(charset.decode(raw.duplicate().position(p).limit(o)).toString());
-					p = o + 1;
-				    }
+			Collection<String> names = new ArrayList<>();
+			if(head.fWide()) {
+			    for(int p = 0, o = 0; o < raw.capacity(); o += 2) {
+				if(raw.getShort(o) == 0) {
+				    if(o == p)
+					break;
+				    names.add(win.C_WCHARSET().decode(raw.duplicate().position(p).limit(o)).toString());
+				    p = o + 2;
 				}
 			    }
-			    Collection<Path> paths = new ArrayList<>();
-			    names.forEach(nm -> paths.add(Paths.get(nm)));
-			    return(paths);
-			};
-			buf.add(new Item<Collection<Path>>(Format.PATHS, () -> Promise.of(pfun)));
+			} else {
+			    Charset charset = win.codepage(win.GetACP(), Win32.latin1);
+			    for(int p = 0, o = 0; o < raw.capacity(); o++) {
+				if(raw.get(o) == 0) {
+				    if(o == p)
+					break;
+				    names.add(charset.decode(raw.duplicate().position(p).limit(o)).toString());
+				    p = o + 1;
+				}
+			    }
+			}
+			Collection<Path> paths = new ArrayList<>();
+			names.forEach(nm -> paths.add(Paths.get(nm)));
+			return(paths);
 		    } finally {
 			win.GlobalUnlock(hmem);
 		    }
+		}
+
+		private void mkfiles(List<Item<?>> buf, Handle hmem) {
+		    buf.add(new Item<Collection<Path>>(Format.PATHS, () -> Promise.of(() -> mkfiles(hmem))));
 		}
 
 		private Contents mkcontents() {
@@ -1301,6 +1302,122 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		public Promise<Contents> get() {
 		    return(openclipboard().then(_ -> Promise.deferred(this::mkcontents, WGLToolkit.this::msgrun)));
 		}
+	    }
+
+	    public class DropTarget implements IDropTarget {
+		public final BMap<DropHandler.Action, Integer> actmap =
+		    new HashBMap<>(Utils.<DropHandler.Action, Integer>map()
+				   .put(DropHandler.Action.COPY, DROPEFFECT_COPY)
+				   .put(DropHandler.Action.MOVE, DROPEFFECT_MOVE)
+				   .put(DropHandler.Action.LINK, DROPEFFECT_LINK)
+				   .map());
+		public final DropHandler handler;
+		private Clipboard.Contents current;
+
+		public DropTarget(DropHandler handler) {
+		    this.handler = handler;
+		}
+
+		private Promise<CharSequence> cvt_text(IDataObject data) {
+		    return(Promise.deferred(() -> {
+			COM.FORMATETC fmt = com.FORMATETC();
+			fmt.dwAspect(COM.DVASPECT_CONTENT).lindex(-1).tymed(COM.TYMED_HGLOBAL);
+			COM.STGMEDIUM stg = data.GetData(fmt.cfFormat(Win32.CF_UNICODETEXT));
+			return(clipboard.mktext(((HGlobal)stg.get()).hmem(), win.C_WCHARSET()));
+		    }, WGLToolkit.this::msgrun));
+		}
+
+		private Promise<BufferedImage> cvt_dib(IDataObject data) {
+		    return(Promise.deferred(() -> {
+			COM.FORMATETC fmt = com.FORMATETC();
+			fmt.dwAspect(COM.DVASPECT_CONTENT).lindex(-1).tymed(COM.TYMED_HGLOBAL);
+			COM.STGMEDIUM stg = data.GetData(fmt.cfFormat(Win32.CF_DIBV5));
+			return(clipboard.mkdib(((HGlobal)stg.get()).hmem()));
+		    }, WGLToolkit.this::msgrun).defer().map(Supplier::get));
+		}
+
+		private Promise<Collection<Path>> cvt_files(IDataObject data) {
+		    return(Promise.deferred(() -> {
+			COM.FORMATETC fmt = com.FORMATETC();
+			fmt.dwAspect(COM.DVASPECT_CONTENT).lindex(-1).tymed(COM.TYMED_HGLOBAL);
+			COM.STGMEDIUM stg = data.GetData(fmt.cfFormat(Win32.CF_HDROP));
+			return(clipboard.mkfiles(((HGlobal)stg.get()).hmem()));
+		    }, WGLToolkit.this::msgrun));
+		}
+
+		private boolean query(IDataObject data, int fmt) {
+		    COM.FORMATETC etc = com.FORMATETC();
+		    etc.dwAspect(COM.DVASPECT_CONTENT).lindex(-1).tymed(COM.TYMED_HGLOBAL);
+		    try {
+			return(data.QueryGetData(etc.cfFormat(fmt)) == Win32.S_OK);
+		    } catch(HResultError e) {
+			return(false);
+		    }
+		}
+
+		private Clipboard.Contents mkcontents(IDataObject data) {
+		    List<Clipboard.Item<?>> items = new ArrayList<>();
+		    if(query(data, Win32.CF_UNICODETEXT))
+			items.add(new Clipboard.Item<CharSequence>(Clipboard.Format.TEXT, () -> cvt_text(data)));
+		    if(query(data, Win32.CF_DIBV5))
+			items.add(new Clipboard.Item<BufferedImage>(Clipboard.Format.IMAGE, () -> cvt_dib(data)));
+		    if(query(data, Win32.CF_HDROP))
+			items.add(new Clipboard.Item<Collection<Path>>(Clipboard.Format.PATHS, () -> cvt_files(data)));
+		    return(new Clipboard.Contents(items));
+		}
+
+		private int hover(Clipboard.Contents cont, Coord wndc) {
+		    class Event implements DropHandler.DropHoverEvent {
+			public Coord wndc() {return(wndc);}
+			public Set<DropHandler.Action> actions() {return(EnumSet.allOf(DropHandler.Action.class));}
+			public Clipboard.Contents contents() {return(cont);}
+		    }
+		    Integer ract = actmap.get(handler.drophover(new Event()));
+		    return((ract == null) ? DROPEFFECT_NONE : ract);
+		}
+
+		public int DragEnter(IDataObject dataobj, int keystate, Coord pt) {
+		    return(hover(current = mkcontents(dataobj), win.ScreenToClient(hwnd, pt)));
+		}
+
+		public int DragOver(int keystate, Coord pt) {
+		    return(hover(current, win.ScreenToClient(hwnd, pt)));
+		}
+
+		public void DragLeave() {
+		    current = null;
+		}
+
+		public int Drop(IDataObject dataobj, int keystate, Coord pt) {
+		    Coord wndc = win.ScreenToClient(hwnd, pt);
+		    Clipboard.Contents cont = mkcontents(dataobj);
+		    class Event implements DropHandler.DroppedEvent {
+			DropHandler.Action accepted = null;
+
+			public Coord wndc() {return(wndc);}
+			public Set<DropHandler.Action> actions() {return(EnumSet.allOf(DropHandler.Action.class));}
+			public Clipboard.Contents contents() {return(cont);}
+
+			public void accept(DropHandler.Action act) {
+			    accepted = act;
+			}
+		    }
+		    Event ev = new Event();
+		    if(!handler.dropped(ev))
+			throw(new HResultError(HResultError.DRAGDROP_S_CANCEL));
+		    Integer ract = actmap.get(ev.accepted);
+		    return((ract == null) ? DROPEFFECT_NONE : ract);
+		}
+	    }
+
+	    public WGLWindow drophandler(DropHandler h) {
+		msgrun(() -> {
+		    if(h == null)
+			com.RevokeDragDrop(hwnd);
+		    else
+			com.RegisterDragDrop(hwnd, new DropTarget(h));
+		});
+		return(this);
 	    }
 
 	    public class W32KeyEvent {
