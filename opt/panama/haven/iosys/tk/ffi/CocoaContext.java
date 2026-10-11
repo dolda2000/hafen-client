@@ -93,7 +93,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
     public int priority() {
 	return(System.getProperty("os.name", "").startsWith("Mac OS") ? 100 : 0);
     }
-    public boolean experimental() {return(true);}
+    public boolean experimental() {return(false);}
 
     private NSApplication app = null;
     public NSApplication app() {
