@@ -29,6 +29,7 @@ package haven.ffi.windows;
 import haven.*;
 import haven.ffi.*;
 import haven.ffi.gl.*;
+import java.util.*;
 import java.nio.*;
 import java.lang.invoke.*;
 import java.lang.foreign.*;
@@ -51,6 +52,7 @@ public abstract class WGL {
     public static final int ERROR_INVALID_PROFILE_ARB = 0x2096;
 
     abstract MemorySegment wglGetProcAddress(String name);
+    abstract MemorySegment proclookup(String name);
     public abstract Handle wglCreateContext(Handle hDC);
     public abstract void wglDeleteContext(Handle hGLRC);
     public abstract void wglMakeCurrent(Handle hDC, Handle hGLRC);
@@ -78,6 +80,13 @@ public abstract class WGL {
 	    if(nullp(rv))
 		return(null);
 	    return(rv);
+	}
+
+	MemorySegment proclookup(String name) {
+	    Optional<MemorySegment> builtin = opengl32.find(name);
+	    if(builtin.isPresent())
+		return(builtin.get());
+	    return(wglGetProcAddress(name));
 	}
 
 	private MethodHandle lookup(String name, FunctionDescriptor sig) {
@@ -221,7 +230,7 @@ public abstract class WGL {
 
     class Resolved extends OpenGL.Base {
 	protected MethodHandle lookup(String name, FunctionDescriptor sig, Linker.Option... options) {
-	    MemorySegment addr = wglGetProcAddress(name);
+	    MemorySegment addr = proclookup(name);
 	    if(nullp(addr))
 		return(null);
 	    return(ld.downcallHandle(addr, sig, options));
