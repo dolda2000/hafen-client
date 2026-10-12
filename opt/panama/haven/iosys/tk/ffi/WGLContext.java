@@ -970,6 +970,8 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	    }
 
 	    public Visibility visible() {
+		if(curstate == State.MINIMIZED)
+		    return(Visibility.NONE);
 		boolean any = false, all = true;
 		for(boolean v : visible) {
 		    any |= v;
