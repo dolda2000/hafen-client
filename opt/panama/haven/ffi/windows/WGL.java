@@ -231,7 +231,7 @@ public abstract class WGL {
     class Resolved extends OpenGL.Base {
 	protected MethodHandle lookup(String name, FunctionDescriptor sig, Linker.Option... options) {
 	    MemorySegment addr = proclookup(name);
-	    if(nullp(addr))
+	    if(addr == null)
 		return(null);
 	    return(ld.downcallHandle(addr, sig, options));
 	}

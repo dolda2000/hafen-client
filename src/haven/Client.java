@@ -153,10 +153,10 @@ public class Client implements Console.Directory {
 	}
 
 	protected boolean bgmode() {
+	    if(wnd.focused())
+		return(false);
 	    Windeye.Visibility v = wnd.visible();
-	    if(v == Windeye.Visibility.UNKNOWN)
-		return(!wnd.focused());
-	    return(v == Windeye.Visibility.NONE);
+	    return((v == Windeye.Visibility.NONE) || (v == Windeye.Visibility.UNKNOWN));
 	}
     }
 
