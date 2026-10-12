@@ -65,6 +65,8 @@ public class Texture2D extends Texture {
 	    if(((w >> level) == 0) && ((h >> level) == 0))
 		throw(new IllegalArgumentException(String.format("Invalid mipmap level %d for (%d, %d) texture", level, w, h)));
 	}
+	if(level == 0)
+	    return(new Image<>(this, w, h, 1, 0));
 	return(new Image<>(this, Math.max(w >> level, 1), Math.max(h >> level, 1), 1, level));
     }
 
