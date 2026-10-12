@@ -898,7 +898,8 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		    fixsize = fixsize(info.fixsize);
 		    minsize = fixsize(info.minsize);
 		    maxsize = fixsize(info.maxsize);
-		    setstate(curstate);
+		    if(showing)
+			setstate(curstate);
 		});
 		return(this);
 	    }
