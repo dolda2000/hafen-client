@@ -43,6 +43,7 @@ import static haven.Utils.*;
 public class WorkshopLauncher {
     static {
 	Utils.initlocale();
+	haven.iosys.tk.AWTToolkit.initawt1();
     }
 
     public static class Client {
