@@ -153,6 +153,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 				WGL.WGL_CONTEXT_MAJOR_VERSION_ARB, ver[0], WGL.WGL_CONTEXT_MINOR_VERSION_ARB, ver[1],
 				0, 0,
 			    });
+			break;
 		    } catch(StdError e) {
 			lasterr = e;
 		    }
