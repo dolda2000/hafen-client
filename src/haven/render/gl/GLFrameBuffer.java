@@ -157,6 +157,8 @@ public class GLFrameBuffer extends GLObject implements BGL.ID {
 	    this.level = img.level;
 	    this.w = img.w;
 	    this.h = img.h;
+	    if((w == 0) || (h == 0))
+		throw(new IllegalArgumentException("Framebuffer textures must not be zero-sized: " + tex.desc()));
 	}
 
 	public void attach(BGL gl, GLFrameBuffer fbo, int point) {
