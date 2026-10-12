@@ -46,6 +46,14 @@ import haven.ffi.gl.*;
 import haven.ffi.windows.Win32.*;
 import static haven.iosys.tk.Key.Std.*;
 
+/*
+ * TODO:
+ *   * Use OLE clipboard.
+ *   * Figure out why eventloop blocks while windows
+ *     are being moved/resized.
+ *   * Figure out why GL batches are sometimes being
+ *     run after a window has been disposed.
+ */
 @Toolkit.Available(name = "wgl")
 public class WGLContext implements Providers.Factory<Toolkit> {
     private final Win32 win;
