@@ -476,6 +476,7 @@ public class WorkshopLauncher {
 	    haven.Client.main(args);
 	    return;
 	}
+	Utils.useragent.put("conf.steam", "1")
 	Collection<UGItem> items = api.ugitems();
 	for(UGItem item : items) {
 	    if(!item.installed() || item.stale()) {
