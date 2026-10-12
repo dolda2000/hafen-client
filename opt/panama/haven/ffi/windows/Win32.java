@@ -1182,8 +1182,6 @@ public abstract class Win32 {
 		} catch(Throwable e) {
 		    throw(new InvocationException(e));
 		}
-		if(nullp(rv))
-		    throw(lasterror());
 		return(Handle.of(rv));
 	    }
 	}
