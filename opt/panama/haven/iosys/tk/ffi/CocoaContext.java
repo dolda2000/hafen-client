@@ -50,6 +50,10 @@ import haven.ffi.objc.Runtime;
 import static haven.ffi.objc.Carbon.*;
 import static haven.iosys.tk.Key.Std.*;
 
+/*
+ * TODO:
+ *   * Implement IME support.
+ */
 @Toolkit.Available(name = "cgl")
 public class CocoaContext implements Providers.Factory<Toolkit> {
     private final Runtime rt;
