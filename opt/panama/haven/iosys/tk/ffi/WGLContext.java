@@ -390,9 +390,28 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	    return(r.val);
 	}
 
-	private void glrun(Handle hwnd, Runnable task) {
+	public static class MissingDCException extends RuntimeException {
+	    public final boolean destroyed, showing;
+	    public final Windeye.State state;
+	    public final Coord size;
+
+	    public MissingDCException(WGLWindow wnd) {
+		super("GDI device context missing for window");
+		this.destroyed = wnd.destroyed;
+		this.showing = wnd.showing;
+		this.state = wnd.curstate;
+		this.size = wnd.size;
+	    }
+	}
+
+	private void glrun(WGLWindow wnd, Runnable task) {
 	    msgrun(() -> {
-		Handle hdc = win.GetDC(hwnd);
+		Handle hdc;
+		try {
+		    hdc = win.GetDC(wnd.hwnd);
+		} catch(StdError e) {
+		    throw(new MissingDCException(wnd));
+		}
 		try {
 		    wgl.wglMakeCurrent(hdc, ctx);
 		    try {
@@ -401,14 +420,19 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 			wgl.wglMakeCurrent(hdc, null);
 		    }
 		} finally {
-		    win.ReleaseDC(hwnd, hdc);
+		    win.ReleaseDC(wnd.hwnd, hdc);
 		}
 	    });
 	}
 
-	private <T> T glrun(Handle hwnd, Supplier<T> task) {
+	private <T> T glrun(WGLWindow wnd, Supplier<T> task) {
 	    return(msgrun(() -> {
-		Handle hdc = win.GetDC(hwnd);
+		Handle hdc;
+		try {
+		    hdc = win.GetDC(wnd.hwnd);
+		} catch(StdError e) {
+		    throw(new MissingDCException(wnd));
+		}
 		try {
 		    wgl.wglMakeCurrent(hdc, ctx);
 		    T ret;
@@ -419,7 +443,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		    }
 		    return(ret);
 		} finally {
-		    win.ReleaseDC(hwnd, hdc);
+		    win.ReleaseDC(wnd.hwnd, hdc);
 		}
 	    }));
 	}
@@ -620,7 +644,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	    private final W32Clipboard clipboard = new W32Clipboard();
 	    private final boolean[] visible = new boolean[visgrid.length];
 	    private Coord size = Coord.z;
-	    private boolean showing = false;
+	    private boolean focused, showing = false, destroyed = false;
 	    private State curstate = State.NORMAL;
 	    private WGLEnvironment renv;
 	    private int vwheelacc = 0, hwheelacc = 0;
@@ -629,7 +653,6 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	    private Area preexcl = null;
 	    private Handle icon = null, cursor = null;
 	    private int cursi = -1;
-	    private boolean focused;
 
 	    private WGLWindow() {
 		Arrays.fill(visible, true);
@@ -660,7 +683,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		    process(gl);
 		    synchronized(this) {
 			if((qstate & 1) != 0)
-			    glrun(hwnd, (Runnable)this::process);
+			    glrun(WGLWindow.this, (Runnable)this::process);
 			qstate &= ~2;
 		    }
 		}
@@ -670,7 +693,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		    synchronized(this) {
 			if(renv == this) {
 			    if(qstate == 0)
-				glrun(hwnd, (Runnable)this::process);
+				glrun(WGLWindow.this, (Runnable)this::process);
 			    qstate |= 1;
 			}
 		    }
@@ -940,7 +963,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		if(renv == null) {
 		    synchronized(this) {
 			if(renv == null)
-			    renv = glrun(hwnd, () -> new WGLEnvironment());
+			    renv = glrun(this, () -> new WGLEnvironment());
 		    }
 		}
 		return(renv);
@@ -993,7 +1016,10 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 
 	    public void dispose() {
 		unregister(this);
-		msgrun(() -> win.DestroyWindow(hwnd));
+		msgrun(() -> {
+		    win.DestroyWindow(hwnd);
+		    destroyed = true;
+		});
 	    }
 
 	    public class W32Clipboard implements Clipboard {
