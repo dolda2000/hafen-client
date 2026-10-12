@@ -89,6 +89,11 @@ public class WGLContext implements Providers.Factory<Toolkit> {
     public boolean experimental() {return(false);}
 
     public class WGLToolkit implements Toolkit {
+	private static final int[][] glversions = {
+	    {4, 6}, {4, 5}, {4, 4}, {4, 3}, {4, 2}, {4, 1}, {4, 0},
+				    {3, 3}, {3, 2}, {3, 1}, {3, 0},
+						    {2, 1}, {2, 0},
+	};
 	private static int serial = 0;
 	private final String wclassname = "haven-window-" + serial;
 	private final Handle hInstance;
@@ -113,6 +118,8 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 
 	private void createctx() {
 	    Handle hwnd = null, hdc = null, temp = null;
+	    ctx = null;
+	    StdError lasterr = null;
 	    try {
 		hwnd = win.CreateWindowEx(0, wclassname, null, 0, null, null, null, null, hInstance);
 		hdc = win.GetDC(hwnd);
@@ -138,11 +145,20 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		    throw(new Unavailable("WGL_ARB_create_context_profile not available"));
 		if(!exts.contains("WGL_EXT_swap_control"))
 		    throw(new Unavailable("WGL_EXT_swap_control not available"));
-		ctx = text.wglCreateContextAttribsARB(hdc, null, new int[] {
-			WGL.WGL_CONTEXT_PROFILE_MASK_ARB, WGL.WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-			WGL.WGL_CONTEXT_MAJOR_VERSION_ARB, 4, WGL.WGL_CONTEXT_MINOR_VERSION_ARB, 6,
-			0, 0,
-		    });
+		
+		for(int[] ver : glversions) {
+		    try {
+			ctx = text.wglCreateContextAttribsARB(hdc, null, new int[] {
+				WGL.WGL_CONTEXT_PROFILE_MASK_ARB, WGL.WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+				WGL.WGL_CONTEXT_MAJOR_VERSION_ARB, ver[0], WGL.WGL_CONTEXT_MINOR_VERSION_ARB, ver[1],
+				0, 0,
+			    });
+		    } catch(StdError e) {
+			lasterr = e;
+		    }
+		}
+		if(ctx == null) 
+		    throw(new Unavailable("could not create OpenGL context", lasterr));
 		wgl.wglMakeCurrent(hdc, ctx);
 		gl = wgl.gl();
 		wgl.wglMakeCurrent(hdc, null);
