@@ -102,6 +102,10 @@ public interface ObjectData<T> {
 		buf.put(s("method"), el.getMethodName());
 		buf.put(s("native"), el.isNativeMethod());
 	    });
+
+	register(Enum.class, (el, buf) -> {
+		buf.put(s("name"), el.name());
+	    });
 	return(null);
     }
 
