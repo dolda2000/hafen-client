@@ -656,17 +656,15 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 
 	    private WGLWindow() {
 		Arrays.fill(visible, true);
-		hwnd = msgrun(() -> win.CreateWindowEx(0, wclassname, null, STYLE_NORMAL,
-						       null, null, null, null, hInstance));
+		hwnd = win.CreateWindowEx(0, wclassname, null, STYLE_NORMAL,
+					  null, null, null, null, hInstance);
 		register(this);
-		msgrun(() -> {
-		    Handle hdc = win.GetDC(hwnd);
-		    try {
-			win.SetPixelFormat(hdc, pfmt, pfd);
-		    } finally {
-			win.ReleaseDC(hwnd, hdc);
-		    }
-		});
+		Handle hdc = win.GetDC(hwnd);
+		try {
+		    win.SetPixelFormat(hdc, pfmt, pfd);
+		} finally {
+		    win.ReleaseDC(hwnd, hdc);
+		}
 	    }
 
 	    public class WGLEnvironment extends FFIEnvironment {
@@ -1622,7 +1620,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 	}
 
 	public Windeye window() {
-	    return(new WGLWindow());
+	    return(msgrun(WGLWindow::new));
 	}
 
 	public class ShellPicker implements FilePicker.Factory {
