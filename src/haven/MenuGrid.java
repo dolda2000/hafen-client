@@ -250,10 +250,11 @@ public class MenuGrid extends Widget implements KeyBinding.Bindable {
 	private char bindchr(KeyMatch key) {
 	    if(key.modmatch != 0)
 		return(0);
-	    char vkey = key.chr;
-	    if((vkey == 0) && (key.keyname.length() == 1))
-		vkey = key.keyname.charAt(0);
-	    return(vkey);
+	    if(key instanceof KeyMatch.CharMatch)
+		return(((KeyMatch.CharMatch)key).chr);
+	    if(key.keyname.length() == 1)
+		return(key.keyname.charAt(0));
+	    return(0);
 	}
 
 	public static final Text.Foundry keyfnd = new Text.Foundry(Text.sans.deriveFont(Font.BOLD), 10);
