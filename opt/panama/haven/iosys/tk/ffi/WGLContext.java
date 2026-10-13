@@ -478,7 +478,11 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 
 	private void unregister(WGLWindow wnd) {
 	    synchronized(mtmon) {
-		windows.remove(wnd.hwnd);
+		WGLWindow reg = windows.remove(wnd.hwnd);
+		if(reg == null)
+		    throw(new IllegalStateException("window unregistered doubly"));
+		else if(reg != wnd)
+		    throw(new RuntimeException("window registration not matching"));
 	    }
 	}
 
