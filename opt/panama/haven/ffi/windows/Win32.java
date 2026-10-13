@@ -109,32 +109,46 @@ public abstract class Win32 {
     public static final int SWP_DEFERERASE     = 0x2000;
     public static final int SWP_ASYNCWINDOWPOS = 0x4000;
 
-    public static final int WM_SIZE             = 0x0005;
-    public static final int WM_SETFOCUS         = 0x0007;
-    public static final int WM_KILLFOCUS        = 0x0008;
-    public static final int WM_CLOSE            = 0x0010;
-    public static final int WM_SHOWWINDOW       = 0x0018;
-    public static final int WM_SETCURSOR        = 0x0020;
-    public static final int WM_GETMINMAXINFO    = 0x0024;
-    public static final int WM_SETICON          = 0x0080;
-    public static final int WM_KEYDOWN          = 0x0100;
-    public static final int WM_KEYUP            = 0x0101;
-    public static final int WM_SYSKEYDOWN       = 0x0104;
-    public static final int WM_SYSKEYUP         = 0x0105;
-    public static final int WM_SYSCOMMAND       = 0x0112;
-    public static final int WM_MOUSEMOVE        = 0x0200;
-    public static final int WM_LBUTTONDOWN      = 0x0201;
-    public static final int WM_LBUTTONUP        = 0x0202;
-    public static final int WM_RBUTTONDOWN      = 0x0204;
-    public static final int WM_RBUTTONUP        = 0x0205;
-    public static final int WM_MBUTTONDOWN      = 0x0207;
-    public static final int WM_MBUTTONUP        = 0x0208;
-    public static final int WM_MOUSEWHEEL       = 0x020a;
-    public static final int WM_XBUTTONDOWN      = 0x020b;
-    public static final int WM_XBUTTONUP        = 0x020c;
-    public static final int WM_HMOUSEWHEEL      = 0x020e;
-    public static final int WM_DESTROYCLIPBOARD = 0x0307;
-    public static final int WM_USER             = 0x0400;
+    public static final int WM_SIZE                 = 0x0005;
+    public static final int WM_SETFOCUS             = 0x0007;
+    public static final int WM_KILLFOCUS            = 0x0008;
+    public static final int WM_CLOSE                = 0x0010;
+    public static final int WM_SHOWWINDOW           = 0x0018;
+    public static final int WM_SETCURSOR            = 0x0020;
+    public static final int WM_GETMINMAXINFO        = 0x0024;
+    public static final int WM_SETICON              = 0x0080;
+    public static final int WM_KEYDOWN              = 0x0100;
+    public static final int WM_KEYUP                = 0x0101;
+    public static final int WM_CHAR                 = 0x0102;
+    public static final int WM_SYSKEYDOWN           = 0x0104;
+    public static final int WM_SYSKEYUP             = 0x0105;
+    public static final int WM_IME_STARTCOMPOSITION = 0x010d;
+    public static final int WM_IME_ENDCOMPOSITION   = 0x010e;
+    public static final int WM_IME_COMPOSITION      = 0x010f;
+    public static final int WM_SYSCOMMAND           = 0x0112;
+    public static final int WM_MOUSEMOVE            = 0x0200;
+    public static final int WM_LBUTTONDOWN          = 0x0201;
+    public static final int WM_LBUTTONUP            = 0x0202;
+    public static final int WM_RBUTTONDOWN          = 0x0204;
+    public static final int WM_RBUTTONUP            = 0x0205;
+    public static final int WM_MBUTTONDOWN          = 0x0207;
+    public static final int WM_MBUTTONUP            = 0x0208;
+    public static final int WM_MOUSEWHEEL           = 0x020a;
+    public static final int WM_XBUTTONDOWN          = 0x020b;
+    public static final int WM_XBUTTONUP            = 0x020c;
+    public static final int WM_HMOUSEWHEEL          = 0x020e;
+    public static final int WM_IME_SETCONTEXT       = 0x0281;
+    public static final int WM_IME_NOTIFY           = 0x0282;
+    public static final int WM_IME_CONTROL          = 0x0283;
+    public static final int WM_IME_COMPOSITIONFULL  = 0x0284;
+    public static final int WM_IME_SELECT           = 0x0285;
+    public static final int WM_IME_CHAR             = 0x0286;
+    public static final int WM_IME_REQUEST          = 0x0288;
+    public static final int WM_IME_KEYDOWN          = 0x0290;
+    public static final int WM_IME_KEYUP            = 0x0291;
+    public static final int WM_DESTROYCLIPBOARD     = 0x0307;
+    public static final int WM_USER                 = 0x0400;
+    public static final int WM_APP                  = 0x8000;
 
     public static final int SC_KEYMENU = 0xf100;
     public static final int ICON_SMALL = 0;
@@ -177,6 +191,8 @@ public abstract class Win32 {
     public static final int MK_MBUTTON  = 0x0010;
     public static final int MK_XBUTTON1 = 0x0020;
     public static final int MK_XBUTTON2 = 0x0040;
+
+    public static final int VK_PROCESSKEY = 0xe5;
 
     public static final int RRF_RT_ANY = 0xffff;
     public static final int REG_NONE = 0;
@@ -299,6 +315,10 @@ public abstract class Win32 {
 	}
 
 	MemorySegment mem() {return(mem);}
+	public abstract Handle hwnd();
+	public abstract int message();
+	public abstract long wparam();
+	public abstract long lparam();
     }
     public abstract MSG MSG();
 
@@ -478,6 +498,7 @@ public abstract class Win32 {
     public abstract int DestroyWindow(Handle hWnd);
     public abstract boolean GetMessage(MSG lpMsg, Handle hWnd, int wMsgFilterMin, int wMsgFilterMax);
     public abstract boolean PeekMessage(Win32.MSG lpMsg, Handle hWnd, int wMsgFilterMin, int wMsgFilterMax, int wRemoveMsg);
+    public abstract boolean TranslateMessage(Win32.MSG lpMsg);
     public abstract long DispatchMessage(Win32.MSG lpMsg);
     public abstract void PostMessage(Handle hWnd, int Msg, long wParam, long lParam);
     public abstract int SendMessage(Handle hWnd, int Msg, long wParam, long lParam);
@@ -920,6 +941,15 @@ public abstract class Win32 {
 	    }
 
 	    protected StructLayout $layout() {return(_MSG);}
+
+	    private static final VarHandle hwnd = _MSG.varHandle(PathElement.groupElement("hwnd"));
+	    public Handle hwnd() {return(Handle.of((MemorySegment)hwnd.get(mem, 0)));}
+	    private static final VarHandle message = _MSG.varHandle(PathElement.groupElement("message"));
+	    public int message() {return((int)message.get(mem, 0));}
+	    private static final VarHandle wparam = _MSG.varHandle(PathElement.groupElement("wparam"));
+	    public long wparam() {return((long)wparam.get(mem, 0));}
+	    private static final VarHandle lparam = _MSG.varHandle(PathElement.groupElement("lparam"));
+	    public long lparam() {return((long)lparam.get(mem, 0));}
 	}
 
 	public MSG MSG() {
@@ -980,6 +1010,16 @@ public abstract class Win32 {
 	    int rv;
 	    try {
 		rv = (int)PeekMessageW.invoke(lpMsg.mem(), nhandle(hWnd), wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
+	    } catch(Throwable e) {
+		throw(new InvocationException(e));
+	    }
+	    return(rv != 0);
+	}
+	private final MethodHandle TranslateMessage = ld.downcallHandle(user32.find("TranslateMessage").get(), FunctionDescriptor.of(BOOL, ADDRESS));
+	public boolean TranslateMessage(Win32.MSG lpMsg) {
+	    int rv;
+	    try {
+		rv = (int)TranslateMessage.invoke(lpMsg.mem());
 	    } catch(Throwable e) {
 		throw(new InvocationException(e));
 	    }
