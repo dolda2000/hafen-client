@@ -40,6 +40,7 @@ public interface ReadLine {
     public int mark();
     public void mark(int m);
     public void setline(String line);
+    @Deprecated
     public boolean key(char c, KeyEvent ev, int mod);
     public double mtime();
 
@@ -60,6 +61,7 @@ public interface ReadLine {
 	return(true);
     }
 
+    @Deprecated
     public default boolean key(KeyEvent ev) {
 	int mod = UI.modflags(ev);
 	char c = ev.getKeyChar();
@@ -79,6 +81,10 @@ public interface ReadLine {
 	    }
 	}
 	return(key(c, ev, mod));
+    }
+
+    public default boolean key(Widget.KeyDownEvent ev) {
+	return(key(ev.awt));
     }
 
     public static interface Owner {

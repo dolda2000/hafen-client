@@ -168,7 +168,7 @@ public class TextEntry extends Widget implements ReadLine.Owner {
     }
 
     public boolean keydown(KeyDownEvent e) {
-	return(buf.key(e.awt));
+	return(buf.key(e));
     }
 
     public void mousemove(MouseMoveEvent ev) {

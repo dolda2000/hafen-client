@@ -560,7 +560,7 @@ public class FightWnd extends Widget {
 			ed = null;
 			return(true);
 		    } else {
-			return(ed.key(ev.awt));
+			return(ed.key(ev));
 		    }
 		}
 		return(super.keydown(ev));

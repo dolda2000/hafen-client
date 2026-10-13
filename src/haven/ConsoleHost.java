@@ -57,11 +57,11 @@ public abstract class ConsoleHost extends Widget implements Console.Host, ReadLi
 	cancelcmd();
     }
 
-    private boolean cmdkey(KeyEvent ev) {
+    private boolean cmdkey(KeyDownEvent ev) {
 	if(cmdline != null) {
 	    if(key_esc.match(ev)) {
 		cancelcmd();
-	    } else if((ev.getKeyChar() == 8) && (KeyMatch.mods(ev) == 0) && cmdline.empty()) {
+	    } else if((ev.c == 8) && (ev.mods == 0) && cmdline.empty()) {
 		cancelcmd();
 	    } else if(kb_histprev.key().match(ev)) {
 		if(hpos > 0) {
@@ -126,7 +126,7 @@ public abstract class ConsoleHost extends Widget implements Console.Host, ReadLi
     }
 
     public boolean keydown(KeyDownEvent ev) {
-	if(cmdkey(ev.awt))
+	if(cmdkey(ev))
 	    return(true);
 	return(super.keydown(ev));
     }

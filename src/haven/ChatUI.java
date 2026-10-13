@@ -1570,12 +1570,12 @@ public class ChatUI extends Widget {
 	    cancel();
 	}
 
-	public boolean key(KbdEvent ev) {
+	public boolean key(KeyDownEvent ev) {
 	    if(key_esc.match(ev)) {
 		cancel();
 		return(true);
 	    } else {
-		return(buf.key(ev.awt));
+		return(buf.key(ev));
 	    }
 	}
     }
