@@ -40,7 +40,6 @@ public interface ReadLine {
     public int mark();
     public void mark(int m);
     public void setline(String line);
-    @Deprecated
     public boolean key(Widget.KeyDownEvent ev);
     public double mtime();
 
