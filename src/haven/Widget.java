@@ -1388,7 +1388,7 @@ public class Widget {
 	    return(true);
 	if(focusctl && focustab) {
 	    Widget f = focused;
-	    if(key_tab.match(ev.awt, KeyMatch.S) && (f != null)) {
+	    if(key_tab.match(ev, KeyMatch.S) && (f != null)) {
 		while(true) {
 		    if((ev.mods & KeyMatch.S) == 0) {
 			Widget n = f.rnext();
@@ -1415,7 +1415,7 @@ public class Widget {
 	KeyMatch gkey = this.gkey;
 	if(kb_gkey != null)
 	    gkey = kb_gkey.key();
-	if((gkey != null) && gkey.match(ev.awt)) {
+	if((gkey != null) && gkey.match(ev)) {
 	    if(gkeytype(ev))
 		return(true);
 	}

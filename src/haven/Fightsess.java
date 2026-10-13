@@ -438,7 +438,7 @@ public class Fightsess extends Widget {
 		return(true);
 	    }
 	}
-	if(kb_relcycle.key().match(ev.awt, KeyMatch.S)) {
+	if(kb_relcycle.key().match(ev, KeyMatch.S)) {
 	    if((ev.mods & KeyMatch.S) == 0) {
 		Fightview.Relation cur = fv.current;
 		if(cur != null) {
@@ -463,7 +463,7 @@ public class Fightsess extends Widget {
     }
 
     public boolean keyup(KeyUpEvent ev) {
-	if(ev.grabbed && (kb_acts[held].key().match(ev.awt, KeyMatch.MODS))) {
+	if(ev.grabbed && (kb_acts[held].key().match(ev, KeyMatch.MODS))) {
 	    MapView map = getparent(GameUI.class).map;
 	    new Release(held);
 	    holdgrab.remove();

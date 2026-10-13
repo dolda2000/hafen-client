@@ -612,12 +612,12 @@ public class OptWnd extends Window {
 		super.draw(g);
 	    }
 
-	    protected KeyMatch mkmatch(KeyEvent ev) {
+	    protected KeyMatch mkmatch(KbdEvent ev) {
 		return(KeyMatch.forevent(ev, ~cmd.modign));
 	    }
 
-	    protected boolean handle(KeyEvent ev) {
-		if(ev.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+	    protected boolean handle(KbdEvent ev) {
+		if(ev.code == KeyEvent.VK_BACK_SPACE) {
 		    cmd.set(null);
 		    super.set(cmd.key());
 		    return(true);
@@ -657,21 +657,20 @@ public class OptWnd extends Window {
 	    }
 	}
 
-	private boolean handle(KeyEvent ev) {
-	    switch(ev.getKeyCode()) {
+	private boolean handle(KbdEvent ev) {
+	    switch(ev.code) {
 	    case KeyEvent.VK_SHIFT: case KeyEvent.VK_CONTROL: case KeyEvent.VK_ALT:
 	    case KeyEvent.VK_META: case KeyEvent.VK_WINDOWS:
 		return(false);
 	    }
-	    int code = ev.getKeyCode();
-	    if(code == KeyEvent.VK_ESCAPE) {
+	    if(ev.code == KeyEvent.VK_ESCAPE) {
 		return(true);
 	    }
-	    if(code == KeyEvent.VK_BACK_SPACE) {
+	    if(ev.code == KeyEvent.VK_BACK_SPACE) {
 		cmd.set(null);
 		return(true);
 	    }
-	    if(code == KeyEvent.VK_DELETE) {
+	    if(ev.code == KeyEvent.VK_DELETE) {
 		cmd.set(KeyMatch.nil);
 		return(true);
 	    }
@@ -725,7 +724,7 @@ public class OptWnd extends Window {
 	public boolean keydown(KeyDownEvent ev) {
 	    if(!ev.grabbed)
 		return(super.keydown(ev));
-	    if(handle(ev.awt)) {
+	    if(handle(ev)) {
 		kg.remove();
 		kg = null;
 		cmd = null;

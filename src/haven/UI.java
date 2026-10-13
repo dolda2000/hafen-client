@@ -909,6 +909,14 @@ public class UI {
 	return(q.ret);
     }
 
+    public static int modflags(Set<Key.Mod> mods) {
+	return((mods.contains(Key.Mod.SHIFT)   ? MOD_SHIFT : 0) |
+	       (mods.contains(Key.Mod.CONTROL) ? MOD_CTRL  : 0) |
+	       (mods.contains(Key.Mod.META)    ? MOD_META  : 0) |
+	       (mods.contains(Key.Mod.ALT)     ? MOD_META  : 0) |
+	       (mods.contains(Key.Mod.SUPER)   ? MOD_SUPER : 0));
+    }
+
     public static int modflags(InputEvent ev) {
 	int mod = ev.getModifiersEx();
 	return((((mod & InputEvent.SHIFT_DOWN_MASK) != 0) ? MOD_SHIFT : 0) |

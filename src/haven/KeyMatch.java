@@ -50,6 +50,7 @@ public class KeyMatch {
 
     public static int mods(KeyEvent ev) {return(UI.modflags(ev));}
 
+    @Deprecated
     public boolean match(KeyEvent ev, int modign) {
 	int mod = mods(ev);
 	if((mod & modmask & ~modign) != (modmatch & ~modign))
@@ -82,8 +83,13 @@ public class KeyMatch {
 	}
     }
 
+    @Deprecated
     public boolean match(KeyEvent ev) {
 	return(match(ev, 0));
+    }
+
+    public boolean match(Widget.KbdEvent ev, int modign) {
+	return(match(ev.awt, modign));
     }
 
     public boolean match(Widget.KbdEvent ev) {
@@ -126,6 +132,7 @@ public class KeyMatch {
 	return(forcode(code, S | C | M, mods));
     }
 
+    @Deprecated
     public static KeyMatch forevent(KeyEvent ev, int modmask) {
 	int mod = mods(ev) & modmask;
 	char key = Character.toUpperCase(ev.getKeyChar());
@@ -145,6 +152,9 @@ public class KeyMatch {
 	if(!Character.isISOControl(key))
 	    return(new KeyMatch(key, false, VK_UNDEFINED, false, Character.toString(key), modmask, mod));
 	return(null);
+    }
+    public static KeyMatch forevent(Widget.KbdEvent ev, int modmask) {
+	return(forevent(ev.awt, modmask));
     }
 
     public String reduce() {
@@ -236,22 +246,21 @@ public class KeyMatch {
 	    }
 	}
 
-	protected KeyMatch mkmatch(KeyEvent ev) {
+	protected KeyMatch mkmatch(KbdEvent ev) {
 	    return(forevent(ev, MODS));
 	}
 
-	protected boolean handle(KeyEvent ev) {
-	    switch(ev.getKeyCode()) {
+	protected boolean handle(KbdEvent ev) {
+	    switch(ev.code) {
 	    case KeyEvent.VK_SHIFT: case KeyEvent.VK_CONTROL: case KeyEvent.VK_ALT:
 	    case KeyEvent.VK_META: case KeyEvent.VK_WINDOWS:
 		return(false);
 	    }
-	    int code = ev.getKeyCode();
-	    if(code == KeyEvent.VK_ESCAPE) {
+	    if(ev.code == KeyEvent.VK_ESCAPE) {
 		change(namefor(this.key));
 		return(true);
 	    }
-	    if(code == KeyEvent.VK_DELETE) {
+	    if(ev.code == KeyEvent.VK_DELETE) {
 		set(nil);
 		return(true);
 	    }
@@ -266,7 +275,7 @@ public class KeyMatch {
 	public boolean keydown(KeyDownEvent ev) {
 	    if(!ev.grabbed)
 		return(super.keydown(ev));
-	    if(handle(ev.awt)) {
+	    if(handle(ev)) {
 		grab.remove();
 		grab = null;
 	    }
