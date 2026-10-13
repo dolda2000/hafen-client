@@ -476,6 +476,7 @@ public class WorkshopLauncher {
 	    haven.Client.main(args);
 	    return;
 	}
+	Utils.useragent.put("conf.steam", "1");
 	Collection<UGItem> items = api.ugitems();
 	for(UGItem item : items) {
 	    if(!item.installed() || item.stale()) {
@@ -520,7 +521,7 @@ public class WorkshopLauncher {
 		final haven.error.ErrorHandler hg = new haven.error.ErrorHandler(new java.net.URI(ed).toURL());
 		hg.sethandler(new haven.error.ErrorGui(null) {
 			public void errorsent() {
-			    hg.interrupt();
+			    System.exit(1);
 			}
 		    });
 		g = hg;

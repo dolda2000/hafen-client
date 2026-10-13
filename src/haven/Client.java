@@ -397,7 +397,7 @@ public class Client implements Console.Directory {
 		final haven.error.ErrorHandler hg = new haven.error.ErrorHandler(new java.net.URI(ed).toURL());
 		hg.sethandler(new haven.error.ErrorGui(null) {
 			public void errorsent() {
-			    hg.interrupt();
+			    System.exit(1);
 			}
 		    });
 		g = hg;

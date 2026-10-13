@@ -68,6 +68,12 @@ public interface GL {
     public static final int GL_FRAGMENT_SHADER = com.jogamp.opengl.GL3.GL_FRAGMENT_SHADER;
     public static final int GL_FRAMEBUFFER = com.jogamp.opengl.GL.GL_FRAMEBUFFER;
     public static final int GL_FRAMEBUFFER_COMPLETE = com.jogamp.opengl.GL.GL_FRAMEBUFFER_COMPLETE;
+    public static final int GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT = com.jogamp.opengl.GL.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
+    public static final int GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS = com.jogamp.opengl.GL.GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS;
+    public static final int GL_FRAMEBUFFER_INCOMPLETE_FORMATS = com.jogamp.opengl.GL.GL_FRAMEBUFFER_INCOMPLETE_FORMATS;
+    public static final int GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT = com.jogamp.opengl.GL.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
+    public static final int GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE = com.jogamp.opengl.GL.GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE;
+    public static final int GL_FRAMEBUFFER_UNSUPPORT = com.jogamp.opengl.GL.GL_FRAMEBUFFER_UNSUPPORTED;
     public static final int GL_FUNC_ADD = com.jogamp.opengl.GL.GL_FUNC_ADD;
     public static final int GL_FUNC_REVERSE_SUBTRACT = com.jogamp.opengl.GL.GL_FUNC_REVERSE_SUBTRACT;
     public static final int GL_FUNC_SUBTRACT = com.jogamp.opengl.GL.GL_FUNC_SUBTRACT;
