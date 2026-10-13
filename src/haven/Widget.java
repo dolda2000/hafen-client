@@ -1138,7 +1138,7 @@ public class Widget {
     public static final KeyMatch key_esc = KeyMatch.forcode(KeyEvent.VK_ESCAPE, 0);
     public static final KeyMatch key_tab = KeyMatch.forcode(KeyEvent.VK_TAB, 0);
     public static abstract class KbdEvent extends Event {
-	public final Toolkit.KeyEvent tkev;
+	protected final Toolkit.KeyEvent tkev;
 	public final KeyEvent awt;
 	public final int code, mods;
 	public final char c;
@@ -1165,6 +1165,10 @@ public class Widget {
 	    if(c == awt.CHAR_UNDEFINED)
 		c = 0;
 	    this.c = c;
+	}
+
+	public Toolkit.KeyEvent tkev() {
+	    return(tkev);
 	}
     }
 
@@ -1193,6 +1197,10 @@ public class Widget {
     public static class KeyDownEvent extends FocusedKeyEvent {
 	public KeyDownEvent(Toolkit.KeyDownEvent tkev) {super(tkev);}
 
+	public Toolkit.KeyDownEvent tkev() {
+	    return((Toolkit.KeyDownEvent)tkev);
+	}
+
 	protected boolean shandle(Widget w) {
 	    if(w.keydown(this))
 		return(true);
@@ -1203,6 +1211,10 @@ public class Widget {
     public static class KeyUpEvent extends FocusedKeyEvent {
 	public KeyUpEvent(Toolkit.KeyUpEvent tkev) {super(tkev);}
 
+	public Toolkit.KeyUpEvent tkev() {
+	    return((Toolkit.KeyUpEvent)tkev);
+	}
+
 	public boolean shandle(Widget w) {
 	    if(w.keyup(this))
 		return(true);
@@ -1212,6 +1224,10 @@ public class Widget {
 
     public static class GlobKeyEvent extends KbdEvent {
 	public GlobKeyEvent(Toolkit.KeyDownEvent tkev) {super(tkev);}
+
+	public Toolkit.KeyDownEvent tkev() {
+	    return((Toolkit.KeyDownEvent)tkev);
+	}
 
 	protected boolean propagation(Widget from) {
 	    for(Widget wdg = from.lchild; wdg != null; wdg = wdg.prev) {

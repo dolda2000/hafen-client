@@ -55,7 +55,7 @@ public class RootWidget extends ConsoleHost implements UI.Notice.Handler, Widget
     public boolean globtype(GlobKeyEvent ev) {
 	if(ev.propagate(this))
 	    return(true);
-	if(ev.tkev.key().location() == Key.Loc.Std.TLDE) {
+	if(ev.tkev().key().location() == Key.Loc.Std.TLDE) {
 	    if(UILoop.profile.get()) {
 		add(new Profwnd(guprof, "UI profile"), UI.scale(100, 100));
 		add(new Profwnd(grprof, "GL profile"), UI.scale(500, 100));
