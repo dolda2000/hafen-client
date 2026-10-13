@@ -272,9 +272,20 @@ public interface Key {
 
 	    public String id() {return(("std:" + this.name()).intern());}
 	}
+
+	public static final Loc nil = new Loc() {
+	    public String id() {return("nil");}
+	};
     }
 
     public static enum Mod {
 	SHIFT, CONTROL, META, ALT, SUPER, ALTGR
     }
+
+    public static final Key nil = new Key() {
+	public String id() {return("nil");}
+	public Loc location() {return(Loc.nil);}
+	public Sym primary() {return(null);}
+	public Sym primary(Collection<? extends Sym> of) {return(null);}
+    };
 }

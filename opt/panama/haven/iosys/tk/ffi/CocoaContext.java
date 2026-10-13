@@ -1002,7 +1002,7 @@ public class CocoaContext implements Providers.Factory<Toolkit> {
 		    this.text = text;
 		}
 
-		public Key key() {return(null);}
+		public Key key() {return(Key.nil);}
 		public Key.Sym sym() {return(null);}
 		public String string() {return(text);}
 		public Set<Key.Mod> mods() {return(Collections.emptySet());}
