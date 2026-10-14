@@ -1412,7 +1412,7 @@ public class GLXContext implements Providers.Factory<Toolkit> {
 		    });
 		    break;
 		default:
-		    Warning.warn(String.format("unexpected XInput event received for window %s: %d",  ev.evtype()));
+		    Warning.warn(String.format("unexpected XInput event received for window %s: %d",  id, ev.evtype()));
 		    break;
 		}
 	    }
