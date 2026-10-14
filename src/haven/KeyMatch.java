@@ -26,12 +26,14 @@
 
 package haven;
 
+import java.util.*;
 import haven.iosys.tk.*;
 import haven.iosys.tk.Toolkit.*;
 import haven.iosys.tk.Key.*;
 import static java.awt.event.KeyEvent.VK_UNDEFINED;
 
 public abstract class KeyMatch {
+    private static final String sepchars = ":\"'/ \n\0";
     public static final int S = 1, C = 2, M = 4, SUPER = 8, MODS = S | C | M;
     public String keyname;
     public int modmask, modmatch;
@@ -154,6 +156,188 @@ public abstract class KeyMatch {
 	}
     }
 
+    public static class TypedSymMatch extends KeyMatch {
+	public String sym;
+
+	public TypedSymMatch(String sym, String keyname, int modmask, int modmatch) {
+	    super(keyname, modmask, modmatch);
+	    this.sym = sym;
+	}
+
+	public TypedSymMatch(Sym sym, int modmask, int modmatch) {
+	    this(sym.id(), sym.nm(), modmask, modmatch);
+	}
+
+	public boolean match(KeyEvent kev, int modign) {
+	    if(!(kev instanceof KeyDownEvent))
+		return(false);
+	    int mod = mods(kev);
+	    if((mod & modmask & ~modign) != (modmatch & ~modign))
+		return(false);
+	    KeyDownEvent ev = (KeyDownEvent)kev;
+	    return((ev.sym() != null) && (ev.sym().id() == this.sym));
+	}
+
+	private boolean equals(TypedSymMatch that) {
+	    return((this.sym == that.sym) && equals((KeyMatch)that));
+	}
+
+	public boolean equals(Object o) {
+	    return((o instanceof TypedSymMatch) && equals((TypedSymMatch)o));
+	}
+
+	public String reduce() {
+	    StringBuilder buf = new StringBuilder();
+	    reducemods(buf);
+	    for(int i = 0; i < sepchars.length(); i++) {
+		char sep = sepchars.charAt(i);
+		if(sym.indexOf(sep) < 0) {
+		    buf.append(String.format("t%c%s%c%s", sep, sym, sep, keyname));
+		    break;
+		}
+	    }
+	    return(buf.toString());
+	}
+
+	public static TypedSymMatch restore(char id, String desc, int modmask, int modmatch) {
+	    char sep = desc.charAt(0);
+	    int p = desc.indexOf(sep, 1);
+	    String sym = desc.substring(1, p);
+	    String nm = desc.substring(p + 1);
+	    return(new TypedSymMatch(sym, nm, modmask, modmatch));
+	}
+    }
+
+    public static class PriSymMatch extends KeyMatch {
+	public String sym;
+
+	public PriSymMatch(String sym, String keyname, int modmask, int modmatch) {
+	    super(keyname, modmask, modmatch);
+	    this.sym = sym;
+	}
+
+	public PriSymMatch(Sym sym, int modmask, int modmatch) {
+	    this(sym.id(), sym.nm(), modmask, modmatch);
+	}
+
+	public boolean match(KeyEvent ev, int modign) {
+	    int mod = mods(ev);
+	    if((mod & modmask & ~modign) != (modmatch & ~modign))
+		return(false);
+	    Sym sym = ev.key().primary();
+	    return((sym != null) && (sym.id() == this.sym));
+	}
+
+	private boolean equals(PriSymMatch that) {
+	    return((this.sym == that.sym) && equals((KeyMatch)that));
+	}
+
+	public boolean equals(Object o) {
+	    return((o instanceof PriSymMatch) && equals((PriSymMatch)o));
+	}
+
+	public String reduce() {
+	    StringBuilder buf = new StringBuilder();
+	    reducemods(buf);
+	    for(int i = 0; i < sepchars.length(); i++) {
+		char sep = sepchars.charAt(i);
+		if(sym.indexOf(sep) < 0) {
+		    buf.append(String.format("y%c%s%c%s", sep, sym, sep, keyname));
+		    break;
+		}
+	    }
+	    return(buf.toString());
+	}
+
+	public static PriSymMatch restore(char id, String desc, int modmask, int modmatch) {
+	    char sep = desc.charAt(0);
+	    int p = desc.indexOf(sep, 1);
+	    String sym = desc.substring(1, p);
+	    String nm = desc.substring(p + 1);
+	    return(new PriSymMatch(sym, nm, modmask, modmatch));
+	}
+    }
+
+    public static class CatSymMatch extends KeyMatch {
+	public Sym sym;
+	public Collection<? extends Sym> cat;
+
+	public CatSymMatch(Sym sym, Collection<? extends Sym> cat, int modmask, int modmatch) {
+	    super(sym.nm(), modmask, modmatch);
+	    this.sym = sym;
+	    this.cat = cat;
+	}
+
+	public boolean match(KeyEvent ev, int modign) {
+	    int mod = mods(ev);
+	    if((mod & modmask & ~modign) != (modmatch & ~modign))
+		return(false);
+	    Sym sym = ev.key().primary(cat);
+	    return((sym != null) && (sym.id() == this.sym.id()));
+	}
+
+	private boolean equals(CatSymMatch that) {
+	    return((this.sym.id() == that.sym.id()) && this.cat.equals(that.cat) && equals((KeyMatch)that));
+	}
+
+	public boolean equals(Object o) {
+	    return((o instanceof CatSymMatch) && equals((CatSymMatch)o));
+	}
+
+	public String reduce() {
+	    throw(new RuntimeException("symbol-category matches cannot be reduced"));
+	}
+    }
+
+    public static class PhysicalMatch extends KeyMatch {
+	public String id;
+
+	public PhysicalMatch(String id, String keyname, int modmask, int modmatch) {
+	    super(keyname, modmask, modmatch);
+	    this.id = id;
+	}
+
+	public PhysicalMatch(Loc loc, int modmask, int modmatch) {
+	    this(loc.id(), loc.id(), modmask, modmatch);
+	}
+
+	public boolean match(KeyEvent ev, int modign) {
+	    int mod = mods(ev);
+	    if((mod & modmask & ~modign) != (modmatch & ~modign))
+		return(false);
+	    return(ev.key().location().id() == this.id);
+	}
+
+	private boolean equals(PhysicalMatch that) {
+	    return((this.id == that.id) && equals((KeyMatch)that));
+	}
+
+	public boolean equals(Object o) {
+	    return((o instanceof PhysicalMatch) && equals((PhysicalMatch)o));
+	}
+
+	public String reduce() {
+	    StringBuilder buf = new StringBuilder();
+	    reducemods(buf);
+	    for(int i = 0; i < sepchars.length(); i++) {
+		char sep = sepchars.charAt(i);
+		if(id.indexOf(sep) < 0) {
+		    buf.append(String.format("l%c%s%c%s", sep, id, sep, keyname));
+		    break;
+		}
+	    }
+	    return(buf.toString());
+	}
+
+	public static PhysicalMatch restore(char id, String desc, int modmask, int modmatch) {
+	    char sep = desc.charAt(0);
+	    int p = desc.indexOf(sep, 1);
+	    String locid = desc.substring(1, p);
+	    String nm = desc.substring(p + 1);
+	    return(new PhysicalMatch(locid, nm, modmask, modmatch));
+	}
+    }
+
     public static final KeyMatch nil = new KeyMatch("None", 0, 0) {
 	public boolean match(KeyEvent ev, int modign) {
 	    return(false);
@@ -211,12 +395,41 @@ public abstract class KeyMatch {
 	return(forcode(code, S | C | M, mods));
     }
 
+    public static KeyMatch fortsym(Sym sym, int modmask, int modmatch) {
+	return(new TypedSymMatch(sym, modmask, modmatch));
+    }
+    public static KeyMatch fortsym(Sym sym, int mods) {
+	return(fortsym(sym, S | C | M, mods));
+    }
+
+    public static KeyMatch forcsym(Collection<? extends Sym> cat, Sym sym, int modmask, int modmatch) {
+	return(new CatSymMatch(sym, cat, modmask, modmatch));
+    }
+    public static KeyMatch forcsym(Collection<? extends Sym> cat, Sym sym, int mods) {
+	return(forcsym(cat, sym, S | C | M, mods));
+    }
+
+    public static KeyMatch forpsym(Sym sym, int modmask, int modmatch) {
+	return(new PriSymMatch(sym, modmask, modmatch));
+    }
+    public static KeyMatch forpsym(Sym sym, int mods) {
+	return(forpsym(sym, S | C | M, mods));
+    }
+
+    public static KeyMatch forloc(Loc loc, String name, int modmask, int modmatch) {
+	return(new PhysicalMatch(loc.id(), name, modmask, modmatch));
+    }
+    public static KeyMatch forloc(Loc loc, String name, int mods) {
+	return(forloc(loc, name, S | C | M, mods));
+    }
+
     @Deprecated
     public static KeyMatch forevent(KeyEvent ev, int modmask) {
 	int mod = mods(ev) & modmask;
 	char chr = (ev instanceof KeyDownEvent) ?
 	    Character.toUpperCase(keychar((KeyDownEvent)ev)) :
 	    0;
+	/* In due time, switch to use PriSymMatch */
 	int code = AWTCompat.revawt.getOrDefault(ev.key().primary(AWTCompat.revawt.keySet()), VK_UNDEFINED);
 	if(code != VK_UNDEFINED) {
 	    String nm = ev.key().primary().nm();
@@ -258,6 +471,12 @@ public abstract class KeyMatch {
 		return(CharMatch.restore(c, desc.substring(p), modmask, modmatch));
 	    case 'k': case 'K':
 		return(CodeMatch.restore(c, desc.substring(p), modmask, modmatch));
+	    case 't':
+		return(TypedSymMatch.restore(c, desc.substring(p), modmask, modmatch));
+	    case 'y':
+		return(PriSymMatch.restore(c, desc.substring(p), modmask, modmatch));
+	    case 'l':
+		return(PhysicalMatch.restore(c, desc.substring(p), modmask, modmatch));
 	    case 'n':
 		return(nil);
 	    default:
