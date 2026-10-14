@@ -30,8 +30,8 @@ import haven.iosys.tk.*;
 import java.util.*;
 
 public class AWTCompat {
+    public static final Map<Key.Std, Integer> revawt = new HashMap<>();
     private static final java.awt.Component awtdummy = new java.awt.Component() {};
-    private static final Map<Key.Std, Integer> revawt = new HashMap<>();
     static {
 	for(Map.Entry<Integer, Key.Std> k : AWTToolkit.stdsyms.entrySet())
 	    revawt.put(k.getValue(), k.getKey());

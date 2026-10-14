@@ -26,7 +26,9 @@
 
 package haven;
 
-import java.awt.event.*;
+import haven.iosys.tk.*;
+import haven.iosys.tk.Toolkit.*;
+import haven.iosys.tk.Key.*;
 import static java.awt.event.KeyEvent.VK_UNDEFINED;
 
 public abstract class KeyMatch {
@@ -40,6 +42,27 @@ public abstract class KeyMatch {
 	this.modmatch = modmatch & MODS;
     }
 
+    /* Arguably, needing this should be considered deprecated, so
+     * CharMatch as a whole.. */
+    public static char keychar(KeyDownEvent ev) {
+	String t = ev.string();
+	if(t.length() != 1)
+	    return(0);
+	char c = t.charAt(0);
+	if((c < 32) && ev.mods().contains(Key.Mod.CONTROL)) {
+	    /* Undo the TTY Control-code mangling that most systems do. */
+	    Key.Sym sym = ev.sym();
+	    if(sym == Std.BACKSPACE) {
+	    } else if(sym == Std.ENTER) {
+	    } else if(sym == Std.TAB) {
+	    } else if(sym == Std.ESCAPE) {
+	    } else {
+		c = (char)(c + (ev.mods().contains(Key.Mod.SHIFT) ? 'A' : 'a') - 1);
+	    }
+	}
+	return(c);
+    }
+
     public static class CharMatch extends KeyMatch {
 	public char chr;
 	public boolean casematch;
@@ -51,23 +74,12 @@ public abstract class KeyMatch {
 	}
 
 	public boolean match(KeyEvent ev, int modign) {
+	    if(!(ev instanceof KeyDownEvent))
+		return(false);
 	    int mod = mods(ev);
 	    if((mod & modmask & ~modign) != (modmatch & ~modign))
 		return(false);
-	    char evc = ev.getKeyChar();
-	    if(((mod & C) != 0) && (evc < 32)) {
-		/* Undo Java's TTY Control-code mangling */
-		switch(ev.getKeyCode()) {
-		case KeyEvent.VK_BACK_SPACE:
-		case KeyEvent.VK_ENTER:
-		case KeyEvent.VK_TAB:
-		case KeyEvent.VK_ESCAPE:
-		    break;
-		default:
-		    evc = (char)(evc + 'A' - 1);
-		    break;
-		}
-	    }
+	    char evc = keychar((KeyDownEvent)ev);
 	    if(!casematch)
 		evc = Character.toUpperCase(evc);
 	    return(evc == chr);
@@ -116,10 +128,7 @@ public abstract class KeyMatch {
 	    int mod = mods(ev);
 	    if((mod & modmask & ~modign) != (modmatch & ~modign))
 		return(false);
-	    if(extmatch)
-		return(ev.getExtendedKeyCode() == code);
-	    else
-		return(ev.getKeyCode() == code);
+	    return(code == AWTCompat.revawt.getOrDefault(ev.key().primary(AWTCompat.revawt.keySet()), VK_UNDEFINED));
 	}
 
 	private boolean equals(CodeMatch that) {
@@ -158,22 +167,18 @@ public abstract class KeyMatch {
 	}
     };
 
-    public static int mods(KeyEvent ev) {return(UI.modflags(ev));}
+    public static int mods(KeyEvent ev) {return(UI.modflags(ev.mods()));}
 
-    @Deprecated
     public abstract boolean match(KeyEvent ev, int modign);
 
-    @Deprecated
     public boolean match(KeyEvent ev) {
 	return(match(ev, 0));
     }
-
     public boolean match(Widget.KbdEvent ev, int modign) {
-	return(match(ev.awt, modign));
+	return(match(ev.tkev(), modign));
     }
-
     public boolean match(Widget.KbdEvent ev) {
-	return(match(ev.awt));
+	return(match(ev.tkev()));
     }
 
     public String name() {
@@ -200,7 +205,7 @@ public abstract class KeyMatch {
     }
 
     public static KeyMatch forcode(int code, int modmask, int modmatch) {
-	return(new CodeMatch(code, false, KeyEvent.getKeyText(code), modmask, modmatch));
+	return(new CodeMatch(code, false, java.awt.event.KeyEvent.getKeyText(code), modmask, modmatch));
     }
     public static KeyMatch forcode(int code, int mods) {
 	return(forcode(code, S | C | M, mods));
@@ -209,26 +214,20 @@ public abstract class KeyMatch {
     @Deprecated
     public static KeyMatch forevent(KeyEvent ev, int modmask) {
 	int mod = mods(ev) & modmask;
-	char key = Character.toUpperCase(ev.getKeyChar());
-	int code = ev.getExtendedKeyCode();
-	if(key == KeyEvent.CHAR_UNDEFINED)
-	    key = 0;
+	char chr = (ev instanceof KeyDownEvent) ?
+	    Character.toUpperCase(keychar((KeyDownEvent)ev)) :
+	    0;
+	int code = AWTCompat.revawt.getOrDefault(ev.key().primary(AWTCompat.revawt.keySet()), VK_UNDEFINED);
 	if(code != VK_UNDEFINED) {
-	    String nm;
-	    if(ev.getKeyCode() != VK_UNDEFINED)
-		nm = KeyEvent.getKeyText(ev.getKeyCode());
-	    else if(!Character.isISOControl(key))
-		nm = Character.toString(key);
-	    else
-		nm = String.format("%X", code);
+	    String nm = ev.key().primary().nm();
 	    return(new CodeMatch(code, true, nm, modmask, mod));
 	}
-	if(!Character.isISOControl(key))
-	    return(new CharMatch(key, false, Character.toString(key), modmask, mod));
+	if(!Character.isISOControl(chr))
+	    return(new CharMatch(chr, false, Character.toString(chr), modmask, mod));
 	return(null);
     }
     public static KeyMatch forevent(Widget.KbdEvent ev, int modmask) {
-	return(forevent(ev.awt, modmask));
+	return(forevent(ev.tkev(), modmask));
     }
 
     protected void reducemods(StringBuilder buf) {
@@ -299,25 +298,23 @@ public abstract class KeyMatch {
 	    }
 	}
 
-	protected KeyMatch mkmatch(KbdEvent ev) {
+	protected KeyMatch mkmatch(KeyDownEvent ev) {
 	    return(forevent(ev, MODS));
 	}
 
-	protected boolean handle(KbdEvent ev) {
-	    switch(ev.code) {
-	    case KeyEvent.VK_SHIFT: case KeyEvent.VK_CONTROL: case KeyEvent.VK_ALT:
-	    case KeyEvent.VK_META: case KeyEvent.VK_WINDOWS:
+	protected boolean handle(KeyDownEvent kev) {
+	    Toolkit.KeyDownEvent ev = kev.tkev();
+	    if(ev.key().primary(Std.MODKEYS) != null)
 		return(false);
-	    }
-	    if(ev.code == KeyEvent.VK_ESCAPE) {
+	    if(ev.sym() == Std.ESCAPE) {
 		change(namefor(this.key));
 		return(true);
 	    }
-	    if(ev.code == KeyEvent.VK_DELETE) {
+	    if(ev.sym() == Std.DELETE) {
 		set(nil);
 		return(true);
 	    }
-	    KeyMatch key = mkmatch(ev);
+	    KeyMatch key = mkmatch(kev);
 	    if(key != null)
 		set(key);
 	    else
@@ -392,12 +389,12 @@ public abstract class KeyMatch {
 	    }
 	}
 
-	protected boolean handle(KeyEvent ev) {
-	    switch(ev.getKeyCode()) {
-	    case KeyEvent.VK_ESCAPE:
+	protected boolean handle(KeyDownEvent ev) {
+	    if(ev.tkev().sym() == Std.ESCAPE) {
 		change(modname(match));
 		return(true);
-	    case KeyEvent.VK_DELETE:
+	    }
+	    if(ev.tkev().sym() == Std.ESCAPE) {
 		set(0);
 		return(true);
 	    }
@@ -407,9 +404,7 @@ public abstract class KeyMatch {
 	public boolean keyup(KeyUpEvent ev) {
 	    if(!ev.grabbed)
 		return(super.keyup(ev));
-	    switch(ev.code) {
-	    case KeyEvent.VK_SHIFT: case KeyEvent.VK_CONTROL: case KeyEvent.VK_ALT:
-	    case KeyEvent.VK_META: case KeyEvent.VK_WINDOWS:
+	    if(ev.tkev().key().primary(Std.MODKEYS) != null) {
 		grab.remove();
 		grab = null;
 		set(nmatch);
@@ -421,10 +416,8 @@ public abstract class KeyMatch {
 	public boolean keydown(KeyDownEvent ev) {
 	    if(!ev.grabbed)
 		return(super.keydown(ev));
-	    switch(ev.code) {
-	    case KeyEvent.VK_SHIFT: case KeyEvent.VK_CONTROL: case KeyEvent.VK_ALT:
-	    case KeyEvent.VK_META: case KeyEvent.VK_WINDOWS:
-		nmatch |= (mods(ev.awt) & mask);
+	    if(ev.tkev().key().primary(Std.MODKEYS) != null) {
+		nmatch |= (mods(ev.tkev()) & mask);
 		return(true);
 	    }
 	    if(handle(ev)) {
