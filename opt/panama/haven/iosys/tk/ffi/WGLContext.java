@@ -192,16 +192,21 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		this.minf = win.MONITORINFO();
 		win.GetMonitorInfo(hm, minf);
 		this.gdpi = gdpi;
+		int udpi = 0, mdpi = 0, fac = 0;
 		if(shcore != null) {
-		    Coord udpi = shcore.GetDpiForMonitor(hm, SHCore.MDT_EFFECTIVE_DPI);
-		    this.udpi = (udpi.x + udpi.y) / 2;
-		    Coord mdpi = shcore.GetDpiForMonitor(hm, SHCore.MDT_RAW_DPI);
-		    this.mdpi = (mdpi.x + mdpi.y) / 2;
-		    this.fac = shcore.GetScaleFactorForMonitor(hm);
-		} else {
-		    this.udpi = this.mdpi = 0;
-		    this.fac = 0;
+		    try {
+			Coord v = shcore.GetDpiForMonitor(hm, SHCore.MDT_EFFECTIVE_DPI);
+			udpi = (v.x + v.y) / 2;
+		    } catch(HResultError e) {}
+		    try {
+			Coord v = shcore.GetDpiForMonitor(hm, SHCore.MDT_RAW_DPI);
+			mdpi = (v.x + v.y) / 2;
+		    } catch(HResultError e) {}
+		    try {
+			fac = shcore.GetScaleFactorForMonitor(hm);
+		    } catch(HResultError e) {}
 		}
+		this.udpi = udpi; this.mdpi = mdpi; this.fac = fac;
 	    }
 
 	    public Coord resolution() {
