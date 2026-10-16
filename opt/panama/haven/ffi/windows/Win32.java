@@ -122,6 +122,7 @@ public abstract class Win32 {
     public static final int WM_CHAR                 = 0x0102;
     public static final int WM_SYSKEYDOWN           = 0x0104;
     public static final int WM_SYSKEYUP             = 0x0105;
+    public static final int WM_SYSCHAR              = 0x0106;
     public static final int WM_IME_STARTCOMPOSITION = 0x010d;
     public static final int WM_IME_ENDCOMPOSITION   = 0x010e;
     public static final int WM_IME_COMPOSITION      = 0x010f;
