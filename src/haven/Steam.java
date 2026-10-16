@@ -146,7 +146,7 @@ public class Steam {
 	    try {
 		if(!API.init())
 		    return(null);
-	    } catch(NoClassDefFoundError e) {
+	    } catch(LinkageError e) {
 		return(null);
 	    }
 	    instance = new Steam();
