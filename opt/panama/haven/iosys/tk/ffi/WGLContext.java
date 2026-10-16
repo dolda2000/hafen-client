@@ -308,7 +308,8 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 
 	private long keymsgid = 1;
 	private void dispatchmsg(MSG msg) {
-	    boolean bracket = (msg.hwnd() != Handle.nil) && (msg.message() == Win32.WM_KEYDOWN);
+	    boolean bracket = (msg.hwnd() != Handle.nil) && ((msg.message() == Win32.WM_KEYDOWN) ||
+							     (msg.message() == Win32.WM_SYSKEYDOWN));
 	    if(bracket)
 		win.PostMessage(msg.hwnd(), WM_USER_XLATE, keymsgid, 1);
 	    win.TranslateMessage(msg);
@@ -798,7 +799,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 		    }
 		    return(win.DefWindowProc(hwnd, umsg, wparam, lparam));
 
-		case Win32.WM_KEYDOWN:
+		case Win32.WM_KEYDOWN: case Win32.WM_SYSKEYDOWN:
 		    if(xlating != null) {
 			/* Apparently, the Win32 message queue always picks all posted
 			 * messages (including from TranslateMessage) before picking any
@@ -811,14 +812,14 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 			callback(xlating);
 		    }
 		    xlating = new W32KeyDownEvent(keymsgid++, wparam, lparam);
-		    return(0);
-		case Win32.WM_CHAR:
+		    return((umsg == Win32.WM_KEYDOWN) ? 0 : win.DefWindowProc(hwnd, umsg, wparam, lparam));
+		case Win32.WM_CHAR: case Win32.WM_SYSCHAR:
 		    if(xlstate) {
 			xlating.strbuf.append((char)wparam);
 		    } else {
 			callback(new W32CharEvent((char)wparam));
 		    }
-		    return(0);
+		    return((umsg == Win32.WM_CHAR) ? 0 : win.DefWindowProc(hwnd, umsg, wparam, lparam));
 		case WM_USER_XLATE:
 		    if(xlating == null) {
 			Warning.warn("got WM_USER_XLATE without any pending WM_KEYDOWN");
@@ -834,15 +835,9 @@ public class WGLContext implements Providers.Factory<Toolkit> {
 			}
 		    }
 		    return(0);
-		case Win32.WM_SYSKEYDOWN:
-		    callback(new W32KeyDownEvent(0, wparam, lparam));
-		    return(win.DefWindowProc(hwnd, umsg, wparam, lparam));
-		case Win32.WM_KEYUP:
+		case Win32.WM_KEYUP: case Win32.WM_SYSKEYUP:
 		    callback(new W32KeyUpEvent(wparam, lparam));
-		    return(0);
-		case Win32.WM_SYSKEYUP:
-		    callback(new W32KeyUpEvent(wparam, lparam));
-		    return(win.DefWindowProc(hwnd, umsg, wparam, lparam));
+		    return((umsg == Win32.WM_KEYUP) ? 0 : win.DefWindowProc(hwnd, umsg, wparam, lparam));
 		case Win32.WM_SYSCOMMAND:
 		    if((wparam & 0xfff0) == Win32.SC_KEYMENU)
 			return(0);
