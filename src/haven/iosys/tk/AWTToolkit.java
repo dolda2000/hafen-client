@@ -41,11 +41,13 @@ import javax.swing.filechooser.*;
 import java.awt.AWTEvent;
 import java.awt.Component;
 import java.awt.Desktop;
+import java.awt.Dimension;
 import java.awt.DisplayMode;
 import java.awt.EventQueue;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.HeadlessException;
+import java.awt.Insets;
 import java.awt.image.BufferedImage;
 import javax.swing.JFileChooser;
 import static java.awt.event.KeyEvent.*;
@@ -82,6 +84,10 @@ public abstract class AWTToolkit implements Toolkit {
 	} catch(Throwable e) {
 	    throw(new Unavailable("AWT failed to initialize", e));
 	}
+    }
+
+    private static Dimension dim(Coord c) {
+	return(new Dimension(c.x, c.y));
     }
 
     protected void awtrun(Runnable task) {
@@ -708,15 +714,17 @@ public abstract class AWTToolkit implements Toolkit {
 
 	public AWTWindow sizing(Sizing info) {
 	    awtrun(() -> {
+		Insets in = frame.getInsets();
+		Coord fsz = Coord.of(in.left + in.right, in.top + in.bottom);
 		if(info.fixsize == null) {
 		    frame.setResizable(true);
 		    if(info.normsize != null)
-			frame.setSize(info.normsize.x, info.normsize.y);
-		    frame.setMinimumSize((info.minsize == null) ? null : new java.awt.Dimension(info.minsize.x, info.minsize.y));
-		    frame.setMaximumSize((info.maxsize == null) ? null : new java.awt.Dimension(info.maxsize.x, info.maxsize.y));
+			frame.setSize(dim(info.normsize.add(fsz)));
+		    frame.setMinimumSize((info.minsize == null) ? null : dim(info.minsize.add(fsz)));
+		    frame.setMaximumSize((info.maxsize == null) ? null : dim(info.maxsize.add(fsz)));
 		} else {
 		    frame.setResizable(false);
-		    frame.setSize(info.fixsize.x, info.fixsize.y);
+		    frame.setSize(dim(info.fixsize.add(fsz)));
 		    frame.setMinimumSize(null);
 		    frame.setMaximumSize(null);
 		}
@@ -779,7 +787,7 @@ public abstract class AWTToolkit implements Toolkit {
 	}
 
 	public Coord size() {
-	    java.awt.Dimension d = panel().getSize();
+	    Dimension d = panel().getSize();
 	    return(Coord.of(d.width, d.height));
 	}
 
@@ -920,13 +928,13 @@ public abstract class AWTToolkit implements Toolkit {
 	java.awt.Toolkit tk = java.awt.Toolkit.getDefaultToolkit();
 	if(tk.getMaximumCursorColors() < 256)
 	    return(null);
-	java.awt.Dimension cd = tk.getBestCursorSize(512, 512);
+	Dimension cd = tk.getBestCursorSize(512, 512);
 	return(new Cursor.Caps((int)Math.min(cd.getWidth(), cd.getHeight()), 0));
     }
 
     public AWTCursor makecursor(BufferedImage img, Coord hs) {
 	java.awt.Toolkit tk = java.awt.Toolkit.getDefaultToolkit();
-	java.awt.Dimension cd = tk.getBestCursorSize(img.getWidth(), img.getHeight());
+	Dimension cd = tk.getBestCursorSize(img.getWidth(), img.getHeight());
 	BufferedImage buf = TexI.mkbuf(new Coord((int)cd.getWidth(), (int)cd.getHeight()));
 	java.awt.Graphics g = buf.getGraphics();
 	g.drawImage(img, 0, 0, null);
