@@ -94,7 +94,7 @@ public class WGLContext implements Providers.Factory<Toolkit> {
     public int priority() {
 	return(System.getProperty("os.name", "").startsWith("Windows ") ? 100 : 0);
     }
-    public boolean experimental() {return(true);}
+    public boolean experimental() {return(false);}
 
     public class WGLToolkit implements Toolkit {
 	private static final int WM_USER_WAKE  = Win32.WM_USER + 1;
